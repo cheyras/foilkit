@@ -1,0 +1,93 @@
+version = 1
+
+SPDX-PackageName = "foilkit"
+SPDX-PackageSupplier = "Chey Rasmussen <cheyras@gmail.com>"
+SPDX-PackageDownloadLocation = "https://github.com/cheyras/foilkit"
+SPDX-PackageComment = """
+foilkit is dual-licensed by file, not by package. Code is MIT; the dataset is
+dedicated to the public domain under CC0-1.0. This file is the machine-readable
+statement of that split — see LICENSE, LICENSE-DATA and RELICENSE.md for the
+human-readable one.
+
+Precedence is 'aggregate' throughout: a file's own SPDX header wins over the
+glob below it. Every .ts/.js/.mjs/.glsl file is expected to carry
+  // SPDX-License-Identifier: MIT
+in its first lines. The globs exist for the files that cannot carry a comment —
+JSON measurements and PNG masks — and as a backstop for the ones that can.
+
+Neither license grants any right in a third-party trademark. See NOTICE.
+"""
+
+# ---------------------------------------------------------------------------
+# Code — MIT.
+# The library, the shaders, the resolver implementation, the build tooling.
+# MIT rather than CC0 specifically because CC0 carries no patent grant and
+# explicitly disclaims one; see RELICENSE.md.
+# ---------------------------------------------------------------------------
+
+[[annotations]]
+path = "packages/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Chey Rasmussen"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = ["tools/**", "scripts/**", "examples/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Chey Rasmussen"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = [
+  "package.json",
+  "pnpm-workspace.yaml",
+  "tsconfig*.json",
+  ".github/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Chey Rasmussen"
+SPDX-License-Identifier = "MIT"
+
+# ---------------------------------------------------------------------------
+# Data — CC0-1.0.
+# Measurements of physical printings: which foil a printing carries, where the
+# foil sits, how the composite is tuned. These are observations of the physical
+# world, and the whole point of the project is that they are unencumbered.
+#
+# JSON and PNG cannot carry a comment header, so these globs are the ONLY
+# machine-readable statement of their license. Do not remove them.
+# ---------------------------------------------------------------------------
+
+[[annotations]]
+path = "data/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Chey Rasmussen"
+SPDX-License-Identifier = "CC0-1.0"
+
+# Canon files and resolver tables live next to the code they parameterise
+# rather than under data/. They are measurements regardless of where they sit,
+# so the license follows the file, not the directory.
+[[annotations]]
+path = ["**/*.canon.json", "**/*.resolver.json", "**/era-layouts.json"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Chey Rasmussen"
+SPDX-License-Identifier = "CC0-1.0"
+
+# ---------------------------------------------------------------------------
+# Documentation — MIT.
+#
+# Decided rather than defaulted: CC-BY was the alternative and was rejected.
+# CC-BY's attribution requirement is a *stronger* obligation on a downstream
+# reuser than MIT's notice-retention, and it would add a third license to
+# anyone's SBOM for no gain. MIT keeps the repository to exactly two licenses,
+# which is the number a legal reviewer wants to see.
+#
+# Prose that is purely a measurement write-up may be marked CC0-1.0 in its own
+# header; the 'aggregate' precedence here lets it.
+# ---------------------------------------------------------------------------
+
+[[annotations]]
+path = ["docs/**", "*.md"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Chey Rasmussen"
+SPDX-License-Identifier = "MIT"

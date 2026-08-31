@@ -1,0 +1,15 @@
+foilkit — third-party marks notice
+
+The CC0 1.0 public-domain dedication in LICENSE-DATA covers the measurements,
+masks, canon files and resolver tables in this repository. It does NOT cover,
+and cannot cover, third-party trademarks.
+
+Card names, set names, energy-type names and "Pokemon" are trademarks of
+The Pokemon Company International, Nintendo, Creatures Inc. and GAME FREAK Inc.
+foilkit uses them only to identify which real printing a measurement describes.
+That is nominative use — it is not a claim of ownership, endorsement or
+affiliation, and a CC0 dedication cannot grant rights the dedicator does not
+hold.
+
+foilkit ships no card artwork, no scans, no logos and no game assets. See
+NOTICE-CONVENTIONS.md for the rule every asset in this repository is held to.

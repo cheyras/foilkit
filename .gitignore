@@ -1,0 +1,20 @@
+node_modules/
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+
+.env
+.env.*
+!.env.example
+
+.DS_Store
+Thumbs.db
+
+.vercel/
+.idea/
+.vscode/
+
+# Reference media is cited, never vendored — see NOTICE-CONVENTIONS.md.
+# The fetch script reproduces it locally; the pixels do not ship.
+reference-media/
