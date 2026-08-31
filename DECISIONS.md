@@ -277,3 +277,126 @@ Recorded here so they are not mistaken for settled:
   first page". See the entry above.
 - **The extraction itself.** No library code, no dataset and no `packages/`
   directory exist in this repository yet.
+
+---
+
+## 2026-08-31 — The rectifier: four corners → canonical 504 × 704
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `tools/rectifier/` implements the missing half of the scan
+pipeline — a detected quad plus its image becomes a canonical raster and the
+3 × 3 row-major homography that produced it — together with the pair-diff and
+three-way `null` / `frame` / `full` classifier that task 3b's reverse-holo
+delta measurement runs on. Zero dependencies: pure-maths DLT, hand-rolled
+bilinear warp, PNG over `node:zlib`, tests on `node:test`.
+
+**Why:** 3b cannot start without it. DeckPal's `dev/scan-harness` is a
+*detector* — it returns corner lists and warps nothing — so every pair would
+otherwise be hand-aligned, which 3b's verification list forbids in as many
+words. Building it now also front-loads task 4's constants module and task 14's
+capture front end, both of which want exactly this code.
+
+**Implications:**
+
+- **No build step and no dev dependency.** Node 22.18+/24 strips TypeScript
+  natively, so the suite runs as `node --test "tools/rectifier/*.test.ts"`.
+  A `tsx` loader was considered and is not needed. No root `package.json` was
+  added: the pnpm workspace is the extraction's decision to make, not this
+  task's, and a README line documents the command in the meantime.
+- **`constants.ts` is task 4b's constants module, early.** The millimetre
+  constants and the "3 mm corner is triangulated, not official, credible range
+  2.5–3.0 mm" provenance are carried from DeckPal's `cardGeometry.ts`. Nothing
+  derived is typed in twice, and `constants.test.ts` reads the source back and
+  fails on a numeric literal assigned to a derived export — 4b's verification
+  item, satisfied by construction rather than by discipline.
+- **Round-trip error is measured, and the synthetic number is not the real
+  number.** Synthetic smooth pattern through a keystoned quad: mean 0.0019/255,
+  max 1/255. The same path with a real card scan: **mean 2.28/255, max 54/255**
+  (n = 1). Real cards are hard edges and 6 pt type; two bilinear resamples cost
+  real error at every one of them. Anything downstream that keys on a single
+  pixel's value budgets against the real figure.
+
+---
+
+## 2026-08-31 — WebP declined for the smoke test; PNG from the same path
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** The real-scan smoke test fetches TCGdex's `high.png` rather than
+`high.webp`. The scans are downloaded by `tools/rectifier/fetch-smoke-scans.ts`
+into the gitignored `reference-media/` tree and the test **skips** when they are
+absent.
+
+**Why:** Decoding WebP with no dependency means writing a VP8 intra decoder — a
+real project, and one with nothing to do with homographies. TCGdex serves the
+same asset as `.png` from the same path, and `png.ts` already decodes PNG.
+Nothing in the rectifier is format-aware; it takes an RGBA buffer, so swapping
+in a WebP decoder later changes only the loader. Fetch-not-vendor is F2: the
+citation ships, the pixels do not.
+
+**Implications:** `smoke-scans.ts` is the citation and ships; the images never
+do. A clone with no network passes its test run with the smoke suite skipped,
+which is honest, where a vendored card scan would be a licence problem.
+
+---
+
+## 2026-08-31 — The ported PNG codec was missing palette and Adam7
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `tools/rectifier/png.ts` extends the codec ported from DeckPal
+with colour type 3 (palette, bit depths 1/2/4/8, `PLTE` + `tRNS`) and Adam7
+de-interlacing.
+
+**Why:** DeckPal's codec had only ever read `canvas.toDataURL` output, so it
+supported neither. The first two real catalog scans this rectifier was pointed
+at — TCGdex `high.png` — are **8-bit palettised and Adam7-interlaced**, and the
+original threw `interlaced PNG unsupported` on both.
+
+**Implications:** Recorded because it is the smoke test earning its place on the
+first run: the synthetic suite would never have found this, and task 4a's
+framing census walks the same catalog rasters and would have hit it later and
+further from the cause. 16-bit still throws, deliberately.
+
+---
+
+## 2026-08-31 — Every classifier threshold is provisional, and says so
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `CHANGED_PIXEL_DELTA` (24), `NULL_MAX_CHANGED_FRACTION` (0.005),
+`FRAME_MAX_INSIDE_CHANGED_FRACTION` (0.02), `EDGE_MARGIN_PX` (4) and
+`MAX_RESIDUAL_SHIFT_PX` (4) ship as named constants whose comments state they
+are provisional and have never seen a photographed pair.
+
+**Why:** F5 — a measurement carries its n, and this one's n is **zero**. The
+values separate the synthetic cases with room to spare and that is the entire
+claim being made for them. Publishing a bare number would have let a later
+reader mistake a placeholder for a finding.
+
+**Implications:**
+
+- 3b's measurement is **blocked on the physical pair capture** and on nothing
+  else. No bulk source ships variant-specific imagery, so both printings of a
+  card have to be shot from the binder.
+- `PLACEHOLDER_ART_WINDOW` is explicitly not a measurement — the real windows
+  are per-era in `era-layouts.json`. A result computed against the placeholder
+  should say so, and `classifyDelta` refuses to separate `frame` from `full`
+  at all when no window is supplied, returning the conservative class with
+  `trustworthy: false`.
+- The alignment guard likewise reports rather than corrects: a pair whose two
+  rectifications disagree is re-detected, never nudged.
+
+---
+
+## 2026-08-31 — Correction to "Pending, not decided" above
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** The pending item reading *"No library code, no dataset and no
+`packages/` directory exist in this repository yet"* is now partly out of date
+and is corrected here rather than edited in place.
+
+**Why:** `tools/rectifier/` is working code, checked in on this date. It is
+deliberately **not** under `packages/`: it predates the extraction, it is a tool
+rather than a published package, and `constants.ts` is the only part of it with
+a settled destination (`@foilkit/core`, per task 4b).
+
+**Implications:** `packages/` and the dataset remain empty and the extraction is
+still outstanding. The rest of that pending entry stands unchanged.

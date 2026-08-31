@@ -15,11 +15,16 @@ guessed wrong. The shader is what renders the answer; the dataset is the answer.
 
 ## Status
 
-**Pre-extraction.** This repository currently holds the license split, the
-engineering contracts and the documentation skeleton. The library packages —
-`core`, `three`, `webgl2`, `element`, `react`, `patterns`, `resolver`, `masks` —
-land in a subsequent extraction pass from their origin repository, along with
-45 pattern recipes, 32 canon files, the mask corpus and the resolver.
+**Pre-extraction.** This repository holds the license split, the engineering
+contracts, the documentation skeleton — and one piece of working code:
+[`tools/rectifier/`](tools/rectifier/), which turns a detected card quad into a
+canonical 504 × 704 raster and diffs a pair of them. It is dependency-free and
+defines the canonical card space everything else will be measured in.
+
+The library packages — `core`, `three`, `webgl2`, `element`, `react`,
+`patterns`, `resolver`, `masks` — land in a subsequent extraction pass from
+their origin repository, along with 45 pattern recipes, 32 canon files, the mask
+corpus and the resolver.
 
 Nothing is installable yet. Issues and discussion are open.
 
@@ -29,7 +34,7 @@ Two licenses, split by **file** rather than by package:
 
 | | License | Where |
 |---|---|---|
-| **Code** | MIT | `packages/**` — TypeScript, JavaScript, GLSL, tooling |
+| **Code** | MIT | `packages/**`, `tools/**` — TypeScript, JavaScript, GLSL, tooling |
 | **Data** | CC0-1.0 | `data/**`, every `*.canon.json`, resolver tables, mask images |
 
 Drop the code in a storefront and MIT gets you through legal review. Take the

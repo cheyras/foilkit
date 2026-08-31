@@ -20,9 +20,12 @@ Planned layout — a pnpm workspace, one repository:
 packages/{core,three,webgl2,element,react,patterns,resolver,masks}
 data/            measurements — CC0
 docs/            contract documents
+tools/           standalone tooling that predates the extraction
 ```
 
 Nothing under `packages/` exists yet; the extraction lands in a later pass.
+`tools/rectifier/` is live — see its README. It runs on `node --test` with no
+build step and no dependencies, which is the bar tooling here is held to.
 
 ---
 
