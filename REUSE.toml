@@ -48,6 +48,13 @@ precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Chey Rasmussen"
 SPDX-License-Identifier = "MIT"
 
+# Repository metadata that carries no header of its own.
+[[annotations]]
+path = [".gitignore", ".gitattributes", "NOTICE", "REUSE.toml"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Chey Rasmussen"
+SPDX-License-Identifier = "MIT"
+
 # ---------------------------------------------------------------------------
 # Data — CC0-1.0.
 # Measurements of physical printings: which foil a printing carries, where the
@@ -87,7 +94,7 @@ SPDX-License-Identifier = "CC0-1.0"
 # ---------------------------------------------------------------------------
 
 [[annotations]]
-path = ["docs/**", "*.md"]
+path = ["docs/**", "wiki-staging/**", "*.md"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Chey Rasmussen"
 SPDX-License-Identifier = "MIT"

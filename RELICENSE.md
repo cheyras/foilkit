@@ -94,7 +94,9 @@ both:
 
 | Kind of file | License | Mechanism |
 |---|---|---|
+<!-- REUSE-IgnoreStart -->
 | `packages/**/*.glsl`, `*.ts`, `*.js`, `*.mjs` | MIT | `SPDX-License-Identifier: MIT` header in the file |
+<!-- REUSE-IgnoreEnd -->
 | `data/**`, `*.canon.json`, resolver tables, mask PNGs | CC0-1.0 | `REUSE.toml` path globs (JSON and PNG cannot carry a comment) |
 
 This is declared machine-readably in `REUSE.toml` because a prose note is what a

@@ -72,7 +72,7 @@ AI contributors alike.
 | Where | What |
 |---|---|
 | [`docs/`](docs/) | Contract documents — the shader ABI, the provenance model, the resolver tiers (arriving with the extraction) |
-| [Wiki](https://github.com/cheyras/foilkit/wiki) | Narrative, research and history: the pattern taxonomy, the provenance model deep-dive, pre-history |
+| [Wiki](https://github.com/cheyras/foilkit/wiki) | Narrative, research and history: the pattern taxonomy, the provenance model deep-dive, pre-history. **Not live yet** — the pages are written and staged in [`wiki-staging/`](wiki-staging/) pending one manual step, so wiki links 404 for now |
 | [`DECISIONS.md`](DECISIONS.md) | Dated audit trail of every decision and correction |
 
 ## Origin

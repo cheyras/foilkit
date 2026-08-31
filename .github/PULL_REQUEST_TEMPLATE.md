@@ -9,7 +9,9 @@ for the dataset. See `CONTRIBUTING.md` for why a sign-off is not a dedication.
 
 - [ ] **DCO**: every commit carries `Signed-off-by:` (`git commit -s`), certifying
       the [Developer Certificate of Origin 1.1](https://developercertificate.org/)
+<!-- REUSE-IgnoreStart -->
 - [ ] Code files I added carry `// SPDX-License-Identifier: MIT`
+<!-- REUSE-IgnoreEnd -->
 - [ ] Nothing in this PR is third-party material copied rather than referenced
       (the standing ownership rule — `CONTRIBUTING.md`)
 

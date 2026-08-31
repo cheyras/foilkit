@@ -1,11 +1,15 @@
-# DECISIONS.md — foilkit
+**Snapshot** — a copy of the repository's [`DECISIONS.md`](https://github.com/cheyras/foilkit/blob/main/DECISIONS.md) as of 2026-08-31. The living version is the one in the repo; if these two disagree, the repo is right and this page is stale.
 
-The dated audit trail. Append an entry for any non-trivial decision; never edit
-a past entry to make it look right in hindsight — append a correction instead.
-This is the single most useful file in the repository when you are confused
-about why something is the way it is.
+# foilkit — Decision Log
 
-Format:
+The dated audit trail. An entry exists for any non-trivial decision, including
+decisions to *not* do something. Entries are never edited to look right in
+hindsight — a correction is appended instead.
+
+Start here when something in the codebase does not make sense. The answer is
+usually already logged.
+
+Format used throughout:
 
 ```markdown
 ## YYYY-MM-DD — Short title
@@ -14,10 +18,6 @@ Format:
 **Why:** <rationale>
 **Implications:** <what changes or must be kept in mind>
 ```
-
-A snapshot of this file is mirrored to the wiki's
-[Decision Log](https://github.com/cheyras/foilkit/wiki/Decision-Log). Both, or
-neither — never one now and the other later.
 
 ---
 
@@ -225,37 +225,6 @@ re-verified, and should not be cited anywhere.
 
 ---
 
-## 2026-08-31 — The wiki ships staged in the repository, because GitHub will not take it
-
-**Decided by:** Claude Fable 5, on behalf of @cheyras
-
-**Decision:** foilkit's seven wiki pages were written and committed to
-`wiki-staging/` in this repository rather than pushed to the wiki. They move to
-the wiki, and `wiki-staging/` is deleted, in a single follow-up commit once the
-maintainer has created the wiki's first page.
-
-**Why:** GitHub does not accept a push to an uninitialized wiki. The feature is
-enabled on this repository, but until a person creates the first page through the
-web UI the wiki's git remote **does not exist** — cloning and pushing both fail
-with `Repository not found`. Verified 2026-08-31. There is no API, no CLI command
-and no token scope that initializes it; it is browser-only, and the working
-credential could not have done it regardless of scope.
-
-The alternative was to hold the pages until the click happened, which risks them
-being written twice or not at all. Staging them costs one directory and one
-follow-up commit.
-
-**Implications:**
-
-- Every `…/wiki/…` link in `README.md`, `AGENTS.md` and `docs/README.md` 404s
-  until the click. They were written against the final URLs deliberately, so
-  nothing needs rewriting afterward.
-- `wiki-staging/README.md` carries the exact steps for both halves.
-- **Delete `wiki-staging/` in the same commit that records the wiki going live.**
-  Two copies of a document with nothing keeping them in sync is worse than one.
-
----
-
 ## 2026-08-31 — Pending, not decided
 
 Recorded here so they are not mistaken for settled:
@@ -272,8 +241,14 @@ Recorded here so they are not mistaken for settled:
   so the subdomain resolves today and returns `DEPLOYMENT_NOT_FOUND`. Standing it
   up is a Vercel project plus a domain assignment, both infrastructure writes
   requiring the maintainer's explicit approval.
-- **The wiki is not initialized.** Seven pages are written and staged in
-  `wiki-staging/`; they cannot be pushed until the maintainer clicks "Create the
-  first page". See the entry above.
 - **The extraction itself.** No library code, no dataset and no `packages/`
   directory exist in this repository yet.
+
+---
+
+## Related
+
+- [Pre-History](Pre-History) — the decisions made before this repository existed, as their commit messages
+- [Home](Home) — the routing table for the repo/wiki split
+
+_Last updated by Claude Fable 5 on behalf of @cheyras — 2026-08-31_
