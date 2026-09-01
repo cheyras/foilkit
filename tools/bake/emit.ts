@@ -256,6 +256,20 @@ export function emitCatalog(model: CatalogModel, opts: EmitOptions): EmitReport 
     catalogSeriesBytes += write(
       join('catalog', 'series', `${ser.slug}.json`),
       {
+        version: 1,
+        // EVERY ARTIFACT CARRIES THE STAMP, not only the two index files.
+        //
+        // A shard that does not say when it was baked, from what, or against
+        // which resolver cannot be distinguished from a shard out of a
+        // different bake — and "they shipped together, check index.json" is an
+        // answer that is wrong exactly when it matters, which is when a partial
+        // deploy or a hand-copied file is what you are chasing. ~70 bytes per
+        // shard against a catalog whose set pages run 15 KB each.
+        //
+        // The COMMITTED shards under data/catalog/ predate this and are not
+        // rewritten by adding it here: they restamp on the next bake, which is
+        // the only thing that can honestly stamp them.
+        ...stamp,
         seriesSlug: ser.slug,
         sets: ser.sets.map((s) => ({
           setId: s.setId,
@@ -305,6 +319,11 @@ export function emitCatalog(model: CatalogModel, opts: EmitOptions): EmitReport 
         catalogSetsBytes += write(
           join('catalog', 'sets', file),
           {
+            version: 1,
+            // Same stamp, same reason — and this is the shard the editor's CARD
+            // DETAIL comes out of, so it is the one a stale-deploy question is
+            // usually actually about.
+            ...stamp,
             setId: s.setId,
             set: header,
             page,

@@ -322,3 +322,31 @@ test('every emitted artifact passes §6 — the emitter runs the guard itself', 
     assert.throws(() => emitCatalog(model(poisoned), { outDir: dir }), /quantity/)
   })
 })
+
+// ── the bake stamp ─────────────────────────────────────────────────────────
+
+test('EVERY catalog artifact carries the bake stamp, not only the index files', () => {
+  // The stamp is what tells a shard from a different bake's shard. It used to
+  // be on `catalog/index.json` and `search/index.json` only, so a partial
+  // deploy or a hand-copied file was undetectable in the artifacts themselves —
+  // and "they shipped together" is an assumption that is wrong precisely when
+  // somebody is asking. A dated file the reader can date is the whole point.
+  withTmpDir((dir) => {
+    const cards = Array.from({ length: PAGE_SIZE + 1 }, (_, i) => card('fx1', String(i + 1), `Alpha Fixture ${i}`))
+    emitCatalog(model(oneSet('fx1', cards)), { outDir: dir })
+    const stamped = [
+      join('catalog', 'index.json'),
+      join('catalog', 'series', 'fixture-series.json'),
+      join('catalog', 'sets', 'fx1.json'),
+      join('catalog', 'sets', 'fx1.p2.json'),
+      join('search', 'index.json'),
+    ]
+    for (const rel of stamped) {
+      const obj = JSON.parse(readFileSync(join(dir, rel), 'utf8')) as Record<string, unknown>
+      assert.equal(obj.generatedAt, '2026-09-01T00:00:00.000Z', `${rel} has no generatedAt`)
+      assert.equal(obj.source, 'fixture:test', `${rel} has no source`)
+      assert.equal(obj.resolverVersion, 5, `${rel} has no resolverVersion`)
+      assert.equal(obj.version, 1, `${rel} has no version`)
+    }
+  })
+})

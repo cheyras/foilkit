@@ -1420,3 +1420,25 @@ Vite dependency, and a parity test that fails because the editor imported
 something is a test people delete. Checked against the bug it exists for: adding
 an entry to one list only fails it.
 
+## 2026-09-01 — Every catalog artifact carries the bake stamp
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `tools/bake/emit.ts` writes `version` + `generatedAt` + `source` +
+`resolverVersion` onto the per-series and per-set shards, not only onto
+`catalog/index.json` and `search/index.json`. Card detail is read out of the set
+shard, so that covers it too.
+
+**Why:** the spec says every artifact is stamped. A shard that cannot be dated
+cannot be told apart from a shard out of a different bake, and "they shipped
+together, check index.json" is an answer that is wrong exactly when a partial
+deploy or a hand-copied file is what you are chasing. About 70 bytes against set
+pages that run 15 KB.
+
+**Implications:** the change is to the TOOL. The shards committed under
+`data/catalog/` predate it and are NOT rewritten — adding a stamp to an existing
+file would be inventing a date. They restamp on the next bake, which is the only
+thing that can honestly stamp them. `emit.test.ts` asserts the stamp on every
+catalog artifact and on both index files; the editor's shard types carry the
+fields as optional, because unstamped shards exist in the wild today.
+
