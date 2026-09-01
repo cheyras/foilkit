@@ -38,6 +38,7 @@ import {
   defaultTiltSourceId,
   easeToward,
   faceTextureWidth,
+  maskTextureWidth,
   needsLargerDecode,
   scheduleFrame,
   scissorBox,
@@ -76,6 +77,9 @@ export interface CardSettings {
   scanBase?: boolean
 }
 
+/** What a vector-mask rasteriser hands back. Alpha is coverage; y grows down. */
+export type MaskRaster = HTMLCanvasElement | ImageData | Uint8Array
+
 /** Pan/zoom, as the mask editor drives it. */
 export interface CardViewOffset {
   zoom: number
@@ -90,6 +94,26 @@ export interface CardConfig {
   settings?: () => CardSettings
   /** Hand-mask drawing surface (alpha = coverage). */
   maskCanvas?: HTMLCanvasElement | null
+  /**
+   * A VECTOR mask, rasterised client-side at the size the STAGE chooses.
+   *
+   * The stored form is resolution-independent geometry, so mask resizing never
+   * becomes a question: the stage measures the card's box, picks a width (see
+   * `maskTextureWidth` — masks are low-frequency alpha and never need face
+   * resolution) and asks for that. `rasterizeSvgMask` turns an SVG path into
+   * one of these in a line; `@foilkit/forge`'s `rasterizeTemplate` has exactly
+   * this signature already.
+   *
+   * Return alpha-as-coverage: a canvas, an ImageData, or a width×height
+   * Uint8Array of alpha bytes, y-DOWN in every case (the shader flips V).
+   */
+  maskVector?: (width: number, height: number) => MaskRaster | null
+  /**
+   * Cache key for `maskVector`. Cards sharing an id share one rasterisation
+   * per size — which is the normal case, since a template is per era and
+   * scope rather than per card. Omitted: the card gets its own.
+   */
+  maskVectorId?: string
   /** Glyph atlas for the recipes that take one (R3-GLYPH). */
   glyphTexture?: THREE.Texture | null
   glyphInfo?: { count: number; cols: number } | null
@@ -147,6 +171,8 @@ export interface StageStats {
   programs: number
   /** Distinct face-texture URLs uploaded. */
   textures: number
+  /** Rasterised vector masks held, across every card and size. */
+  maskTextures: number
   mode: PresentationMode
   tiltSource: string
   rung: number
@@ -213,6 +239,8 @@ export class FoilStage {
   private readonly mesh: THREE.Mesh
   private readonly materials = new Map<string, THREE.ShaderMaterial>()
   private readonly textures = new Map<string, TextureEntry>()
+  /** Rasterised vector masks, keyed `(maskVectorId, chosen width)`. */
+  private readonly vectorMasks = new Map<string, THREE.Texture>()
   private readonly cards = new Map<string, CardEntry>()
   private readonly byElement = new WeakMap<Element, CardEntry>()
   private readonly ladder: ReturnType<typeof createLadder>
@@ -546,6 +574,46 @@ export class FoilStage {
     return dropped
   }
 
+  /**
+   * The vector-mask tier: geometry in, a texture at the size the stage chose
+   * out. Cached by `(maskVectorId, width)`, so a whole era's worth of cards
+   * sharing one template rasterise once per size rather than once per card.
+   */
+  private vectorMaskFor(card: CardEntry, pixelRatio: number): THREE.Texture | null {
+    const make = card.config.maskVector
+    if (!make) return null
+    const width = maskTextureWidth(card.rect.width || 300, { pixelRatio })
+    const height = Math.max(1, Math.round(width * CARD_ASPECT))
+    const key = `${card.config.maskVectorId ?? card.id}@${width}`
+    const cached = this.vectorMasks.get(key)
+    if (cached) return cached
+    const raster = make(width, height)
+    if (!raster) return null
+    let tex: THREE.Texture
+    if (raster instanceof Uint8Array) {
+      // Alpha bytes, y-down: widen to RGBA because a single-channel upload
+      // would need a format negotiation this layer has no business doing.
+      const rgba = new Uint8Array(width * height * 4)
+      for (let i = 0; i < width * height; i++) {
+        rgba[i * 4 + 3] = raster[i] ?? 0
+      }
+      tex = new THREE.DataTexture(rgba, width, height)
+    } else if (typeof ImageData !== 'undefined' && raster instanceof ImageData) {
+      tex = new THREE.DataTexture(new Uint8Array(raster.data.buffer.slice(0)), raster.width, raster.height)
+    } else {
+      tex = new THREE.CanvasTexture(raster)
+    }
+    // Exactly one V flip, and the shader owns it (`1.0 - uv.y` in MAIN). Two
+    // flips renders the mask upside down, which reads as "the foil is on the
+    // wrong half of the card".
+    tex.flipY = false
+    tex.minFilter = THREE.LinearFilter
+    tex.magFilter = THREE.LinearFilter
+    tex.needsUpdate = true
+    this.vectorMasks.set(key, tex)
+    return tex
+  }
+
   private syncMask(entry: CardEntry): void {
     const canvas = entry.config.maskCanvas ?? null
     if (canvas === entry.maskCanvasSeen) return
@@ -733,6 +801,12 @@ export class FoilStage {
     const face = card.textureUrl ? (this.textures.get(card.textureUrl)?.texture ?? null) : null
     u.uFace!.value = face
 
+    // Mask tiers, in order of specificity: a hand-drawn raster the host is
+    // editing; a vector template rasterised at the size the stage chose; and
+    // otherwise nothing at all — the layout-rect tier, which is a `rectMask`
+    // in the shader and uploads no texture. At grid scale that last one is the
+    // common case, and it is why a stage of three hundred cards carries six
+    // textures rather than three hundred and six.
     if (card.maskTexture) {
       u.uMaskTex!.value = card.maskTexture
       u.uMaskTexOn!.value = settings.maskTexOn ? 1 : 0
@@ -741,7 +815,13 @@ export class FoilStage {
         card.maskVersionSeen = settings.maskTexVersion
       }
     } else {
-      u.uMaskTexOn!.value = 0
+      const vector = this.vectorMaskFor(card, pixelRatio)
+      if (vector) {
+        u.uMaskTex!.value = vector
+        u.uMaskTexOn!.value = 1
+      } else {
+        u.uMaskTexOn!.value = 0
+      }
     }
 
     if (u.uGlyphTex) {
@@ -881,6 +961,7 @@ export class FoilStage {
       materials: this.materials.size,
       programs: this.renderer.info.programs?.length ?? 0,
       textures: this.textures.size,
+      maskTextures: this.vectorMasks.size,
       mode: this.mode,
       tiltSource: this.source.id,
       rung: this.plan.rung,
@@ -905,11 +986,50 @@ export class FoilStage {
     this.materials.clear()
     for (const t of this.textures.values()) t.texture?.dispose()
     this.textures.clear()
+    for (const t of this.vectorMasks.values()) t.dispose()
+    this.vectorMasks.clear()
     this.geometry.dispose()
     if (this.ownsRenderer) {
       this.renderer.dispose()
       this.renderer.domElement.remove()
     }
+  }
+}
+
+/**
+ * An SVG path, in CARD FRACTIONS, as a stage-sized mask rasteriser.
+ *
+ * This is the whole adapter between a stored vector form and the stage — the
+ * geometry is resolution-independent, `Path2D` speaks SVG path syntax natively
+ * (arcs included), and the stage decides the size. `@foilkit/forge`'s
+ * `rasterizeTemplate(tpl, width, height, opts)` already has this signature and
+ * plugs in as-is where a host has the full template machinery available.
+ *
+ * ```ts
+ * stage.register(el, {
+ *   pattern,
+ *   maskVectorId: 'wotc/window',
+ *   maskVector: rasterizeSvgMask('M0.07,0.09 H0.93 V0.47 H0.07 Z'),
+ * })
+ * ```
+ */
+export function rasterizeSvgMask(
+  d: string,
+  options: { fillRule?: CanvasFillRule } = {},
+): (width: number, height: number) => HTMLCanvasElement | null {
+  return (width: number, height: number) => {
+    if (typeof document === 'undefined') return null
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return null
+    // Alpha IS the coverage the shader reads, so the fill colour is irrelevant
+    // and the canvas starts fully transparent.
+    ctx.scale(width, height)
+    ctx.fillStyle = '#fff'
+    ctx.fill(new Path2D(d), options.fillRule ?? 'nonzero')
+    return canvas
   }
 }
 

@@ -48,6 +48,30 @@ export function faceTextureWidth(cssWidth: number, options: TextureBudgetOptions
   return Math.max(min, Math.min(max, bucket))
 }
 
+/** Masks never need face resolution, and never benefit from it. */
+export const MAX_MASK_TEXTURE_PX = 512
+
+/**
+ * The rasterisation width for a card's MASK at `cssWidth` CSS px.
+ *
+ * `uMaskTex` is low-frequency alpha — the feather is 0.008 UV, which at any
+ * plausible size is several pixels wide — so a mask matched to the face's
+ * resolution would spend memory on detail the shader immediately blurs away.
+ * Half the face budget, capped lower.
+ *
+ * This is what makes a VECTOR mask the right stored form: the geometry is
+ * resolution-independent, so the stage picks a size and the mask is rasterised
+ * to it client-side. Mask resizing never becomes a question, and no stored
+ * raster is ever the wrong size for the box it lands in.
+ */
+export function maskTextureWidth(cssWidth: number, options: TextureBudgetOptions = {}): number {
+  return faceTextureWidth(cssWidth, {
+    ...options,
+    oversample: (options.oversample ?? 1.25) * 0.5,
+    max: options.max ?? MAX_MASK_TEXTURE_PX,
+  })
+}
+
 /**
  * Should an already-decoded texture be replaced by a larger decode?
  *

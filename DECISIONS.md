@@ -872,3 +872,36 @@ no credentials, no image proxy and no network beyond the local static server —
 which is also what makes it viable as a CI gate. The acceptance job runs it in
 headless Chromium under SwiftShader as a separate workflow job, so a
 contributor's unit-test failure is not queued behind a browser download.
+
+## 2026-09-01 — Vector masks rasterise at the size the stage chose, and the common tier uploads nothing
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** The stage takes a `maskVector` — a rasteriser it calls with a
+width and height IT picked from the card's on-screen box — rather than a stored
+raster. Masks get half the face budget and a 512px ceiling
+(`maskTextureWidth`). Cards sharing a `maskVectorId` share one rasterisation per
+size. Where there is neither a hand mask nor a vector one, the layout-rect tier
+renders with **no texture at all**.
+
+**Why:** `uMaskTex` is low-frequency alpha — the feather is 0.008 UV, several
+pixels wide at any plausible size — so a mask matched to face resolution buys
+detail the shader immediately blurs away. And a mask stored as geometry has no
+size to be wrong: the stage measures the box, picks a width, and asks for it, so
+"which raster size do I store" is a question that never gets asked. The
+signature is deliberately the one `@foilkit/forge`'s `rasterizeTemplate(tpl, w,
+h, opts)` already has, so the authoring stack plugs in unchanged, and
+`rasterizeSvgMask(d)` covers the case where a host has only a path string —
+`Path2D` speaks SVG path syntax natively, arcs included.
+
+The stage does NOT depend on `@foilkit/forge` to do this. Forge reaches for
+`node:fs` in several modules, and a browser-side stage importing it would drag
+the authoring stack into every consumer's bundle. Passing the rasteriser in is
+one function and no dependency.
+
+**Implications:** measured in the demo — 42 mounted cards, one third of them
+vector-masked, produce **one** raster. The other two thirds upload nothing,
+which is the reason three hundred cards hold six textures rather than three
+hundred and six. Changing a template's geometry requires changing its
+`maskVectorId`; the cache key is the id and the size, not the function
+identity.

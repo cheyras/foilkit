@@ -37,8 +37,21 @@ Two presentation modes, both shipped:
 | **`underlay`** (default) | One canvas fixed behind the page; scissor + viewport per card, every visible card in a single pass. The fast path. It asks the host for CSS discipline — anything opaque stacked over a card blocks the view, and page content must be positioned so it paints above the canvas. |
 | **`blit`** | Each element gets its own canvas, blitted from the shared drawing buffer with `drawImage` inside the same frame — GPU-side, no readback. One operation per card per frame, total layout independence. The escape hatch for layouts the developer does not control, and what a tile with tappable chrome stacked over the art needs. |
 
+Three mask tiers, in order of specificity:
+
+1. `maskCanvas` — a hand-drawn raster the host is editing, live.
+2. `maskVector` — resolution-independent geometry, rasterised client-side at the
+   size the **stage** chose for that card's box, so mask resizing is never a
+   question. `rasterizeSvgMask(d)` is the one-line adapter for a stored path;
+   `@foilkit/forge`'s `rasterizeTemplate` already has the same signature. Cards
+   sharing a `maskVectorId` share one rasterisation per size.
+3. Neither — the layout-rect tier, a `rectMask` in the shader with no texture at
+   all. At grid scale this is the common case, and it is why three hundred cards
+   hold six textures rather than three hundred and six.
+
 `stage.stats()` reports the numbers the stress demo asserts: contexts (one),
-compiled programs, cached textures, the engaged rung, measured work time.
+compiled programs, cached textures, rasterised masks, the engaged rung, measured
+work time.
 
 ## `@foilkit/three`
 

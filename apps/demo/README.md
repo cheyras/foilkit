@@ -26,6 +26,11 @@ page exists to make true is that the count stopped mattering.
   condition `blit` is the escape hatch for.
 - **Every tilt source**, switchable live: pointer, gyro, scroll, sweep, manual,
   none.
+- **Both mask tiers at once.** Two thirds of the cards carry no mask texture —
+  the layout-rect tier is a `rectMask` in the shader and uploads nothing. Every
+  third card (marked ▣) carries a **vector** art-window mask instead,
+  rasterised client-side at whatever size the stage picked for that card's box;
+  they share one id, so the whole screen's worth rasterises once per size.
 - **A ladder readout**: the engaged rung and its label, measured work time, fps,
   pixel ratio, compiled programs against distinct patterns, cached textures
   against distinct URLs, and the context count.
@@ -73,6 +78,7 @@ The run asserts, in both modes:
 | one WebGL context | counted by instrumenting `getContext` from an init script, before any page code runs — and context **loss** counted separately, because past the cap the browser loses one silently |
 | one program per pattern | read from three's `renderer.info.programs`, not from the stage's material map: the map is what the stage intended, `info.programs` is what the GPU was asked to compile |
 | one texture per URL | after scrolling the whole grid, so every card has mounted and unmounted |
+| vector masks per size, not per card | a per-card rasterisation would show as dozens |
 | 300 simultaneous registrations | with the virtualizer switched off, which is the shape the old per-card renderer could never take |
 | the ladder engages and recovers | forced by the synthetic-load knob, and required to spend resolution before it touches animation |
 | both modes render | the screenshot goes back into the page, is decoded by the browser and measured for distinct colours and luma range — "it did not throw" is not evidence of pixels |

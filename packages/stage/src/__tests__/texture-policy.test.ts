@@ -5,8 +5,10 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   MAX_FACE_TEXTURE_PX,
+  MAX_MASK_TEXTURE_PX,
   MIN_FACE_TEXTURE_PX,
   faceTextureWidth,
+  maskTextureWidth,
   needsLargerDecode,
 } from '../texture-policy.ts'
 
@@ -29,6 +31,19 @@ test('device pixel ratio counts, and the ceiling holds', () => {
 test('a thumbnail still gets a usable texture', () => {
   assert.equal(faceTextureWidth(1, { pixelRatio: 1 }), MIN_FACE_TEXTURE_PX)
   assert.equal(faceTextureWidth(0, { pixelRatio: 1 }), MIN_FACE_TEXTURE_PX)
+})
+
+test('a mask is never asked to match the face', () => {
+  for (const w of [120, 176, 300, 640, 1200]) {
+    assert.ok(
+      maskTextureWidth(w, { pixelRatio: 2 }) <= faceTextureWidth(w, { pixelRatio: 2 }),
+      `mask outgrew the face at ${w}px`,
+    )
+  }
+  assert.equal(maskTextureWidth(4000, { pixelRatio: 3 }), MAX_MASK_TEXTURE_PX)
+  // Still bucketed, for the same reason: a vector mask is rasterised on demand,
+  // and a size that tracked the exact box would re-rasterise on every resize.
+  assert.equal(maskTextureWidth(300), maskTextureWidth(311))
 })
 
 test('decodes only ever grow', () => {

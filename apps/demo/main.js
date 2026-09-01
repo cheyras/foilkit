@@ -39,7 +39,7 @@ HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
 import * as THREE from 'three'
 import { CARD_ASPECT, GLOBAL_DEFAULTS } from '@foilkit/core'
 import { PATTERNS, patternById } from '@foilkit/patterns'
-import { FoilStage } from '@foilkit/three'
+import { FoilStage, rasterizeSvgMask } from '@foilkit/three'
 
 const q = new URLSearchParams(location.search)
 const num = (k, d) => {
@@ -160,6 +160,25 @@ function makeFace(seed) {
 
 // ── boot ───────────────────────────────────────────────────────────────────
 
+// ── the mask tiers, both on screen at once ─────────────────────────────────
+//
+// Most cards here carry NO mask texture: the layout-rect tier is a `rectMask`
+// in the shader and uploads nothing, which at grid scale is the common case
+// and is why three hundred cards hold six textures rather than three hundred
+// and six.
+//
+// Every third card carries a VECTOR mask instead — an art-window path in card
+// fractions, rasterised client-side at whatever size the stage picked for that
+// card's box. The geometry is resolution-independent, so mask resizing is never
+// a question; and because they share one id, the whole screen's worth of them
+// rasterises once per size rather than once per card.
+const WINDOW_PATH =
+  'M0.115,0.098 H0.885 A0.04,0.04 0 0 1 0.925,0.138 V0.433 ' +
+  'A0.04,0.04 0 0 1 0.885,0.473 H0.115 A0.04,0.04 0 0 1 0.075,0.433 ' +
+  'V0.138 A0.04,0.04 0 0 1 0.115,0.098 Z'
+const windowMask = rasterizeSvgMask(WINDOW_PATH)
+const hasVectorMask = (i) => i % 3 === 1
+
 const grid = document.getElementById('grid')
 const readout = document.getElementById('readout')
 
@@ -277,7 +296,7 @@ function mount(i) {
 
   const foot = document.createElement('div')
   foot.className = 'foot'
-  foot.innerHTML = `<b>#${i}</b><span>${pattern.id}</span>`
+  foot.innerHTML = `<b>#${i}</b><span>${pattern.id}${hasVectorMask(i) ? ' ▣' : ''}</span>`
 
   card.appendChild(chrome)
   tile.appendChild(card)
@@ -288,6 +307,9 @@ function mount(i) {
     pattern,
     imageUrl: face,
     settings: settingsFor(i),
+    ...(hasVectorMask(i)
+      ? { maskVector: windowMask, maskVectorId: 'demo/art-window' }
+      : {}),
   })
   state.distinctPatterns.add(pattern.id)
   state.distinctFaces.add(face)
@@ -322,6 +344,7 @@ function paint() {
     `drawn       ${s.drawCalls}\n` +
     `programs    ${s.programs} / ${state.distinctPatterns.size} patterns\n` +
     `textures    ${s.textures} / ${state.distinctFaces.size} urls\n` +
+    `masks       ${s.maskTextures} vector rasters\n` +
     `<span class="${ctxCls}">contexts    ${contexts.created} (lost ${contexts.lost})</span>`
   requestAnimationFrame(paint)
 }

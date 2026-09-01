@@ -192,6 +192,15 @@ await settle(40)
     s.textures === s.distinctFaces,
     `textures ${s.textures}, distinct urls ${s.distinctFaces}`,
   )
+  // Both mask tiers are on screen: two thirds of the cards upload no mask at
+  // all (the layout-rect tier is a rectMask in the shader), and the third that
+  // carry a vector template share one rasterisation per size because they
+  // share one id. A per-card rasterisation would show as dozens here.
+  check(
+    'vector masks rasterise per size, not per card',
+    s.maskTextures >= 1 && s.maskTextures <= 4,
+    `${s.maskTextures} rasters across ${s.mounted} mounted cards`,
+  )
 }
 
 // ── all N registered at once, no virtualizer ───────────────────────────────

@@ -85,5 +85,11 @@ default of a source that never moves on its own.
 - `faceTextureWidth(cssWidth)` caps a face by its on-screen size and buckets to
   powers of two, so a scrollbar appearing does not re-decode the screen. KTX2 is
   deliberately out of scope; capping plus a URL-keyed cache is measured first.
+- `maskTextureWidth(cssWidth)` is the same policy at half the budget: `uMaskTex`
+  is low-frequency alpha with a 0.008 UV feather, so a mask matched to face
+  resolution spends memory on detail the shader immediately blurs away. It is
+  also what makes a **vector** mask the right stored form — the stage picks a
+  size and the geometry is rasterised to it, so mask resizing never becomes a
+  question and no stored raster is ever wrong for the box it lands in.
 
 MIT. See `REUSE.toml`.
