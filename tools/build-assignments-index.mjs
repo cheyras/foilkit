@@ -7,10 +7,10 @@
 //   data/foil-card-assignments.json  (canonical, cited, hand-reviewed)
 //     └─► packages/resolver/src/assignments-index.json  (trimmed, bundle-friendly)
 //
-// The research file carries full claims + source quotes; the SPA only needs
-// the selectors (setIds / cls / rarities / variantKinds / cardIds / facet),
-// the pattern, confidence, and citation hostnames. Regenerate after ANY
-// change to the research file:   node tools/build-assignments-index.mjs
+// The evidence file carries full claims + cited sources; the shipped index
+// only needs the selectors (setIds / cls / rarities / variantKinds / cardIds /
+// facet), the pattern, confidence, and citation hostnames. Regenerate after ANY
+// change to the evidence file:   node tools/build-assignments-index.mjs
 //
 // Selector semantics (mirrored by resolver.ts resolveFoil v3):
 //   facet rows  — catalog-wide: variant kind declares an explicit foil facet
@@ -22,9 +22,9 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SRC = join(root, 'research', 'foil-card-assignments.json');
-const OUT = join(root, 'apps', 'web', 'src', 'foil', 'assignments-index.json');
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const SRC = join(root, 'data', 'foil-card-assignments.json');
+const OUT = join(root, 'packages', 'resolver', 'src', 'assignments-index.json');
 
 const src = JSON.parse(readFileSync(SRC, 'utf8'));
 

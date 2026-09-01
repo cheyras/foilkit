@@ -4,26 +4,33 @@
 // tools/build-usage-index.mjs — derive the workbench resolver's usage
 // index from the research corpus.
 //
-//   data/foil-pattern-usage.json  (113 cited rows, canonical, NEVER edited)
+//   data/foil-pattern-usage.json  (cited rows, canonical, NEVER hand-edited)
 //     └─► packages/resolver/src/usage-index.json  (trimmed, bundle-friendly)
 //
-// The research file carries full claims + verbatim-ish source quotes (~125 KB);
-// the SPA only needs (pattern, sets, series-key, applies_to, confidence,
-// source hosts) to make a base guess, so we strip the prose and keep the
-// citations as hostnames + count. Regenerate after ANY change to the research
-// file:   node tools/build-usage-index.mjs
+// The evidence file carries full claims + cited sources (~130 KB); the shipped
+// index only needs (pattern, sets, series-key, applies_to, confidence, source
+// hosts) to make a base guess, so we strip the prose and keep the citations as
+// hostnames. Regenerate after ANY change to the evidence file:
+//   node tools/build-usage-index.mjs
 //
-// With the branch api up (port 3712) it also prints a coverage report of how
-// many catalog set names the index matches — diagnostics only, the output
-// file does not depend on the api.
+// Optionally it also prints a coverage report of how many catalog set names the
+// index matches. That needs a catalog API, and this repository has no catalog —
+// so there is NO default host: pass `--api <base-url>` or set FOILKIT_CATALOG_API
+// (the shape it expects is `GET /series` and `GET /series/<slug>`). Without one
+// the report is skipped. Diagnostics only; the output file never depends on it.
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SRC = join(root, 'research', 'foil-pattern-usage.json');
-const OUT = join(root, 'apps', 'web', 'src', 'foil', 'usage-index.json');
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const SRC = join(root, 'data', 'foil-pattern-usage.json');
+const OUT = join(root, 'packages', 'resolver', 'src', 'usage-index.json');
+
+const argv = process.argv.slice(2);
+const apiFlag = argv.indexOf('--api');
+const API =
+  (apiFlag >= 0 ? argv[apiFlag + 1] : undefined) ?? process.env.FOILKIT_CATALOG_API ?? null;
 
 /** Same normalization the resolver applies to catalog set names at runtime. */
 const norm = (s) =>
@@ -86,26 +93,33 @@ mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify(out, null, 1) + '\n');
 console.log(`wrote ${OUT} (${rows.length} rows)`);
 
-// ── Optional coverage diagnostics against the live catalog ──────────────────
-try {
-  const api = 'http://127.0.0.1:3712/deckscout/api';
-  const seriesRes = await fetch(`${api}/series`);
-  if (!seriesRes.ok) throw new Error('api down');
-  const { series } = await seriesRes.json();
-  const bySet = new Set(rows.flatMap((r) => r.sets));
-  let matched = 0;
-  let total = 0;
-  const misses = [];
-  for (const s of series) {
-    const d = await (await fetch(`${api}/series/${encodeURIComponent(s.slug)}`)).json();
-    for (const set of d.sets) {
-      total++;
-      if (bySet.has(norm(set.name))) matched++;
-      else misses.push(`${s.slug}/${set.name}`);
+// ── Optional coverage diagnostics against a catalog API ─────────────────────
+// Opt-in and host-agnostic: no address is baked in, so the default run of this
+// script talks to nothing. Give it `--api <base-url>` (or FOILKIT_CATALOG_API)
+// pointing at whatever catalog you have.
+if (!API) {
+  console.log('(catalog coverage report skipped - no --api / FOILKIT_CATALOG_API given)');
+} else {
+  const api = API.replace(/\/+$/, '');
+  try {
+    const seriesRes = await fetch(`${api}/series`);
+    if (!seriesRes.ok) throw new Error(`HTTP ${seriesRes.status}`);
+    const { series } = await seriesRes.json();
+    const bySet = new Set(rows.flatMap((r) => r.sets));
+    let matched = 0;
+    let total = 0;
+    const misses = [];
+    for (const s of series) {
+      const d = await (await fetch(`${api}/series/${encodeURIComponent(s.slug)}`)).json();
+      for (const set of d.sets) {
+        total++;
+        if (bySet.has(norm(set.name))) matched++;
+        else misses.push(`${s.slug}/${set.name}`);
+      }
     }
+    console.log(`coverage: ${matched}/${total} catalog sets have a set-level row (rest fall back to series/heuristic)`);
+    if (misses.length) console.log('set-level misses:', misses.join(', '));
+  } catch (err) {
+    console.log(`(catalog coverage report skipped - ${api} unreachable: ${err.message})`);
   }
-  console.log(`coverage: ${matched}/${total} catalog sets have a set-level row (rest fall back to series/heuristic)`);
-  if (misses.length) console.log('set-level misses:', misses.join(', '));
-} catch {
-  console.log('(catalog coverage report skipped - branch api not reachable)');
 }
