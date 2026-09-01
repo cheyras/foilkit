@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "patternId": "cosmos-ii-pixel",
+  "savedAt": "2026-08-07T23:36:58.953Z",
+  "contract": 2,
+  "tunedUnderContract": 1,
+  "frozen": {
+    "at": "2026-09-01",
+    "reason": "foilkit extraction: every uniform in the contract recorded explicitly, so the snapshot no longer inherits code defaults that can move. Values are the ones already in effect — no retune, verified byte-identical through the zero-delta render harness.",
+    "inheritedKeysRecorded": []
+  },
+  "uniforms": {
+    "uIntensity": 1.92,
+    "uScale": 1,
+    "uHueShift": 0.12,
+    "uHueSpread": 0.9,
+    "uSat": 0.55,
+    "uArtGate": 0.5,
+    "uSpecular": 0.35,
+    "uDarken": 0,
+    "uTint": 0,
+    "uInkGuard": 1,
+    "uInkPop": 0.5,
+    "uMetal": 0,
+    "uSheen": 3.4,
+    "uSheenTint": 0,
+    "uDepth": 0,
+    "uGrain": 1,
+    "uP0": 0.7,
+    "uP1": 0.2,
+    "uP2": 0.5,
+    "uP3": 1.25
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "cardId": "base1-6",
+  "variantId": 23,
+  "runId": "frame-canonical-2026-09-01",
+  "archivedAt": "2026-09-01T05:16:24.092Z",
+  "method": "ai-corrected",
+  "files": {
+    "23.png": "ef1095609c80de7074d1f4a9fcbb48bb0bfc42fd1f029a299193693113a93f8b",
+    "23.json": "588fe0be94e7f948e4e3f4f82266879c38c2f4f1ac5a9a05725b1a8f30c848fb",
+    "23.prior.png": "4863801d24283397d7a24b7932f1aef3e168f508f2134be3c695f5ffb025e038",
+    "23.diff.png": "745bd5fa3997d79f300b084afb011247e61250c806b9d77ba2857e2b4575f332",
+    "23.parent.png": "cfc3421ec0fde113412071886958a184b1883294b2b55fb9fac8f19f640d7d8c",
+    "23.parent.diff.png": "726e05365bd58d25153de37b410fd7029ff76cbf17acdc1e596236be58bf52cd"
+  }
+}

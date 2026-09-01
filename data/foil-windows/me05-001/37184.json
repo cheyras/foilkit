@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "cardId": "me05-001",
+  "variantId": 37184,
+  "artworkKey": "me05-001",
+  "savedAt": "2026-08-07T23:53:40.040Z",
+  "scope": "sheet",
+  "eraId": "modern-sv",
+  "rect": [
+    0.075,
+    0.5269999999999999,
+    0.85,
+    0.3749417758369723
+  ],
+  "radius": 0.006,
+  "invert": true,
+  "base": {
+    "rect": [
+      0.075,
+      0.5269999999999999,
+      0.85,
+      0.315
+    ],
+    "radius": 0.006,
+    "resolverVersion": 5
+  },
+  "frame": "canonical",
+  "frameNote": "rect is a FRACTION of the card face and is therefore invariant under the 4b cutover — nothing moved. The field records which space the fraction describes: canonical (63 x 88 mm), not a raster."
+}

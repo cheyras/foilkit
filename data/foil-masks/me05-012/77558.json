@@ -1,0 +1,121 @@
+{
+  "version": 4,
+  "cardId": "me05-012",
+  "variantId": 77558,
+  "artworkKey": "me05-012",
+  "width": 504,
+  "height": 704,
+  "channel": "alpha",
+  "derivation_method": "hand-refined",
+  "authorship": "human",
+  "reviewStatus": "human-authored",
+  "savedAt": "2026-08-08T06:54:27.057Z",
+  "artworkUrl": "/pokedex/images/en/me/me05/012/high.webp",
+  "card": {
+    "setId": "me05",
+    "seriesSlug": "mega-evolution",
+    "name": "Armarouge",
+    "number": "012"
+  },
+  "prior": {
+    "source": "mask",
+    "eraId": "modern-sv",
+    "scope": "sheet",
+    "rect": [
+      0.075,
+      0.527,
+      0.85,
+      0.3749
+    ],
+    "radius": 0.006,
+    "invert": true,
+    "feather": 0.008,
+    "resolverVersion": 5,
+    "parentMask": {
+      "cardId": "me05-012",
+      "variantId": 77558,
+      "savedAt": "2026-08-08T06:50:05.111Z",
+      "method": "hand"
+    }
+  },
+  "priorPng": "77558.prior.png",
+  "diffPng": "77558.diff.png",
+  "diff": {
+    "addedPx": 0,
+    "removedPx": 60824,
+    "unchangedPx": 181004,
+    "agreement": 0.7485
+  },
+  "correction": {
+    "parent": {
+      "cardId": "me05-012",
+      "variantId": 77558,
+      "savedAt": "2026-08-08T06:50:05.111Z",
+      "method": "hand",
+      "sha256": "27146991d2479b3eb502bda19d95dd8e5010a09129041919430115d12e0aef01",
+      "generator": null
+    },
+    "parentPng": "77558.parent.png",
+    "parentDiffPng": "77558.parent.diff.png",
+    "addedPx": 0,
+    "removedPx": 22849,
+    "unchangedPx": 181004,
+    "agreement": 0.8879,
+    "changedPx": 22849,
+    "changedFraction": 0.064397,
+    "bbox": [
+      0,
+      0,
+      1,
+      1
+    ],
+    "grid": {
+      "size": 4,
+      "cells": [
+        0.091,
+        0.108,
+        0.108,
+        0.246,
+        0,
+        0,
+        0,
+        0.159,
+        0,
+        0,
+        0,
+        0.167,
+        0,
+        0,
+        0,
+        0.151
+      ]
+    }
+  },
+  "lineage": [
+    {
+      "method": "hand",
+      "savedAt": "2026-08-08T06:50:05.111Z",
+      "source": "layout",
+      "generator": null
+    },
+    {
+      "method": "hand-refined",
+      "savedAt": "2026-08-08T06:54:27.057Z",
+      "source": "mask",
+      "generator": null
+    },
+    {
+      "method": "hand-refined",
+      "savedAt": "2026-08-08T06:54:27.057Z",
+      "source": "mask",
+      "generator": null,
+      "frameMigration": {
+        "from": "tcgdex-high",
+        "to": "canonical",
+        "runId": "frame-canonical-2026-09-01"
+      },
+      "migratedAt": "2026-09-01T05:16:24.951Z"
+    }
+  ],
+  "frame": "canonical"
+}

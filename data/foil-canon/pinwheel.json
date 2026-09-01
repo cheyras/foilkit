@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "patternId": "pinwheel",
+  "savedAt": "2026-08-02T19:43:29.927Z",
+  "contract": 2,
+  "tunedUnderContract": 1,
+  "frozen": {
+    "at": "2026-09-01",
+    "reason": "foilkit extraction: every uniform in the contract recorded explicitly, so the snapshot no longer inherits code defaults that can move. Values are the ones already in effect — no retune, verified byte-identical through the zero-delta render harness.",
+    "inheritedKeysRecorded": [
+      "uTint",
+      "uInkGuard",
+      "uInkPop",
+      "uMetal",
+      "uSheen",
+      "uSheenTint",
+      "uDepth",
+      "uGrain"
+    ]
+  },
+  "uniforms": {
+    "uIntensity": 1,
+    "uScale": 1,
+    "uHueShift": 0.3,
+    "uHueSpread": 0.55,
+    "uSat": 0.75,
+    "uArtGate": 0,
+    "uSpecular": 0.4,
+    "uDarken": 0,
+    "uTint": 0.6,
+    "uInkGuard": 1,
+    "uInkPop": 0.5,
+    "uMetal": 0,
+    "uSheen": 4.2,
+    "uSheenTint": 0,
+    "uDepth": 0.45,
+    "uGrain": 1,
+    "uP0": 8.5,
+    "uP1": 0.25,
+    "uP2": 1.2,
+    "uP3": 1.2
+  }
+}

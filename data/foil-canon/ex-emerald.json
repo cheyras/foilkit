@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "patternId": "ex-emerald",
+  "savedAt": "2026-08-02T19:44:41.628Z",
+  "contract": 2,
+  "tunedUnderContract": 1,
+  "frozen": {
+    "at": "2026-09-01",
+    "reason": "foilkit extraction: every uniform in the contract recorded explicitly, so the snapshot no longer inherits code defaults that can move. Values are the ones already in effect — no retune, verified byte-identical through the zero-delta render harness.",
+    "inheritedKeysRecorded": [
+      "uTint",
+      "uInkGuard",
+      "uInkPop",
+      "uMetal",
+      "uSheen",
+      "uSheenTint",
+      "uDepth",
+      "uGrain"
+    ]
+  },
+  "uniforms": {
+    "uIntensity": 0.28,
+    "uScale": 1,
+    "uHueShift": 0.3,
+    "uHueSpread": 0.68,
+    "uSat": 0.8,
+    "uArtGate": 0.1,
+    "uSpecular": 0.35,
+    "uDarken": 0.25,
+    "uTint": 0,
+    "uInkGuard": 1,
+    "uInkPop": 0.5,
+    "uMetal": 0,
+    "uSheen": 3,
+    "uSheenTint": 0,
+    "uDepth": 0.6,
+    "uGrain": 1,
+    "uP0": 6,
+    "uP1": 1,
+    "uP2": 0.5,
+    "uP3": 1.6
+  }
+}

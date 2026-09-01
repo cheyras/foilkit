@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "patternId": "vstar-pearl",
+  "savedAt": "2026-08-02T22:29:05.396Z",
+  "contract": 2,
+  "tunedUnderContract": 1,
+  "frozen": {
+    "at": "2026-09-01",
+    "reason": "foilkit extraction: every uniform in the contract recorded explicitly, so the snapshot no longer inherits code defaults that can move. Values are the ones already in effect — no retune, verified byte-identical through the zero-delta render harness.",
+    "inheritedKeysRecorded": [
+      "uTint",
+      "uInkGuard",
+      "uInkPop",
+      "uMetal",
+      "uSheen",
+      "uSheenTint",
+      "uDepth",
+      "uGrain"
+    ]
+  },
+  "uniforms": {
+    "uIntensity": 1,
+    "uScale": 0.35,
+    "uHueShift": 0.71,
+    "uHueSpread": 0.6,
+    "uSat": 0.81,
+    "uArtGate": 0,
+    "uSpecular": 0.35,
+    "uDarken": 0.3,
+    "uTint": 0,
+    "uInkGuard": 1,
+    "uInkPop": 0.5,
+    "uMetal": 0,
+    "uSheen": 1.2,
+    "uSheenTint": 0,
+    "uDepth": 0.2,
+    "uGrain": 1,
+    "uP0": 0.04,
+    "uP1": 1.6,
+    "uP2": 1.4,
+    "uP3": 1.2
+  }
+}

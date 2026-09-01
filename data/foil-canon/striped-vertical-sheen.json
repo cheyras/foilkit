@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "patternId": "striped-vertical-sheen",
+  "savedAt": "2026-08-02T19:28:35.781Z",
+  "contract": 2,
+  "tunedUnderContract": 1,
+  "frozen": {
+    "at": "2026-09-01",
+    "reason": "foilkit extraction: every uniform in the contract recorded explicitly, so the snapshot no longer inherits code defaults that can move. Values are the ones already in effect — no retune, verified byte-identical through the zero-delta render harness.",
+    "inheritedKeysRecorded": [
+      "uTint",
+      "uInkGuard",
+      "uInkPop",
+      "uMetal",
+      "uSheen",
+      "uSheenTint",
+      "uDepth",
+      "uGrain"
+    ]
+  },
+  "uniforms": {
+    "uIntensity": 0.9,
+    "uScale": 1,
+    "uHueShift": 0.55,
+    "uHueSpread": 0.6,
+    "uSat": 0.65,
+    "uArtGate": 0.35,
+    "uSpecular": 0.5,
+    "uDarken": 0.32,
+    "uTint": 0,
+    "uInkGuard": 1,
+    "uInkPop": 0.5,
+    "uMetal": 0,
+    "uSheen": 4.2,
+    "uSheenTint": 0,
+    "uDepth": 0.45,
+    "uGrain": 1,
+    "uP0": 6,
+    "uP1": 1.45,
+    "uP2": 0.05,
+    "uP3": 1
+  }
+}

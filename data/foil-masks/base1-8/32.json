@@ -1,0 +1,121 @@
+{
+  "version": 4,
+  "cardId": "base1-8",
+  "variantId": 32,
+  "artworkKey": "base1-8",
+  "width": 504,
+  "height": 704,
+  "channel": "alpha",
+  "derivation_method": "hand-refined",
+  "authorship": "human",
+  "reviewStatus": "human-authored",
+  "savedAt": "2026-08-08T05:48:27.004Z",
+  "artworkUrl": "/pokedex/images/en/base/base1/8/high.webp",
+  "card": {
+    "setId": "base1",
+    "seriesSlug": "base",
+    "name": "Machamp",
+    "number": "8"
+  },
+  "prior": {
+    "source": "mask",
+    "eraId": "wotc",
+    "scope": "window",
+    "rect": [
+      0.103,
+      0.48000000000000004,
+      0.802,
+      0.418
+    ],
+    "radius": 0.004,
+    "invert": false,
+    "feather": 0.008,
+    "resolverVersion": 5,
+    "parentMask": {
+      "cardId": "base1-8",
+      "variantId": 32,
+      "savedAt": "2026-08-01T22:35:48.527Z",
+      "method": "hand"
+    }
+  },
+  "priorPng": "32.prior.png",
+  "diffPng": "32.diff.png",
+  "diff": {
+    "addedPx": 12,
+    "removedPx": 42520,
+    "unchangedPx": 76255,
+    "agreement": 0.6419
+  },
+  "correction": {
+    "parent": {
+      "cardId": "base1-8",
+      "variantId": 32,
+      "savedAt": "2026-08-01T22:35:48.527Z",
+      "method": "hand",
+      "sha256": "68bc050ae3077201bc18d97e6218b2ef7578e09cb6828d0b45bc75f5ec18fc4c",
+      "generator": null
+    },
+    "parentPng": "32.parent.png",
+    "parentDiffPng": "32.parent.diff.png",
+    "addedPx": 1761,
+    "removedPx": 1628,
+    "unchangedPx": 74506,
+    "agreement": 0.9565,
+    "changedPx": 3389,
+    "changedFraction": 0.009551,
+    "bbox": [
+      0.2262,
+      0.4787,
+      0.502,
+      0.3963
+    ],
+    "grid": {
+      "size": 4,
+      "cells": [
+        0.002,
+        0.019,
+        0.031,
+        0,
+        0,
+        0.032,
+        0.056,
+        0,
+        0,
+        0,
+        0.012,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "lineage": [
+    {
+      "method": "hand",
+      "savedAt": "2026-08-01T22:35:48.527Z",
+      "source": "layout",
+      "generator": null
+    },
+    {
+      "method": "hand-refined",
+      "savedAt": "2026-08-08T05:48:27.004Z",
+      "source": "mask",
+      "generator": null
+    },
+    {
+      "method": "hand-refined",
+      "savedAt": "2026-08-08T05:48:27.004Z",
+      "source": "mask",
+      "generator": null,
+      "frameMigration": {
+        "from": "tcgdex-high",
+        "to": "canonical",
+        "runId": "frame-canonical-2026-09-01"
+      },
+      "migratedAt": "2026-09-01T05:16:24.291Z"
+    }
+  ],
+  "frame": "canonical"
+}

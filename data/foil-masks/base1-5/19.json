@@ -1,0 +1,121 @@
+{
+  "version": 4,
+  "cardId": "base1-5",
+  "variantId": 19,
+  "artworkKey": "base1-5",
+  "width": 504,
+  "height": 704,
+  "channel": "alpha",
+  "derivation_method": "hand-refined",
+  "authorship": "human",
+  "reviewStatus": "human-authored",
+  "savedAt": "2026-08-08T05:52:55.654Z",
+  "artworkUrl": "/pokedex/images/en/base/base1/5/high.webp",
+  "card": {
+    "setId": "base1",
+    "seriesSlug": "base",
+    "name": "Clefairy",
+    "number": "5"
+  },
+  "prior": {
+    "source": "mask",
+    "eraId": "wotc",
+    "scope": "window",
+    "rect": [
+      0.103,
+      0.48000000000000004,
+      0.802,
+      0.418
+    ],
+    "radius": 0.004,
+    "invert": false,
+    "feather": 0.008,
+    "resolverVersion": 5,
+    "parentMask": {
+      "cardId": "base1-5",
+      "variantId": 19,
+      "savedAt": "2026-08-02T16:37:41.457Z",
+      "method": "hand"
+    }
+  },
+  "priorPng": "19.prior.png",
+  "diffPng": "19.diff.png",
+  "diff": {
+    "addedPx": 6,
+    "removedPx": 55337,
+    "unchangedPx": 63438,
+    "agreement": 0.5341
+  },
+  "correction": {
+    "parent": {
+      "cardId": "base1-5",
+      "variantId": 19,
+      "savedAt": "2026-08-02T16:37:41.457Z",
+      "method": "hand",
+      "sha256": "40b8b3855f0ad8cdadf4a3e8300f2563191d60a97bfb65d0aa6169934ad431ea",
+      "generator": null
+    },
+    "parentPng": "19.parent.png",
+    "parentDiffPng": "19.parent.diff.png",
+    "addedPx": 194,
+    "removedPx": 219,
+    "unchangedPx": 63250,
+    "agreement": 0.9935,
+    "changedPx": 413,
+    "changedFraction": 0.001164,
+    "bbox": [
+      0.246,
+      0.5014,
+      0.5437,
+      0.3565
+    ],
+    "grid": {
+      "size": 4,
+      "cells": [
+        0,
+        0.002,
+        0.003,
+        0,
+        0,
+        0.007,
+        0.004,
+        0.002,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "lineage": [
+    {
+      "method": "hand",
+      "savedAt": "2026-08-02T16:37:41.457Z",
+      "source": "layout",
+      "generator": null
+    },
+    {
+      "method": "hand-refined",
+      "savedAt": "2026-08-08T05:52:55.654Z",
+      "source": "mask",
+      "generator": null
+    },
+    {
+      "method": "hand-refined",
+      "savedAt": "2026-08-08T05:52:55.654Z",
+      "source": "mask",
+      "generator": null,
+      "frameMigration": {
+        "from": "tcgdex-high",
+        "to": "canonical",
+        "runId": "frame-canonical-2026-09-01"
+      },
+      "migratedAt": "2026-09-01T05:16:23.992Z"
+    }
+  ],
+  "frame": "canonical"
+}
