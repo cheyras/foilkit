@@ -1,0 +1,20 @@
+{
+  "name": "@foilkit/stage",
+  "version": "0.0.0",
+  "description": "Renderer-agnostic stage policy: the budget ladder, the tilt sources, visibility, scheduling and texture sizing for many cards on one renderer.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "source": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false
+}

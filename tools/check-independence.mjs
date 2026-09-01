@@ -13,11 +13,18 @@
 // obligation the extraction carries forward for them, and it costs nothing —
 // but only while it is still true.
 //
-// The check builds `core` (and `patterns`, which is data with no renderer in
+// The check builds `core` (plus `patterns`, which is data with no renderer in
+// it either, and `stage`, which is the many-cards POLICY with no renderer in
 // it either) in an isolated directory whose node_modules contains typescript
-// and @types/node and NOTHING ELSE. If either package reaches for three, or
+// and @types/node and NOTHING ELSE. If any of them reaches for three, or
 // react, or anything else, the compile fails there rather than in someone's
 // bundle six months from now.
+//
+// `stage` is here for the same reason `core` is, and it is the newer half of
+// the argument: the budget ladder, the tilt sources and the schedule are
+// arithmetic over rectangles and frame times. A single `import * as THREE` in
+// that package would make "one renderer, any number of cards" a three.js
+// feature instead of an architecture every adapter can have.
 
 import { execFileSync } from 'node:child_process'
 import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
@@ -26,7 +33,7 @@ import { fileURLToPath } from 'node:url'
 import { tmpdir } from 'node:os'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
-const PACKAGES = ['core', 'patterns']
+const PACKAGES = ['core', 'patterns', 'stage']
 const BANNED = ['three', 'react', 'react-dom']
 
 // ── 1. the source says so ──────────────────────────────────────────────────
@@ -122,5 +129,11 @@ execFileSync(process.execPath, ['--conditions', 'source', '--input-type=module',
    if (CANONICAL_W !== 504) throw new Error('canonical width')
    if (!src.fragmentShader.includes('vec3 foilPattern')) throw new Error('no recipe in the fragment shader')
    if (typeof GLOBAL_DEFAULTS.uSheen !== 'number') throw new Error('no uniform table')
-   console.log('runtime: core + patterns assembled a', src.fragmentShader.length, 'char shader with no renderer loaded')`,
+   const { createLadder, scheduleFrame, LADDER_STEPS } = await import('@foilkit/stage')
+   const ladder = createLadder({ warmupFrames: 0, dropAfterMs: 0 })
+   for (let i = 0; i < 40; i++) ladder.observe(200, i * 16)
+   if (ladder.step === 0) throw new Error('the ladder did not engage')
+   const seat = { id: 'a', index: 0, rect: { x: 0, y: 0, width: 200, height: 280 }, intersecting: true, largeEnough: true }
+   if (!scheduleFrame([seat], LADDER_STEPS[0], { width: 800, height: 600 })[0].draw) throw new Error('nothing scheduled')
+   console.log('runtime: core + patterns assembled a', src.fragmentShader.length, 'char shader, and the stage laddered to step', ladder.step, '— no renderer loaded')`,
 ], { cwd: ROOT, stdio: 'inherit' })

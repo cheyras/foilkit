@@ -1,7 +1,7 @@
 {
   "name": "@foilkit/three",
   "version": "0.0.0",
-  "description": "three.js adapter: buildFoilMaterial, plus the React card viewer and mask/window drawing surfaces.",
+  "description": "three.js adapter: the shared stage (one renderer, any number of cards), buildFoilMaterial, plus the React card viewer and mask/window drawing surfaces.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -24,7 +24,8 @@
   "sideEffects": false,
   "dependencies": {
     "@foilkit/core": "workspace:*",
-    "@foilkit/patterns": "workspace:*"
+    "@foilkit/patterns": "workspace:*",
+    "@foilkit/stage": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18",

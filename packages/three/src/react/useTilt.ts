@@ -1,7 +1,17 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2026 Chey Rasmussen
 //
-// foil/useTilt.ts — tilt input for the workbench viewer.
+// useTilt — the one-card React hook, now a thin wrapper over the stage's
+// tilt sources.
+//
+// Its public shape is unchanged: the same `mode`, the same `target` ref the
+// viewer eases toward, the same `onPointerMove` / `onPointerLeave` handlers to
+// spread onto the viewer container, the same `requestGyro` for iOS.
+//
+// What moved is the MAPPING — pointer position to -1..1, the first-reading
+// gyro baseline, the 28°-per-unit scale, the reduced-motion default. That
+// arithmetic is now `@foilkit/stage`, where it is per-card by construction and
+// unit-tested without a browser. This hook holds one card's worth of it.
 //
 // Modes:
 //   pointer — desktop: pointer position over the viewer maps to tilt.
@@ -10,100 +20,83 @@
 //             permission request from a user gesture (requestGyro).
 //   manual  — sliders drive tilt; the default when prefers-reduced-motion
 //             is set (no motion-driven animation), and always available.
-//
-// The live tilt target lives in a mutable ref — the viewer's rAF loop reads
-// and eases toward it without React re-renders.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  gyroPermissionState,
+  gyroSource,
+  pointerSource,
+  prefersReducedMotion,
+  type TiltPermission,
+} from '@foilkit/stage'
 
 export type TiltMode = 'pointer' | 'gyro' | 'manual'
-export type GyroPermission = 'unsupported' | 'prompt' | 'granted' | 'denied'
-
-interface GyroBaseline { beta: number; gamma: number }
+export type GyroPermission = TiltPermission
 
 export function useTilt() {
-  const reducedMotion = useMemo(
-    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-    [],
-  )
-  const hasGyroApi = typeof DeviceOrientationEvent !== 'undefined'
-  const needsGyroPermission =
-    hasGyroApi &&
-    typeof (DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> })
-      .requestPermission === 'function'
+  const reducedMotion = useMemo(() => prefersReducedMotion(), [])
 
   const [mode, setMode] = useState<TiltMode>(reducedMotion ? 'manual' : 'pointer')
-  const [gyroPermission, setGyroPermission] = useState<GyroPermission>(
-    !hasGyroApi ? 'unsupported' : needsGyroPermission ? 'prompt' : 'granted',
-  )
+  const [gyroPermission, setGyroPermission] = useState<GyroPermission>(() => gyroPermissionState())
   const [manual, setManualState] = useState({ x: 0, y: 0 })
 
-  // Mutable target the viewer eases toward.
+  // Mutable target the viewer eases toward — never a React render.
   const target = useRef({ x: 0, y: 0 })
-  const baseline = useRef<GyroBaseline | null>(null)
-  const gyroSeen = useRef(false)
+
+  // No window listeners: this source is driven by the React pointer handlers
+  // below, because a workbench viewer wants the pointer's position over ITS
+  // box and nothing else on the page.
+  const pointer = useMemo(() => pointerSource({ target: null }), [])
+  const gyro = useMemo(
+    () => gyroSource({ onChange: (t) => (target.current = t) }),
+    [],
+  )
 
   const setManual = useCallback((x: number, y: number) => {
     setManualState({ x, y })
     target.current = { x, y }
   }, [])
 
-  // Pointer handlers — attach to the viewer container.
   const onPointerMove = useCallback(
     (e: React.PointerEvent<HTMLElement>) => {
       if (mode !== 'pointer') return
       const r = e.currentTarget.getBoundingClientRect()
-      const x = ((e.clientX - r.left) / r.width) * 2 - 1
-      const y = ((e.clientY - r.top) / r.height) * 2 - 1
-      target.current = { x: Math.max(-1, Math.min(1, x)), y: Math.max(-1, Math.min(1, -y)) }
+      pointer.set!(e.clientX, e.clientY)
+      target.current = pointer.tiltFor({
+        id: 'viewer',
+        index: 0,
+        time: 0,
+        viewport: { width: window.innerWidth, height: window.innerHeight },
+        rect: { x: r.left, y: r.top, width: r.width, height: r.height },
+      })
     },
-    [mode],
+    [mode, pointer],
   )
+
   const onPointerLeave = useCallback(() => {
     if (mode === 'pointer') target.current = { x: 0, y: 0 }
   }, [mode])
 
-  // Gyro listener — active only in gyro mode with permission.
+  // Gyro listener — active only in gyro mode with permission. Attaching is
+  // what re-baselines, so a phone put down and picked up starts neutral again.
   useEffect(() => {
     if (mode !== 'gyro' || gyroPermission !== 'granted') return
-    baseline.current = null
-    const onOrient = (e: DeviceOrientationEvent) => {
-      if (e.beta == null || e.gamma == null) return
-      gyroSeen.current = true
-      if (!baseline.current) baseline.current = { beta: e.beta, gamma: e.gamma }
-      const dx = (e.gamma - baseline.current.gamma) / 28
-      const dy = (e.beta - baseline.current.beta) / 28
-      target.current = {
-        x: Math.max(-1, Math.min(1, dx)),
-        y: Math.max(-1, Math.min(1, -dy)),
-      }
-    }
-    window.addEventListener('deviceorientation', onOrient)
-    return () => window.removeEventListener('deviceorientation', onOrient)
-  }, [mode, gyroPermission])
+    gyro.attach!()
+    return () => gyro.detach!()
+  }, [mode, gyroPermission, gyro])
 
   // iOS motion-permission request — must run inside a user gesture.
   const requestGyro = useCallback(async () => {
-    if (!hasGyroApi) return
-    if (needsGyroPermission) {
-      try {
-        const res = await (
-          DeviceOrientationEvent as unknown as { requestPermission: () => Promise<string> }
-        ).requestPermission()
-        setGyroPermission(res === 'granted' ? 'granted' : 'denied')
-        if (res === 'granted') setMode('gyro')
-      } catch {
-        setGyroPermission('denied')
-      }
-    } else {
-      setGyroPermission('granted')
-      setMode('gyro')
-    }
-  }, [hasGyroApi, needsGyroPermission])
+    const res = await gyro.requestPermission!()
+    setGyroPermission(res)
+    if (res === 'granted') setMode('gyro')
+  }, [gyro])
 
   const recenterGyro = useCallback(() => {
-    baseline.current = null
-  }, [])
+    // Detach/attach IS the recentre: the source baselines on its first reading.
+    gyro.detach!()
+    gyro.attach!()
+  }, [gyro])
 
   return {
     mode,

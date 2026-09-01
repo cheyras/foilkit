@@ -6,4 +6,5 @@
 // non-React consumer never pulls React in.
 
 export * from './material.ts'
+export * from './stage.ts'
 export * from './glyphs.ts'

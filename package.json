@@ -28,6 +28,7 @@
     "@foilkit/patterns": "workspace:*",
     "@foilkit/resolver": "workspace:*",
     "@foilkit/forge": "workspace:*",
-    "@foilkit/three": "workspace:*"
+    "@foilkit/three": "workspace:*",
+    "@foilkit/stage": "workspace:*"
   }
 }

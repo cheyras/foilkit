@@ -20,6 +20,9 @@ importers:
       '@foilkit/resolver':
         specifier: workspace:*
         version: link:packages/resolver
+      '@foilkit/stage':
+        specifier: workspace:*
+        version: link:packages/stage
       '@foilkit/three':
         specifier: workspace:*
         version: link:packages/three
@@ -62,6 +65,8 @@ importers:
         specifier: workspace:*
         version: link:../patterns
 
+  packages/stage: {}
+
   packages/three:
     dependencies:
       '@foilkit/core':
@@ -70,6 +75,9 @@ importers:
       '@foilkit/patterns':
         specifier: workspace:*
         version: link:../patterns
+      '@foilkit/stage':
+        specifier: workspace:*
+        version: link:../stage
       react:
         specifier: '>=18'
         version: 19.2.8
