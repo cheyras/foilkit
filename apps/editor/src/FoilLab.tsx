@@ -1485,7 +1485,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
                 {maskSource === 'layout' && windowScoped && (
                   <ActionBtn onClick={startAdjust}>⤡ Adjust window</ActionBtn>
                 )}
-                {savedMask && <ActionBtn onClick={deleteMask}>Delete saved</ActionBtn>}
+                {canWrite && savedMask && <ActionBtn onClick={deleteMask}>Delete saved</ActionBtn>}
               </div>
             ) : (
               <div className="space-y-[8px]">

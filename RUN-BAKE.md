@@ -35,11 +35,19 @@ one of them runs the fixture bake for real and reads every file back.
 node --conditions source tools/bake-fixture.mts --out /tmp/fixbake
 ```
 
-Expect a synthetic bake — 2 series, 4 sets, 300 cards, 422 printings, 5 set
+Expect a synthetic bake — 3 series, 5 sets, 309 cards, 440 printings, 6 set
 pages, 21 search buckets — written under `/tmp/fixbake`, plus the size report.
-Everything in it is invented; the image URLs point at `fixture.invalid` and
-every artifact stamps `source: "fixture:synthetic"` so it can never be mistaken
-for the real thing.
+Every NAME in it is invented; the image URLs point at `fixture.invalid` (a
+reserved TLD that can never resolve) and every artifact stamps
+`source: "fixture:synthetic"`, so it can never be mistaken for the real thing.
+
+One of the three series is the **corpus-overlap set**: real catalog ids
+(`base1-1`, `base1-4`, …) under invented names, covering exactly the cards the
+committed mask corpus carries. A card id is a coordinate and
+`data/foil-masks/base1-4/` is already in this repository; a name is the part the
+ownership rule is about. It exists because every other fixture card resolves to
+scope `none` — the resolver has never heard of `fxp1` — so without it the
+editor's end-to-end run would have nothing to draw on.
 
 ---
 
