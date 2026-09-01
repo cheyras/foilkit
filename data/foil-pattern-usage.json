@@ -1,5 +1,5 @@
 {
- "$comment": "foil-pattern-usage.json - resolver base guess: (era/set-range, rarity/variant class) -> pattern slug. Slugs match research/foil-patterns.md and research/foil-video-reference/. Generated 2026-08-02 on branch foil/video-reference.",
+ "$comment": "foil-pattern-usage.json - resolver base guess: (era/set-range, rarity/variant class) -> pattern slug. Slugs match research/foil-patterns.md and research/foil-video-reference/. Generated 2026-08-02 on branch foil/video-reference. Source-quote policy (2026-09-01): every citation of a video source in this file is a PARAPHRASE in the maintainer's voice, marked as such and attributed by video id + chapter/timestamp. No third-party narration is reproduced here — this file is CC0 and may only contain material the project can dedicate. Follow the URL for the creator's own words.",
  "method": "7 era-scoped research lanes run under Ringer (opencode workers; 6x openrouter/z-ai/glm-5.2 passed incl. the dp-hgss rerun; 1 nvidia/nemotron free-model attempt failed and was rerun on glm-5.2). Every lane's rows passed pipeline/validate_usage.py (schema + min-rows + citation presence) plus an honesty check on findings.md. Orchestrator spot-checks: Bulbapedia tinsel quote verified near-verbatim; Collexy DP cosmos citation verified in substance but the 'quote' was a paraphrase - treat source quotes as lossy pointers, follow the URL for exact wording.",
  "sources_of_record": [
   "https://youtu.be/wQ2TvnHVdys (Sleeve No Card Behind - All 39 Pokemon Card Holo Patterns Explained)",
@@ -50,7 +50,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "tinsel introduced with BW 2011 regular holos"
+     "quote": "Paraphrase (ch. 'Tinsel', 13:24) — tinsel arrives with the Black & White regular holos in 2011."
     }
    ],
    "conflicts": null,
@@ -131,7 +131,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "BW-era ACE SPECs = tinsel"
+     "quote": "Paraphrase (ch. 'Tinsel', 13:24) — the BW-era ACE SPEC cards use plain tinsel."
     }
    ],
    "conflicts": "Collexy does not mention ACE SPEC cards at all and instead classifies BW Ultra/Secret Rares as 'Glossy' (early sets) or 'Textured' (Next Destinies onward); the provided vocabulary also contains an undefined 'ace-spec' slug that no source explains.",
@@ -171,7 +171,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "diagonal-sheen-right = default for XY-era sets"
+     "quote": "Paraphrase (ch. 'Diagonal sheen (right)', 15:12) — the default holo of the XY-era sets."
     }
    ],
    "conflicts": null,
@@ -233,7 +233,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "starlight-ii = XY Evolutions 2016"
+     "quote": "Paraphrase (ch. 'Starlight II', 17:19) — XY Evolutions, 2016."
     }
    ],
    "conflicts": "Bulbapedia's Starlight section lists only Base/Jungle/Fossil and does not mention Evolutions; Collexy is the source confirming Evolutions' reuse.",
@@ -258,7 +258,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "prism = BREAK cards only"
+     "quote": "Paraphrase (ch. 'Prism', 16:28) — within the TCG, BREAK cards only."
     }
    ],
    "conflicts": "Collexy does not use the term 'prism'; it files BREAK cards under Glossy Holofoil (Ultra Rare) and Textured Holofoil (Ultra/Secret Rare) rather than a distinct prism pattern.",
@@ -282,7 +282,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "diagonal-sheen-right = secret Battle Arena deck variants (Moltres EX Plasma Storm) then default for XY-era sets"
+     "quote": "Paraphrase (ch. 'Diagonal sheen (right)', 15:12) — first as secret Battle Arena deck variants (Moltres EX, Plasma Storm), then the default holo across the XY-era sets."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-xy-era/",
@@ -312,7 +312,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "cosmos-ii-pixel = Platinum-onward denser cosmos (default promo pattern)"
+     "quote": "Paraphrase (ch. 'Cosmos II / pixel cosmos', 11:11) — the denser Platinum-onward cosmos, and the promo default."
     },
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
@@ -340,7 +340,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "cosmos-iii-smooth introduced in Legendary Treasures, dominant for years"
+     "quote": "Paraphrase (ch. 'Cosmos III / smooth cosmos', 12:34) — arrives in Legendary Treasures and stays dominant for years."
     }
    ],
    "conflicts": "No corroborating text source uses the 'cosmos-iii-smooth' label; Collexy describes Legendary Treasures promo-type holos only in terms of Confetti (Radiant Collection) and Glossy/Textured for Ultra/Secret Rares.",
@@ -375,7 +375,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "confetti = every English McDonald's set"
+     "quote": "Paraphrase (ch. 'Confetti', 23:59) — every English McDonald's set."
     }
    ],
    "conflicts": null,
@@ -407,7 +407,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "crosshatch = League promos"
+     "quote": "Paraphrase (ch. 'Crosshatch', 23:08) — League promos."
     }
    ],
    "conflicts": null,
@@ -458,7 +458,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "radiant-collection-dots = RC subsets (Legendary Treasures + Generations; dot overprint + white-ink windows + plain mirror, some RC non-holo)"
+     "quote": "Paraphrase (ch. 'Radiant Collection Dots', 20:56) — the RC subsets in Legendary Treasures and Generations: a dot overprint plus white-ink shape windows over plain mirror foil, and some RC cards are non-holo underneath."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-black-white-era/",
@@ -610,7 +610,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "cracked-ice = FRLG legendary-bird ex promos + POP Series"
+     "quote": "Paraphrase (ch. 'Cracked Ice', 5:07) — the FRLG legendary-bird ex promos and the POP series."
     }
    ],
    "conflicts": "Video says 'FRLG legendary-bird ex promos + POP Series'; Collexy confirms cracked-ice on the EX FireRed & LeafGreen SET versions of the birds and notes the separate Nintendo Black Star Promo tin versions of the same birds used Cosmos, not cracked-ice. The video's 'promos' wording may conflate the set prints with the tin promos.",
@@ -636,7 +636,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "cracked-ice = FRLG legendary-bird ex promos + POP Series"
+     "quote": "Paraphrase (ch. 'Cracked Ice', 5:07) — the FRLG legendary-bird ex promos and the POP series."
     }
    ],
    "conflicts": "Could not confirm cracked-ice in POP Series from non-video sources. Collexy states POP Series 4 and POP Series 5 used Refractor Holofoil (not cracked-ice) and that POP Series 1-5 had no Reverse Holofoil variants at all, so the video's 'POP Series' reference for cracked-ice is unverified and may be a misattribution.",
@@ -692,7 +692,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "vertical-sheen-rainbow = first sheen holo, a few sets after Unseen Forces (demo card Medicham EX Crystal Guardians)"
+     "quote": "Paraphrase (ch. 'Vertical sheen rainbow', 7:49) — the first of the sheen holos, arriving a few sets after Unseen Forces. Demo card Medicham EX, Crystal Guardians."
     }
    ],
    "conflicts": "Video pinpoints the first sheen holo demo card as Medicham EX in EX Crystal Guardians, but Collexy attributes the Sheen Holofoil only to energy cards in EX Holon Phantoms and EX Power Keepers (the set immediately after Crystal Guardians) and does not list any sheen card in Crystal Guardians.",
@@ -751,7 +751,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "energy-symbols = EX Hidden Legends, first bespoke Pokemon pattern"
+     "quote": "Paraphrase (ch. 'Energy symbols', 4:20) — EX Hidden Legends, and the first pattern designed specifically for Pokemon rather than taken from manufacturer stock."
     }
    ],
    "conflicts": null,
@@ -782,7 +782,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "energy-symbols-ii = EX FireRed & LeafGreen"
+     "quote": "Paraphrase (ch. 'Energy symbols II', 4:54) — EX FireRed & LeafGreen."
     }
    ],
    "conflicts": "Video explicitly assigns energy-symbols-ii only to EX FireRed & LeafGreen; TRR is grouped here because Bulbapedia states TRR uses 'the same pattern as EX FireRed & LeafGreen,' but TRR drops the energy-type foil stamp, so its classification as energy-symbols-ii is an inference.",
@@ -812,7 +812,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "pinwheel = EX Deoxys (reverses)"
+     "quote": "Paraphrase (ch. 'Pinwheel', 5:41) — EX Deoxys reverse holos."
     }
    ],
    "conflicts": "Collexy names this the 'Wheel' pattern while Bulbapedia and the video call it 'pinwheel'; same physical pattern, different label.",
@@ -842,7 +842,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "ex-emerald = EX Emerald only"
+     "quote": "Paraphrase (ch. 'EX Emerald', 6:10) — EX Emerald and nothing else."
     }
    ],
    "conflicts": "Video says 'ex-emerald = EX Emerald only' without specifying front vs reverse; Collexy and Bulbapedia show EX Emerald's standard holos are plain Cosmos and that the unique-to-Emerald holofoil is its Poke Ball reverse pattern, so ex-emerald is mapped to the reverse here.",
@@ -872,7 +872,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "pokeball-hologram = EX Unseen Forces (true hologram, seam artifact)"
+     "quote": "Paraphrase (ch. 'Pokeball hologram', 6:31) — EX Unseen Forces: a true hologram rather than diffraction foil, with a visible seam artefact."
     }
    ],
    "conflicts": "Video describes pokeball-hologram as a 'true hologram' with a 'seam artifact'; neither Bulbapedia nor Collexy use 'true hologram' or 'seam' language, both describing it as a 3D Poke Ball reverse pattern. The video's front-vs-reverse framing is ambiguous; mapped to the reverse here as that is the unique-to-Unseen-Forces holofoil.",
@@ -906,7 +906,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "vertical-sheen-rainbow = first sheen holo, a few sets after Unseen Forces (demo card Medicham EX Crystal Guardians)"
+     "quote": "Paraphrase (ch. 'Vertical sheen rainbow', 7:49) — the first of the sheen holos, arriving a few sets after Unseen Forces. Demo card Medicham EX, Crystal Guardians."
     }
    ],
    "conflicts": "Bulbapedia calls this a 'plain holographic' reverse 'similar to Expedition Base Set' (i.e. closer to the early mirror reverse), while Collexy calls it a 'Plain pattern' with a 'sheen reflective effect'; the video labels the first sheen holo 'vertical-sheen-rainbow' and dates it to around Crystal Guardians. Mapping the late-EX reverse sheen to vertical-sheen-rainbow reconciles the 'first sheen' and 'sheen reflective effect' wording but is an inference since the video's vertical-sheen is otherwise pegged to HGSS/Platinum.",
@@ -994,7 +994,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "acid-wash = League promo energies ~2006"
+     "quote": "Paraphrase (ch. 'Acid wash', 24:29) — League promo energy cards around 2006."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
@@ -1035,7 +1035,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "confetti = Celebrations + every English McDonald's set ever (video, chapter 'Confetti')"
+     "quote": "Paraphrase (ch. 'Confetti', 23:59) — Celebrations, plus every English McDonald's set released."
     }
    ],
    "conflicts": null,
@@ -1061,7 +1061,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "confetti = Celebrations + every English McDonald's set ever (video, chapter 'Confetti')"
+     "quote": "Paraphrase (ch. 'Confetti', 23:59) — Celebrations, plus every English McDonald's set released."
     }
    ],
    "conflicts": null,
@@ -1089,7 +1089,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "sequin = General Mills cereal promos only (video, chapter 'Sequin')"
+     "quote": "Paraphrase (ch. 'Sequin', 22:48) — General Mills cereal promos and nothing else."
     }
    ],
    "conflicts": null,
@@ -1117,7 +1117,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "crosshatch = League/Play! promos exclusively (Pokemon, trainers, energies; affordable on eBay) (video, chapter 'Crosshatch')"
+     "quote": "Paraphrase (ch. 'Crosshatch', 23:08) — League / Play! promos only, across Pokemon, trainer and energy cards; the chapter notes they stay cheap and plentiful on the secondary market."
     }
    ],
    "conflicts": null,
@@ -1139,7 +1139,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "acid-wash = League promo energies ~2006 only, short-lived (video, chapter 'Acid Wash')"
+     "quote": "Paraphrase (ch. 'Acid wash', 24:29) — League promo energies around 2006 only; short-lived."
     }
    ],
    "conflicts": "Bulbapedia's Holofoil page documents crosshatch for Play! Pokémon events but does not separately name an 'acid-wash' pattern for the 2006 League Energy promos; only the video asserts acid-wash as a distinct finish.",
@@ -1170,7 +1170,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "cracked-ice = theme-deck window holos for much of TCG history (video, chapter 'Cracked Ice')"
+     "quote": "Paraphrase (ch. 'Cracked Ice', 5:07) — the theme-deck window holo for much of the TCG's history."
     }
    ],
    "conflicts": null,
@@ -1308,7 +1308,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "cosmos-ii-pixel then both cosmos variants = default promo pattern (tins/blisters/order bonuses) (video, chapter 'Cosmos variants')"
+     "quote": "Paraphrase (ch. 'Cosmos II / pixel cosmos', 11:11) — cosmos II, and later both cosmos variants, as the promo default for tins, blisters and order bonuses."
     },
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
@@ -1334,7 +1334,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "big-glitter = e-series oversized box toppers once (video, chapter 'Big Glitter')"
+     "quote": "Paraphrase (ch. 'Big glitter', 3:19) — used once, on the e-series oversized box toppers."
     }
    ],
    "conflicts": "Neither Bulbapedia's Holofoil page nor the Collexy WOTC-era overview names a 'big-glitter' pattern or explicitly documents oversized e-series box topper holofoil; this row rests on the video alone. The separate acrylic Skyridge box topper (jumbo Charizard) is a different product and is not covered here due to lack of a corroborating holofoil-pattern source.",
@@ -1356,7 +1356,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "disco = unreleased factory prototypes authenticated by CGC/ex-WOTC staff (video, chapter 'Disco')"
+     "quote": "Paraphrase (ch. 'Disco', 25:02) — never released; factory prototypes authenticated through CGC and ex-WOTC staff."
     }
    ],
    "conflicts": "No corroborating collector-database source (Bulbapedia, Collexy, PSA/CGC public articles) was fetched that names a 'disco' holofoil pattern; confidence is limited to the video's claim.",
@@ -1404,7 +1404,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "pokeball-hologram seam = EX Unseen Forces (video, chapter 'Poké Ball Hologram')"
+     "quote": "Paraphrase (ch. 'Pokeball hologram', 6:31) — the seam artefact belongs to EX Unseen Forces."
     }
    ],
    "conflicts": "EX Unseen Forces is a standard retail set, not a promo/product lane, so it is included here only because the lane's video claims explicitly call out its Poké Ball seam; it likely belongs to the EX-era standard-set lane worker.",
@@ -1439,7 +1439,7 @@
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     },
     {
-     "quote": "water-web (aka oil slick) = SM standard holos + GX cards (Bulbapedia: SM through Cosmic Eclipse).",
+     "quote": "Paraphrase (ch. 'Water web', 18:13) — the pattern collectors also call oil slick: SM standard holos and GX cards. Bulbapedia extends the range from SM through Cosmic Eclipse.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -1470,7 +1470,7 @@
    },
    "sources": [
     {
-     "quote": "water-web (aka oil slick) = SM standard holos + GX cards (Bulbapedia: SM through Cosmic Eclipse).",
+     "quote": "Paraphrase (ch. 'Water web', 18:13) — the pattern collectors also call oil slick: SM standard holos and GX cards. Bulbapedia extends the range from SM through Cosmic Eclipse.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -1501,7 +1501,7 @@
    },
    "sources": [
     {
-     "quote": "diagonal-sheen-left = SM reverse holos.",
+     "quote": "Paraphrase (ch. 'Diagonal sheen (left)', 15:34) — Sun & Moon reverse holos.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     },
     {
@@ -1581,7 +1581,7 @@
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     },
     {
-     "quote": "striped-vertical-sheen (Bulbapedia 'Line') = SWSH regular holos + some Trick or Trade.",
+     "quote": "Paraphrase (ch. 'Striped vertical sheen', 16:01) — Bulbapedia's 'Line': SWSH regular holos, plus some Trick or Trade cards.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -1618,7 +1618,7 @@
    },
    "sources": [
     {
-     "quote": "diagonal-right = XY-era default + Battle Arena deck variants; diagonal-left = Sun&Moon reverse holos; [SWSH reverses use the XY-era diagonal-right sheet by implication of era progression].",
+     "quote": "Paraphrase (ch. 'Diagonal sheen (right)', 15:12) — diagonal-right is the XY-era default plus the Battle Arena deck variants; diagonal-left carries the Sun & Moon reverse holos. Our reading that SWSH reverses continue on the XY-era right-diagonal sheet is inference from era progression, not a claim in the video.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -1690,7 +1690,7 @@
    },
    "sources": [
     {
-     "quote": "rainbow-glitter = VMAX/rainbow rares (glitter over rainbow mirror).",
+     "quote": "Paraphrase (ch. 'Rainbow glitter', 18:55) — VMAX and rainbow rares: glitter over a rainbow mirror.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -1716,7 +1716,7 @@
    },
    "sources": [
     {
-     "quote": "radiant = radiant cards in a handful of SWSH sets.",
+     "quote": "Paraphrase (ch. 'Radiant', 18:28) — the radiant cards across a handful of SWSH sets.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -1744,7 +1744,7 @@
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     },
     {
-     "quote": "sequin = General Mills cereal promos only.",
+     "quote": "Paraphrase (ch. 'Sequin', 22:48) — General Mills cereal-box promos only.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -1772,7 +1772,7 @@
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     },
     {
-     "quote": "confetti = Celebrations + McDonald's.",
+     "quote": "Paraphrase (ch. 'Confetti', 23:59) — Celebrations and the McDonald's sets.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -1801,7 +1801,7 @@
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     },
     {
-     "quote": "cracked-ice = SWSH theme/starter deck holos.",
+     "quote": "Paraphrase (ch. 'Cracked Ice', 5:07) — the SWSH theme and starter deck holos.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -1831,7 +1831,7 @@
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-xy-era/"
     },
     {
-     "quote": "crosshatch = League promos.",
+     "quote": "Paraphrase (ch. 'Crosshatch', 23:08) — League promos only.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -1859,7 +1859,7 @@
    },
    "sources": [
     {
-     "quote": "cosmos-ii-pixel = Platinum-onward denser cosmos (default promo pattern).",
+     "quote": "Paraphrase (ch. 'Cosmos II / pixel cosmos', 11:11) — the denser Platinum-onward cosmos, and the promo default.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -1905,7 +1905,7 @@
    },
    "sources": [
     {
-     "quote": "striped-vertical-sheen (Bulbapedia 'Line') = SWSH regular holos + some Trick or Trade.",
+     "quote": "Paraphrase (ch. 'Striped vertical sheen', 16:01) — Bulbapedia's 'Line': SWSH regular holos, plus some Trick or Trade cards.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -1945,7 +1945,7 @@
      "url": "https://www.pokebeach.com/2022/12/scarlet-violet-holo-effects-revealed-includes-foil-card-borders"
     },
     {
-     "quote": "horizontal-sheen (Bulbapedia 'Mirage') = SV series default + Mega-era standard holos.",
+     "quote": "Paraphrase (ch. 'Horizontal sheen', 15:49) — Bulbapedia's 'Mirage': the SV-series default and the Mega-era standard holos.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -1967,7 +1967,7 @@
    },
    "sources": [
     {
-     "quote": "horizontal-sheen (Bulbapedia 'Mirage') = SV series default + Mega-era standard holos.",
+     "quote": "Paraphrase (ch. 'Horizontal sheen', 15:49) — Bulbapedia's 'Mirage': the SV-series default and the Mega-era standard holos.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     },
     {
@@ -2008,7 +2008,7 @@
      "url": "https://www.pokebeach.com/2022/12/scarlet-violet-holo-effects-revealed-includes-foil-card-borders"
     },
     {
-     "quote": "ex-starfoil = SV ex cards (star overprint over diagonal sheen foil).",
+     "quote": "Paraphrase (ch. 'ex starfoil', 22:15) — SV ex cards, with the star overprint sitting on diagonal sheen foil.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -2046,7 +2046,7 @@
      "url": "https://www.pokebeach.com/2022/12/scarlet-violet-holo-effects-revealed-includes-foil-card-borders"
     },
     {
-     "quote": "ex-starfoil = SV ex cards (star overprint over diagonal sheen foil).",
+     "quote": "Paraphrase (ch. 'ex starfoil', 22:15) — SV ex cards, with the star overprint sitting on diagonal sheen foil.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -2072,7 +2072,7 @@
    },
    "sources": [
     {
-     "quote": "ace-spec pattern = SV ACE SPEC cards only (BW ACE SPECs were tinsel).",
+     "quote": "Paraphrase (ch. 'Ace spec', 19:32) — unique to the SV-era ACE SPEC cards; the BW-era ACE SPECs were plain tinsel.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -2192,7 +2192,7 @@
    },
    "sources": [
     {
-     "quote": "cosmos borders on regular SV cards + promos in both cosmos-ii/cosmos-iii variants (151 chase).",
+     "quote": "Paraphrase (ch. 'Cosmos II / pixel cosmos', 11:11) — cosmos borders on regular SV cards, with promos shipping in both the pixel and smooth cosmos variants (the 151 master-set chase).",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -2216,7 +2216,7 @@
    },
    "sources": [
     {
-     "quote": "cosmos borders on regular SV cards + promos in both cosmos-ii/cosmos-iii variants (151 chase).",
+     "quote": "Paraphrase (ch. 'Cosmos II / pixel cosmos', 11:11) — cosmos borders on regular SV cards, with promos shipping in both the pixel and smooth cosmos variants (the 151 master-set chase).",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -2241,7 +2241,7 @@
    },
    "sources": [
     {
-     "quote": "radiant-collection-dots = RC dot overprint.",
+     "quote": "Paraphrase (ch. 'Radiant Collection Dots', 20:56) — the RC dot overprint.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -2263,7 +2263,7 @@
    },
    "sources": [
     {
-     "quote": "prismatic-pokeball = Prismatic Evolutions (texture + opaque ink over rainbow mirror, not a foil embossing).",
+     "quote": "Paraphrase (ch. 'Prismatic pokeball', 20:20) — Prismatic Evolutions: texture plus opaque ink over a rainbow mirror, not a foil embossing.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -2286,7 +2286,7 @@
    },
    "sources": [
     {
-     "quote": "tinsel-ii (aka static) = Black Bolt & White Flare only.",
+     "quote": "Paraphrase (ch. 'Tinsel II', 14:02) — also called static; Black Bolt & White Flare only.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -2309,7 +2309,7 @@
    },
    "sources": [
     {
-     "quote": "pokeball-masterball = BBWF pokeball/masterball reverses (second embossment over ink, acetone-removable, JP had them earlier).",
+     "quote": "Paraphrase (ch. 'Pokeball / masterball', 20:11) — BBWF ball reverses: a second embossment over the ink, acetone-removable, and present on Japanese printings earlier.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     },
     {
@@ -2335,7 +2335,7 @@
    },
    "sources": [
     {
-     "quote": "tcg-classic = TCG Classic product (2023, every card holo).",
+     "quote": "Paraphrase (ch. 'TCG classic', 23:47) — the TCG Classic product (2023), where every card is holo.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -2357,7 +2357,7 @@
    },
    "sources": [
     {
-     "quote": "rainbow-glitter-sheen = Mega-era Mega ex cards (glitter over horizontal rainbow sheen).",
+     "quote": "Paraphrase (ch. 'Rainbow glitter sheen', 19:21) — Mega-era Mega ex cards: glitter over a horizontal rainbow sheen.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -2379,7 +2379,7 @@
    },
    "sources": [
     {
-     "quote": "confetti = McDonald's/Celebrations aka Bulbapedia 'Pixel'.",
+     "quote": "Paraphrase (ch. 'Confetti', 23:59) — the McDonald's and Celebrations pattern; Bulbapedia files it as 'Pixel'.",
      "url": "https://youtu.be/wQ2TvnHVdys"
     }
    ],
@@ -2434,7 +2434,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "starlight = Base Set/Jungle/Fossil (international only; JP used cosmos; chapter 'Starlight')"
+     "quote": "Paraphrase (ch. 'Starlight', 0:00) — Base Set, Jungle and Fossil, international printings only; the Japanese equivalents used cosmos."
     }
    ],
    "conflicts": null,
@@ -2471,7 +2471,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "cosmos = first English in Base Set 2 (chapter 'Cosmos')"
+     "quote": "Paraphrase (ch. 'Cosmos', 0:45) — first English appearance is Base Set 2."
     }
    ],
    "conflicts": "Bulbapedia extends the Cosmos standard-holo run to Call of Legends (beyond this era), while Collexy scopes the contiguous English run to Neo Destiny before resuming on the e-series; both agree for the in-era set range.",
@@ -2547,7 +2547,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "mirror = introduced on Neo Destiny Shining cards (chapter 'Mirror')"
+     "quote": "Paraphrase (ch. 'Mirror', 2:23) — introduced on the Neo Destiny Shining cards."
     }
    ],
    "conflicts": "Collexy names this pattern 'Refractor Holofoil' while the video calls it 'mirror'; both describe the same Neo Destiny Shining Secret Rare treatment.",
@@ -2577,7 +2577,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "fireworks = Legendary Collection only, first parallel set (chapter 'Fireworks')"
+     "quote": "Paraphrase (ch. 'Fireworks', 1:36) — Legendary Collection only, and the TCG's first parallel set."
     }
    ],
    "conflicts": null,
@@ -2677,7 +2677,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "cosmos = first English in Base Set 2, WOTC experimented earlier incl. Fossil employee copies (chapter 'Cosmos')"
+     "quote": "Paraphrase (ch. 'Cosmos', 0:45) — first English appearance is Base Set 2, though WOTC had experimented earlier, including the Fossil copies given to employees."
     }
    ],
    "conflicts": "Collexy frames these as an 'unofficial WOTC release' while the video calls them 'Fossil employee copies'; the existence of English Fossil cosmos exceptions is agreed.",
@@ -2721,7 +2721,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "cracked-ice first on Skyridge acrylic box toppers (chapter 'Cracked ice')"
+     "quote": "Paraphrase (ch. 'Cracked Ice', 5:07) — first appearance is the Skyridge acrylic box toppers."
     }
    ],
    "conflicts": "Bulbapedia dates Cracked Ice's introduction to Platinum-series theme decks and does not document the Skyridge acrylic box topper; only the video claims this first-use, so it is medium confidence.",
@@ -2745,7 +2745,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "big-glitter = e-series oversized box toppers once (chapter 'Big glitter')"
+     "quote": "Paraphrase (ch. 'Big glitter', 3:19) — the e-series oversized box toppers, used once."
     }
    ],
    "conflicts": "Single video source; no corroborating collector/database source found for the e-series oversized big-glitter box topper.",
@@ -2765,7 +2765,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "disco = never released, late-90s factory prototypes (chapter 'Disco')"
+     "quote": "Paraphrase (ch. 'Disco', 25:02) — never released; late-1990s factory prototypes."
     }
    ],
    "conflicts": "No released English WOTC card carries Disco; documented only as unreleased prototypes in the video.",
@@ -2787,7 +2787,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "prism pre-dates TCG on 1996 Carddass (chapter 'Prism')"
+     "quote": "Paraphrase (ch. 'Prism', 16:28) — predates the TCG, on the 1996 Carddass prism stickers."
     }
    ],
    "conflicts": "Outside the English WOTC-era scope (pre-TCG Japanese Carddass); included only because the video lists it in this lane.",
@@ -3029,7 +3029,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "cracked-ice = theme-deck-exclusive holos (demo card Raichu LV.39 DP theme deck) [ch. 'Cracked Ice']."
+     "quote": "Paraphrase (ch. 'Cracked Ice', 5:07) — the theme-deck-exclusive holo; demo card Raichu LV.39 from a DP theme deck."
     }
    ],
    "conflicts": "Bulbapedia says Cracked Ice was 'first used... from the Platinum Series', but the video cites a DP-era Raichu LV.39 theme-deck demo card and Collexy lists Cracked Ice among the Diamond & Pearl era's four patterns, so the very first DP-era use is disputed (Bulbapedia: Platinum; video/Collexy: DP era).",
@@ -3066,7 +3066,7 @@
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "crosshatch = League promos [ch. 'Crosshatch']."
+     "quote": "Paraphrase (ch. 'Crosshatch', 23:08) — League promos."
     }
    ],
    "conflicts": null,
@@ -3118,7 +3118,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "cosmos-ii-pixel introduced in Platinum series, becomes default promo pattern (tins/blisters) [ch. 'Cosmos II Pixel']."
+     "quote": "Paraphrase (ch. 'Cosmos II / pixel cosmos', 11:11) — introduced in the Platinum series and becomes the promo default for tins and blisters."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-heartgold-soulsilver-era/",
@@ -3170,7 +3170,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "This holo pattern was used through Platinum, Call of Legends, Black and White, and XY... underneath they all have the same vertical sheen foil pattern."
+     "quote": "Paraphrase (ch. 'Vertical sheen', 8:20) — the same vertical sheen sheet carries Platinum, Call of Legends, Black & White and XY, sitting under holos that look different on the surface."
     }
    ],
    "conflicts": "Bulbapedia states Cosmos was the standard holo Base Set 2 through Call of Legends, and Collexy assigns DP/HGSS-era holo rares to Cosmos with per-set Reverse patterns (often Mirror-like); no research lane emitted a vertical-sheen row. The video's claim is kept as a distinct row rather than silently merged. Per-set adjudication is future work for the resolver.",
@@ -3194,7 +3194,7 @@
    "sources": [
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
-     "quote": "First widely seen on e-series (Expedition) reverse holos; a staple ever since; the base layer for later overprint patterns."
+     "quote": "Paraphrase (ch. 'Rainbow mirror', 2:53) — became common on the e-series (Expedition) reverse holos and has stayed in use since; it is the base layer later overprint patterns are applied to."
     }
    ],
    "conflicts": "The wotc research lane classified the same e-series reverses as plain 'mirror' (flat, patternless). Corpus frames of Crystal Energy (Aquapolis reverse) show clear sweeping rainbow bands, supporting rainbow-mirror; plain mirror shows no hue at any angle. Both rows kept.",
@@ -3214,7 +3214,7 @@
    "sources": [
     {
      "url": "https://youtu.be/TjlU_WKhS8w",
-     "quote": "item cards [got] a full art treatment with gold foil from top to bottom ... they'd also extend this gold art treatment to stadium cards as well and even the energy went gold"
+     "quote": "Paraphrase (timestamp not recorded) — item cards took a full-art gold-foil treatment across the whole card; stadium cards followed, and eventually the energy cards went gold too."
     },
     {
      "url": "https://sleevenocardbehind.com/gold-pokemon-cards-everything-you-need-to-know/",
@@ -3237,7 +3237,7 @@
    "sources": [
     {
      "url": "https://youtu.be/TjlU_WKhS8w",
-     "quote": "sword and shield continues to dish out the gold. the pattern this time around makes the entire card gold - background, text boxes, empty space"
+     "quote": "Paraphrase (timestamp not recorded) — in the Sword & Shield era the gold treatment covers the whole card face: background, text boxes and empty space all print gold."
     },
     {
      "url": "https://sleevenocardbehind.com/gold-pokemon-cards-everything-you-need-to-know/",
@@ -3245,7 +3245,7 @@
     },
     {
      "url": "https://youtu.be/8CvE7sXbJOo",
-     "quote": "(corpus tilt footage: Turbopatch, Darkness Ablaze 200/189 - gold face, glitter grain, radial burst rays, warm-locked hue travel)"
+     "quote": "Paraphrase (corpus tilt footage) — Turbopatch, Darkness Ablaze 200/189: gold face, visible glitter grain, radial burst rays, hue travel locked to the warm end."
     }
    ],
    "conflicts": "Catalog 'secret rare' buckets in swsh1-swsh6 mix Rainbow Rare (rainbow-glitter) and gold Secret Rare - the resolver must split them by the 'gold' facet or rarity string before this row lands per-card."
@@ -3303,7 +3303,7 @@
     },
     {
      "url": "https://youtu.be/wRDwJyv-aP8",
-     "quote": "(corpus tilt footage: Arceus VSTAR, Brilliant Stars 123/172)"
+     "quote": "Paraphrase (corpus tilt footage) — Arceus VSTAR, Brilliant Stars 123/172."
     }
    ],
    "conflicts": "Catalog 'ultra rare' buckets lump V / VMAX / VSTAR (swsh9-swsh12.5 residuals) - needs the VSTAR rarity/kind split. Rainbow-rare and gold VSTAR prints are rainbow-glitter / gold-secret, not this pattern."
@@ -3334,7 +3334,7 @@
     },
     {
      "url": "https://youtu.be/_cyddOc1SMU",
-     "quote": "Both card designs are textured and feature the sparkles around the Pokémon (19:16; corpus tilt footage 19:18-19:26: Shiny Buzzwole SV24 + Shiny Ho-Oh GX SV50)"
+     "quote": "Paraphrase (19:16) — both shiny-vault card designs are textured and carry sparkles around the Pokemon. Corpus tilt footage 19:18-19:26: Shiny Buzzwole SV24 and Shiny Ho-Oh GX SV50."
     }
    ]
   },
@@ -3378,7 +3378,7 @@
    "sources": [
     {
      "url": "https://youtu.be/_cyddOc1SMU",
-     "quote": "Some of the baby shinies are really cool, like Snorlax ... and holo borders that add that extra bit of sparkle. (26:32-26:59)"
+     "quote": "Paraphrase (26:32-26:59) — the baby-shiny designs are singled out (Snorlax among them) for their holo borders, which add extra sparkle."
     }
    ]
   },
@@ -3425,7 +3425,7 @@
     },
     {
      "url": "https://youtu.be/WjuDazguHnE",
-     "quote": "(corpus tilt footage: Charizard det1 5/18)"
+     "quote": "Paraphrase (corpus tilt footage) — Charizard, Detective Pikachu 5/18."
     }
    ],
    "conflicts": "The Japanese Movie Special Pack (smp2) prints its Commons/Uncommons as Mirror Holofoil (Bulbapedia) - a different treatment, out of this row's scope. The assignments-lane residual's 'thick shattered/raised foil' description is unsourced; footage shows smooth beams."
