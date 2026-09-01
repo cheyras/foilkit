@@ -24,17 +24,20 @@ measurements are here.
 |---|---|
 | [`packages/core`](packages/core/) | The shader ABI — canonical card space, the uniform contract, `PREAMBLE + pattern.glsl + MAIN`, canon layering. **Zero dependencies, no renderer.** |
 | [`packages/patterns`](packages/patterns/) | The 45 recipes as data, individually importable. |
-| [`packages/three`](packages/three/) | The three.js binding, plus the React card viewer and the mask/window drawing surfaces. |
+| [`packages/stage`](packages/stage/) | Many cards on one renderer, as policy: the budget ladder, the six tilt sources, the frame schedule, the texture sizing. **Zero dependencies, no renderer.** |
+| [`packages/three`](packages/three/) | The three.js binding — `FoilStage` (one canvas, one context, any number of cards), the material, plus the React card viewer and the mask/window drawing surfaces. |
 | [`packages/resolver`](packages/resolver/) | Which foil a printing carries. Pokémon-specific and optional by construction. |
 | [`packages/forge`](packages/forge/) | The authoring stack: provenance, the mask corpus, the generator, edge tracing, vector templates. `node:` builtins only. |
 | [`data/`](data/) | 32 canon files, 21 card directories of masks in canonical 504 × 704, the frame registry, the resolver's cited evidence. |
 | [`tools/rectifier`](tools/rectifier/) | Four detected corners into a canonical raster, and the pair diff that needs it. |
 | [`tools/parity`](tools/parity/) | The frame-stepped zero-delta render harness. |
+| [`apps/demo`](apps/demo/) | The stress demo: several hundred cards, one WebGL context, both presentation modes, every tilt source, a live ladder readout — and the acceptance run that asserts all of it. |
 
 `packages/webgl2`, `element` and `react` are not built yet. The one obligation
-the extraction carried for them is already met: `core` imports nothing from
-three.js, and CI proves it on every push, so each of them is a later *addition*
-rather than a later rewrite.
+the extraction carried for them is already met: `core`, `patterns` and `stage`
+import nothing from three.js, and CI proves it on every push, so each of them is
+a later *addition* rather than a later rewrite — and each inherits "one
+renderer, any number of cards" instead of reimplementing it.
 
 **The move came with a receipt.** 45 of 45 recipes render byte-identically
 before and after; 177 tests pass; the resolver returns an identical digest over

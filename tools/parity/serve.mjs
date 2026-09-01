@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2026 Chey Rasmussen
 //
-// A static file server for the pattern room. node: builtins only — the page it
-// serves is plain ESM + an import map, so there is no bundler in this loop and
-// nothing between the source and the pixels.
+// A static file server for the browser-side pages — the pattern room, and the
+// stage's stress demo. node: builtins only — the pages it serves are plain ESM
+// + an import map, so there is no bundler in this loop and nothing between the
+// source and the pixels.
 //
-//   node tools/parity/serve.mjs [--port 5199] [--mount /alias=<dir>]…
+//   node tools/parity/serve.mjs [--port 5199] [--page <html>] [--mount /alias=<dir>]…
 //
 // Routes:
-//   /                          -> tools/parity/host/index.html
+//   /                          -> --page, default tools/parity/host/index.html
 //   /vendor/three.module.js    -> node_modules/three/build/three.module.js
 //   /packages/… /data/…        -> the repository, as-is
 //   /<alias>/…                 -> whatever --mount pointed at (the moving
@@ -28,6 +29,10 @@ const arg = (n, d) => {
   return i >= 0 && argv[i + 1] !== undefined ? argv[i + 1] : d
 }
 const PORT = Number(arg('port', '5199'))
+// Which page answers "/". Everything else it needs — its own module, the
+// packages, the canon files — resolves through the generic repository route
+// below, so a second page costs a flag rather than a second server.
+const PAGE = arg('page', 'tools/parity/host/index.html')
 
 /** @type {Map<string, string>} alias -> absolute dir */
 const mounts = new Map()
@@ -55,8 +60,8 @@ const TYPES = {
 }
 
 function resolvePath(urlPath) {
-  if (urlPath === '/' || urlPath === '') return join(ROOT, 'tools/parity/host/index.html')
-  if (urlPath === '/main.js') return join(ROOT, 'tools/parity/host/main.js')
+  if (urlPath === '/' || urlPath === '') return join(ROOT, PAGE)
+  if (urlPath === '/main.js') return join(ROOT, PAGE.replace(/[^/\\]+$/, 'main.js'))
   // The whole three build directory: three.module.js re-exports three.core.js.
   if (urlPath.startsWith('/vendor/')) return join(ROOT, 'node_modules/three/build', urlPath.slice('/vendor/'.length))
   for (const [alias, dir] of mounts) {
@@ -87,6 +92,6 @@ const server = createServer((req, res) => {
 })
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`parity host: http://127.0.0.1:${PORT}/  root=${ROOT}`)
+  console.log(`serving ${PAGE}: http://127.0.0.1:${PORT}/  root=${ROOT}`)
   for (const [a, d] of mounts) console.log(`  mount ${a} -> ${d}`)
 })

@@ -773,3 +773,102 @@ problem, not the lesser one:
 
 This closes the item the previous entry flagged. Nothing about the source-quote
 policy is now outstanding in either evidence file.
+
+---
+
+## 2026-09-01 — The stage is two packages: policy without a renderer, and a binding with one
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** "One renderer, any number of cards" ships as **`@foilkit/stage`**
+(the budget ladder, the six tilt sources, the frame schedule, the scissor
+arithmetic, the texture sizing — importing nothing) plus **`FoilStage` inside
+`@foilkit/three`** (one canvas, one `WebGLRenderer`, a material cache keyed by
+`patternId`, a texture cache keyed by URL, one rAF loop, one
+`IntersectionObserver`, one `ResizeObserver`).
+
+**Why:** folding all of it into `@foilkit/three` was the obvious alternative and
+was refused for a concrete reason, not an aesthetic one. A `packages/stage` that
+depended on `@foilkit/three` would have been imported back by
+`three/react/CardViewer`, and TypeScript project references forbid the cycle;
+breaking the cycle by moving `CardViewer` into the new package would have
+changed its import path, which is a public shape this work promised to keep.
+Splitting *policy* from *binding* has no cycle in either direction, and it buys
+something real: the ladder and the sources are arithmetic over rectangles and
+frame times, so they are tested by `node --test` with no GPU (40 new tests), and
+a future `webgl2` or `element` adapter inherits the architecture instead of
+reimplementing it. `tools/check-independence.mjs` now proves `stage` imports no
+renderer, exactly as it does of `core`.
+
+**Implications:**
+
+- `CardViewer` keeps every prop it had and becomes a thin host registering one
+  element, in `blit` mode so its overlays and pan/zoom wrapper are untouched.
+  `useTilt` keeps its public shape and delegates the mapping to the stage's
+  sources.
+- `options.renderer` is honoured, never restyled and never disposed: a host
+  already running a three.js scene must not be forced into a second context.
+- **`renderScale` is a no-op in `underlay`.** A card's pixels there ARE the
+  page's pixels and cannot be scaled up after the fact. It is live in `blit`,
+  where a card is rendered small and stretched on the way out. Rung 1 therefore
+  has one step fewer in underlay, and the ladder moves on to rung 2 rather than
+  pretending otherwise.
+- **Frozen (rung 3) and stopped (rung 4) cards are still DRAWN in `underlay`.**
+  Freezing means the image stops changing, which is what the rung is for; it
+  saves the per-card CPU work and not the fragment shading. In `blit` a frozen
+  card skips its render and its blit entirely, so it saves both.
+
+## 2026-09-01 — The ladder reads work time, and `preserveDrawingBuffer` was refused
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** The budget ladder's input is the stage's own **work** time — how
+long its frame callback took — compared against the budget of the cadence
+currently being run when deciding to drop, and against the TARGET cadence when
+deciding to climb. `blit` reads the shared drawing buffer with `drawImage`
+inside the same frame, and the renderer is created **without**
+`preserveDrawingBuffer`.
+
+**Why:** the obvious signal, the wall-clock gap between frames, is
+self-defeating: rung 2 lengthens that gap deliberately, so a ladder reading its
+own cadence as evidence of load can drop but can never climb back. Judging drops
+and climbs against different budgets is what lets a stage sit correctly at 30fps
+without either oscillating or getting stuck there.
+
+`preserveDrawingBuffer: true` was considered for a different design of rungs 3–4
+— clear only the dirty card rects and let frozen cards' pixels persist, which
+would have saved fragment shading in `underlay` too. Refused: it costs a
+driver-dependent full-frame copy every frame, and it breaks the moment the page
+scrolls, because a persisted rect is in the wrong place as soon as its element
+moves. Reading the buffer inside the same task needs no such flag.
+
+**Implications:** the ladder can be exercised deterministically by adding
+measurable work rather than by finding a slow machine — `stage.syntheticLoadMs`
+busy-waits inside the measured region, the demo exposes it as a slider, and the
+acceptance test uses it. That is the only honest way to assert "engages and
+recovers" in CI, since the ladder reads work time and has no idea where the work
+came from. Measured on this run: forced 26ms of work per frame took the ladder
+from step 0 to step 7 (rung 2, "30 fps") and it returned to step 0 within ~15s
+of the load being removed.
+
+## 2026-09-01 — The stress demo commits no card imagery, and its faces are arithmetic
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `apps/demo` draws its card faces in a canvas from a seeded
+generator. No scan, no fetch of one, no fixture. What is real in it is the
+shipped recipes, their canon snapshots read from `data/foil-canon`, the shipped
+composite and the shipped stage.
+
+**Why:** F2 (source and reference, never copy) is written to cover `data/`, a
+demo and a test fixture in the same breath, and there is nothing to trade away
+here: the texture budget is a function of SIZE and COUNT, and the generated
+faces are the same size and count real scans would be. A blank base also
+exercises the classic composite path (`uScanBase: 0`), which is the one the
+canon files were tuned under.
+
+**Implications:** the demo is runnable by anyone who clones the repository, with
+no credentials, no image proxy and no network beyond the local static server —
+which is also what makes it viable as a CI gate. The acceptance job runs it in
+headless Chromium under SwiftShader as a separate workflow job, so a
+contributor's unit-test failure is not queued behind a browser download.

@@ -15,6 +15,8 @@
     "test": "node --conditions source --test \"packages/*/src/__tests__/*.test.ts\" \"tools/rectifier/*.test.ts\"",
     "reuse": "reuse lint",
     "test:packages": "node --conditions source --test \"packages/*/src/__tests__/*.test.ts\"",
+    "demo": "node tools/parity/serve.mjs --page apps/demo/index.html --port 5200",
+    "acceptance": "node apps/demo/acceptance.mjs",
     "clean": "tsc --build --clean tsconfig.build.json"
   },
   "devDependencies": {

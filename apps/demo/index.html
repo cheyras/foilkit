@@ -1,0 +1,197 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: MIT -->
+<!-- SPDX-FileCopyrightText: 2026 Chey Rasmussen -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>foilkit — the stress demo</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/vendor/three.module.js",
+          "@foilkit/core": "/packages/core/dist/index.js",
+          "@foilkit/patterns": "/packages/patterns/dist/index.js",
+          "@foilkit/stage": "/packages/stage/dist/index.js",
+          "@foilkit/three": "/packages/three/dist/index.js"
+        }
+      }
+    </script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #e8ebf2;
+        --dim: #8a8f99;
+        --panel: rgba(14, 17, 24, 0.92);
+        --line: #232838;
+      }
+      /* The page background lives on <html>, NOT on body or on any tile.
+         `underlay` puts one canvas behind the page and looks through the card
+         elements; an opaque background anywhere over a card's box is a lid on
+         the canvas. This is the CSS discipline the mode asks for, and the demo
+         is the worked example of it. */
+      html {
+        background: #0b0d12;
+        color: var(--ink);
+        font: 13px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      body {
+        margin: 0;
+        background: transparent;
+      }
+
+      /* Positioned, so it paints ABOVE the fixed canvas the stage prepends. */
+      #app {
+        position: relative;
+        z-index: 1;
+        padding: 96px 16px 64px;
+      }
+      #grid {
+        position: relative;
+        margin: 0 auto;
+      }
+
+      .tile {
+        position: absolute;
+        left: 0;
+        top: 0;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        overflow: hidden;
+        /* No background: the card slot is a hole through to the stage. */
+      }
+      .tile .card {
+        position: relative;
+        width: 100%;
+      }
+      /* Chrome stacked over the art — the exact condition `blit` exists for.
+         A counter box you can tap and a footer you can read, both opaque. */
+      .tile .chrome {
+        position: absolute;
+        right: 6px;
+        top: 6px;
+        z-index: 2;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: rgba(10, 12, 18, 0.82);
+        border: 1px solid var(--line);
+        font-variant-numeric: tabular-nums;
+        font-size: 11px;
+      }
+      .tile .foot {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        gap: 6px;
+        padding: 5px 8px;
+        background: #12151d;
+        border-top: 1px solid var(--line);
+        font-size: 11px;
+        color: var(--dim);
+        white-space: nowrap;
+        overflow: hidden;
+      }
+      .tile .foot b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      #controls {
+        position: fixed;
+        z-index: 3;
+        left: 0;
+        right: 0;
+        top: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+        backdrop-filter: blur(6px);
+      }
+      #controls label {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--dim);
+      }
+      select,
+      input,
+      button {
+        background: #161a23;
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 3px 7px;
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+
+      #readout {
+        position: fixed;
+        z-index: 3;
+        right: 10px;
+        bottom: 10px;
+        min-width: 232px;
+        padding: 9px 11px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+        white-space: pre;
+      }
+      #rung {
+        font-weight: 700;
+      }
+      .ok {
+        color: #6ee7a8;
+      }
+      .warn {
+        color: #f0c36d;
+      }
+      .bad {
+        color: #f08a8a;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="controls">
+      <strong>foilkit stage</strong>
+      <label>mode
+        <select id="mode">
+          <option value="underlay">underlay</option>
+          <option value="blit">blit</option>
+        </select>
+      </label>
+      <label>tilt
+        <select id="source">
+          <option value="pointer">pointer</option>
+          <option value="gyro">gyro</option>
+          <option value="scroll">scroll</option>
+          <option value="sweep">sweep</option>
+          <option value="manual">manual</option>
+          <option value="none">none</option>
+        </select>
+      </label>
+      <label>cards
+        <input id="count" type="number" min="1" max="2000" step="50" style="width: 5.5em" />
+      </label>
+      <label>forced load
+        <input id="load" type="range" min="0" max="40" step="1" style="width: 110px" />
+        <span id="loadv">0ms</span>
+      </label>
+      <button id="permission" hidden>enable motion</button>
+      <button id="reset">reset ladder</button>
+    </div>
+
+    <div id="app"><div id="grid"></div></div>
+    <div id="readout">booting…</div>
+
+    <script type="module" src="/apps/demo/main.js"></script>
+  </body>
+</html>

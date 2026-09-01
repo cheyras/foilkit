@@ -14,18 +14,27 @@ trading-card foil behaves, plus a WebGL renderer that makes them visible. When
 a change would improve the renderer at the cost of the measurements' honesty,
 the measurements win.
 
-Planned layout — a pnpm workspace, one repository:
+Layout — a pnpm workspace, one repository:
 
 ```
-packages/{core,three,webgl2,element,react,patterns,resolver,masks}
+packages/{core,patterns,stage,three,resolver,forge}   built
+packages/{webgl2,element,react}                       planned
+apps/demo/       the stage's stress demo and its acceptance run
 data/            measurements — CC0
 docs/            contract documents
 tools/           standalone tooling that predates the extraction
 ```
 
-Nothing under `packages/` exists yet; the extraction lands in a later pass.
-`tools/rectifier/` is live — see its README. It runs on `node --test` with no
-build step and no dependencies, which is the bar tooling here is held to.
+`core`, `patterns` and `stage` import no renderer, and
+`tools/check-independence.mjs` proves it on every push — that is what keeps
+`webgl2` and `element` an addition rather than a rewrite, and what makes "one
+renderer, any number of cards" an architecture every adapter inherits rather
+than a three.js feature.
+
+Everything in `packages/` and `tools/` runs on `node --test` with no build step
+and no dependencies, which is the bar code here is held to. The two
+browser-side instruments — `tools/parity` and `apps/demo` — resolve Playwright
+through `PW_ROOT` rather than adding it to the workspace, for the same reason.
 
 ---
 

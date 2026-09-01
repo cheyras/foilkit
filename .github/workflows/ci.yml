@@ -54,9 +54,11 @@ jobs:
       - name: Typecheck
         run: pnpm run typecheck
 
-      # core and patterns must compile AND RUN with three.js absent. Cheap to
-      # verify, expensive to lose: it is what keeps a WebGL2 or custom-element
-      # adapter an addition rather than a rewrite.
+      # core, patterns and stage must compile AND RUN with three.js absent.
+      # Cheap to verify, expensive to lose: it is what keeps a WebGL2 or
+      # custom-element adapter an addition rather than a rewrite — and it is
+      # what makes "one renderer, any number of cards" an architecture every
+      # adapter inherits rather than a three.js feature.
       - name: Renderer independence
         run: node tools/check-independence.mjs
 
@@ -64,6 +66,70 @@ jobs:
       # contract, sidecars normalise, mask rasters are canonical.
       - name: Data receipt
         run: node --conditions source tools/parity/data-receipt.mjs
+
+  # A SEPARATE JOB on purpose. It needs a browser, a built dist/ and a server,
+  # and it takes minutes rather than seconds — hanging that off the fast suite
+  # would make every contributor wait for a GPU-less Chromium to finish before
+  # learning a unit test failed. Run in parallel, gate the same.
+  acceptance:
+    name: stage acceptance (headless Chromium)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The demo is plain ESM behind an import map and loads packages/*/dist —
+      # there is no bundler in this loop either.
+      - name: Build
+        run: pnpm run build
+
+      # Playwright is deliberately NOT a repository dependency: the library and
+      # the unit suite need none, and this is an instrument rather than a gate
+      # on `pnpm install`. It is installed here, into a directory of its own,
+      # and reached through PW_ROOT — the same contract the parity harness uses.
+      - name: Install Playwright
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw"
+          cd "$RUNNER_TEMP/pw"
+          npm init -y > /dev/null
+          npm i --no-audit --no-fund playwright@1.62.1
+          npx playwright install --with-deps chromium
+
+      # Server and run in ONE step: a background process started in one step and
+      # used by the next is a race the runner does not owe anybody.
+      #
+      # SwiftShader inside, so the run does not depend on a GPU the runner does
+      # not have. The ladder is forced with the demo's synthetic-load knob
+      # rather than by hoping the machine is slow, which is also what makes it
+      # reproducible.
+      - name: Acceptance
+        run: |
+          node tools/parity/serve.mjs --page apps/demo/index.html --port 5200 &
+          SERVER=$!
+          trap 'kill $SERVER 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:5200/ > /dev/null && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:5200/ > /dev/null || { echo 'demo server never came up' >&2; exit 1; }
+          node apps/demo/acceptance.mjs --cards 300
+        env:
+          PW_ROOT: ${{ runner.temp }}/pw/package.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage-acceptance
+          path: apps/demo/.acceptance/
+          if-no-files-found: warn
 
   reuse:
     name: REUSE compliance
