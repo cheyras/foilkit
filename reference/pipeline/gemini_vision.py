@@ -5,9 +5,19 @@
 
 Usage: gemini_vision.py <job.json> [out_override]
 job.json: {"model": "...", "images": ["/abs/path.jpg", ...], "prompt": "...",
-           "out": "gemini-spec.md", "max_tokens": 4000}
+           "out": "gemini-spec.md", "max_tokens": 4000,
+           "captionsFile": "reference-media/.captions/<slug>.txt"}
 `out` (or the CLI override) may be relative — resolved against the CWD, so a
 Ringer worker running this from its task directory lands the output there.
+
+`captionsFile` is OPTIONAL and LOCAL-ONLY. The creator's narration is
+third-party material and is not in this repository (AGENTS.md F2); the prompts
+say so themselves. `reference/fetch-reference.sh --captions` writes YouTube's
+auto-subtitles to the gitignored path above, and when that file exists its text
+is appended to the prompt for this run. When it does not, the job runs on the
+frames alone — a missing caption file is never an error, and caption text never
+travels back into the repository.
+
 Reads the OpenRouter key from OpenCode's auth store; never prints it.
 
 Part of the foil-video-reference corpus (see ../README.md). Every model call
@@ -33,13 +43,30 @@ for p in auth_paths:
 if not key:
     sys.exit("no openrouter key found in opencode auth store")
 
+# The optional local caption slot. Present file -> appended; absent -> ignored.
+prompt = job["prompt"]
+cap_path = job.get("captionsFile")
+if cap_path and os.path.exists(cap_path):
+    captions = open(cap_path, encoding="utf-8").read().strip()
+    if captions:
+        prompt += (
+            "\n\nCreator's narration for this segment, restored locally from the "
+            f"video's auto-generated subtitles ({cap_path}). Treat it as context "
+            "for reading the frames. It is the creator's words, not ours: do not "
+            "reproduce it in your output, quote from it, or copy its phrasing — "
+            "state what it tells you in your own words.\n\n" + captions
+        )
+    print(f"captions: {cap_path} ({len(captions)} chars)")
+elif cap_path:
+    print(f"captions: none at {cap_path} — running on the frames alone")
+
 content = []
 for img in job["images"]:
     b64 = base64.b64encode(open(img, "rb").read()).decode()
     ext = "jpeg" if img.lower().endswith((".jpg", ".jpeg")) else "png"
     content.append({"type": "image_url",
                     "image_url": {"url": f"data:image/{ext};base64,{b64}"}})
-content.append({"type": "text", "text": job["prompt"]})
+content.append({"type": "text", "text": prompt})
 
 payload = {
     "model": job["model"],

@@ -138,8 +138,16 @@ branches could be deleted.
 embedded the full auto-caption block for their video segment — considerably more
 transcript than the notes carried, and not named in the original rule. The
 rule's reason covers it exactly, so all 39 were stripped and each carries a note
-saying what was there and how `fetch-reference.sh` puts it back locally. The
-prompt rubric itself, which is the part that is ours, is untouched.
+saying what was there and how to restore it locally. The prompt rubric itself,
+which is the part that is ours, is untouched.
+
+**Corrected 2026-09-01.** That note originally said `fetch-reference.sh` "writes
+the caption block back into this slot", and no such capability existed. The 39
+prompts and `reference/README.md` now say what is true: the captions were
+removed from the repository, `fetch-reference.sh --captions` restores them to a
+gitignored local path for personal analysis, and each job's `captionsFile` field
+is what `pipeline/gemini_vision.py` reads when the file is present. See the
+closeout entry in `DECISIONS.md`.
 
 ## Reference corpus and `MANIFEST.json`
 

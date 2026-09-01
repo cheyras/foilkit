@@ -16,8 +16,26 @@
 #   reference/fetch-reference.sh --list           # what would be fetched
 #   reference/fetch-reference.sh --record         # also fill MANIFEST's source tier
 #   reference/fetch-reference.sh --keep-video     # do not delete the downloads
+#   reference/fetch-reference.sh --captions       # also slice the auto-subtitles
+#   reference/fetch-reference.sh --captions-only  # the subtitles and nothing else
 #
 # Requires: yt-dlp, ffmpeg, node (for the manifest reader). Nothing else.
+#
+# ── THE CAPTIONS ───────────────────────────────────────────────────────────
+#
+# The creator's narration is third-party material exactly as the pixels are,
+# and it is not in git either — the auto-caption block every notes.md and every
+# pipeline/jobs/*.json prompt used to carry was removed when this corpus left
+# DeckPal. `--captions` is the same bargain as the frames: it fetches YouTube's
+# AUTO-GENERATED subtitles with yt-dlp and slices each pattern's chapter range
+# into `reference-media/.captions/<slug>.txt`, which is gitignored along with
+# the rest of reference-media/. That copy is for your own local analysis. It is
+# not a repository artifact and must not be committed, pasted into a notes.md,
+# or quoted into the evidence JSONs.
+#
+# `pipeline/gemini_vision.py` reads it when it is there: a job whose
+# `captionsFile` names an existing file gets that text appended to its prompt,
+# and runs on the frames alone when it does not.
 #
 # ── THE ONE PARAMETER THAT WAS NEVER WRITTEN DOWN ──────────────────────────
 #
@@ -60,6 +78,8 @@ CLIP_HEIGHT=360
 LIST_ONLY=0
 RECORD=0
 KEEP_VIDEO=0
+CAPTIONS=0
+CAPTIONS_ONLY=0
 WANTED=()
 
 for a in "$@"; do
@@ -67,7 +87,9 @@ for a in "$@"; do
     --list) LIST_ONLY=1 ;;
     --record) RECORD=1 ;;
     --keep-video) KEEP_VIDEO=1 ;;
-    -h|--help) sed -n '3,50p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    --captions) CAPTIONS=1 ;;
+    --captions-only) CAPTIONS=1; CAPTIONS_ONLY=1 ;;
+    -h|--help) sed -n '3,64p' "${BASH_SOURCE[0]}"; exit 0 ;;
     --*) echo "unknown option: $a" >&2; exit 2 ;;
     *) WANTED+=("$a") ;;
   esac
@@ -75,7 +97,11 @@ done
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "missing dependency: $1" >&2; exit 3; }; }
 need node
-[ "$LIST_ONLY" = 1 ] || { need yt-dlp; need ffmpeg; }
+if [ "$LIST_ONLY" != 1 ]; then
+  need yt-dlp
+  # ffmpeg cuts frames and clips; captions need only yt-dlp and node.
+  [ "$CAPTIONS_ONLY" = 1 ] || need ffmpeg
+fi
 
 [ -f "$MANIFEST" ] || { echo "no MANIFEST.json — run: node reference/manifest.mjs build" >&2; exit 4; }
 
@@ -113,7 +139,10 @@ mkdir -p "$MEDIA" "$WORK"
 # excerpt is a narrower excerpt.
 declare -A HAVE=()
 fetch_source() {
-  local id="$1" out="$WORK/$id.mp4"
+  # Two statements, not one `local a=… b=$a`: under `set -u` bash 5.2 does not
+  # see the first name as assigned yet while evaluating the second.
+  local id="$1"
+  local out="$WORK/$id.mp4"
   [ -n "${HAVE[$id]:-}" ] && return 0
   if [ ! -f "$out" ]; then
     echo "==> downloading $id"
@@ -156,15 +185,99 @@ cut_clip() {
 }
 
 COUNT=0
-while IFS=$'\t' read -r slug src f0 f1 c0 c1; do
-  fetch_source "$src"
-  dir="$MEDIA/$slug"
-  mkdir -p "$dir"
-  echo "==> $slug  ($src  ${f0}s-${f1}s)"
-  cut_frames "${HAVE[$src]}" "$dir" "$f0" "$f1"
-  [ -n "$c0" ] && cut_clip "${HAVE[$src]}" "$dir" "$c0" "$c1"
-  COUNT=$((COUNT + 1))
-done < <(plan)
+if [ "$CAPTIONS_ONLY" != 1 ]; then
+  while IFS=$'\t' read -r slug src f0 f1 c0 c1; do
+    fetch_source "$src"
+    dir="$MEDIA/$slug"
+    mkdir -p "$dir"
+    echo "==> $slug  ($src  ${f0}s-${f1}s)"
+    cut_frames "${HAVE[$src]}" "$dir" "$f0" "$f1"
+    [ -n "$c0" ] && cut_clip "${HAVE[$src]}" "$dir" "$c0" "$c1"
+    COUNT=$((COUNT + 1))
+  done < <(plan)
+fi
+
+# ── 2b. the captions, on request ───────────────────────────────────────────
+# Local-only, gitignored, and derived from the same sources by the same rule as
+# the frames: yt-dlp's AUTO-GENERATED subtitles, sliced to each pattern's
+# chapter range (the range MANIFEST.json records, which is what the notes.md
+# heading says). No caption text may travel back into the repository.
+CAPTION_COUNT=0
+if [ "$CAPTIONS" = 1 ]; then
+  CAPDIR="$MEDIA/.captions"
+  mkdir -p "$CAPDIR" "$WORK"
+
+  # Every pattern that HAS a chapter range, media or not — the interlude has
+  # narration and no frames, and it is the layer model the shaders imitate.
+  caption_plan() {
+    node -e '
+      const m = require(process.argv[1]);
+      const want = process.argv.slice(2);
+      const sec = (t) => t.trim().split(":").map(Number).reduce((a, x) => a * 60 + x, 0);
+      for (const [slug, d] of Object.entries(m.derived)) {
+        if (!d.chapter || !d.chapter.includes("-")) continue;
+        if (want.length && !want.includes(slug)) continue;
+        const [a, b] = d.chapter.split("-");
+        process.stdout.write([slug, d.source, sec(a), sec(b)].join("\t") + "\n");
+      }
+    ' "$MANIFEST" "${WANTED[@]+"${WANTED[@]}"}"
+  }
+
+  declare -A SUBS=()
+  fetch_subs() {
+    local id="$1"
+    local stem="$WORK/$id.subs"
+    [ -n "${SUBS[$id]:-}" ] && return 0
+    local vtt
+    vtt="$(ls "$stem".*.vtt 2>/dev/null | head -1 || true)"
+    if [ -z "$vtt" ]; then
+      echo "==> auto-subtitles for $id"
+      # --skip-download: no video, no audio, just the caption track.
+      yt-dlp \
+        --no-playlist --skip-download \
+        --write-auto-subs --sub-langs 'en.*' --sub-format vtt \
+        --output "$stem" \
+        "https://www.youtube.com/watch?v=$id" || true
+      vtt="$(ls "$stem".*.vtt 2>/dev/null | head -1 || true)"
+    fi
+    [ -n "$vtt" ] || { echo "    no auto-subtitles available for $id — skipping" >&2; return 1; }
+    SUBS[$id]="$vtt"
+  }
+
+  # WebVTT -> plain text for one time range. yt-dlp's auto-subs are a rolling
+  # two-line karaoke feed with inline <c> timing spans, so strip the markup and
+  # drop consecutive repeats; what is left reads as prose.
+  slice_vtt() {
+    node -e '
+      const fs = require("fs");
+      const [file, from, to] = [process.argv[1], Number(process.argv[2]), Number(process.argv[3])];
+      const ts = (s) => { const p = s.split(":").map(Number); return p.reduce((a, x) => a * 60 + x, 0); };
+      const out = [];
+      let cueStart = null;
+      for (const raw of fs.readFileSync(file, "utf8").split(/\r?\n/)) {
+        const m = raw.match(/^(\d+:\d+:\d+\.\d+)\s+-->\s+(\d+:\d+:\d+\.\d+)/);
+        if (m) { cueStart = ts(m[1]); continue; }
+        if (cueStart === null || cueStart < from || cueStart > to) continue;
+        const line = raw.replace(/<[^>]*>/g, "").trim();
+        if (!line || line === out[out.length - 1]) continue;
+        out.push(line);
+      }
+      process.stdout.write(out.join("\n") + (out.length ? "\n" : ""));
+    ' "$1" "$2" "$3"
+  }
+
+  while IFS=$'\t' read -r slug src t0 t1; do
+    fetch_subs "$src" || continue
+    slice_vtt "${SUBS[$src]}" "$t0" "$t1" > "$CAPDIR/$slug.txt"
+    if [ -s "$CAPDIR/$slug.txt" ]; then
+      echo "==> captions $slug  ($src  ${t0}s-${t1}s)"
+      CAPTION_COUNT=$((CAPTION_COUNT + 1))
+    else
+      rm -f "$CAPDIR/$slug.txt"
+      echo "    no caption cues in range for $slug" >&2
+    fi
+  done < <(caption_plan)
+fi
 
 # ── 3. the exact tier ──────────────────────────────────────────────────────
 # Only with --record, and only from a download that actually happened: this is
@@ -191,5 +304,10 @@ if [ "$KEEP_VIDEO" != 1 ]; then
 fi
 
 echo
-echo "$COUNT pattern(s) -> $MEDIA"
-node "$HERE/manifest.mjs" validate --media "$MEDIA"
+if [ "$CAPTIONS" = 1 ]; then
+  echo "$CAPTION_COUNT caption file(s) -> $MEDIA/.captions (local only — never commit these)"
+fi
+if [ "$CAPTIONS_ONLY" != 1 ]; then
+  echo "$COUNT pattern(s) -> $MEDIA"
+  node "$HERE/manifest.mjs" validate --media "$MEDIA"
+fi

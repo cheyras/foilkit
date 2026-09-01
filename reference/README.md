@@ -30,8 +30,19 @@ were not.
 `pipeline/` holds the scripts and job files that produced the specs via
 OpenRouter (`google/gemini-3.1-pro-preview`); every model call ran as a verified
 Ringer task. The narration block each job prompt embedded is likewise not
-carried — `fetch-reference.sh` writes it back into that slot locally, from a
-source the operator fetched themselves.
+carried: those captions were **removed from the repository**. They are the
+creator's words exactly as the frames are the creator's pixels, and a CC0
+dataset may not carry either.
+
+They are restorable **locally, and for personal analysis only**.
+`fetch-reference.sh --captions` fetches the sources' auto-generated subtitles
+with yt-dlp and slices each pattern's chapter range into
+`reference-media/.captions/<slug>.txt`, gitignored along with the rest of
+`reference-media/`. Each of the 39 job files names that path in a `captionsFile`
+field, and `pipeline/gemini_vision.py` appends the text to the prompt when the
+file is present and runs on the frames alone when it is not. Nothing written
+into `.captions/` may travel back into git — not into a `notes.md`, not into a
+spec, and not into the evidence JSONs.
 
 `_interlude-what-is-a-holo/` is the video's production-physics segment. No frames
 were ever cut from it; the notes there are the layer model the shaders imitate.
@@ -43,6 +54,8 @@ node reference/manifest.mjs build --media <existing-corpus>   # (already done)
 reference/fetch-reference.sh --list                           # what it would fetch
 reference/fetch-reference.sh                                  # into reference-media/
 reference/fetch-reference.sh --record                         # + the source hashes
+reference/fetch-reference.sh --captions                       # + local caption slices
+reference/fetch-reference.sh --captions-only                  # captions, no video cut
 ```
 
 `reference-media/` is gitignored. `MANIFEST.json` is what says whether a

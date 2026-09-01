@@ -18,3 +18,6 @@ Thumbs.db
 # Reference media is cited, never vendored — see NOTICE-CONVENTIONS.md.
 # The fetch script reproduces it locally; the pixels do not ship.
 reference-media/
+
+# Python bytecode from reference/pipeline/*.py
+__pycache__/
