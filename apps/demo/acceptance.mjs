@@ -264,13 +264,34 @@ const ladder = { before: null, loaded: null, recovered: null }
     `pixel ratio ${basePixelRatio.toFixed(2)} -> ${ladder.loaded.pixelRatio.toFixed(2)} at rung ${ladder.loaded.rung}`,
   )
 
+  // Recovery is WATCHED, not counted in frames. The ladder climbs on clear
+  // headroom in about a second and a half a step, and probes its way out of
+  // the dead band on a much longer clock — a fixed frame budget therefore
+  // measures how fast the machine renders rather than whether the ladder
+  // recovers, and on a software rasteriser those are wildly different numbers.
   await page.evaluate(() => window.foilkitDemo.setLoad(0))
-  await settle(900)
+  let best = ladder.loaded.step
+  let lastGain = Date.now()
+  const deadline = Date.now() + 150000
+  while (Date.now() < deadline) {
+    await page.waitForTimeout(1000)
+    const s = await stats()
+    if (s.step < best) {
+      best = s.step
+      lastGain = Date.now()
+    }
+    if (best <= ladder.before) break
+    // Long enough to cover the probe interval and its first doubling. Past
+    // that, the ladder has decided this machine cannot hold the step above,
+    // which is an answer rather than a hang.
+    if (Date.now() - lastGain > 25000) break
+  }
   ladder.recovered = await stats()
+  ladder.recoveredInMs = Date.now() - (deadline - 150000)
   check(
     'and recovers to where this machine rests',
     ladder.recovered.step < ladder.loaded.step && ladder.recovered.step <= ladder.before + 2,
-    `step ${ladder.loaded.step} -> ${ladder.recovered.step} (rung ${ladder.recovered.rung}), resting step was ${ladder.before}`,
+    `step ${ladder.loaded.step} -> ${ladder.recovered.step} (rung ${ladder.recovered.rung}) in ${(ladder.recoveredInMs / 1000).toFixed(0)}s, resting step was ${ladder.before}`,
   )
 }
 
