@@ -1,0 +1,1029 @@
+{
+  "$doc": [
+    "MANIFEST.json — what the reference corpus IS, so a re-fetch can be checked.",
+    "",
+    "The pixels are not in this repository and never will be: this is third-party",
+    "footage, cited rather than vendored (AGENTS.md F2). fetch-reference.sh",
+    "reproduces it locally into reference-media/, and this file is what tells you",
+    "whether the reproduction is the same corpus.",
+    "",
+    "TWO TIERS. Source videos are EXACT (id, duration, sha256) so a re-fetch that",
+    "resolves to different content fails loudly. Derived frames and clips are",
+    "STRUCTURAL (count, dimensions, the second-range they were cut from), because",
+    "different yt-dlp/ffmpeg versions re-encode differently and a byte-hash gate",
+    "over derived media would fail on a CORRECT fetch.",
+    "",
+    "The source tier is UNMEASURED and says so. The offline archive holds the",
+    "derived frames and clips; it never held the source videos, which were fetched,",
+    "cut from and discarded under the media budget. Inventing a duration or a hash",
+    "now would be worse than admitting there is not one — run",
+    "fetch-reference.sh --record to fill them in from a real fetch.",
+    "",
+    "FIVE source videos, not six. A sixth id (TjlU_WKhS8w) appears in the resolver",
+    "evidence files as a CITATION for a usage claim; no frames or clip were ever",
+    "cut from it, so it is not a source of this corpus and is not listed here."
+  ],
+  "version": 1,
+  "generatedAt": "2026-09-01",
+  "frameWidthPx": 480,
+  "clipHeightPx": 360,
+  "clipAudio": false,
+  "sources": {
+    "wQ2TvnHVdys": {
+      "url": "https://youtu.be/wQ2TvnHVdys",
+      "title": "All 39 Pokemon Card Holo Patterns Explained",
+      "creator": "Sleeve No Card Behind",
+      "durationSec": null,
+      "sha256": null,
+      "measured": false
+    },
+    "WjuDazguHnE": {
+      "url": "https://youtu.be/WjuDazguHnE",
+      "title": "Charizard 5/18 - Pokemon Detective Pikachu",
+      "creator": "Pokemon Holo",
+      "durationSec": null,
+      "sha256": null,
+      "measured": false
+    },
+    "8CvE7sXbJOo": {
+      "url": "https://youtu.be/8CvE7sXbJOo",
+      "title": "Pokemon TCG Showcase I review Turbopatch Gold Secretrare 200/189 Darkness Ablaze",
+      "creator": "M W C G",
+      "durationSec": null,
+      "sha256": null,
+      "measured": false
+    },
+    "_cyddOc1SMU": {
+      "url": "https://youtu.be/_cyddOc1SMU",
+      "title": "The Entire History of Shiny Pokémon Cards",
+      "creator": "Sleeve No Card Behind",
+      "durationSec": null,
+      "sha256": null,
+      "measured": false
+    },
+    "wRDwJyv-aP8": {
+      "url": "https://youtu.be/wRDwJyv-aP8",
+      "title": "Pulling Arceus Vstar 123/172 from Brilliant Stars Pokemon TCG",
+      "creator": "Ant's Collectables",
+      "durationSec": null,
+      "sha256": null,
+      "measured": false
+    }
+  },
+  "derived": {
+    "_interlude-what-is-a-holo": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "8:35 - 11:11",
+      "frames": null,
+      "clip": null,
+      "noMedia": true,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "ace-spec": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "19:32 - 20:11",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1172.3,
+        "toSec": 1180
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1173,
+        "toSec": 1176.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "acid-wash": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "24:29 - 25:02",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1469.5,
+        "toSec": 1477.5
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1470.5,
+        "toSec": 1474
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "big-glitter": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "3:19 - 4:20",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 199,
+        "toSec": 204.5
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 199.5,
+        "toSec": 203
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "confetti": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "23:59 - 24:29",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1441.5,
+        "toSec": 1449.5
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1442.5,
+        "toSec": 1446
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "cosmos": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "0:45 - 1:36",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 45.3,
+        "toSec": 49.6
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 45.6,
+        "toSec": 49.1
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "cosmos-ii-pixel": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "11:11 - 12:34",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 671.5,
+        "toSec": 678.5
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 672.5,
+        "toSec": 676
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "cosmos-iii-smooth": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "12:34 - 13:24",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 755.5,
+        "toSec": 763
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 756.5,
+        "toSec": 760
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "cracked-ice": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "5:07 - 5:41",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 307.5,
+        "toSec": 313.5
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 308,
+        "toSec": 311.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "crosshatch": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "23:08 - 23:47",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1388.5,
+        "toSec": 1396
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1389.5,
+        "toSec": 1393
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "detective-pikachu": {
+      "source": "WjuDazguHnE",
+      "chapter": null,
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 3.5,
+        "toSec": 11.5
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 5,
+        "toSec": 8.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "diagonal-sheen-left": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "15:34 - 15:49",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 934.2,
+        "toSec": 941.5
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 935,
+        "toSec": 938.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "diagonal-sheen-right": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "15:12 - 15:34",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 912.2,
+        "toSec": 919.5
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 913,
+        "toSec": 916.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "disco": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "25:02 - 25:46",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1502.5,
+        "toSec": 1512
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1503.5,
+        "toSec": 1507
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "energy-symbols": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "4:20 - 4:54",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 260.5,
+        "toSec": 268
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 261.5,
+        "toSec": 265
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "energy-symbols-ii": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "4:54 - 5:07",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 296,
+        "toSec": 305
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 298,
+        "toSec": 301.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "ex-emerald": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "6:10 - 6:31",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 375,
+        "toSec": 383
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 376.5,
+        "toSec": 380
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "ex-starfoil": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "22:15 - 22:48",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1335.5,
+        "toSec": 1343.5
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1336.5,
+        "toSec": 1340
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "fireworks": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "1:36 - 2:23",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 97,
+        "toSec": 104
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 98,
+        "toSec": 101.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "gold-secret": {
+      "source": "8CvE7sXbJOo",
+      "chapter": null,
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 15,
+        "toSec": 23
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 17,
+        "toSec": 20.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "horizontal-sheen": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "15:49 - 16:01",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 949.5,
+        "toSec": 957
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 950.5,
+        "toSec": 954
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "mirror": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "2:23 - 2:53",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 156.5,
+        "toSec": 166
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 158,
+        "toSec": 161.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "pinwheel": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "5:41 - 6:10",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 341.5,
+        "toSec": 348.5
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 343,
+        "toSec": 346.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "pokeball-hologram": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "6:31 - 7:49",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 391.5,
+        "toSec": 399
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 392.5,
+        "toSec": 396
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "pokeball-masterball": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "20:11 - 20:20",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1211.2,
+        "toSec": 1218.5
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1212,
+        "toSec": 1215.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "prism": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "16:28 - 17:19",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 988.5,
+        "toSec": 996
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 989.5,
+        "toSec": 993
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "prismatic-pokeball": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "20:20 - 20:56",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1220.5,
+        "toSec": 1228
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1221.5,
+        "toSec": 1225
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "radiant": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "18:28 - 18:55",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1112.3,
+        "toSec": 1115.8
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1112.3,
+        "toSec": 1115.8
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "radiant-collection-dots": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "20:56 - 22:15",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1256.5,
+        "toSec": 1264.5
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1257.5,
+        "toSec": 1261
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "rainbow-glitter": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "18:55 - 19:21",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1135.3,
+        "toSec": 1142
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1136,
+        "toSec": 1139.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "rainbow-glitter-sheen": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "19:21 - 19:32",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1161.2,
+        "toSec": 1168
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1162,
+        "toSec": 1165.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "rainbow-mirror": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "2:53 - 3:19",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 173.5,
+        "toSec": 181
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 174.5,
+        "toSec": 178
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "sequin": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "22:48 - 23:08",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1368.3,
+        "toSec": 1374.5
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1369,
+        "toSec": 1372.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "shiny-vault": {
+      "source": "_cyddOc1SMU",
+      "chapter": "18:19 - 19:30",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1158,
+        "toSec": 1166
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1160,
+        "toSec": 1163.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "starlight": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "0:00 - 0:45",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 23,
+        "toSec": 30.5
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 24,
+        "toSec": 27.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "starlight-ii": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "17:19 - 18:13",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1039.5,
+        "toSec": 1047
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1040.5,
+        "toSec": 1044
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "striped-vertical-sheen": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "16:01 - 16:28",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 961.5,
+        "toSec": 969
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 962.5,
+        "toSec": 966
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "tcg-classic": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "23:47 - 23:59",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1427.2,
+        "toSec": 1434
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1428,
+        "toSec": 1431.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "tinsel": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "13:24 - 14:02",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 813.5,
+        "toSec": 821
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 814.5,
+        "toSec": 818
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "tinsel-ii": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "14:02 - 15:12",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 843,
+        "toSec": 850
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 844,
+        "toSec": 847.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "vertical-sheen": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "8:20 - 8:35",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 500.2,
+        "toSec": 507
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 500.5,
+        "toSec": 504
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "vertical-sheen-rainbow": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "7:49 - 8:20",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 469.3,
+        "toSec": 475
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 470,
+        "toSec": 473.5
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "vstar-pearl": {
+      "source": "wRDwJyv-aP8",
+      "chapter": null,
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 34.5,
+        "toSec": 42.5
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 36.5,
+        "toSec": 40
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    },
+    "water-web": {
+      "source": "wQ2TvnHVdys",
+      "chapter": "18:13 - 18:28",
+      "frames": {
+        "count": 8,
+        "width": 480,
+        "sizes": [
+          "480x270"
+        ],
+        "fromSec": 1093.2,
+        "toSec": 1100
+      },
+      "clip": {
+        "present": true,
+        "heightPx": 360,
+        "audio": false,
+        "fromSec": 1093.5,
+        "toSec": 1097
+      },
+      "noMedia": false,
+      "measuredAgainst": "offline archive 2026-08-31"
+    }
+  }
+}
