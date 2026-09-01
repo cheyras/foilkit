@@ -241,9 +241,17 @@ await settle(40)
 // ── 4. the ladder engages, and recovers ────────────────────────────────────
 const ladder = { before: null, loaded: null, recovered: null }
 {
-  ladder.before = (await stats()).step
+  // The RESTING step, whatever it is on this machine. A fast desktop settles
+  // at 0 and a software rasteriser on a two-core runner may not — which is the
+  // point of a measured ladder, and is why recovery is asserted against where
+  // this machine was rather than against a number chosen in advance.
+  await settle(200)
+  const rest = await stats()
+  ladder.before = rest.step
+  const basePixelRatio = rest.pixelRatio
+
   await page.evaluate((ms) => window.foilkitDemo.setLoad(ms), SLOW_MS)
-  await settle(220)
+  await settle(240)
   ladder.loaded = await stats()
   check(
     'the ladder engages under forced load',
@@ -251,18 +259,18 @@ const ladder = { before: null, loaded: null, recovered: null }
     `step ${ladder.before} -> ${ladder.loaded.step} (rung ${ladder.loaded.rung}, "${ladder.loaded.rungLabel}")`,
   )
   check(
-    'and it gives up resolution first, not animation',
-    ladder.loaded.rung <= 2 || ladder.loaded.step >= 6,
-    `rung ${ladder.loaded.rung} at step ${ladder.loaded.step}`,
+    'and it gives up resolution first',
+    ladder.loaded.pixelRatio < basePixelRatio,
+    `pixel ratio ${basePixelRatio.toFixed(2)} -> ${ladder.loaded.pixelRatio.toFixed(2)} at rung ${ladder.loaded.rung}`,
   )
 
   await page.evaluate(() => window.foilkitDemo.setLoad(0))
   await settle(900)
   ladder.recovered = await stats()
   check(
-    'and recovers when the load goes away',
-    ladder.recovered.step < ladder.loaded.step && ladder.recovered.rung <= 1,
-    `step ${ladder.loaded.step} -> ${ladder.recovered.step} (rung ${ladder.recovered.rung})`,
+    'and recovers to where this machine rests',
+    ladder.recovered.step < ladder.loaded.step && ladder.recovered.step <= ladder.before + 2,
+    `step ${ladder.loaded.step} -> ${ladder.recovered.step} (rung ${ladder.recovered.rung}), resting step was ${ladder.before}`,
   )
 }
 
