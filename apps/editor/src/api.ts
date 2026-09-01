@@ -703,28 +703,19 @@ export const foilApi = {
     return (await res.json()) as FoilCanonEntry
   },
 
-  /**
-   * Per-card overrides. Staged sessions carry them; there is no server route,
-   * because `data/foil-overrides/` has never existed and a PUT with no reader
-   * would be a promise rather than a feature. A writer-capability holder's
-   * adjusted uniforms currently live in the recipe JSON they copy out.
-   */
-  putOverride: async (
-    _cardId: string,
-    _variantId: number,
-    _body: {
-      patternId: string
-      patternOverride: string | null
-      uniforms: Record<string, number>
-      baseline: { canonSavedAt: string | null }
-    },
-  ): Promise<FoilOverrideEntry> => {
-    throw new Error('per-card overrides are staged, not written — data/foil-overrides has no records yet')
-  },
-
-  deleteOverride: async (_cardId: string, _variantId: number): Promise<void> => {
-    /* nothing to delete: see putOverride */
-  },
+  // `putOverride`/`deleteOverride` ARE GONE, not stubbed.
+  //
+  // `putOverride` threw unconditionally — there is no `/api/override` route,
+  // because `data/foil-overrides/` has never held a record and a PUT with no
+  // reader would be a promise rather than a feature. But it was still WIRED to
+  // a "Save card overrides" button, so the one thing it reliably produced was a
+  // red "save failed" that blamed a server for refusing a request it never
+  // received. A client method that can only throw is a trap for the next
+  // caller, so the method went with the button (FoilLab.tsx, `overrideDiff`).
+  //
+  // Per-card overrides are SESSION CONTENTS: `stageMask` writes them into the
+  // staged session, and `getOverride` above still reads a committed one if the
+  // corpus ever grows any.
 
   // ── Deletions: the writer path only ──────────────────────────
   //

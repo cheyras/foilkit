@@ -72,15 +72,14 @@ let overrides = new Map()
 /**
  * Set by a test to make matching artifacts answer SLOWLY.
  *
- * Not a flourish: the deep-link bug below is a RACE, and a localhost static
- * server cannot lose it. On the deployed site the card-detail shard is a cold
- * CDN fetch while `catalog/index.json` is already warm, so the picker's
- * auto-select chain finishes first and overwrites the deep link. Every file
- * here answers in under a millisecond, so the chain never gets the chance and
- * the assertions pass against the bug — which is the worst outcome a regression
- * test has, and was measured to be exactly what happened before this existed.
- * Delaying the artifacts that are cold in production is what makes the race
- * REPRODUCIBLE rather than lucky.
+ * Not a flourish: two of the bugs this run exists to catch are races that a
+ * localhost static server cannot lose. On the deployed site the card-detail
+ * shard is a cold CDN fetch while `catalog/index.json` is already warm, so the
+ * picker's auto-select chain finishes first and overwrites the deep link. Every
+ * file here answers in under a millisecond, so the chain never gets the chance
+ * and the test passes against the bug — which is the worst outcome a regression
+ * test has. Delaying the specific artifacts that are cold in production is what
+ * makes the race REPRODUCIBLE rather than lucky.
  */
 let slowUrls = null
 const SLOW_MS = 600
@@ -171,6 +170,41 @@ const FAKE_SCAN = (() => {
   return encodePng({ width: SCAN_W, height: SCAN_H, rgba })
 })()
 
+/**
+ * Press "Provisional diff" and return the numbers it prints, as one string.
+ *
+ * The numbers are a fingerprint of the CANVAS — the editor rasterizes the era
+ * rule and diffs the live alpha against it — which is what makes them the right
+ * thing to compare across a reload. Every digit on the line is captured rather
+ * than parsed into fields: a comparison that decides which digits matter is a
+ * comparison that can be made to pass.
+ */
+async function readProvisional(page) {
+  await page.getByRole('button', { name: 'Provisional diff' }).click()
+  const line = page.locator('[data-testid="provisional-diff"]')
+  await line.waitFor({ timeout: 10000 })
+  const text = await line.innerText()
+  const nums = text.match(/[\d][\d.,]*/g)
+  return nums === null ? null : nums.join('|')
+}
+
+/** Every staged session in the page's IndexedDB. */
+function readSessions(page) {
+  return page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const req = indexedDB.open('foilkit-staging', 1)
+        req.onsuccess = () => {
+          const tx = req.result.transaction('sessions', 'readonly')
+          const all = tx.objectStore('sessions').getAll()
+          all.onsuccess = () => resolve(all.result)
+          all.onerror = () => resolve([])
+        }
+        req.onerror = () => resolve([])
+      }),
+  )
+}
+
 /** setId from a cardId — everything before the last `-`, the bake's own rule. */
 const setIdOf = (cardId) => cardId.slice(0, cardId.lastIndexOf('-'))
 
@@ -259,6 +293,41 @@ try {
   await page.mouse.up()
   await page.waitForTimeout(200)
 
+  // …and an ERASE stroke, which is not decoration.
+  //
+  // The brush stroke above lands INSIDE the committed mask, where it changes
+  // partial alpha and nothing else — and the provisional diff is thresholded at
+  // alpha ≥ 128, so it reports the identical numbers for the drawn canvas and
+  // for plain upstream (measured: 66.4% / +0 / −39,869 either way). An assertion
+  // that the numbers survive a reload would then have held while the pixels were
+  // being destroyed, which is the exact failure mode it exists to catch. Erasing
+  // removes covered pixels, and a change the diff can measure is the only kind
+  // this test can pin.
+  await page.getByRole('button', { name: 'Erase', exact: true }).first().click()
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.32)
+  await page.mouse.down()
+  for (let i = 1; i <= 16; i++) {
+    await page.mouse.move(box.x + box.width * (0.3 + i * 0.025), box.y + box.height * 0.32)
+  }
+  await page.mouse.up()
+  await page.getByRole('button', { name: 'Brush', exact: true }).first().click()
+  await page.waitForTimeout(200)
+
+  // WHAT THE CONTRIBUTOR JUST DREW, as a number, read HERE — before anything is
+  // staged.
+  //
+  // Because staging was itself one of the ways the pixels got destroyed:
+  // `staging.save` re-reads the session store, the store's list was a dependency
+  // of the mask loader, so pressing "Save to session" re-ran the upstream fetch
+  // and painted over the very canvas it had just written. Taking the reading
+  // afterwards compares upstream against upstream and calls it stable.
+  const provisionalNow = await readProvisional(page)
+  ok(
+    'the provisional diff reports numbers for the drawn mask',
+    provisionalNow !== null,
+    String(provisionalNow),
+  )
+
   // ── 4. Save to the session ───────────────────────────────────────────────
   const save = page.getByRole('button', { name: /Save to session/ })
   ok('an unsigned-in visitor is offered the staging path, not a sign-in wall', (await save.count()) === 1)
@@ -279,7 +348,7 @@ try {
       }),
   )
   ok('the session landed in IndexedDB', staged.length === 1, `${staged.length} session(s)`)
-  const s = staged[0] ?? {}
+  let s = staged[0] ?? {}
   ok('it is keyed by card and variant', s.id === `mask:base1-4:${variantId}`, String(s.id))
   ok('it carries pixels', typeof s.png === 'string' && s.png.startsWith('data:image/png;base64,'))
   ok('it pins the parent sha at seed time', typeof s.seed?.parentSha256 === 'string', String(s.seed?.parentSha256))
@@ -292,6 +361,13 @@ try {
     'the undo stack is NOT persisted — the session is kilobytes, not megabytes',
     JSON.stringify(s).length < 400_000,
     `${JSON.stringify(s).length} bytes`,
+  )
+
+  // Staging must not have moved the canvas either — same numbers, still.
+  ok(
+    'staging the session does not repaint the canvas from upstream',
+    (await readProvisional(page)) === provisionalNow,
+    String(provisionalNow),
   )
 
   // ── 5. It survives a reload ──────────────────────────────────────────────
@@ -311,6 +387,44 @@ try {
   ok('the session survives a reload', afterReload.length === 1 && afterReload[0].png === s.png)
   await page.waitForSelector('text=/Staged \\d/', { timeout: 15000 })
   ok('the reloaded page shows the staged session', true)
+
+  // ── 5b. THE STAGED PIXELS SURVIVE THE RELOAD, NOT JUST THE RECORD ────────
+  //
+  // The regression this exists for: the session record came back and the
+  // PIXELS did not. `getMask` fetched the committed upstream mask and drew it
+  // over the canvas, unguarded, while the staged restore had already latched
+  // and would not run again — a network fetch beats a data-URL decode every
+  // time. The record survived, the contribution did not, and the next "Save to
+  // session" wrote the upstream pixels over it. Measured live at 61.1% → 66.4%
+  // agreement, which is exactly the upstream mask's own number.
+  //
+  // ASSERT THE NUMBERS, NOT THE EXISTENCE OF A SESSION. "A session is still
+  // there" was already true while this bug was destroying work — it is what
+  // made the bug invisible.
+  // SETTLE FIRST. Reading the canvas the instant the session badge appears is
+  // how this assertion passes against the bug: the staged restore is a local
+  // decode and lands quickly, the upstream fetch that clobbers it lands a beat
+  // later. Give the clobber every chance to happen before measuring.
+  await page.waitForTimeout(2500)
+  const provisionalAfter = await readProvisional(page)
+  ok(
+    'the provisional diff is UNCHANGED across a reload — the staged pixels own the canvas',
+    provisionalAfter !== null && provisionalAfter === provisionalNow,
+    `before ${provisionalNow} / after ${provisionalAfter}`,
+  )
+
+  // …and staging again writes back what was restored, not what upstream holds.
+  await page.getByRole('button', { name: /Save to session/ }).click()
+  await page.waitForSelector('text=/Staged ✓|Staged 20/', { timeout: 10000 })
+  const restaged = await readSessions(page)
+  ok(
+    'saving to the session after a reload does not overwrite the staged PNG with upstream',
+    restaged.length === 1 && restaged[0].png === s.png,
+    restaged.length === 1 ? `${(restaged[0].png ?? '').length} vs ${(s.png ?? '').length} bytes` : 'no session',
+  )
+  // The re-save bumped `updatedAt`, so the export/import round trip below has to
+  // compare against the record as it stands now rather than as it was staged.
+  s = restaged[0] ?? s
 
   // ── 6. Export / import round-trip ────────────────────────────────────────
   await page.goto(`${BASE}/staged`, { waitUntil: 'networkidle' })
@@ -457,7 +571,6 @@ try {
   // Both entry points are exercised, because they fail the same way and are
   // fixed by the same guard, and because "the queue sends you somewhere else"
   // is the one that costs a contributor an hour.
-  //
   // Everything the DEFAULT chain needs stays instant; everything a non-default
   // card needs goes cold. That is the production shape of this race, and the
   // only shape in which the bug is visible at all.

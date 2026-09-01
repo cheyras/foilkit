@@ -1442,6 +1442,38 @@ thing that can honestly stamp them. `emit.test.ts` asserts the stamp on every
 catalog artifact and on both index files; the editor's shard types carry the
 fields as optional, because unstamped shards exist in the wild today.
 
+## 2026-09-01 — A staged session's pixels beat upstream, unconditionally
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** when a staged session for `(cardId, variantId)` holds a PNG, that
+PNG owns the mask canvas. The saved-hand-mask loader in `FoilLab.tsx` does not
+fetch and does not draw while such a session exists — and it does not run at all
+until the session store has been read (`staging.loading`). Upstream is loaded
+only when no staged pixels exist, or deliberately, through the conflict flow's
+`take-theirs` / `re-trace`.
+
+**Why:** the loader was unguarded. On every reload it fetched the committed mask
+and drew it over a canvas the staged-restore effect had already painted — a
+network fetch beats a data-URL decode, and the restore had latched
+`restoredFor` and would not run again. The session RECORD survived; the PIXELS
+did not. Worse, `staging.save` re-reads the store, and the store's list was a
+dependency of the loader, so pressing **Save to session** re-ran the fetch and
+then wrote the upstream pixels over the contribution. Measured live: provisional
+diff 61.1% (+10,387/-39,869) before a reload, 66.4% (+0/-39,869) after — exactly
+the upstream mask's own manifest agreement. A contributor's staged PNG is the
+only copy of that work in existence; nothing may overwrite it implicitly.
+
+**Implications:** `staged` is now DERIVED from the store rather than mirrored in
+`useState` — the mirror lagged the selection by one commit, so every guard
+written against it read the previous card's session for one render. The
+`restoredFor` latch resets on card change, or leaving a staged card and coming
+back showed the pixels of whatever was opened in between. The editor's E2E
+asserts the provisional diff NUMBERS are unchanged across staging and across a
+reload, and that a second Save to session leaves the stored PNG byte-identical.
+The existence of a session is not asserted as a proxy for any of that, because
+it was true throughout the bug.
+
 ## 2026-09-01 — A pending deep link holds the picker's auto-select chain
 
 **Decided by:** Claude Fable 5 on behalf of @cheyras
@@ -1478,4 +1510,70 @@ chosen artifacts: everything the DEFAULT chain needs stays instant while the
 target's shards go cold. That is the production shape of the race and the only
 shape in which the bug is visible at all — without it the new assertions passed
 against the unfixed code, which is the worst outcome a regression test has.
+
+## 2026-09-01 — A refused write says so, in the server's words, and keeps the pixels
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** the direct-write paths surface their outcome. `saveMask`,
+`deleteMask` and `saveWindow` no longer swallow the throw: the error line shows
+the message `api.ts`'s `writeError` already parsed out of the server's response,
+and says that nothing was discarded. A failed save re-asserts the dirty flag and
+touches neither the canvas nor the session; a failed DELETE now clears nothing
+at all, where it used to clear the whole surface and report a success the
+repository never granted.
+
+**Why:** `catch {}` with the comment "surfaced by the dirty flag remaining" was
+not a surface. A writer pressing Save against a 503 saw a button that behaved
+exactly as it does on success, and the server's actual sentence — which names
+the missing variable — was parsed and then thrown away.
+
+**Implications:** three stale strings went with it ("is the branch api up?",
+"is the 3712 api up?", and "Saved to issues/foil/" for a note that now goes to a
+staged session). The failure text is the server's rather than ours, so a new
+refusal reason needs no client change to become readable.
+
+## 2026-09-01 — Per-card overrides are session contents; the button that pretended otherwise is gone
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** the "Save card overrides" button is removed, and `putOverride` /
+`deleteOverride` are deleted from `api.ts` rather than left as stubs. Adjusted
+uniforms ride the staged session — `stageMask` already writes them — which is
+what spec 8 says per-card overrides are. The panel states this, and states
+plainly that a writer's Save commits mask pixels rather than sliders.
+
+**Why:** `putOverride` threw unconditionally. There is no `/api/override` route,
+because `data/foil-overrides/` has never held a record, and a PUT with no reader
+would be a promise rather than a feature — but it was still wired to a live
+button. The one thing it reliably produced was a red "Override save failed" that
+blamed a server for refusing a request it had never been sent. A button that
+cannot succeed is worse than no button, and a client method that can only throw
+is a trap for the next caller.
+
+**Alternative considered and declined:** making the button call `stageMask()`.
+It would work, but it would create a mask session — carrying the canvas PNG —
+for somebody who only meant to save sliders, and a writer has no session UI on
+this surface. Saying what actually happens beats inventing a path to make a
+button true.
+
+## 2026-09-01 — A 404'd scan says so instead of rendering a black card
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** the card pane HEADs `/api/image` for the printing on screen and,
+on a 404, says "scan unavailable upstream — this printing has no image at the
+catalog's path"; on a 502 it says upstream answered with something that was not
+a scan. Only OUR proxy is probed — a cross-origin URL's status is not readable
+and guessing at one would put a wrong explanation under a card that renders
+fine — and a network failure says nothing at all.
+
+**Why:** `/api/image` already distinguishes those two cases deliberately. Its
+own header gives the reason: a contributor staring at a blank editor needs to
+tell "no scan exists" from "the CDN is serving an error page with a 200 on it".
+The editor was throwing that distinction away and rendering a void, and a void
+reads as a broken editor rather than as a gap in a volunteer CDN.
+
+**Implications:** one HEAD per card opened. HEAD is the method `/api/image`
+documents for exactly this question — every header and no body.
 

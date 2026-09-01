@@ -22,7 +22,7 @@
 // as unavailable and those affordances hide themselves.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import {
   foilApi,
   proxied,
@@ -138,7 +138,6 @@ const fmtRect = (r?: [number, number, number, number]): string =>
 // ── The workbench ──────────────────────────────────────────────────────────
 
 export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerState }) {
-  const queryClient = useQueryClient()
   const [sel, setSel] = useState<Selection>(loadSelection)
   /**
    * THE DEEP LINK, held until the browse chain has been re-derived for it.
@@ -167,8 +166,6 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
     () => (localStorage.getItem(LS_FILTER_KEY) as ContributionFilter | null) ?? 'all',
   )
   const [corpus, setCorpus] = useState<CorpusView | null>(null)
-  /** The staged session for the card on screen, or null when nothing is staged. */
-  const [staged, setStaged] = useState<MaskSession | null>(null)
   const [conflict, setConflict] = useState<ConflictReport | null>(null)
   const [provisional, setProvisional] = useState<ProvisionalReport | null>(null)
   const [ghostPng, setGhostPng] = useState<string | null>(null)
@@ -179,6 +176,16 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   const [searchQ, setSearchQ] = useState('')
   const [patternOverride, setPatternOverride] = useState<string>('auto')
   const [scopeOverride, setScopeOverride] = useState<'auto' | FoilScope>('auto')
+  /**
+   * Does upstream actually have a scan for this printing?
+   *
+   * A 404'd scan used to render a BLACK CARD with no explanation, which reads
+   * as a broken editor rather than as a gap in a volunteer CDN. `/api/image`
+   * already distinguishes the cases it is asked about — 404 "upstream has no
+   * scan at this path", 502 "upstream answered and what it answered with was
+   * wrong" — so the pane can say which, instead of showing a void.
+   */
+  const [scan, setScan] = useState<'unknown' | 'ok' | 'missing' | 'upstream-error'>('unknown')
   const [maskView, setMaskView] = useState(false)
   const [maskFeather, setMaskFeather] = useState(0.008)
   const [maxTiltDeg, setMaxTiltDeg] = useState(16)
@@ -210,8 +217,13 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
     painted: boolean
   }>({ startedFrom: 'layout', parent: null, painted: false })
   const [maskTexVersion, setMaskTexVersion] = useState(0)
+  /** Save status for the DIRECT-WRITE path, and the server's own words when it refused. */
+  const [maskSaveStatus, setMaskSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [maskSaveError, setMaskSaveError] = useState<string | null>(null)
   const editorRef = useRef<MaskEditorHandle | null>(null)
   const zeroTilt = useRef({ x: 0, y: 0 })
+  /** Which staged session's pixels are on the canvas. Reset when the card changes. */
+  const restoredFor = useRef<string | null>(null)
 
   // Adjusted-window state (foil/mask-refine): handles on the layout window
   // rect, persisted pre-flatten as data/foil-windows/<cardId>/<variantId>.json.
@@ -220,6 +232,8 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   const [winSaved, setWinSaved] = useState<{ savedAt: string; aliasOf: number | null } | null>(null)
   const [winDirty, setWinDirty] = useState(false)
   const [winStatus, setWinStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  /** The server's own words when a window write was refused. */
+  const [winError, setWinError] = useState<string | null>(null)
   const preAdjustMaskView = useRef(false)
 
   // Comments
@@ -436,14 +450,71 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
         Math.abs(winGeom.radius - layoutMask.radius) > 1e-4),
   )
 
-  // ── Saved hand mask: load on card/variant change (beats the layout tier) ──
+  // ── Staging: which session owns this printing ────────────────────────────
+  //
+  // DERIVED FROM THE STORE, never held in its own state. It used to be a
+  // `useState` synchronised by an effect, which meant `staged` lagged the
+  // selection by one commit — and every guard written against it was therefore
+  // reading the PREVIOUS card's session for one render. A memo over the store's
+  // own list cannot lag, because there is nothing to synchronise.
+  const stagedId = detail && sel.variantId != null ? `mask:${detail.card.cardId}:${sel.variantId}` : null
+  const staged = useMemo<MaskSession | null>(
+    () =>
+      stagedId === null
+        ? null
+        : ((staging.sessions.find((x) => x.id === stagedId && x.kind === 'mask') as MaskSession | undefined) ?? null),
+    [stagedId, staging.sessions],
+  )
+  /**
+   * DOES A STAGED SESSION OWN THE CANVAS?
+   *
+   * This is the whole of HIGH-1. A staged session's PNG is a contributor's only
+   * copy of work that exists nowhere else — not on a server, not in a git
+   * object, nowhere — so for the printing it belongs to it beats upstream
+   * unconditionally. A session re-seeded through the conflict flow carries
+   * `png: null` on purpose (the canvas was repainted from upstream at the time
+   * the choice was made), and that case must still load upstream, which is why
+   * this asks about the pixels rather than about the record.
+   */
+  const stagedPixels = staged !== null && staged.png !== null
+
+  /**
+   * Per-selection reset. ALWAYS runs, whoever ends up owning the canvas — it is
+   * about the surface, not about the pixels. Kept out of the mask loader below
+   * precisely so that guarding the loader cannot also disable the reset.
+   */
   useEffect(() => {
-    if (!detail || sel.variantId == null) return
     setEditMode(false)
     setMaskDirty(false)
-    let cancelled = false
+    setSavedMask(false)
+    setMaskMeta(null)
     setMaskSidecar(null)
     setSession({ startedFrom: 'layout', parent: null, painted: false })
+    setProvisional(null)
+    setProvisionalStale(false)
+    setGhostPng(null)
+    setMaskSaveStatus('idle')
+    setMaskSaveError(null)
+    // A different printing is a different canvas, so the staged-restore latch
+    // has to let the next session paint. Without this, leaving a staged card
+    // and coming back showed the pixels of whatever was opened in between.
+    restoredFor.current = null
+  }, [detail?.card.cardId, sel.variantId])
+
+  // ── Saved hand mask: load on card/variant change (beats the layout tier) ──
+  //
+  // …but a STAGED SESSION beats it in turn. This effect is a network fetch and
+  // the staged restore below is a data-URL decode, so upstream always won that
+  // race; the session record survived a reload while its pixels were silently
+  // replaced, and the next "Save to session" then wrote the replacement over
+  // the contribution. Ordering is not a fix for that — the guard is.
+  useEffect(() => {
+    if (!detail || sel.variantId == null) return
+    // Not "no session": "we have not read the store yet". Loading upstream on
+    // the strength of an unread store is the same bug with better timing.
+    if (staging.loading) return
+    if (stagedPixels) return
+    let cancelled = false
     // Artwork-keyed lookup: pass the variant's resolved scope so a sibling
     // variant's mask on the same scan can answer (aliasOf in the meta).
     const cardId = detail.card.cardId
@@ -477,7 +548,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
     return () => {
       cancelled = true
     }
-  }, [detail, sel.variantId, maskCanvas, resolved.scope])
+  }, [detail, sel.variantId, maskCanvas, resolved.scope, staging.loading, stagedPixels])
 
   // ── Saved window geometry: load on card/variant change (pre-flatten state).
   // Artwork-keyed like masks — a sibling variant's geometry on the same scan
@@ -518,65 +589,34 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
     setUniforms({ ...baseline, ...(override?.uniforms ?? {}) })
   }, [seedKey, baseline, override])
 
-  // Sparse live diff vs the canon baseline — what "Save card overrides" writes.
+  /**
+   * Sparse live diff vs the canon baseline — the per-card override.
+   *
+   * THERE IS NO "SAVE CARD OVERRIDES" BUTTON, and its absence is the fix rather
+   * than an omission. It called `putOverride`, which threw unconditionally
+   * because no `/api/override` route exists and `data/foil-overrides/` has
+   * never held a record. Pressing it produced a red "Override save failed" that
+   * blamed a server for refusing a request it was never sent — a button that
+   * cannot succeed is worse than no button.
+   *
+   * Per-card overrides are SESSION CONTENTS (spec 8), and they already are:
+   * `stageMask` writes `uniforms: overrideDiff` into the staged session for
+   * everybody, writer capability or not. So the sliders are staged with the
+   * mask, and the panel says so.
+   */
   const overrideDiff = useMemo(() => sparseDiff(uniforms, baseline), [uniforms, baseline])
   const overrideDiffKeys = Object.keys(overrideDiff)
-  const [overrideStatus, setOverrideStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
-  const saveOverrides = async () => {
-    if (!detail || sel.variantId == null) return
-    setOverrideStatus('saving')
-    try {
-      if (overrideDiffKeys.length === 0) {
-        // Sliders match canon — an override file would say nothing; remove it.
-        if (override) await foilApi.deleteOverride(detail.card.cardId, sel.variantId)
-      } else {
-        await foilApi.putOverride(detail.card.cardId, sel.variantId, {
-          patternId: pattern.id,
-          patternOverride: patternOverride === 'auto' ? null : canonicalPatternId(patternOverride),
-          uniforms: overrideDiff,
-          baseline: { canonSavedAt: canon?.savedAt ?? null },
-        })
-      }
-      await queryClient.invalidateQueries({ queryKey: ['foil', 'override', sel.cardId, sel.variantId] })
-      setOverrideStatus('saved')
-      setTimeout(() => setOverrideStatus('idle'), 1500)
-    } catch {
-      setOverrideStatus('error')
-    }
-  }
-
-  const removeOverrides = async () => {
-    if (!detail || sel.variantId == null) return
-    try {
-      await foilApi.deleteOverride(detail.card.cardId, sel.variantId)
-      await queryClient.invalidateQueries({ queryKey: ['foil', 'override', sel.cardId, sel.variantId] })
-      setUniforms({ ...baseline })
-    } catch {
-      setOverrideStatus('error')
-    }
-  }
-
-  // ── Staging: adopt or create the session for this card+variant ───────
+  // ── Staging: the session for this card+variant ───────────────────────
   //
-  // The session is keyed by card+variant, so walking away and coming back finds
-  // the work. It is ADOPTED rather than recreated: when a staged session exists
-  // its seed wins over whatever a fresh page load resolved, because the seed IS
-  // the provenance claim and re-deriving it would silently reparent the
-  // correction onto whatever happens to be upstream today.
-  const stagedId = detail && sel.variantId != null ? `mask:${detail.card.cardId}:${sel.variantId}` : null
-  useEffect(() => {
-    if (stagedId === null) {
-      setStaged(null)
-      setConflict(null)
-      return
-    }
-    const found = staging.sessions.find((x) => x.id === stagedId && x.kind === 'mask') as MaskSession | undefined
-    setStaged(found ?? null)
-  }, [stagedId, staging.sessions])
-
+  // `stagedId` / `staged` / `stagedPixels` are computed further up, next to the
+  // mask loader they guard. The session is keyed by card+variant, so walking
+  // away and coming back finds the work. It is ADOPTED rather than recreated:
+  // when a staged session exists its seed wins over whatever a fresh page load
+  // resolved, because the seed IS the provenance claim and re-deriving it would
+  // silently reparent the correction onto whatever happens to be upstream today.
+  //
   // Restore staged pixels onto the canvas when a staged session is adopted.
-  const restoredFor = useRef<string | null>(null)
   useEffect(() => {
     if (staged === null || staged.png === null) return
     if (restoredFor.current === staged.id) return
@@ -777,8 +817,12 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
               },
               now,
             )
+      // `staging.save` re-reads the store, so `staged` (a memo over that list)
+      // already carries `next` by the time this resolves. Nothing to set.
       await staging.save(next)
-      setStaged(next)
+      // The canvas holds exactly what was just staged, so the restore effect
+      // must not repaint it from the round-tripped PNG.
+      restoredFor.current = next.id
       setMaskDirty(false)
       setStageStatus('saved')
       setTimeout(() => setStageStatus('idle'), 1500)
@@ -825,6 +869,8 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
       return
     }
     const s = override ?? session
+    setMaskSaveStatus('saving')
+    setMaskSaveError(null)
     try {
       // Sidecar v3: every save records the starting prior — the deterministic
       // layout-rule output for this card/variant — so the server can persist
@@ -875,8 +921,21 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
         painted: false,
       })
       setCorpusKey((k) => k + 1)
-    } catch {
-      /* surfaced by the dirty flag remaining */
+      setMaskSaveStatus('saved')
+      setTimeout(() => setMaskSaveStatus('idle'), 1500)
+    } catch (err) {
+      // A SILENT FAILED SAVE LOSES WORK. `api.ts` already parses the server's
+      // own error text out of the response and throws it; discarding that here
+      // left a writer looking at a button that behaved exactly as it does on
+      // success. So it is shown, in the server's words.
+      //
+      // AND THE PIXELS ARE NEVER TOUCHED. Nothing in this branch clears the
+      // canvas, resets the session or drops the mask source — the drawing on
+      // screen is the only copy of it, and the dirty flag is re-asserted so the
+      // surface keeps saying there is unsaved work.
+      setMaskSaveStatus('error')
+      setMaskSaveError(err instanceof Error ? err.message : String(err))
+      setMaskDirty(true)
     }
   }
 
@@ -906,6 +965,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
       return true
     }
     setWinStatus('saving')
+    setWinError(null)
     try {
       if (!winDiffers) {
         // Geometry matches the era rule — a file would say nothing; remove it.
@@ -926,8 +986,9 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
       setWinStatus('saved')
       setTimeout(() => setWinStatus('idle'), 1500)
       return true
-    } catch {
+    } catch (err) {
       setWinStatus('error')
+      setWinError(err instanceof Error ? err.message : String(err))
       return false
     }
   }
@@ -972,11 +1033,19 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
    */
   const deleteMask = async () => {
     if (!detail || sel.variantId == null || !canWrite) return
+    setMaskSaveStatus('saving')
+    setMaskSaveError(null)
     try {
       await foilApi.deleteMask(detail.card.cardId, sel.variantId)
-    } catch {
-      /* ignore */
+    } catch (err) {
+      // The delete was REFUSED, so the mask is still there. Clearing the
+      // surface anyway — which is what this used to do — reported a success the
+      // repository never granted, and the next reload silently contradicted it.
+      setMaskSaveStatus('error')
+      setMaskSaveError(err instanceof Error ? err.message : String(err))
+      return
     }
+    setMaskSaveStatus('idle')
     setSavedMask(false)
     setMaskDirty(false)
     setMaskMeta(null)
@@ -1036,7 +1105,6 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
     setGhostPng(reseeded.ghostPng)
     restoredFor.current = reseeded.session.id // the canvas is already correct
     await staging.save({ ...reseeded.session, png: null })
-    setStaged({ ...reseeded.session, png: null })
     setConflict(null)
     setMaskDirty(false)
   }
@@ -1151,6 +1219,22 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   const imageUrl = detail?.card.images.high ? proxied(detail.card.images.high) : null
   const cardRect = cardScreenRect(hostSize.w, hostSize.h)
 
+  // A HEAD, not a second GET: `/api/image` answers every header and no body for
+  // one, which is exactly the "does this scan exist" question. Only asked of
+  // OUR proxy — a cross-origin url's status is not readable, and guessing at one
+  // would put a wrong explanation under a card that renders fine.
+  useEffect(() => {
+    setScan('unknown')
+    if (imageUrl === null || !imageUrl.startsWith('/api/image')) return
+    const ac = new AbortController()
+    void fetch(imageUrl, { method: 'HEAD', signal: ac.signal })
+      .then((r) => setScan(r.ok ? 'ok' : r.status === 404 ? 'missing' : 'upstream-error'))
+      // Aborted, offline, or a deployment with no functions at all. Say nothing
+      // rather than blame upstream for something that never reached it.
+      .catch(() => undefined)
+    return () => ac.abort()
+  }, [imageUrl])
+
   // Era-grouped picker: series bucketed by frame generation. Series with no
   // era-layouts.json mapping get an honest "other" bucket rather than being
   // silently lumped under the SV header (the resolver still falls back to
@@ -1229,6 +1313,16 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
             {variant ? ` · ${variant.displayName}` : ''}
           </div>
         </div>
+        {(scan === 'missing' || scan === 'upstream-error') && (
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 max-w-[280px] -translate-x-1/2 -translate-y-1/2 rounded-md border border-amber-500/50 bg-surface-secondary/90 p-[10px] text-center text-[12px] leading-[1.5] text-amber-200"
+            data-testid="scan-unavailable"
+          >
+            {scan === 'missing'
+              ? 'Scan unavailable upstream — this printing has no image at the catalog’s path. The foil renders over an empty base; the mask work is still valid.'
+              : 'Upstream answered, but not with a scan. The CDN is erroring rather than reporting a missing card — try again later.'}
+          </div>
+        )}
         <div className="pointer-events-none absolute right-[12px] top-[10px] rounded-full bg-surface-secondary/70 px-[8px] py-[2px] text-[11px] text-text-muted">
           {editMode ? 'mask edit' : adjustMode ? 'window adjust' : tilt.mode}
           {handActive && !editMode ? ' · hand mask' : ''}
@@ -1546,7 +1640,10 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
                   <ActionBtn onClick={endAdjust}>Done</ActionBtn>
                 </div>
                 {winStatus === 'error' && (
-                  <p className="text-[12px] text-red-400">Window save failed — is the branch api up?</p>
+                  <p className="text-[12px] text-red-400">
+                    {winError ?? 'Window save failed.'} Nothing was discarded — the geometry on screen is
+                    still yours.
+                  </p>
                 )}
               </div>
             ) : !editMode ? (
@@ -1555,7 +1652,11 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
                 {maskSource === 'layout' && windowScoped && (
                   <ActionBtn onClick={startAdjust}>⤡ Adjust window</ActionBtn>
                 )}
-                {canWrite && savedMask && <ActionBtn onClick={deleteMask}>Delete saved</ActionBtn>}
+                {canWrite && savedMask && (
+                  <ActionBtn onClick={deleteMask}>
+                    {maskSaveStatus === 'saving' ? 'Deleting…' : 'Delete saved'}
+                  </ActionBtn>
+                )}
               </div>
             ) : (
               <div className="space-y-[8px]">
@@ -1595,11 +1696,34 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
                   {/* Wrapped, NOT passed by reference: ActionBtn forwards the
                       click event as the first argument, which would land in
                       saveMask's `override` slot and blank out `derivation`. */}
-                  <ActionBtn onClick={() => void saveMask()}>{maskDirty ? 'Save mask ●' : 'Save mask'}</ActionBtn>
+                  <ActionBtn onClick={() => void saveMask()}>
+                    {maskSaveStatus === 'saving'
+                      ? 'Saving…'
+                      : maskSaveStatus === 'saved'
+                        ? 'Saved ✓'
+                        : maskDirty
+                          ? 'Save mask ●'
+                          : 'Save mask'}
+                  </ActionBtn>
                   <ActionBtn onClick={() => setEditMode(false)}>Done</ActionBtn>
                 </div>
               </div>
             )
+          )}
+          {/*
+            A refused write, in the server's own words. It used to be an empty
+            catch: the strokes stayed on screen and nothing said the save had
+            not landed, which is how a writer closes a tab on work that was
+            never committed.
+          */}
+          {maskSaveStatus === 'error' && (
+            <p className="mt-[6px] text-[12px] leading-[1.5] text-red-400" data-testid="mask-save-error">
+              Save refused: {maskSaveError ?? 'the server gave no reason'}. Your strokes are still on the
+              canvas — nothing was discarded.
+            </p>
+          )}
+          {maskSaveStatus === 'saved' && (
+            <p className="mt-[6px] text-[12px] text-action-primary">Committed to the repository ✓</p>
           )}
           <p className="mt-[6px] text-[11px] text-text-muted">
             {handActive
@@ -1716,7 +1840,10 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
                 server confirms.
               </p>
             ) : (
-              <p className="mt-[6px] text-[11px] leading-[15px] text-text-muted tabular-nums">
+              <p
+                className="mt-[6px] text-[11px] leading-[15px] text-text-muted tabular-nums"
+                data-testid="provisional-diff"
+              >
                 vs the era rule: agreement {(provisional.vsRule.agreement * 100).toFixed(1)}% · +
                 {provisional.vsRule.addedPx.toLocaleString()} / −{provisional.vsRule.removedPx.toLocaleString()}px.{' '}
                 <span className="text-amber-200/80">Provisional</span> — the server recomputes it at save.
@@ -1792,26 +1919,17 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
               ? ` · saved overrides ${new Date(override.savedAt).toLocaleDateString()} (${Object.keys(override.uniforms).length}) → data/foil-overrides/`
               : ''}
           </p>
-          {canWrite && (
-            <div className="mb-[6px] flex flex-wrap gap-[6px]">
-              <ActionBtn onClick={saveOverrides} disabled={overrideDiffKeys.length === 0 && !override}>
-                {overrideStatus === 'saving'
-                  ? 'Saving…'
-                  : overrideStatus === 'saved'
-                    ? 'Saved ✓'
-                    : `Save card overrides${overrideDiffKeys.length > 0 ? ' ●' : ''}`}
-              </ActionBtn>
-              <ActionBtn onClick={() => setUniforms({ ...baseline })}>Reset to canon</ActionBtn>
-              {override && <ActionBtn onClick={removeOverrides}>Delete saved</ActionBtn>}
-            </div>
-          )}
-          {overrideStatus === 'error' && (
-            <p className="mb-[6px] text-[12px] text-red-400">Override save failed.</p>
-          )}
-          {!canWrite && overrideDiffKeys.length > 0 && (
+          <div className="mb-[6px] flex flex-wrap gap-[6px]">
+            <ActionBtn onClick={() => setUniforms({ ...baseline })}>Reset to canon</ActionBtn>
+          </div>
+          {overrideDiffKeys.length > 0 && (
             <p className="mb-[6px] text-[12px] text-text-muted">
-              These {overrideDiffKeys.length} adjusted uniform(s) ride along in the staged session when you
-              press Save mask.
+              {canWrite
+                ? `These ${overrideDiffKeys.length} adjusted uniform(s) are not committed by Save — the direct write puts mask pixels, not sliders. Copy the recipe JSON below, or lock them for the whole pattern on the Canon tab.`
+                : `These ${overrideDiffKeys.length} adjusted uniform(s) ride along in the staged session when you press Save.`}{' '}
+              There is no per-card override file to write to — <code>data/foil-overrides/</code> has never
+              held a record and no <code>/api/override</code> route exists — so a card&rsquo;s uniforms are
+              session contents until the contribution pipeline can open a PR for one.
             </p>
           )}
           <button
@@ -1847,8 +1965,14 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
               className="w-full rounded-md border border-border-default bg-surface-tertiary p-[8px] text-[13px] text-text-primary"
             />
             <div className="mt-[10px] flex items-center justify-end gap-[8px]">
-              {commentStatus === 'error' && <span className="mr-auto text-[12px] text-red-400">Save failed — is the 3712 api up?</span>}
-              {commentStatus === 'saved' && <span className="mr-auto text-[12px] text-action-primary">Saved to issues/foil/ ✓</span>}
+              {commentStatus === 'error' && (
+                <span className="mr-auto text-[12px] text-red-400">
+                  Could not store the note — the browser refused to write the session.
+                </span>
+              )}
+              {commentStatus === 'saved' && (
+                <span className="mr-auto text-[12px] text-action-primary">Saved to your staged session ✓</span>
+              )}
               <ActionBtn onClick={() => setCommentOpen(false)}>Cancel</ActionBtn>
               <ActionBtn onClick={submitComment} active>
                 {commentStatus === 'saving' ? 'Saving…' : 'Save comment'}
