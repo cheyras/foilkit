@@ -90,6 +90,17 @@ interface Selection {
  * localStorage selection when the URL says nothing is the workbench's old
  * behaviour and is right for "I came back to keep going".
  */
+/** The card the ADDRESS BAR is asking for at mount, or null when it asks for none. */
+function urlTarget(): { cardId: string; variantId: number | undefined } | null {
+  if (typeof location === 'undefined') return null
+  const params = new URLSearchParams(location.search)
+  const id = params.get('id')
+  if (id === null) return null
+  const v = params.get('v')
+  const variantId = v === null ? undefined : Number(v)
+  return { cardId: id, variantId: Number.isInteger(variantId) ? variantId : undefined }
+}
+
 function loadSelection(): Selection {
   let stored: Selection = {}
   try {
@@ -97,18 +108,22 @@ function loadSelection(): Selection {
   } catch {
     stored = {}
   }
-  if (typeof location === 'undefined') return stored
-  const params = new URLSearchParams(location.search)
-  const id = params.get('id')
-  if (id === null) return stored
-  const v = params.get('v')
-  const variantId = v === null ? undefined : Number(v)
+  const target = urlTarget()
+  if (target === null) return stored
   return {
     ...stored,
-    cardId: id,
-    variantId: Number.isInteger(variantId) ? variantId : undefined,
+    cardId: target.cardId,
+    variantId: target.variantId,
     // The series/set chain is re-derived from the card detail, so a deep link
     // does not have to carry it and cannot carry a stale version of it.
+    //
+    // EMPTYING THOSE TWO SLOTS IS WHAT MAKES THE DEEP LINK FRAGILE, which is
+    // why `deepLink` below exists: the auto-select effects fill empty slots,
+    // and the set auto-select fills `setId` by CLEARING `cardId`. Left
+    // unguarded it resolves faster than the card detail does and the address
+    // bar is rewritten to Base Set Machamp before the requested card ever
+    // loads. The guard, not this function, is the fix — this comment is here so
+    // nobody removes it as redundant.
     seriesSlug: undefined,
     setId: undefined,
   }
@@ -125,6 +140,22 @@ const fmtRect = (r?: [number, number, number, number]): string =>
 export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerState }) {
   const queryClient = useQueryClient()
   const [sel, setSel] = useState<Selection>(loadSelection)
+  /**
+   * THE DEEP LINK, held until the browse chain has been re-derived for it.
+   *
+   * `/card?id=sv3-45&v=2` arrives with `seriesSlug` and `setId` empty, because
+   * only the card detail knows what they are. The auto-select effects below
+   * fill empty slots — and the SET one fills `setId` by clearing `cardId`,
+   * which is how a queue "Work this" into `modern-swsh` used to land on
+   * `base1-8` with the address bar rewritten to match. The detail query cannot
+   * win that race: it is a second network round trip and the auto-selects need
+   * none.
+   *
+   * So the auto-selects do not run at all while this is set. It clears when the
+   * chain agrees with the loaded card — or when the catalog cannot answer for
+   * the id, because a permanent hold would leave the picker empty forever.
+   */
+  const [deepLink, setDeepLink] = useState<string | null>(() => urlTarget()?.cardId ?? null)
   /**
    * The write path for THIS viewer. `direct-write` is the writer capability:
    * one PUT, straight to the repository, exactly as the workbench always
@@ -303,26 +334,36 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   // Auto-select down the chain, but ONLY into empty slots (prefer the classic
   // demo: Base Set Machamp). A selection that isn't in the current browse list
   // (picked via search, or hidden by Owned-only) is preserved, never clobbered.
+  //
+  // ALL THREE ARE HELD while a deep link is resolving — see `deepLink`. The
+  // guard is on every one of them rather than only on the set step that does
+  // the clobbering, because the chain is a chain: letting the series step run
+  // is what enables the set step one render later.
   useEffect(() => {
+    if (deepLink !== null) return
     if (!sel.seriesSlug && seriesQ.data?.length) {
       const base = seriesQ.data.find((s) => s.slug === 'base')
       setSel((p) => ({ ...p, seriesSlug: (base ?? seriesQ.data[0]).slug }))
     }
-  }, [seriesQ.data, sel.seriesSlug])
+  }, [seriesQ.data, sel.seriesSlug, deepLink])
   useEffect(() => {
+    if (deepLink !== null) return
     if (sel.seriesSlug && setsQ.data?.length && !sel.setId) {
       const base1 = setsQ.data.find((s) => s.setId === 'base1')
       setSel((p) => ({ ...p, setId: (base1 ?? setsQ.data[0]).setId, cardId: undefined, variantId: undefined }))
     }
-  }, [setsQ.data, sel.seriesSlug, sel.setId])
+  }, [setsQ.data, sel.seriesSlug, sel.setId, deepLink])
   useEffect(() => {
+    if (deepLink !== null) return
     if (sel.setId && cards.length && !sel.cardId) {
       const machamp = cards.find((c) => c.cardId === 'base1-8')
       setSel((p) => ({ ...p, cardId: (machamp ?? cards[0]).cardId, variantId: undefined }))
     }
-  }, [cards, sel.setId, sel.cardId])
+  }, [cards, sel.setId, sel.cardId, deepLink])
   // Keep the browse chain pointed at the shown card's home (a search pick can
-  // jump to any set/series in the catalog).
+  // jump to any set/series in the catalog). This is also the effect that
+  // RESOLVES a deep link — the card detail is the only thing that knows which
+  // series and set the requested card lives in.
   useEffect(() => {
     const d = detailQ.data
     if (!d) return
@@ -332,6 +373,22 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
         : p,
     )
   }, [detailQ.data])
+  // Release the hold once the chain agrees with the card that loaded — or at
+  // once if the catalog has no entry for the requested id, because a deep link
+  // to a card that does not exist must degrade to the normal picker rather than
+  // freeze it.
+  useEffect(() => {
+    if (deepLink === null) return
+    if (detailQ.isError) {
+      setDeepLink(null)
+      return
+    }
+    const d = detailQ.data
+    if (!d || d.card.cardId !== deepLink) return
+    if (sel.cardId === deepLink && sel.seriesSlug === d.card.series.slug && sel.setId === d.card.set.setId) {
+      setDeepLink(null)
+    }
+  }, [deepLink, detailQ.data, detailQ.isError, sel.cardId, sel.seriesSlug, sel.setId])
   useEffect(() => {
     const vs = detailQ.data?.variants
     if (vs?.length && !vs.some((v) => v.variantId === sel.variantId)) {
@@ -1201,6 +1258,19 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
       {/* ── Controls column ── */}
       <div className="flex-1 space-y-[12px] overflow-y-auto p-[12px] min-[700px]:w-[360px] min-[700px]:flex-none min-[700px]:shrink-0 min-[1200px]:w-[400px]">
         <SurfaceTabs active="card" />
+
+        {/*
+          A deep link the catalog cannot answer for. The auto-select chain takes
+          over from here — that is the right fallback — but doing it SILENTLY is
+          what made "Work this sent me to Base Set Machamp" a mystery rather than
+          a message.
+        */}
+        {detailQ.isError && sel.cardId !== undefined && (
+          <p className="rounded-md border border-amber-500/50 bg-amber-500/10 p-[10px] text-[13px] text-amber-200">
+            No catalog entry for <code>{sel.cardId}</code> in this bake, so the picker fell back to its
+            default card. Either the id is wrong, or this deploy&rsquo;s catalog is older than the link.
+          </p>
+        )}
 
         <Section title="Card (full catalog, by era)">
           <div className="mb-[8px] flex items-center gap-[8px]">

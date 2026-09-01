@@ -21,7 +21,6 @@
 // collection count, or an internal id "just because it was in the query".
 
 import { getJson } from './artifacts.ts'
-import { setIdOf } from './search.ts'
 
 export interface CatalogIndex {
   version: number
@@ -40,6 +39,11 @@ export interface CatalogSetRef {
 }
 
 export interface CatalogSeriesShard {
+  /** Bake stamp — optional, because shards baked before it exist in the wild. */
+  version?: number
+  generatedAt?: string
+  source?: string
+  resolverVersion?: number
   seriesSlug: string
   sets: CatalogSetRef[]
 }
@@ -62,6 +66,11 @@ export interface CatalogCard {
 }
 
 export interface CatalogSetShard {
+  /** Bake stamp — optional, because shards baked before it exist in the wild. */
+  version?: number
+  generatedAt?: string
+  source?: string
+  resolverVersion?: number
   setId: string
   set: {
     setId: string
@@ -120,19 +129,51 @@ export class Catalog {
    * and a caller only has a cardId. Page 1 answers for every set but the big
    * promo ones, so this is one request in the overwhelming majority of cases —
    * and the shards are cached, so scrubbing a set costs nothing after the first.
+   *
+   * AND IT WALKS HYPHENS, not only pages — see `setIdCandidates`.
    */
   async card(cardId: string, signal?: AbortSignal): Promise<{ card: CatalogCard; shard: CatalogSetShard } | null> {
-    const setId = setIdOf(cardId)
-    let page = 1
-    let pageCount = 1
-    do {
-      const shard = await this.setShard(setId, page, signal)
-      if (shard === null) return null
-      pageCount = shard.pageCount
-      const card = shard.cards.find((c) => c.cardId === cardId)
-      if (card) return { card, shard }
-      page++
-    } while (page <= pageCount)
+    for (const setId of setIdCandidates(cardId)) {
+      let page = 1
+      let pageCount = 1
+      do {
+        const shard = await this.setShard(setId, page, signal)
+        // No shard under this candidate: try the next hyphen rather than giving
+        // up, because the candidate is only a guess about where the split falls.
+        if (shard === null) break
+        pageCount = shard.pageCount
+        const card = shard.cards.find((c) => c.cardId === cardId)
+        if (card) return { card, shard }
+        page++
+      } while (page <= pageCount)
+    }
     return null
   }
+}
+
+/**
+ * The set shards a cardId might live in, most likely first.
+ *
+ * The rule is "setId is everything before the LAST hyphen", and the bake
+ * ASSERTS that round trip for every search row it writes — but deliberately
+ * does not ENFORCE it: a promo whose NUMBER contains a hyphen (`fxsp-FX-254`)
+ * breaks it, and failing a whole catalog bake over one malformed id would trade
+ * a slightly-wrong search result for no site at all. The bake counts and prints
+ * those instead.
+ *
+ * So the reader has to be exactly as forgiving as the writer. When it was not,
+ * such a card was UNOPENABLE: the derived shard 404'd, the detail query failed,
+ * and the picker's auto-select quietly filled the empty slots with Base Set
+ * Machamp — which is precisely what pressing "Work this" on one of these looked
+ * like from the outside. Four candidates is a bound rather than a search: a
+ * card number carrying four hyphens is a catalog problem, not a routing one.
+ */
+export function setIdCandidates(cardId: string): string[] {
+  const out: string[] = []
+  let i = cardId.lastIndexOf('-')
+  while (i > 0 && out.length < 4) {
+    out.push(cardId.slice(0, i))
+    i = cardId.lastIndexOf('-', i - 1)
+  }
+  return out
 }

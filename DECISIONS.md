@@ -1442,3 +1442,40 @@ thing that can honestly stamp them. `emit.test.ts` asserts the stamp on every
 catalog artifact and on both index files; the editor's shard types carry the
 fields as optional, because unstamped shards exist in the wild today.
 
+## 2026-09-01 — A pending deep link holds the picker's auto-select chain
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `FoilLab` holds the card id a deep link asked for until the browse
+chain has been re-derived for it, and the three auto-select effects
+(series -> set -> card) do not run while it is held. It is released when the
+loaded detail agrees with the selection, or immediately if the catalog has no
+entry for the id — in which case the surface says so instead of silently
+substituting a different card.
+
+**Why:** a deep link arrives with `seriesSlug` and `setId` empty, because only
+the card detail knows what they are. The auto-selects fill empty slots, and the
+SET step fills `setId` by CLEARING `cardId`. It needs no network round trip and
+the detail query needs one, so it won the race, landed on the hardcoded
+`base1` / `base1-8` default, and the URL-sync effect then rewrote the address
+bar to match. The contributor was working on a card nobody sent them. Measured
+live: 3/3 wrong for queue "Work this" picks outside `base1`, 2/4 wrong for cold
+deep links.
+
+**Also fixed here:** `Catalog.card()` derived the set shard as "everything
+before the last hyphen" and gave up if that 404'd. The bake deliberately
+TOLERATES ids that break that round trip — it counts and prints them rather than
+failing a whole catalog over one malformed promo id — so the reader has to be as
+forgiving as the writer. Otherwise such a card is unopenable, and the
+auto-select fallback is exactly what pressing "Work this" on one of them looks
+like. It now walks hyphens right-to-left, bounded at four candidates.
+
+**Implications:** the editor's E2E asserts the address bar and the card on
+screen for several queue picks and for a cold deep link into another series.
+And, because a localhost static server answers every file in under a
+millisecond and therefore cannot lose this race, the harness can now delay
+chosen artifacts: everything the DEFAULT chain needs stays instant while the
+target's shards go cold. That is the production shape of the race and the only
+shape in which the bug is visible at all — without it the new assertions passed
+against the unfixed code, which is the worst outcome a regression test has.
+

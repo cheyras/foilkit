@@ -69,8 +69,25 @@ const MIME = {
 /** Set by a test to make upstream "move" under a staged session. */
 let overrides = new Map()
 
-const server = createServer((req, res) => {
+/**
+ * Set by a test to make matching artifacts answer SLOWLY.
+ *
+ * Not a flourish: the deep-link bug below is a RACE, and a localhost static
+ * server cannot lose it. On the deployed site the card-detail shard is a cold
+ * CDN fetch while `catalog/index.json` is already warm, so the picker's
+ * auto-select chain finishes first and overwrites the deep link. Every file
+ * here answers in under a millisecond, so the chain never gets the chance and
+ * the assertions pass against the bug — which is the worst outcome a regression
+ * test has, and was measured to be exactly what happened before this existed.
+ * Delaying the artifacts that are cold in production is what makes the race
+ * REPRODUCIBLE rather than lucky.
+ */
+let slowUrls = null
+const SLOW_MS = 600
+
+const server = createServer(async (req, res) => {
   const url = (req.url ?? '/').split('?')[0]
+  if (slowUrls !== null && slowUrls.test(url)) await new Promise((r) => setTimeout(r, SLOW_MS))
   if (overrides.has(url)) {
     const body = overrides.get(url)
     if (body === null) {
@@ -153,6 +170,22 @@ const FAKE_SCAN = (() => {
   }
   return encodePng({ width: SCAN_W, height: SCAN_H, rgba })
 })()
+
+/** setId from a cardId — everything before the last `-`, the bake's own rule. */
+const setIdOf = (cardId) => cardId.slice(0, cardId.lastIndexOf('-'))
+
+/** A fixture card's printed name, read from whichever page of its set shard holds it. */
+function fixtureCardName(cardId) {
+  const setId = setIdOf(cardId)
+  const dir = path.join(ROOT, 'data', 'fixture-bake', 'catalog', 'sets')
+  for (const file of [`${setId}.json`, `${setId}.p2.json`, `${setId}.p3.json`]) {
+    const abs = path.join(dir, file)
+    if (!existsSync(abs)) continue
+    const found = JSON.parse(readFileSync(abs, 'utf8')).cards.find((c) => c.cardId === cardId)
+    if (found) return found.name
+  }
+  return null
+}
 
 const browser = await chromium.launch({
   // WebGL in headless Chromium, the same way the stage's acceptance run gets it.
@@ -412,7 +445,85 @@ try {
   ok('the glyph slot answers with an index, not a 404', glyphs !== null)
   ok('and the slot is empty, which is the shipping state', Object.keys(glyphs?.patterns ?? {}).length === 0)
 
-  // ── 10. No console errors on the happy path ──────────────────────────────
+  // ── 10. THE CARD YOU ASKED FOR IS THE CARD YOU GET ───────────────────────
+  //
+  // The regression this exists for: a deep link arrives with its series and set
+  // slots empty, because only the card detail knows what they are. The
+  // auto-select chain fills empty slots — and the SET step fills `setId` by
+  // clearing `cardId` — so it resolved first, landed on Base Set Machamp, and
+  // the URL-sync effect then rewrote the address bar to match. Measured live at
+  // 3/3 wrong for queue picks outside `base1` and 2/4 wrong for cold deep links.
+  //
+  // Both entry points are exercised, because they fail the same way and are
+  // fixed by the same guard, and because "the queue sends you somewhere else"
+  // is the one that costs a contributor an hour.
+  //
+  // Everything the DEFAULT chain needs stays instant; everything a non-default
+  // card needs goes cold. That is the production shape of this race, and the
+  // only shape in which the bug is visible at all.
+  slowUrls = /^\/catalog\/(sets\/(?!base1\.json)|series\/(?!base\.json))/
+
+  const queueTargets = []
+  for (let row = 0; row < 4; row++) {
+    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' })
+    await page.waitForSelector('text=Where an hour moves the most pixels', { timeout: 15000 })
+    const button = page.getByRole('button', { name: 'Work this' }).nth(row)
+    if ((await button.count()) === 0) break
+    await button.click()
+    await page.waitForURL(/\/card\?id=/, { timeout: 15000 })
+    const asked = new URL(page.url()).searchParams.get('id')
+    await page.waitForSelector('text=Card (full catalog, by era)', { timeout: 20000 })
+    // Long enough for the series → sets → cards chain to have run if it were
+    // going to. A shorter wait would pass against the bug it is here to catch.
+    await page.waitForTimeout(2000)
+    const landed = new URL(page.url()).searchParams.get('id')
+    const name = fixtureCardName(asked)
+    queueTargets.push(asked)
+    ok(
+      `queue row ${row}: the address bar still says the card it picked`,
+      landed === asked,
+      `asked ${asked}, landed ${landed}`,
+    )
+    ok(
+      `queue row ${row}: and that card is the one on screen`,
+      name !== null && (await page.getByText(name, { exact: false }).count()) > 0,
+      `expected ${name} for ${asked}`,
+    )
+  }
+  ok(
+    'at least one queue pick was OUTSIDE base1 — otherwise this proves nothing',
+    queueTargets.some((id) => setIdOf(id) !== 'base1'),
+    queueTargets.join(', '),
+  )
+
+  // A COLD deep link into a different series, with no localStorage help: a fresh
+  // context, one navigation, and the card had better be the one named.
+  const cold = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+  await cold.route('**://fixture.invalid/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'image/png', body: FAKE_SCAN }),
+  )
+  const coldPage = await cold.newPage()
+  const COLD_ID = 'fxs1-1'
+  const coldVariant = JSON.parse(
+    readFileSync(path.join(ROOT, 'data', 'fixture-bake', 'catalog', 'sets', 'fxs1.json'), 'utf8'),
+  ).cards.find((c) => c.cardId === COLD_ID).variants[0].variantId
+  await coldPage.goto(`${BASE}/card?id=${COLD_ID}&v=${coldVariant}`, { waitUntil: 'networkidle' })
+  await coldPage.waitForSelector('text=Card (full catalog, by era)', { timeout: 20000 })
+  await coldPage.waitForTimeout(2000)
+  ok(
+    'a cold deep link outside the default series keeps its id in the address bar',
+    new URL(coldPage.url()).searchParams.get('id') === COLD_ID,
+    coldPage.url(),
+  )
+  ok(
+    'and opens that card, not the auto-selected default',
+    (await coldPage.getByText(fixtureCardName(COLD_ID), { exact: false }).count()) > 0,
+    `expected ${fixtureCardName(COLD_ID)}`,
+  )
+  await cold.close()
+  slowUrls = null
+
+  // ── 11. No console errors on the happy path ──────────────────────────────
   const real = consoleErrors.filter(
     (t) => !/fixture\.invalid|ERR_NAME_NOT_RESOLVED|Failed to load resource.*40[34]/.test(t),
   )
