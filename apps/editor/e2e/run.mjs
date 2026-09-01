@@ -208,17 +208,44 @@ function readSessions(page) {
 /** setId from a cardId — everything before the last `-`, the bake's own rule. */
 const setIdOf = (cardId) => cardId.slice(0, cardId.lastIndexOf('-'))
 
-/** A fixture card's printed name, read from whichever page of its set shard holds it. */
-function fixtureCardName(cardId) {
-  const setId = setIdOf(cardId)
+/**
+ * A fixture card's printed name, read from whichever page of its set shard
+ * holds it.
+ *
+ * It walks hyphens right-to-left for the same reason `Catalog.setIdCandidates`
+ * does: the fixture deliberately contains a promo whose NUMBER carries a hyphen
+ * (`fxsp-FX-257`), so "everything before the last hyphen" names no shard. A
+ * helper that could not find those cards failed the assertion on whichever runs
+ * the queue happened to sample one — a flake that reports the FIXED code as
+ * broken, which is how a regression test loses its authority.
+ */
+function fixtureCard(cardId) {
   const dir = path.join(ROOT, 'data', 'fixture-bake', 'catalog', 'sets')
-  for (const file of [`${setId}.json`, `${setId}.p2.json`, `${setId}.p3.json`]) {
-    const abs = path.join(dir, file)
-    if (!existsSync(abs)) continue
-    const found = JSON.parse(readFileSync(abs, 'utf8')).cards.find((c) => c.cardId === cardId)
-    if (found) return found.name
+  for (let cut = cardId.lastIndexOf('-'); cut > 0; cut = cardId.lastIndexOf('-', cut - 1)) {
+    const setId = cardId.slice(0, cut)
+    for (const file of [`${setId}.json`, `${setId}.p2.json`, `${setId}.p3.json`]) {
+      const abs = path.join(dir, file)
+      if (!existsSync(abs)) continue
+      const shard = JSON.parse(readFileSync(abs, 'utf8'))
+      const found = shard.cards.find((c) => c.cardId === cardId)
+      if (found) return { ...found, setName: shard.set.name }
+    }
   }
   return null
+}
+
+/**
+ * The line the viewer prints under the card name: `<set> · #<number>`.
+ *
+ * The NAME alone is not enough to identify a card here. The fixture reuses
+ * Greek-letter names across sets — `fxs1-1` and `fxp2.5-1` are both
+ * "9 Fixture" — so asserting on the name would pass while the editor showed a
+ * card from a different set, which is the exact failure being tested for. Set
+ * plus number is unique.
+ */
+function fixtureCardLabel(cardId) {
+  const c = fixtureCard(cardId)
+  return c === null ? null : `${c.setName} · #${c.number}`
 }
 
 const browser = await chromium.launch({
@@ -590,7 +617,7 @@ try {
     // going to. A shorter wait would pass against the bug it is here to catch.
     await page.waitForTimeout(2000)
     const landed = new URL(page.url()).searchParams.get('id')
-    const name = fixtureCardName(asked)
+    const label = fixtureCardLabel(asked)
     queueTargets.push(asked)
     ok(
       `queue row ${row}: the address bar still says the card it picked`,
@@ -599,8 +626,8 @@ try {
     )
     ok(
       `queue row ${row}: and that card is the one on screen`,
-      name !== null && (await page.getByText(name, { exact: false }).count()) > 0,
-      `expected ${name} for ${asked}`,
+      label !== null && (await page.getByText(label, { exact: false }).count()) > 0,
+      `expected "${label}" for ${asked}`,
     )
   }
   ok(
@@ -630,8 +657,8 @@ try {
   )
   ok(
     'and opens that card, not the auto-selected default',
-    (await coldPage.getByText(fixtureCardName(COLD_ID), { exact: false }).count()) > 0,
-    `expected ${fixtureCardName(COLD_ID)}`,
+    (await coldPage.getByText(fixtureCardLabel(COLD_ID), { exact: false }).count()) > 0,
+    `expected "${fixtureCardLabel(COLD_ID)}"`,
   )
   await cold.close()
   slowUrls = null
