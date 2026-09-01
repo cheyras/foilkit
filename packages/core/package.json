@@ -1,0 +1,23 @@
+{
+  "name": "@foilkit/core",
+  "version": "0.0.0",
+  "description": "The foil shader ABI: canonical card space, the uniform contract, shader assembly, canon layering. Zero dependencies, no renderer.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "source": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -b && node ../../tools/copy-json.mjs packages/core"
+  }
+}

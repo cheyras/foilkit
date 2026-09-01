@@ -1,0 +1,44 @@
+{
+  "$doc": [
+    "THE COMPOSITE CONTRACT — the version of the rendering law a stored uniform",
+    "snapshot was chosen under.",
+    "",
+    "A canon file is a full uniform snapshot: 'this is what the pattern looks",
+    "like, period'. That claim is only meaningful relative to the law that turns",
+    "uniforms into pixels. Change the law and the SAME FILE is a DIFFERENT",
+    "RENDERING — and that has to be legible rather than silent, which is what",
+    "this number is for. Every canon file carries `contract` (the law it is read",
+    "under) and `tunedUnderContract` (the law its numbers were chosen under).",
+    "When they differ, the file has not been rechecked against the current law.",
+    "",
+    "A bump is not a migration. Nothing rewrites a canon file: the numbers are a",
+    "human's eye, and a machine may not adjust them (AGENTS.md F4). The bump only",
+    "records that the ground moved under them.",
+    "",
+    "Read by packages/core/src/shader.ts. The recheck procedure under a bump is",
+    "two runs of tools/parity/run.mjs — one per law — through",
+    "tools/parity/compare.mjs, ranked on mean absolute error; see",
+    "docs/CANON-ASPECT-RECHECK.md for how contract 2 was measured."
+  ],
+  "contract": 2,
+  "history": [
+    {
+      "contract": 1,
+      "from": "2026-08-02",
+      "summary": "The workbench-split baseline. Pattern geometry is made isotropic against CARD_ASPECT = era-layouts.cardAspect, which was [245, 337] — TCGdex's small-size raster. All 32 canon files were tuned here.",
+      "cardAspect": [
+        245,
+        337
+      ]
+    },
+    {
+      "contract": 2,
+      "from": "2026-09-01",
+      "summary": "4b: canonical space is the PHYSICAL CARD. cardAspect moves [245, 337] -> [63, 88], so CARD_ASPECT goes 1.37551 -> 1.39683 and every pattern's vertical feature scale changes by 1.55%. It reaches the recipes through the 51 `vec2(1.0, CARD_ASPECT)` uses in packages/patterns/src/patterns.ts, plus rectMask, cardAlpha and the R6 ink-estimate ring radii. Recipes with tuned cell GEOMETRY are more exposed than ones carrying a global scale. No canon file was retuned in the bump — see docs/CANON-ASPECT-RECHECK.md for the measured per-canon delta and which ones a human should look at.",
+      "cardAspect": [
+        63,
+        88
+      ]
+    }
+  ]
+}

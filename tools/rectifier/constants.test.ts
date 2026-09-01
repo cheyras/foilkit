@@ -22,6 +22,12 @@ import {
   mmToCanonicalPx,
 } from './constants.ts';
 
+// The definition moved into @foilkit/core in the extraction; `constants.ts` is
+// now a re-export shim. These guards follow the definition, not the shim —
+// reading the shim back would prove nothing.
+const CORE_MODULE = fileURLToPath(new URL('../../packages/core/src/canonical-space.ts', import.meta.url));
+const CORE_DATUM = fileURLToPath(new URL('../../packages/core/src/card-space.json', import.meta.url));
+
 describe('canonical space derives from the millimetre constants', () => {
   it('recomputes the raster from mm rather than trusting the export', () => {
     assert.equal(CANONICAL_W, CARD_WIDTH_MM * CANONICAL_PX_PER_MM);
@@ -73,12 +79,12 @@ describe('canonical space derives from the millimetre constants', () => {
   // catch a literal — 504 === 504 either way — so this reads the source back
   // and fails if a derived export was ever assigned a number.
   it('never assigns a derived value a literal', () => {
-    const src = readFileSync(fileURLToPath(new URL('./constants.ts', import.meta.url)), 'utf8');
+    const src = readFileSync(CORE_MODULE, 'utf8');
     const derived = [
       'CANONICAL_W',
       'CANONICAL_H',
-      'CARD_ASPECT',
-      'CARD_ASPECT_INVERSE',
+      'CARD_ASPECT_WH',
+      'CARD_ASPECT_HW',
       'CARD_CORNER_RADIUS_FRACTION',
       'CANONICAL_CORNER_RADIUS_PX',
     ];
@@ -89,15 +95,26 @@ describe('canonical space derives from the millimetre constants', () => {
         `${name} is assigned a numeric literal; it must be computed from the millimetre constants`,
       );
     }
-    // …and the four inputs ARE literals, which is what makes them the inputs.
+    // …and the four inputs are READ from the datum, never restated here.
     for (const name of ['CARD_WIDTH_MM', 'CARD_HEIGHT_MM', 'CARD_CORNER_RADIUS_MM', 'CANONICAL_PX_PER_MM']) {
-      assert.ok(new RegExp(`export const ${name} = \\d`).test(src), `${name} should be a literal input`);
+      assert.ok(
+        new RegExp(`export const ${name} = space\\.`).test(src),
+        `${name} should be read from card-space.json, not restated in the module`,
+      );
+    }
+    // The four literals live in the datum file, which is what makes them the
+    // inputs — one file to change, and the provenance note sits beside them.
+    const datum = JSON.parse(readFileSync(CORE_DATUM, 'utf8')) as Record<string, unknown>;
+    for (const key of ['widthMm', 'heightMm', 'cornerRadiusMm', 'pxPerMm']) {
+      assert.equal(typeof datum[key], 'number', `card-space.json must carry a numeric ${key}`);
     }
   });
 
   it('keeps the provenance honest about the corner radius', () => {
-    const src = readFileSync(fileURLToPath(new URL('./constants.ts', import.meta.url)), 'utf8');
-    assert.match(src, /TRIANGULATED, NOT OFFICIAL/);
-    assert.match(src, /2\.5–3\.0 mm/);
+    // The provenance travels with the datum now, not with the arithmetic.
+    const doc = (JSON.parse(readFileSync(CORE_DATUM, 'utf8')) as { $doc: string[] }).$doc.join(' ');
+    assert.match(doc, /TRIANGULATED, NOT OFFICIAL/);
+    assert.match(doc, /2\.5-3\.0 mm/);
+    assert.match(readFileSync(CORE_MODULE, 'utf8'), /TRIANGULATED, NOT OFFICIAL/);
   });
 });

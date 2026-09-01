@@ -1,0 +1,41 @@
+{
+  "name": "@foilkit/three",
+  "version": "0.0.0",
+  "description": "three.js adapter: buildFoilMaterial, plus the React card viewer and mask/window drawing surfaces.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "source": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "source": "./src/react/index.ts",
+      "default": "./dist/react/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "dependencies": {
+    "@foilkit/core": "workspace:*",
+    "@foilkit/patterns": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "three": ">=0.160"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "build": "tsc -b"
+  }
+}

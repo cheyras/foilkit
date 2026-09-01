@@ -1,0 +1,29 @@
+{
+  "name": "@foilkit/resolver",
+  "version": "0.0.0",
+  "description": "Which foil does this printing carry? The Pokemon-specific resolver, era layouts and evidence indexes. Optional by construction.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "source": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./usage-index.json": "./src/usage-index.json",
+    "./assignments-index.json": "./src/assignments-index.json",
+    "./era-layouts.json": "./src/era-layouts.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "dependencies": {
+    "@foilkit/patterns": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc -b && node ../../tools/copy-json.mjs packages/resolver"
+  }
+}

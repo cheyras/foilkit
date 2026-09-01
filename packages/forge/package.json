@@ -1,0 +1,25 @@
+{
+  "name": "@foilkit/forge",
+  "version": "0.0.0",
+  "description": "The authoring stack: provenance, mask corpus, generator, edge trace, line snap, region learn, vector templates. node: builtins only.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "source": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@foilkit/core": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  }
+}

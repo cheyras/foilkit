@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/patterns" },
+    { "path": "packages/three" },
+    { "path": "packages/resolver" },
+    { "path": "packages/forge" }
+  ]
+}
