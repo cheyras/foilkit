@@ -178,30 +178,61 @@ implemented here now. The synthetic suite would never have found it.
 
 ## What is still blocked
 
-**The physical pair capture.** No bulk source ships variant-specific imagery:
-TCGdex returns one image per card and that image is the normal printing;
-`card_variant` has no image column. Both printings of the same card have to be
-photographed from the binder. Until that happens:
+**The first pairs have landed.** Four were photographed from the binder and
+measured on 2026-08-31 — see **`THRESHOLDS.md`**, which carries the numbers, the
+corpus size and the reasoning. No photograph is committed anywhere in this repo;
+the numbers are the whole record. Headlines:
 
-- **No delta class has been measured.** Every class in the test suite is
-  synthetic, constructed to have a known answer. Zero real pairs, n = 0.
-- **Every threshold in `diff.ts` is provisional.** `CHANGED_PIXEL_DELTA`,
-  `NULL_MAX_CHANGED_FRACTION`, `FRAME_MAX_INSIDE_CHANGED_FRACTION`,
-  `EDGE_MARGIN_PX`, `MAX_RESIDUAL_SHIFT_PX` — all set to separate the synthetic
-  cases with room to spare, none refitted against a photograph. Expect the null
-  ceiling in particular to rise: a real pair carries registration slop and
-  per-scan colour drift that a synthetic pair does not.
+- **The thresholds were deliberately NOT refitted.** `CHANGED_PIXEL_DELTA` is
+  measuring the wrong quantity on photographs rather than the right one badly:
+  exposure, angle-dependent foil optics and the reverse's printed foil
+  micro-texture all move it, and none of them is ink. The fitted per-channel
+  gain between a reverse printing and its normal ran 0.38-0.56 on three of the
+  four pairs. On the one pair that registered cleanly — difference image
+  visually near-black — the threshold still marks 40.8% of the art window
+  changed and the classifier returns `full`. The fix is a photometrically
+  invariant statistic, not a recalibrated ceiling.
+- **No real pair has yet produced a `null` or a `frame` classification.** All
+  four returned `full`, for that metric reason. The three-way behaviour is still
+  exercised only by the synthetic suite.
+- **The alignment guard can pass a badly misregistered pair.** It correlates raw
+  luma, which for a normal against a reverse-holo is dominated by the very
+  difference being measured, so the objective goes nearly flat and its argmin is
+  noise. It returned `aligned: true` for all four pairs while three were badly
+  misregistered. `AlignmentReport.peakContrast` now reports how far the winning
+  shift stands out from the field; a small shift alone is not evidence.
+- **The die-cut edge is not a sufficient registration datum.** Sleeves and
+  print-centring variance leave two copies of one card with their ink in
+  different places — one pair carries a stable 2 mm horizontal offset after both
+  halves were correctly rectified to their own outlines. A capture pipeline has
+  to register on printed content, not only rectify to the cut. That is task 14's
+  problem and it is the most useful thing this run measured.
+
+What the run did establish, independently of the classifier: direct inspection
+of the rectified lower-left tag block shows a frame-confined structural ink
+difference on 3 of 3 pairs from the one 2026 set sampled — the set-code badge
+inverts between printings and the collector number, illustrator credit, rarity
+pip and flavour text all gain a white knockout keyline on the reverse. On the
+holo-against-reverse pair that treatment tracked the reverse printing rather
+than the presence of foil.
+
+Still genuinely unmeasured:
+
 - **`PLACEHOLDER_ART_WINDOW` is not a measurement.** The real windows are
   per-era and live in `era-layouts.json`. Pass the right one; a result computed
   against the placeholder should say so.
 - **The EX-era cases are untested.** EX Deoxys running the pattern across image
-  and text, FireRed & LeafGreen's centre-card Poké Ball, Hidden Legends' large
+  and text, FireRed & LeafGreen's centre-card Poke Ball, Hidden Legends' large
   background type symbol — 3b requires each to be tested explicitly rather than
-  assumed, and each needs a photographed pair.
+  assumed, and each needs a photographed pair. The binder sample contained none.
+- **The WOTC era is untested**, so the `wotc` rect has still never met a
+  photograph, and the Base Set holo-against-normal question has no measurement.
+- **Full-face rarities are untested.** No illustration rare, special
+  illustration rare or full-art pair.
 
-When the pairs land: refit the thresholds against them, record the corpus size
-on the front of every claim (AGENTS.md F5), and state the exception rate as a
-fraction of pairs tested.
+Every claim carries its corpus size on the front (AGENTS.md F5), and the
+exception rate is stated as a fraction of pairs tested — which at n = 4 across
+one era is not yet a rate at all.
 
 ## Handoffs
 

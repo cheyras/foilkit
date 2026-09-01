@@ -10,11 +10,25 @@
 // check here is a guard against a bad detection, not an alignment step: if the
 // two rectifications disagree, the honest answer is to re-detect, not to nudge.
 //
-// EVERY THRESHOLD IN THIS FILE IS PROVISIONAL. They are set to values that
-// separate the synthetic cases in `diff.test.ts` with room to spare, and they
-// have never seen a photographed pair — the pairs do not exist yet, because
-// shooting them is the human half of 3b. When the first real pairs land, refit
-// these against them and record the corpus size (AGENTS.md F5).
+// EVERY THRESHOLD IN THIS FILE IS STILL PROVISIONAL, and now for a sharper
+// reason than "no pairs exist". Four pairs have been photographed and measured
+// (THRESHOLDS.md, n = 4, 2026-08-31) and the thresholds were DELIBERATELY NOT
+// refitted against them.
+//
+// The finding is that `CHANGED_PIXEL_DELTA` is measuring the wrong quantity on
+// photographs rather than measuring the right one badly. Two frames of two
+// physical cards differ by exposure (the fitted per-channel gain between a
+// reverse printing and its normal ran 0.38-0.56 on three of four pairs — the
+// foil returns two to three times more light), by angle-dependent foil optics,
+// and by the reverse's printed foil micro-texture, none of which is ink. On the
+// one pair that registered cleanly, whose difference image is visually
+// near-black, this threshold still marks 40.8% of the art window changed and
+// the classifier returns `full`. Bringing that pair under the 2% frame ceiling
+// would need the threshold raised past the p99 of its own inside-window delta.
+//
+// So the fix is a photometrically invariant statistic, not a recalibrated
+// ceiling; refitting these numbers would have encoded an illumination artefact
+// as a measurement. Read THRESHOLDS.md before touching any value here.
 
 import { CANONICAL_H, CANONICAL_W } from './constants.ts';
 import type { RgbaImage } from './homography.ts';
@@ -99,6 +113,27 @@ export interface AlignmentReport {
   residual: number;
   /** Mean absolute luma difference at zero shift, for comparison. */
   residualAtZero: number;
+  /**
+   * Mean residual over the whole search window, MINUS the best residual. How
+   * far the winning shift stands out from the field.
+   *
+   * A small `dx`/`dy` is not by itself evidence of alignment, and on real pairs
+   * it is routinely not. This guard correlates raw luma, and for a normal
+   * against a reverse-holo raw luma is dominated by the very difference being
+   * measured — a whole foil sheet — so the objective goes nearly flat and its
+   * argmin is noise. Measured on the first four photographed pairs
+   * (THRESHOLDS.md, 2026-08-31), `aligned` came back true for all four while
+   * three of them were badly misregistered: the winning shift improved the mean
+   * residual by under 1 unit out of ~35, and several winners sat exactly on the
+   * +/-12 search limit. A peak at the edge of its own search window that
+   * improves the objective by 3% is not a registration.
+   *
+   * So a caller that wants a trustworthy guard should require this to be
+   * comfortably positive as well as the shift to be small. It is reported
+   * rather than folded into `aligned` because what counts as "comfortable"
+   * depends on the imagery, and n = 4 is not enough to fix a bound.
+   */
+  peakContrast: number;
   aligned: boolean;
 }
 
@@ -135,6 +170,8 @@ export function checkAlignment(a: RgbaImage, b: RgbaImage): AlignmentReport {
 
   let best = { dx: 0, dy: 0, residual: Number.POSITIVE_INFINITY };
   let atZero = Number.POSITIVE_INFINITY;
+  let residualSum = 0;
+  let residualCount = 0;
   for (let dy = -R; dy <= R; dy++) {
     for (let dx = -R; dx <= R; dx++) {
       let sum = 0;
@@ -147,6 +184,7 @@ export function checkAlignment(a: RgbaImage, b: RgbaImage): AlignmentReport {
       }
       const residual = n ? sum / n : Number.POSITIVE_INFINITY;
       if (dx === 0 && dy === 0) atZero = residual;
+      if (Number.isFinite(residual)) { residualSum += residual; residualCount++; }
       if (residual < best.residual) best = { dx, dy, residual };
     }
   }
@@ -158,6 +196,7 @@ export function checkAlignment(a: RgbaImage, b: RgbaImage): AlignmentReport {
     dy: dyPx,
     residual: best.residual,
     residualAtZero: atZero,
+    peakContrast: residualCount ? residualSum / residualCount - best.residual : 0,
     aligned: Math.abs(dxPx) <= MAX_RESIDUAL_SHIFT_PX && Math.abs(dyPx) <= MAX_RESIDUAL_SHIFT_PX,
   };
 }
