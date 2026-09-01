@@ -19,6 +19,9 @@
 import { createReadStream, existsSync, statSync } from 'node:fs'
 import { extname, join, normalize, resolve } from 'node:path'
 import { defineConfig, type Plugin, type ViteDevServer } from 'vite'
+// @ts-expect-error -- plain .mjs, shared with copy-data.mjs so the dev server
+// and the build cannot disagree about what the glyph slot contains.
+import { buildGlyphIndex } from './glyph-index.mjs'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -45,6 +48,9 @@ export const DATA_ROUTES: { prefix: string; dir: string }[] = [
   { prefix: '/foil-windows/', dir: 'foil-windows' },
 ]
 
+/** The glyph drop directory, served at the route `@foilkit/three` polls. */
+export const GLYPHS_DIR = join(ROOT, 'assets', 'glyphs')
+
 /** Directories that live in `data/` regardless of which bake is selected. */
 export const CORPUS_DIRS = new Set(['foil-masks', 'foil-canon', 'foil-windows'])
 export const DATA_FILES: Record<string, string> = {
@@ -64,6 +70,7 @@ const MIME: Record<string, string> = {
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
   '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
 }
 
 function bakeData(): Plugin {
@@ -72,6 +79,27 @@ function bakeData(): Plugin {
     configureServer(server: ViteDevServer) {
       server.middlewares.use((req, res, next) => {
         const url = (req.url ?? '').split('?')[0] ?? ''
+        // The glyph slot. `/foil-glyphs` is the index; `/foil-glyphs/<slug>/<file>`
+        // is an asset. Empty today, and answering with an empty index rather
+        // than a 404 is the honest difference between "no surface" and
+        // "nothing dropped in yet".
+        if (url === '/foil-glyphs' || url === '/foil-glyphs/') {
+          res.setHeader('content-type', MIME['.json']!)
+          res.end(JSON.stringify(buildGlyphIndex(GLYPHS_DIR)))
+          return
+        }
+        if (url.startsWith('/foil-glyphs/')) {
+          const abs = normalize(join(GLYPHS_DIR, decodeURIComponent(url.slice('/foil-glyphs/'.length))))
+          if (!abs.startsWith(normalize(GLYPHS_DIR)) || !existsSync(abs) || !statSync(abs).isFile()) {
+            res.statusCode = 404
+            res.end('no such glyph asset')
+            return
+          }
+          res.setHeader('content-type', MIME[extname(abs)] ?? 'application/octet-stream')
+          createReadStream(abs).pipe(res)
+          return
+        }
+
         let rel: string | null = DATA_FILES[url] ?? null
         let root = BAKE_DIR
         if (rel === null && CORPUS_FILES[url] !== undefined) {

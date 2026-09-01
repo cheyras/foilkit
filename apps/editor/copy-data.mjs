@@ -14,6 +14,7 @@
 
 import { cpSync, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
+import { buildGlyphIndex } from './glyph-index.mjs'
 
 const HERE = import.meta.dirname
 const ROOT = resolve(HERE, '..', '..')
@@ -97,6 +98,21 @@ for (const [from, to] of FILES) {
   copied++
   console.log(`copy-data: ${from} -> dist/${to} (${statSync(src).size} bytes)`)
 }
+
+// ── The glyph slot ─────────────────────────────────────────────────────────
+// Empty today, and shipped as an EMPTY INDEX rather than as a 404. `uGlyphOn`
+// stays 0 and every slotted pattern renders its procedural fallback; that is
+// the shipping state, not a defect. Serving the slot is how it stays possible.
+const GLYPHS = join(ROOT, 'assets', 'glyphs')
+const glyphIndex = buildGlyphIndex(GLYPHS)
+mkdirSync(join(DIST, 'foil-glyphs'), { recursive: true })
+if (existsSync(GLYPHS)) cpSync(GLYPHS, join(DIST, 'foil-glyphs'), { recursive: true })
+// The index has to answer at `/foil-glyphs` itself, and a directory cannot —
+// so it is also written as `/foil-glyphs/index.json` for hosts that serve one.
+writeFileSync(join(DIST, 'foil-glyphs.json'), JSON.stringify(glyphIndex))
+writeFileSync(join(DIST, 'foil-glyphs', 'index.json'), JSON.stringify(glyphIndex))
+report.artifacts['foil-glyphs'] = { present: true, slots: Object.keys(glyphIndex.patterns).length }
+console.log(`copy-data: glyph slot -> dist/foil-glyphs/ (${Object.keys(glyphIndex.patterns).length} slot(s) filled)`)
 
 // The build's own receipt. The editor fetches it and shows what shipped, so
 // "which bake is this site serving" is answerable from the site itself rather

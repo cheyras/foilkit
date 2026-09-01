@@ -13,7 +13,11 @@
   },
   "rewrites": [
     {
-      "source": "/((?!api/|assets/|catalog/|search/|foil-masks/|foil-canon/|foil-windows/|corpus-manifest\\.json|foil-verification-map\\.json|foil-pattern-cards\\.json|bake-receipt\\.json|favicon).*)",
+      "source": "/foil-glyphs",
+      "destination": "/foil-glyphs.json"
+    },
+    {
+      "source": "/((?!api/|assets/|catalog/|search/|foil-masks/|foil-canon/|foil-windows/|foil-glyphs/|foil-glyphs\\.json|corpus-manifest\\.json|foil-verification-map\\.json|foil-pattern-cards\\.json|bake-receipt\\.json|favicon).*)",
       "destination": "/index.html"
     }
   ],

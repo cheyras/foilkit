@@ -93,6 +93,13 @@ const server = createServer((req, res) => {
     createReadStream(abs).pipe(res)
     return
   }
+  // vercel.json rewrites `/foil-glyphs` to the generated index; the static
+  // server has to do the same or the glyph poller reads the SPA's index.html
+  // as its index, which is a different bug in every deployment that has one.
+  if (url === '/foil-glyphs') {
+    res.setHeader('content-type', 'application/json')
+    return createReadStream(path.join(DIST, 'foil-glyphs.json')).pipe(res)
+  }
   // Anything under /api/ 404s, exactly as `vite dev` does and as a deploy with
   // no functions would — the editor must read that as "signed out".
   if (url.startsWith('/api/')) {
@@ -330,7 +337,19 @@ try {
 
   overrides = new Map()
 
-  // ── 8. No console errors on the happy path ───────────────────────────────
+  // ── 8. The glyph slot is present and EMPTY ───────────────────────────────
+  // `uGlyphOn` stays 0 and every slotted pattern renders its procedural
+  // fallback. An empty index is a different claim from a 404: it says the
+  // surface is here and nothing has been dropped into it, which is true, and it
+  // is what makes the first original asset a drop rather than a wiring job.
+  const glyphs = await page.evaluate(async () => {
+    const res = await fetch('/foil-glyphs')
+    return res.ok ? await res.json() : null
+  })
+  ok('the glyph slot answers with an index, not a 404', glyphs !== null)
+  ok('and the slot is empty, which is the shipping state', Object.keys(glyphs?.patterns ?? {}).length === 0)
+
+  // ── 9. No console errors on the happy path ───────────────────────────────
   const real = consoleErrors.filter(
     (t) => !/fixture\.invalid|ERR_NAME_NOT_RESOLVED|Failed to load resource.*40[34]/.test(t),
   )
