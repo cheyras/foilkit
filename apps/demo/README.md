@@ -80,8 +80,9 @@ The run asserts, in both modes:
 | one texture per URL | after scrolling the whole grid, so every card has mounted and unmounted |
 | vector masks per size, not per card | a per-card rasterisation would show as dozens |
 | 300 simultaneous registrations | with the virtualizer switched off, which is the shape the old per-card renderer could never take |
-| the ladder engages and recovers | forced by the synthetic-load knob, and required to spend resolution before it touches animation |
+| the ladder engages and recovers | forced by the synthetic-load knob; required to spend resolution first, and to climb back to where THIS machine rests — recovery is watched on a clock, because a frame count measures how fast the machine renders rather than whether the ladder recovers |
 | both modes render | the screenshot goes back into the page, is decoded by the browser and measured for distinct colours and luma range — "it did not throw" is not evidence of pixels |
+| both modes render at a reduced pixel ratio | the ladder pinned to rung 1. A bug invisible at full quality is not caught by a test that only ever runs at full quality — this is where the ratio-applied-twice bug lived, green on four other checks in the same run |
 
 Output lands in `apps/demo/.acceptance/` (gitignored): a PNG per mode and
 `acceptance.json` with every number.

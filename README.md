@@ -40,14 +40,16 @@ a later *addition* rather than a later rewrite — and each inherits "one
 renderer, any number of cards" instead of reimplementing it.
 
 **The move came with a receipt.** 45 of 45 recipes render byte-identically
-before and after; 177 tests pass; the resolver returns an identical digest over
-10,312 probes built from the assignment corpus itself; and `core` compiles and
-runs with three.js absent from `node_modules`. See [`RECEIPT.md`](RECEIPT.md).
+before and after; the 177 tests that existed at the time all passed; the
+resolver returns an identical digest over 10,312 probes built from the
+assignment corpus itself; and `core` compiles and runs with three.js absent from
+`node_modules`. See [`RECEIPT.md`](RECEIPT.md).
 
 ```
 pnpm install
-pnpm test          # 177 tests, no build step
+pnpm test              # 224 tests, no build step, no browser, no database
 pnpm run build
+pnpm run demo          # the stress demo: several hundred cards, one context
 ```
 
 Issues and discussion are open.
