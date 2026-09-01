@@ -1,0 +1,42 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: MIT -->
+<!-- SPDX-FileCopyrightText: 2026 Chey Rasmussen -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>foilkit — pattern room</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/vendor/three.module.js",
+          "@foilkit/core": "/packages/core/dist/index.js",
+          "@foilkit/patterns": "/packages/patterns/dist/index.js"
+        }
+      }
+    </script>
+    <style>
+      :root { color-scheme: dark; }
+      html, body { margin: 0; padding: 0; background: #0b0d12; }
+      /* The viewer host is a FIXED pixel box on purpose: the parity harness
+         clips the card rect out of the screenshot, and that rect is computed
+         from these two numbers. A responsive host would make the clip depend
+         on the window manager. */
+      #host {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1000px;
+        height: 800px;
+        background: #0b0d12;
+        overflow: hidden;
+        user-select: none;
+      }
+      #state { position: absolute; left: 1010px; top: 0; font: 12px monospace; color: #8a8f99; }
+    </style>
+  </head>
+  <body>
+    <div id="host"></div>
+    <div id="state">booting…</div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
