@@ -129,6 +129,10 @@ jobs:
         with:
           name: stage-acceptance
           path: apps/demo/.acceptance/
+          # The directory is dot-prefixed, and upload-artifact skips hidden
+          # files by default — so without this the artifact is empty exactly
+          # when it is needed, which is on a failure.
+          include-hidden-files: true
           if-no-files-found: warn
 
   reuse:

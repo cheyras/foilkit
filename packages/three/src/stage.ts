@@ -40,8 +40,8 @@ import {
   faceTextureWidth,
   maskTextureWidth,
   needsLargerDecode,
+  cardGlBox,
   scheduleFrame,
-  scissorBox,
   shortEdge,
   type CardState,
   type LadderOptions,
@@ -723,11 +723,16 @@ export class FoilStage {
     }
     const schedule = scheduleFrame(states, this.plan, viewport)
 
+    // CSS PIXELS, not device pixels. `setViewport`/`setScissor` multiply by the
+    // renderer's own pixel ratio before they reach GL, so a device-pixel box
+    // handed to them is the ratio applied twice — invisible at ratio 1 and
+    // catastrophic below it, which is exactly the shape of bug that only turns
+    // up once the budget ladder starts walking the ratio down. Everything the
+    // stage hands three is in CSS px; the only device-pixel arithmetic left is
+    // the blit's source rect, which reads the drawing buffer directly.
     this.renderer.setScissorTest(true)
-    const canvasW = Math.round(viewport.width * pixelRatio)
-    const canvasH = Math.round(viewport.height * pixelRatio)
-    this.renderer.setScissor(0, 0, canvasW, canvasH)
-    this.renderer.setViewport(0, 0, canvasW, canvasH)
+    this.renderer.setScissor(0, 0, viewport.width, viewport.height)
+    this.renderer.setViewport(0, 0, viewport.width, viewport.height)
     this.renderer.clear(true, true, false)
 
     const time = (now - this.started) / 1000
@@ -836,14 +841,10 @@ export class FoilStage {
     // stretched back on the way out (rung 1's second step); in underlay a
     // card's pixels ARE the page's pixels, so renderScale is a no-op there.
     const scale = this.modeFor(card) === 'blit' ? this.plan.renderScale : 1
-    const box = scissorBox(card.rect, viewport, pixelRatio)
-    const w = Math.max(1, Math.round(box.width * scale))
-    const h = Math.max(1, Math.round(box.height * scale))
-    const y = box.y + box.height - h // anchored to the card's top edge
-    this.renderer.setScissor(box.x, y, w, h)
-    this.renderer.setViewport(box.x, y, w, h)
-
-    this.camera.aspect = w / h
+    const box = cardGlBox(card.rect, viewport, scale)
+    this.renderer.setScissor(box.x, box.y, box.width, box.height)
+    this.renderer.setViewport(box.x, box.y, box.width, box.height)
+    this.camera.aspect = box.width / box.height
     const fovY = (this.camera.fov * Math.PI) / 180
     const distH = (CARD_ASPECT / 2 / Math.tan(fovY / 2)) * 1.16
     const fovX = 2 * Math.atan(Math.tan(fovY / 2) * this.camera.aspect)
@@ -873,30 +874,28 @@ export class FoilStage {
   ): void {
     const canvas = card.blitCanvas!
     const ctx = card.blitCtx!
-    const box = scissorBox(card.rect, viewport, pixelRatio)
-    const scale = this.plan.renderScale
-    const sw = Math.max(1, Math.round(box.width * scale))
-    const sh = Math.max(1, Math.round(box.height * scale))
-    if (canvas.width !== box.width || canvas.height !== box.height) {
-      canvas.width = Math.max(1, box.width)
-      canvas.height = Math.max(1, box.height)
+    // The one place device pixels are still the unit: this reads the drawing
+    // buffer, so the box has to be converted the same way three converts it —
+    // multiply by the ratio, then floor, component by component.
+    const css = cardGlBox(card.rect, viewport, this.plan.renderScale)
+    const dev = (v: number) => Math.floor(v * pixelRatio)
+    const sx = dev(css.x)
+    const sw = Math.max(1, dev(css.width))
+    const sh = Math.max(1, dev(css.height))
+    const full = cardGlBox(card.rect, viewport, 1)
+    const outW = Math.max(1, dev(full.width))
+    const outH = Math.max(1, dev(full.height))
+    if (canvas.width !== outW || canvas.height !== outH) {
+      canvas.width = outW
+      canvas.height = outH
     }
-    // The source rect is in canvas pixels with a TOP-left origin, so the
-    // scissor box's bottom-left y has to be flipped back.
-    const canvasH = Math.round(viewport.height * pixelRatio)
-    const sy = canvasH - (box.y + box.height)
+    // drawImage's source rect has a TOP-left origin over the real drawing
+    // buffer, so the GL box's bottom-left y flips against the buffer's own
+    // height rather than against a recomputed one.
+    const bufferH = this.renderer.domElement.height
+    const sy = bufferH - (dev(css.y) + sh)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.drawImage(
-      this.renderer.domElement,
-      box.x,
-      sy,
-      sw,
-      sh,
-      0,
-      0,
-      canvas.width,
-      canvas.height,
-    )
+    ctx.drawImage(this.renderer.domElement, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
   }
 
   private sourceFor(card: CardEntry): TiltSource {

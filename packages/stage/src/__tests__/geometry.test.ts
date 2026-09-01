@@ -13,6 +13,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   cardFitRect,
+  cardGlBox,
   distanceFromCentre,
   intersectsViewport,
   scissorBox,
@@ -39,6 +40,35 @@ test('device pixel ratio scales the box, not the flip', () => {
 test('boxes are whole device pixels', () => {
   const box = scissorBox({ x: 10.4, y: 20.6, width: 99.5, height: 139.2 }, viewport, 1.5)
   for (const v of Object.values(box)) assert.equal(v, Math.round(v))
+})
+
+test('the drawn box is in CSS pixels, because the renderer applies the ratio', () => {
+  // three multiplies every setViewport/setScissor by its own pixel ratio on the
+  // way to GL. A device-pixel box therefore applies the ratio TWICE — invisible
+  // at ratio 1, and at ratio 0.5 it draws every card into the wrong quarter of
+  // the screen. This test is the regression, and it cost a CI run to learn.
+  const rect = { x: 100, y: 40, width: 200, height: 280 }
+  assert.deepEqual(cardGlBox(rect, viewport), scissorBox(rect, viewport, 1))
+  assert.deepEqual(cardGlBox(rect, viewport), { x: 100, y: 800 - 40 - 280, width: 200, height: 280 })
+})
+
+test('a scaled-down render stays inside its own rect, anchored to the top edge', () => {
+  const rect = { x: 100, y: 40, width: 200, height: 280 }
+  const full = cardGlBox(rect, viewport, 1)
+  const half = cardGlBox(rect, viewport, 0.5)
+  assert.equal(half.width, 100)
+  assert.equal(half.height, 140)
+  assert.equal(half.x, full.x)
+  // GL y grows up, so the card's top edge is the box's HIGHEST y — a scaled
+  // box shares it, and never bleeds into the neighbour above.
+  assert.equal(half.y + half.height, full.y + full.height)
+  assert.ok(half.y >= full.y)
+})
+
+test('a render scale at or above 1 is not a resize', () => {
+  const rect = { x: 10, y: 10, width: 176, height: 246 }
+  assert.deepEqual(cardGlBox(rect, viewport, 1), cardGlBox(rect, viewport))
+  assert.deepEqual(cardGlBox(rect, viewport, 2), cardGlBox(rect, viewport))
 })
 
 test('intersection is inclusive of partly-visible cards and margins', () => {

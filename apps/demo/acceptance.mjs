@@ -339,6 +339,25 @@ for (const mode of ['underlay', 'blit']) {
   writeFileSync(path.join(OUT, `${mode}.png`), png)
   const pixels = await measure(png)
 
+  // AND at a reduced pixel ratio. Rung 1 walks the ratio down, and a renderer
+  // that applies its own ratio to a box the stage already scaled draws every
+  // card into the wrong fraction of the screen — a failure that is invisible at
+  // ratio 1 and therefore invisible until a machine is slow enough to matter.
+  // This is the regression, pinned rather than waited for.
+  await page.evaluate(() => window.foilkitDemo.stage.setLadderStep(5))
+  await settle(30)
+  const lowShot = await page.screenshot({ clip })
+  writeFileSync(path.join(OUT, `${mode}-rung1.png`), lowShot)
+  const lowPixels = await measure(lowShot)
+  const lowStats = await stats()
+  check(
+    `'${mode}' still renders with the pixel ratio walked down`,
+    lowPixels.distinct > 40 && lowPixels.range > 24,
+    `pixel ratio ${lowStats.pixelRatio.toFixed(2)}, ${lowPixels.distinct} distinct colours, luma range ${lowPixels.min.toFixed(0)}–${lowPixels.max.toFixed(0)}`,
+  )
+  await page.evaluate(() => window.foilkitDemo.resetLadder())
+  await settle(20)
+
   modeReport[mode] = {
     mode: s.mode,
     contexts: ctx.created,

@@ -35,6 +35,29 @@ export function scissorBox(rect: Rect, viewport: Viewport, pixelRatio: number): 
   return { x: left, y: canvasH - top - height, width, height }
 }
 
+/**
+ * The box a card is actually drawn into, in **CSS pixels**, GL origin
+ * bottom-left, with rung 1's per-card render scale applied.
+ *
+ * CSS pixels on purpose. A renderer that owns its own pixel ratio applies it
+ * on the way to GL — three.js multiplies every `setViewport`/`setScissor` by
+ * `_pixelRatio` — so handing it a device-pixel box applies the ratio twice.
+ * That is invisible at ratio 1 and catastrophic below it, which means it stays
+ * invisible until the budget ladder starts walking the ratio down. It cost a
+ * CI run to find; this function is where it does not happen again.
+ *
+ * The scaled box is anchored to the card's TOP edge (its highest GL y), so a
+ * card rendered small stays inside its own rect and never bleeds into the
+ * neighbour above it.
+ */
+export function cardGlBox(rect: Rect, viewport: Viewport, renderScale = 1): Box {
+  const box = scissorBox(rect, viewport, 1)
+  if (renderScale >= 1) return box
+  const width = Math.max(1, Math.round(box.width * renderScale))
+  const height = Math.max(1, Math.round(box.height * renderScale))
+  return { x: box.x, y: box.y + box.height - height, width, height }
+}
+
 /** Does any part of the rect fall inside the viewport? */
 export function intersectsViewport(rect: Rect, viewport: Viewport, margin = 0): boolean {
   return (
