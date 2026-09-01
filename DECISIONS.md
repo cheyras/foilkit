@@ -1398,3 +1398,25 @@ site answers 503. The table was the only thing still saying 500 and 502 — and 
 is the part somebody reads while deciding whether they are looking at a
 packaging failure or an unfinished setup, which is the exact distinction the 503
 exists to draw.
+## 2026-09-01 — `functions/_lib/writers.test.ts` exists, because two files cite it
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** the client/server writer-list parity check moves out of
+`session.test.ts` into `writers.test.ts`, the file `writers.ts` and
+`capability.ts` both name. It also now asserts that the two `isWriter`
+IMPLEMENTATIONS agree, not only that the arrays match, and that the list is
+non-empty.
+
+**Why:** the citations pointed at a file that did not exist. That is harmless
+until somebody grants the second writer, edits one list, greps for the named
+test to run it, and finds nothing. The matching RULE is duplicated as well as
+the list, so a list that agrees while the rule does not would let the UI and the
+server disagree about `CheyRas` while the test said they were in step.
+
+**Implications:** the editor's copy is still read as SOURCE TEXT rather than
+imported — it is front-end code whose import graph is free to grow a React or
+Vite dependency, and a parity test that fails because the editor imported
+something is a test people delete. Checked against the bug it exists for: adding
+an entry to one list only fails it.
+

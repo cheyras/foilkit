@@ -9,9 +9,6 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
 
 process.env.FOILKIT_SESSION_SECRET ??= 'test-secret-that-is-at-least-32-characters-long'
 
@@ -111,17 +108,9 @@ test('the writer capability is a list, matched case-insensitively', () => {
   assert.ok(Array.isArray(WRITERS))
 })
 
-test('THE TWO WRITER LISTS AGREE — the server check and what the UI offers', () => {
-  // A duplicated list that silently diverges is the worst of both worlds: a UI
-  // that offers a save the server refuses, or one that hides a save it would
-  // have allowed. So the editor's copy is read as source and compared.
-  const here = dirname(fileURLToPath(import.meta.url))
-  const editor = readFileSync(join(here, '..', '..', 'apps', 'editor', 'src', 'writer', 'capability.ts'), 'utf8')
-  const m = /export const WRITERS: readonly string\[\] = \[([^\]]*)\]/.exec(editor)
-  assert.ok(m, "could not find WRITERS in the editor's capability.ts")
-  const editorList = [...m[1]!.matchAll(/'([^']+)'/g)].map((x) => x[1])
-  assert.deepEqual(editorList, [...WRITERS], 'the editor and the server disagree about who may write')
-})
+// The client/server list parity check MOVED to `writers.test.ts` — the file
+// both copies of the list cite by name, and which did not exist until it was
+// noticed that the citation pointed nowhere.
 
 test('a card id is a path segment, and anything else is refused', () => {
   assert.equal(assertCardId('base1-4'), 'base1-4')
