@@ -1382,3 +1382,19 @@ white on top and black on the bottom, and an assertion samples the rendered
 canvas and requires the top band to be brighter. The guard was checked against
 the bug it was written for — reverting the fix fails it. A flat-base test can
 never again stand in for "the card renders correctly".
+
+## 2026-09-01 — The env table said 500/502; the code has always said 503
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `DEPLOYMENT.md`'s environment table now says `503 not_configured`
+for `FOILKIT_SESSION_SECRET`, the OAuth pair and `FOILKIT_GITHUB_TOKEN`, and
+notes that `502 write_failed` is a different answer entirely — the token was
+present and GitHub refused the commit.
+
+**Why:** `config.ts` sends 503, `tools/verify-functions.mts` asserts 503, CI
+runs it, the same document's own failure-modes section says 503, and the live
+site answers 503. The table was the only thing still saying 500 and 502 — and it
+is the part somebody reads while deciding whether they are looking at a
+packaging failure or an unfinished setup, which is the exact distinction the 503
+exists to draw.

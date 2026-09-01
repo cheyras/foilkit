@@ -62,15 +62,15 @@ Two consequences worth knowing before you edit anything:
 
 Every variable a feature depends on is declared here in the same commit that
 introduced the code reading it. A missing one **fails loudly** — the endpoint
-answers `500 not_configured` and names the variable — rather than degrading into
+answers `503 not_configured` and names the variable — rather than degrading into
 "nobody is ever a writer", which would be a mystery instead of an error.
 
 | Name | Purpose | Environments | Secret? | Missing behaviour |
 |---|---|---|---|---|
-| `FOILKIT_SESSION_SECRET` | HMAC key for the signed session cookie. **≥ 32 characters**; generate with `openssl rand -hex 32`. | Production, Preview | **yes** | `/api/me` and every write endpoint answer `500 not_configured`. Read and staging are unaffected. |
-| `FOILKIT_OAUTH_CLIENT_ID` | The GitHub OAuth App's client id. Public half. | Production, Preview | no | `/api/auth/start` answers `500 not_configured`; the Sign in link fails. |
-| `FOILKIT_OAUTH_CLIENT_SECRET` | The same App's client secret. | Production, Preview | **yes** | The callback answers `500 not_configured`; nobody can complete sign-in. |
-| `FOILKIT_GITHUB_TOKEN` | The token that **commits** a direct write. Fine-grained PAT scoped to `cheyras/foilkit` with **Contents: read and write** and nothing else. | Production | **yes** | Write endpoints answer `502 write_failed` naming the variable. |
+| `FOILKIT_SESSION_SECRET` | HMAC key for the signed session cookie. **≥ 32 characters**; generate with `openssl rand -hex 32`. | Production, Preview | **yes** | `/api/me` and every write endpoint answer `503 not_configured` naming it. Read and staging are unaffected. |
+| `FOILKIT_OAUTH_CLIENT_ID` | The GitHub OAuth App's client id. Public half. | Production, Preview | no | `/api/auth/start` answers `503 not_configured` naming it; the Sign in link fails. |
+| `FOILKIT_OAUTH_CLIENT_SECRET` | The same App's client secret. | Production, Preview | **yes** | The callback answers `503 not_configured` naming it; nobody can complete sign-in. |
+| `FOILKIT_GITHUB_TOKEN` | The token that **commits** a direct write. Fine-grained PAT scoped to `cheyras/foilkit` with **Contents: read and write** and nothing else. | Production | **yes** | Write endpoints answer `503 not_configured` naming it, before they read a cookie or touch the repository. (`502 write_failed` is a different answer entirely: the token was present and GitHub refused the commit.) |
 | `FOILKIT_REPO` | `owner/repo` to commit into. Defaults to `cheyras/foilkit`. | optional | no | Uses the default. |
 | `FOILKIT_BRANCH` | Branch to commit onto. Defaults to `main`. | optional | no | Uses the default. |
 | `FOILKIT_FRAMES_FILE` | Overrides where `@foilkit/forge` reads `data/frames.json`. **Set by the function at run time; do not configure it.** Listed because it exists. | — | no | The write endpoint sets it per request. |
