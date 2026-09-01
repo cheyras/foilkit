@@ -1,0 +1,2162 @@
+{
+  "version": 1,
+  "generatedAt": "2026-08-31T15:10:56.993Z",
+  "source": "catalog",
+  "resolverVersion": 5,
+  "countingUnits": {
+    "maskCoverage": "(cardId, scope) — one mask serves every sibling variant of the card at that scope",
+    "windowGeometry": "cardId — scope-agnostic; a sheet is the same art box inverted",
+    "patternAssignment": "(cardId, variantId) — one printing, since holo and reverse resolve differently",
+    "crossCardReuse": "never aliased — reprints of one illustration under different cardIds stay separate rows",
+    "exemplars": "admissible masks via selectExemplars({eraId, scope}) (EXEMPLAR_WEIGHT > 0), then aliased to distinct (cardId, scope) units — never a directory glob, so unreviewed `ai` masks can never count as evidence",
+    "leverage": "printings ÷ (exemplars + 1) — where an hour of human attention moves the most pixels",
+    "maskCoveredCards": "coverage is NOT evidence: a group can carry masks that selectExemplars rejects (unreviewed `ai`), so maskCoveredCards ≥ exemplarsInGroup by design",
+    "confidenceHistogram": "guess.confidence per printing; a null confidence (heuristic) is bucketed as 'none'"
+  },
+  "groupKey": [
+    "eraId",
+    "scope",
+    "patternId",
+    "match"
+  ],
+  "sortedBy": "leverage desc, then printings desc, then key",
+  "catalog": {
+    "variantsScanned": 41471,
+    "variantsAssigned": 21797,
+    "cardsAssigned": 18179,
+    "groups": 96
+  },
+  "corpus": {
+    "maskRecords": 20,
+    "maskCards": 20,
+    "maskCoverageUnits": 20,
+    "exemplarUnits": 15,
+    "windowGeometryFiles": 1,
+    "windowGeometryCards": 1,
+    "exemplarPools": {
+      "modern-sv|window": {
+        "eraId": "modern-sv",
+        "scope": "window",
+        "exemplars": 0,
+        "records": 0,
+        "weight": 0,
+        "byMethod": {},
+        "rejected": 20
+      },
+      "modern-sv|sheet": {
+        "eraId": "modern-sv",
+        "scope": "sheet",
+        "exemplars": 11,
+        "records": 11,
+        "weight": 7.4,
+        "byMethod": {
+          "hand-refined": 1,
+          "hand": 1,
+          "ai-corrected": 9
+        },
+        "rejected": 9
+      },
+      "modern-sv|full": {
+        "eraId": "modern-sv",
+        "scope": "full",
+        "exemplars": 0,
+        "records": 0,
+        "weight": 0,
+        "byMethod": {},
+        "rejected": 20
+      },
+      "modern-swsh|full": {
+        "eraId": "modern-swsh",
+        "scope": "full",
+        "exemplars": 0,
+        "records": 0,
+        "weight": 0,
+        "byMethod": {},
+        "rejected": 20
+      },
+      "modern-swsh|sheet": {
+        "eraId": "modern-swsh",
+        "scope": "sheet",
+        "exemplars": 0,
+        "records": 0,
+        "weight": 0,
+        "byMethod": {},
+        "rejected": 20
+      },
+      "wotc|window": {
+        "eraId": "wotc",
+        "scope": "window",
+        "exemplars": 4,
+        "records": 4,
+        "weight": 3.6,
+        "byMethod": {
+          "hand": 1,
+          "hand-refined": 2,
+          "ai-corrected": 1
+        },
+        "rejected": 16
+      },
+      "modern-swsh|window": {
+        "eraId": "modern-swsh",
+        "scope": "window",
+        "exemplars": 0,
+        "records": 0,
+        "weight": 0,
+        "byMethod": {},
+        "rejected": 20
+      },
+      "wotc|sheet": {
+        "eraId": "wotc",
+        "scope": "sheet",
+        "exemplars": 0,
+        "records": 0,
+        "weight": 0,
+        "byMethod": {},
+        "rejected": 20
+      }
+    }
+  },
+  "groups": [
+    {
+      "key": "modern-swsh|sheet|energy-symbols-ii|set",
+      "eraId": "modern-swsh",
+      "scope": "sheet",
+      "patternId": "energy-symbols-ii",
+      "match": "set",
+      "printings": 2041,
+      "distinctCards": 2032,
+      "confidence": {
+        "high": 2041
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 2041
+    },
+    {
+      "key": "modern-sv|window|cosmos|set",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "cosmos",
+      "match": "set",
+      "printings": 1624,
+      "distinctCards": 1385,
+      "confidence": {
+        "high": 1554,
+        "medium": 68,
+        "low": 2
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 1624
+    },
+    {
+      "key": "modern-sv|full|diagonal-sheen-right|set",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "diagonal-sheen-right",
+      "match": "set",
+      "printings": 863,
+      "distinctCards": 794,
+      "confidence": {
+        "high": 863
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 863
+    },
+    {
+      "key": "modern-swsh|window|striped-vertical-sheen|set",
+      "eraId": "modern-swsh",
+      "scope": "window",
+      "patternId": "striped-vertical-sheen",
+      "match": "set",
+      "printings": 665,
+      "distinctCards": 630,
+      "confidence": {
+        "high": 614,
+        "low": 17,
+        "medium": 34
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 665
+    },
+    {
+      "key": "modern-sv|window|horizontal-sheen|set",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "horizontal-sheen",
+      "match": "set",
+      "printings": 534,
+      "distinctCards": 486,
+      "confidence": {
+        "high": 406,
+        "medium": 128
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 534
+    },
+    {
+      "key": "wotc|sheet|rainbow-mirror|set",
+      "eraId": "wotc",
+      "scope": "sheet",
+      "patternId": "rainbow-mirror",
+      "match": "set",
+      "printings": 474,
+      "distinctCards": 467,
+      "confidence": {
+        "high": 474
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 474
+    },
+    {
+      "key": "modern-sv|window|cosmos-ii-pixel|set",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "cosmos-ii-pixel",
+      "match": "set",
+      "printings": 436,
+      "distinctCards": 345,
+      "confidence": {
+        "low": 196,
+        "medium": 148,
+        "high": 92
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 436
+    },
+    {
+      "key": "modern-sv|full|water-web|set",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "water-web",
+      "match": "set",
+      "printings": 408,
+      "distinctCards": 407,
+      "confidence": {
+        "medium": 408
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 408
+    },
+    {
+      "key": "modern-sv|sheet|energy-symbols-ii|set",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "energy-symbols-ii",
+      "match": "set",
+      "printings": 3538,
+      "distinctCards": 3529,
+      "confidence": {
+        "high": 2780,
+        "medium": 758
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 294.833
+    },
+    {
+      "key": "modern-sv|full|ex-starfoil|set",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "ex-starfoil",
+      "match": "set",
+      "printings": 280,
+      "distinctCards": 255,
+      "confidence": {
+        "high": 116,
+        "medium": 164
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 280
+    },
+    {
+      "key": "modern-sv|full|rainbow-glitter-sheen|set",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "rainbow-glitter-sheen",
+      "match": "set",
+      "printings": 275,
+      "distinctCards": 264,
+      "confidence": {
+        "low": 275
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 275
+    },
+    {
+      "key": "modern-swsh|full|rainbow-glitter|set",
+      "eraId": "modern-swsh",
+      "scope": "full",
+      "patternId": "rainbow-glitter",
+      "match": "set",
+      "printings": 262,
+      "distinctCards": 262,
+      "confidence": {
+        "medium": 214,
+        "low": 48
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 262
+    },
+    {
+      "key": "modern-sv|sheet|energy-symbols|set",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "energy-symbols",
+      "match": "set",
+      "printings": 2989,
+      "distinctCards": 2987,
+      "confidence": {
+        "medium": 1767,
+        "high": 1222
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 249.083
+    },
+    {
+      "key": "modern-sv|full|water-web|series",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "water-web",
+      "match": "series",
+      "printings": 224,
+      "distinctCards": 224,
+      "confidence": {
+        "medium": 224
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 224
+    },
+    {
+      "key": "modern-sv|window|cosmos|facet",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "cosmos",
+      "match": "facet",
+      "printings": 210,
+      "distinctCards": 201,
+      "confidence": {
+        "high": 210
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 210
+    },
+    {
+      "key": "modern-sv|sheet|mirror|set",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "mirror",
+      "match": "set",
+      "printings": 2454,
+      "distinctCards": 2447,
+      "confidence": {
+        "high": 372,
+        "low": 11,
+        "medium": 2071
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 11,
+      "maskCoveredCards": 11,
+      "windowGeometryCards": 1,
+      "leverage": 204.5
+    },
+    {
+      "key": "modern-sv|full|rainbow-glitter|set",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "rainbow-glitter",
+      "match": "set",
+      "printings": 179,
+      "distinctCards": 175,
+      "confidence": {
+        "low": 179
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 179
+    },
+    {
+      "key": "modern-sv|full|tinsel-ii|set",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "tinsel-ii",
+      "match": "set",
+      "printings": 169,
+      "distinctCards": 169,
+      "confidence": {
+        "low": 169
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 169
+    },
+    {
+      "key": "modern-swsh|full|rainbow-glitter|facet",
+      "eraId": "modern-swsh",
+      "scope": "full",
+      "patternId": "rainbow-glitter",
+      "match": "facet",
+      "printings": 151,
+      "distinctCards": 151,
+      "confidence": {
+        "medium": 151
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 151
+    },
+    {
+      "key": "modern-sv|window|confetti|set",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "confetti",
+      "match": "set",
+      "printings": 142,
+      "distinctCards": 142,
+      "confidence": {
+        "high": 142
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 142
+    },
+    {
+      "key": "modern-swsh|full|radiant|set",
+      "eraId": "modern-swsh",
+      "scope": "full",
+      "patternId": "radiant",
+      "match": "set",
+      "printings": 138,
+      "distinctCards": 138,
+      "confidence": {
+        "medium": 138
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 138
+    },
+    {
+      "key": "modern-swsh|window|cosmos-ii-pixel|set",
+      "eraId": "modern-swsh",
+      "scope": "window",
+      "patternId": "cosmos-ii-pixel",
+      "match": "set",
+      "printings": 136,
+      "distinctCards": 136,
+      "confidence": {
+        "medium": 135,
+        "low": 1
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 136
+    },
+    {
+      "key": "modern-sv|window|mirror|set",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "mirror",
+      "match": "set",
+      "printings": 131,
+      "distinctCards": 74,
+      "confidence": {
+        "medium": 131
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 131
+    },
+    {
+      "key": "modern-sv|window|shiny-vault|set",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "shiny-vault",
+      "match": "set",
+      "printings": 120,
+      "distinctCards": 120,
+      "confidence": {
+        "medium": 120
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 120
+    },
+    {
+      "key": "wotc|sheet|fireworks|set",
+      "eraId": "wotc",
+      "scope": "sheet",
+      "patternId": "fireworks",
+      "match": "set",
+      "printings": 115,
+      "distinctCards": 110,
+      "confidence": {
+        "high": 115
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 115
+    },
+    {
+      "key": "modern-swsh|window|shiny-vault|card",
+      "eraId": "modern-swsh",
+      "scope": "window",
+      "patternId": "shiny-vault",
+      "match": "card",
+      "printings": 104,
+      "distinctCards": 104,
+      "confidence": {
+        "high": 104
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 104
+    },
+    {
+      "key": "modern-swsh|full|gold-secret|facet",
+      "eraId": "modern-swsh",
+      "scope": "full",
+      "patternId": "gold-secret",
+      "match": "facet",
+      "printings": 88,
+      "distinctCards": 88,
+      "confidence": {
+        "high": 88
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 88
+    },
+    {
+      "key": "modern-sv|full|prism|set",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "prism",
+      "match": "set",
+      "printings": 81,
+      "distinctCards": 81,
+      "confidence": {
+        "low": 81
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 81
+    },
+    {
+      "key": "wotc|window|cosmos|set",
+      "eraId": "wotc",
+      "scope": "window",
+      "patternId": "cosmos",
+      "match": "set",
+      "printings": 403,
+      "distinctCards": 263,
+      "confidence": {
+        "high": 403
+      },
+      "exemplars": 4,
+      "exemplarRecords": 4,
+      "exemplarWeight": 3.6,
+      "exemplarsByMethod": {
+        "hand": 1,
+        "hand-refined": 2,
+        "ai-corrected": 1
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 80.6
+    },
+    {
+      "key": "modern-swsh|window|striped-vertical-sheen|series",
+      "eraId": "modern-swsh",
+      "scope": "window",
+      "patternId": "striped-vertical-sheen",
+      "match": "series",
+      "printings": 68,
+      "distinctCards": 68,
+      "confidence": {
+        "high": 68
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 68
+    },
+    {
+      "key": "modern-sv|full|radiant-collection-dots|card",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "radiant-collection-dots",
+      "match": "card",
+      "printings": 57,
+      "distinctCards": 57,
+      "confidence": {
+        "high": 7,
+        "medium": 50
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 57
+    },
+    {
+      "key": "modern-swsh|full|radiant|series",
+      "eraId": "modern-swsh",
+      "scope": "full",
+      "patternId": "radiant",
+      "match": "series",
+      "printings": 53,
+      "distinctCards": 53,
+      "confidence": {
+        "medium": 53
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 53
+    },
+    {
+      "key": "modern-sv|window|shiny-vault|card",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "shiny-vault",
+      "match": "card",
+      "printings": 51,
+      "distinctCards": 51,
+      "confidence": {
+        "high": 51
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 51
+    },
+    {
+      "key": "modern-sv|full|gold-secret|facet",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "gold-secret",
+      "match": "facet",
+      "printings": 46,
+      "distinctCards": 44,
+      "confidence": {
+        "high": 46
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 46
+    },
+    {
+      "key": "modern-swsh|full|vstar-pearl|set",
+      "eraId": "modern-swsh",
+      "scope": "full",
+      "patternId": "vstar-pearl",
+      "match": "set",
+      "printings": 39,
+      "distinctCards": 32,
+      "confidence": {
+        "high": 39
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 39
+    },
+    {
+      "key": "modern-sv|window|cracked-ice|facet",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "cracked-ice",
+      "match": "facet",
+      "printings": 38,
+      "distinctCards": 38,
+      "confidence": {
+        "medium": 2,
+        "high": 36
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 38
+    },
+    {
+      "key": "modern-sv|sheet|vertical-sheen|set",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "vertical-sheen",
+      "match": "set",
+      "printings": 447,
+      "distinctCards": 445,
+      "confidence": {
+        "medium": 447
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 37.25
+    },
+    {
+      "key": "modern-sv|full|shiny-vault|card",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "shiny-vault",
+      "match": "card",
+      "printings": 35,
+      "distinctCards": 35,
+      "confidence": {
+        "high": 35
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 35
+    },
+    {
+      "key": "modern-sv|full|starlight-ii|set",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "starlight-ii",
+      "match": "set",
+      "printings": 30,
+      "distinctCards": 30,
+      "confidence": {
+        "high": 30
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 30
+    },
+    {
+      "key": "wotc|window|starlight|set",
+      "eraId": "wotc",
+      "scope": "window",
+      "patternId": "starlight",
+      "match": "set",
+      "printings": 133,
+      "distinctCards": 51,
+      "confidence": {
+        "high": 114,
+        "medium": 19
+      },
+      "exemplars": 4,
+      "exemplarRecords": 4,
+      "exemplarWeight": 3.6,
+      "exemplarsByMethod": {
+        "hand": 1,
+        "hand-refined": 2,
+        "ai-corrected": 1
+      },
+      "exemplarsInGroup": 4,
+      "maskCoveredCards": 9,
+      "windowGeometryCards": 0,
+      "leverage": 26.6
+    },
+    {
+      "key": "modern-sv|sheet|pokeball-masterball|facet",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "pokeball-masterball",
+      "match": "facet",
+      "printings": 307,
+      "distinctCards": 240,
+      "confidence": {
+        "medium": 307
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 25.583
+    },
+    {
+      "key": "modern-sv|sheet|pokeball-masterball|set",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "pokeball-masterball",
+      "match": "set",
+      "printings": 304,
+      "distinctCards": 160,
+      "confidence": {
+        "high": 304
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 25.333
+    },
+    {
+      "key": "modern-swsh|full|striped-vertical-sheen|set",
+      "eraId": "modern-swsh",
+      "scope": "full",
+      "patternId": "striped-vertical-sheen",
+      "match": "set",
+      "printings": 25,
+      "distinctCards": 25,
+      "confidence": {
+        "high": 25
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 25
+    },
+    {
+      "key": "modern-swsh|window|confetti|set",
+      "eraId": "modern-swsh",
+      "scope": "window",
+      "patternId": "confetti",
+      "match": "set",
+      "printings": 25,
+      "distinctCards": 25,
+      "confidence": {
+        "high": 25
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 25
+    },
+    {
+      "key": "wotc|window|starlight|facet",
+      "eraId": "wotc",
+      "scope": "window",
+      "patternId": "starlight",
+      "match": "facet",
+      "printings": 124,
+      "distinctCards": 61,
+      "confidence": {
+        "high": 124
+      },
+      "exemplars": 4,
+      "exemplarRecords": 4,
+      "exemplarWeight": 3.6,
+      "exemplarsByMethod": {
+        "hand": 1,
+        "hand-refined": 2,
+        "ai-corrected": 1
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 24.8
+    },
+    {
+      "key": "modern-sv|window|tinsel-ii|set",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "tinsel-ii",
+      "match": "set",
+      "printings": 24,
+      "distinctCards": 22,
+      "confidence": {
+        "medium": 22,
+        "low": 2
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 24
+    },
+    {
+      "key": "modern-sv|full|prism|card",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "prism",
+      "match": "card",
+      "printings": 23,
+      "distinctCards": 23,
+      "confidence": {
+        "medium": 23
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 23
+    },
+    {
+      "key": "modern-swsh|window|cosmos|facet",
+      "eraId": "modern-swsh",
+      "scope": "window",
+      "patternId": "cosmos",
+      "match": "facet",
+      "printings": 19,
+      "distinctCards": 19,
+      "confidence": {
+        "high": 19
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 19
+    },
+    {
+      "key": "modern-swsh|full|shiny-vault|card",
+      "eraId": "modern-swsh",
+      "scope": "full",
+      "patternId": "shiny-vault",
+      "match": "card",
+      "printings": 18,
+      "distinctCards": 18,
+      "confidence": {
+        "high": 18
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 18
+    },
+    {
+      "key": "modern-sv|window|water-web|set",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "water-web",
+      "match": "set",
+      "printings": 16,
+      "distinctCards": 16,
+      "confidence": {
+        "high": 16
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 16
+    },
+    {
+      "key": "modern-sv|full|cosmos-iii-smooth|set",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "cosmos-iii-smooth",
+      "match": "set",
+      "printings": 14,
+      "distinctCards": 14,
+      "confidence": {
+        "low": 14
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 14
+    },
+    {
+      "key": "modern-sv|window|detective-pikachu|card",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "detective-pikachu",
+      "match": "card",
+      "printings": 14,
+      "distinctCards": 14,
+      "confidence": {
+        "high": 14
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 14
+    },
+    {
+      "key": "modern-sv|full|cosmos-ii-pixel|set",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "cosmos-ii-pixel",
+      "match": "set",
+      "printings": 13,
+      "distinctCards": 13,
+      "confidence": {
+        "low": 13
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 13
+    },
+    {
+      "key": "modern-sv|full|tinsel|set",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "tinsel",
+      "match": "set",
+      "printings": 13,
+      "distinctCards": 13,
+      "confidence": {
+        "high": 13
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 13
+    },
+    {
+      "key": "modern-sv|full|shiny-vault|set",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "shiny-vault",
+      "match": "set",
+      "printings": 12,
+      "distinctCards": 12,
+      "confidence": {
+        "medium": 12
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 12
+    },
+    {
+      "key": "modern-sv|window|cracked-ice|heuristic",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "cracked-ice",
+      "match": "heuristic",
+      "printings": 12,
+      "distinctCards": 12,
+      "confidence": {
+        "none": 12
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 12
+    },
+    {
+      "key": "modern-sv|window|vertical-sheen-rainbow|card",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "vertical-sheen-rainbow",
+      "match": "card",
+      "printings": 12,
+      "distinctCards": 12,
+      "confidence": {
+        "medium": 12
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 12
+    },
+    {
+      "key": "wotc|sheet|cosmos|facet",
+      "eraId": "wotc",
+      "scope": "sheet",
+      "patternId": "cosmos",
+      "match": "facet",
+      "printings": 11,
+      "distinctCards": 5,
+      "confidence": {
+        "high": 7,
+        "medium": 4
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 11
+    },
+    {
+      "key": "modern-sv|full|mirror|set",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "mirror",
+      "match": "set",
+      "printings": 9,
+      "distinctCards": 9,
+      "confidence": {
+        "low": 9
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 9
+    },
+    {
+      "key": "modern-sv|window|crosshatch|facet",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "crosshatch",
+      "match": "facet",
+      "printings": 9,
+      "distinctCards": 7,
+      "confidence": {
+        "high": 9
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 9
+    },
+    {
+      "key": "wotc|sheet|cosmos|set",
+      "eraId": "wotc",
+      "scope": "sheet",
+      "patternId": "cosmos",
+      "match": "set",
+      "printings": 9,
+      "distinctCards": 9,
+      "confidence": {
+        "medium": 9
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 9
+    },
+    {
+      "key": "modern-sv|sheet|pokeball-hologram|set",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "pokeball-hologram",
+      "match": "set",
+      "printings": 100,
+      "distinctCards": 100,
+      "confidence": {
+        "medium": 100
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 8.333
+    },
+    {
+      "key": "modern-sv|sheet|ex-emerald|set",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "ex-emerald",
+      "match": "set",
+      "printings": 97,
+      "distinctCards": 97,
+      "confidence": {
+        "medium": 97
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 8.083
+    },
+    {
+      "key": "modern-sv|full|gold-secret|card",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "gold-secret",
+      "match": "card",
+      "printings": 8,
+      "distinctCards": 8,
+      "confidence": {
+        "high": 8
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 8
+    },
+    {
+      "key": "modern-sv|sheet|pinwheel|set",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "pinwheel",
+      "match": "set",
+      "printings": 95,
+      "distinctCards": 95,
+      "confidence": {
+        "high": 95
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 7.917
+    },
+    {
+      "key": "modern-sv|window|confetti|card",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "confetti",
+      "match": "card",
+      "printings": 7,
+      "distinctCards": 7,
+      "confidence": {
+        "high": 7
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 7
+    },
+    {
+      "key": "modern-sv|window|cracked-ice|set",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "cracked-ice",
+      "match": "set",
+      "printings": 7,
+      "distinctCards": 7,
+      "confidence": {
+        "low": 7
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 7
+    },
+    {
+      "key": "modern-sv|window|starlight|facet",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "starlight",
+      "match": "facet",
+      "printings": 7,
+      "distinctCards": 7,
+      "confidence": {
+        "high": 7
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 7
+    },
+    {
+      "key": "modern-swsh|window|rainbow-glitter|set",
+      "eraId": "modern-swsh",
+      "scope": "window",
+      "patternId": "rainbow-glitter",
+      "match": "set",
+      "printings": 6,
+      "distinctCards": 6,
+      "confidence": {
+        "low": 6
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 6
+    },
+    {
+      "key": "modern-sv|sheet|crosshatch|set",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "crosshatch",
+      "match": "set",
+      "printings": 59,
+      "distinctCards": 48,
+      "confidence": {
+        "medium": 27,
+        "high": 32
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 4.917
+    },
+    {
+      "key": "modern-sv|full|cosmos|set",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "cosmos",
+      "match": "set",
+      "printings": 4,
+      "distinctCards": 3,
+      "confidence": {
+        "high": 4
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 4
+    },
+    {
+      "key": "modern-sv|window|detective-pikachu|set",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "detective-pikachu",
+      "match": "set",
+      "printings": 4,
+      "distinctCards": 4,
+      "confidence": {
+        "high": 4
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 4
+    },
+    {
+      "key": "modern-swsh|window|cracked-ice|facet",
+      "eraId": "modern-swsh",
+      "scope": "window",
+      "patternId": "cracked-ice",
+      "match": "facet",
+      "printings": 4,
+      "distinctCards": 4,
+      "confidence": {
+        "high": 4
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 4
+    },
+    {
+      "key": "modern-swsh|window|sequin|card",
+      "eraId": "modern-swsh",
+      "scope": "window",
+      "patternId": "sequin",
+      "match": "card",
+      "printings": 4,
+      "distinctCards": 4,
+      "confidence": {
+        "high": 4
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 4
+    },
+    {
+      "key": "modern-sv|sheet|cosmos-ii-pixel|set",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "cosmos-ii-pixel",
+      "match": "set",
+      "printings": 40,
+      "distinctCards": 16,
+      "confidence": {
+        "medium": 40
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 3.333
+    },
+    {
+      "key": "modern-sv|window|crosshatch|card",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "crosshatch",
+      "match": "card",
+      "printings": 3,
+      "distinctCards": 3,
+      "confidence": {
+        "high": 3
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 3
+    },
+    {
+      "key": "modern-sv|window|tinsel-ii|facet",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "tinsel-ii",
+      "match": "facet",
+      "printings": 3,
+      "distinctCards": 3,
+      "confidence": {
+        "low": 3
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 3
+    },
+    {
+      "key": "modern-sv|sheet|energy-symbols-ii|series",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "energy-symbols-ii",
+      "match": "series",
+      "printings": 32,
+      "distinctCards": 32,
+      "confidence": {
+        "high": 32
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 2.667
+    },
+    {
+      "key": "modern-sv|full|prism|series",
+      "eraId": "modern-sv",
+      "scope": "full",
+      "patternId": "prism",
+      "match": "series",
+      "printings": 2,
+      "distinctCards": 2,
+      "confidence": {
+        "low": 2
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 2
+    },
+    {
+      "key": "modern-sv|window|mirror|facet",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "mirror",
+      "match": "facet",
+      "printings": 2,
+      "distinctCards": 2,
+      "confidence": {
+        "low": 2
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 2
+    },
+    {
+      "key": "modern-swsh|full|rainbow-glitter|card",
+      "eraId": "modern-swsh",
+      "scope": "full",
+      "patternId": "rainbow-glitter",
+      "match": "card",
+      "printings": 2,
+      "distinctCards": 2,
+      "confidence": {
+        "low": 2
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 2
+    },
+    {
+      "key": "modern-swsh|sheet|energy-symbols-ii|series",
+      "eraId": "modern-swsh",
+      "scope": "sheet",
+      "patternId": "energy-symbols-ii",
+      "match": "series",
+      "printings": 2,
+      "distinctCards": 2,
+      "confidence": {
+        "high": 2
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 2
+    },
+    {
+      "key": "modern-sv|sheet|cracked-ice|set",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "cracked-ice",
+      "match": "set",
+      "printings": 17,
+      "distinctCards": 17,
+      "confidence": {
+        "high": 9,
+        "medium": 8
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 1.417
+    },
+    {
+      "key": "wotc|window|cosmos|facet",
+      "eraId": "wotc",
+      "scope": "window",
+      "patternId": "cosmos",
+      "match": "facet",
+      "printings": 6,
+      "distinctCards": 5,
+      "confidence": {
+        "high": 6
+      },
+      "exemplars": 4,
+      "exemplarRecords": 4,
+      "exemplarWeight": 3.6,
+      "exemplarsByMethod": {
+        "hand": 1,
+        "hand-refined": 2,
+        "ai-corrected": 1
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 1.2
+    },
+    {
+      "key": "modern-sv|sheet|cosmos|facet",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "cosmos",
+      "match": "facet",
+      "printings": 13,
+      "distinctCards": 13,
+      "confidence": {
+        "high": 13
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 1.083
+    },
+    {
+      "key": "modern-sv|window|cosmos-ii-pixel|card",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "cosmos-ii-pixel",
+      "match": "card",
+      "printings": 1,
+      "distinctCards": 1,
+      "confidence": {
+        "medium": 1
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 1
+    },
+    {
+      "key": "modern-sv|window|cosmos|card",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "cosmos",
+      "match": "card",
+      "printings": 1,
+      "distinctCards": 1,
+      "confidence": {
+        "high": 1
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 1
+    },
+    {
+      "key": "modern-sv|window|horizontal-sheen|series",
+      "eraId": "modern-sv",
+      "scope": "window",
+      "patternId": "horizontal-sheen",
+      "match": "series",
+      "printings": 1,
+      "distinctCards": 1,
+      "confidence": {
+        "high": 1
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 1
+    },
+    {
+      "key": "modern-swsh|full|cosmos-ii-pixel|set",
+      "eraId": "modern-swsh",
+      "scope": "full",
+      "patternId": "cosmos-ii-pixel",
+      "match": "set",
+      "printings": 1,
+      "distinctCards": 1,
+      "confidence": {
+        "low": 1
+      },
+      "exemplars": 0,
+      "exemplarRecords": 0,
+      "exemplarWeight": 0,
+      "exemplarsByMethod": {},
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 1
+    },
+    {
+      "key": "wotc|window|cracked-ice|facet",
+      "eraId": "wotc",
+      "scope": "window",
+      "patternId": "cracked-ice",
+      "match": "facet",
+      "printings": 4,
+      "distinctCards": 4,
+      "confidence": {
+        "medium": 4
+      },
+      "exemplars": 4,
+      "exemplarRecords": 4,
+      "exemplarWeight": 3.6,
+      "exemplarsByMethod": {
+        "hand": 1,
+        "hand-refined": 2,
+        "ai-corrected": 1
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 0.8
+    },
+    {
+      "key": "modern-sv|sheet|tinsel|set",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "tinsel",
+      "match": "set",
+      "printings": 8,
+      "distinctCards": 8,
+      "confidence": {
+        "medium": 8
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 0.667
+    },
+    {
+      "key": "modern-sv|sheet|cracked-ice|facet",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "cracked-ice",
+      "match": "facet",
+      "printings": 4,
+      "distinctCards": 4,
+      "confidence": {
+        "high": 4
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 0.333
+    },
+    {
+      "key": "modern-sv|sheet|crosshatch|facet",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "crosshatch",
+      "match": "facet",
+      "printings": 4,
+      "distinctCards": 4,
+      "confidence": {
+        "high": 4
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 0.333
+    },
+    {
+      "key": "modern-sv|sheet|energy-symbols|series",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "energy-symbols",
+      "match": "series",
+      "printings": 3,
+      "distinctCards": 3,
+      "confidence": {
+        "medium": 3
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 0.25
+    },
+    {
+      "key": "modern-sv|sheet|crosshatch|card",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "crosshatch",
+      "match": "card",
+      "printings": 1,
+      "distinctCards": 1,
+      "confidence": {
+        "high": 1
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 0.083
+    },
+    {
+      "key": "modern-sv|sheet|starlight|facet",
+      "eraId": "modern-sv",
+      "scope": "sheet",
+      "patternId": "starlight",
+      "match": "facet",
+      "printings": 1,
+      "distinctCards": 1,
+      "confidence": {
+        "high": 1
+      },
+      "exemplars": 11,
+      "exemplarRecords": 11,
+      "exemplarWeight": 7.4,
+      "exemplarsByMethod": {
+        "hand-refined": 1,
+        "hand": 1,
+        "ai-corrected": 9
+      },
+      "exemplarsInGroup": 0,
+      "maskCoveredCards": 0,
+      "windowGeometryCards": 0,
+      "leverage": 0.083
+    }
+  ]
+}

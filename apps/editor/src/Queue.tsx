@@ -28,6 +28,7 @@ import { ActionBtn, Chip, Section, SurfaceTabs } from './ui.tsx'
 import { foilApi } from './api.ts'
 import { CorpusView } from './catalog/manifest.ts'
 import { assessStaleness, getJson } from './catalog/artifacts.ts'
+import type { CatalogIndex } from './catalog/shards.ts'
 import { navigate } from './router.ts'
 import { RESOLVER_VERSION } from '@foilkit/resolver'
 import type { Staging } from './staging/useStaging.ts'
@@ -86,6 +87,14 @@ const REGEN_LEVERAGE_FLOOR = 200
 export function Queue({ staging }: { staging: Staging }): React.ReactElement {
   const [map, setMap] = useState<VerificationMapFile | null>(null)
   const [corpus, setCorpus] = useState<CorpusView | null>(null)
+  /**
+   * The catalog index is checked separately from the map, because they are
+   * baked together but committed independently and the failure they produce is
+   * different. A missing MAP means no queue; a missing CATALOG means the queue
+   * ranks correctly and every card it offers is a 404. The second is the more
+   * confusing one, so it gets its own banner rather than being inferred.
+   */
+  const [catalogIndex, setCatalogIndex] = useState<CatalogIndex | null>(null)
   const [loading, setLoading] = useState(true)
   const [scope, setScope] = useState<'all' | 'window' | 'sheet' | 'full'>('all')
   const [opening, setOpening] = useState<string | null>(null)
@@ -93,12 +102,14 @@ export function Queue({ staging }: { staging: Staging }): React.ReactElement {
   useEffect(() => {
     const ac = new AbortController()
     void (async () => {
-      const [m, c] = await Promise.all([
+      const [m, c, idx] = await Promise.all([
         getJson<VerificationMapFile>('/foil-verification-map.json', ac.signal),
         CorpusView.load(ac.signal),
+        getJson<CatalogIndex>('/catalog/index.json', ac.signal),
       ])
       setMap(m)
       setCorpus(c)
+      setCatalogIndex(idx)
       setLoading(false)
     })()
     return () => ac.abort()
@@ -147,6 +158,12 @@ export function Queue({ staging }: { staging: Staging }): React.ReactElement {
       {stale.banner && (
         <p className="rounded-md border border-amber-500/50 bg-amber-500/10 p-[10px] text-[13px] text-amber-200">
           {stale.banner}
+        </p>
+      )}
+      {!loading && catalogIndex === null && (
+        <p className="rounded-md border border-amber-500/50 bg-amber-500/10 p-[10px] text-[13px] text-amber-200">
+          No catalog has been baked for this site. The ranking below is real, but every card it points at is a
+          missing file — run <code>tools/bake-catalog.mts</code> and commit its output (see RUN-BAKE.md).
         </p>
       )}
 
@@ -224,7 +241,10 @@ export function Queue({ staging }: { staging: Staging }): React.ReactElement {
                         {Math.round(g.leverage).toLocaleString()}
                       </td>
                       <td className="py-[8px] text-right">
-                        <ActionBtn onClick={() => void openGroup(g)} disabled={opening === g.key}>
+                        <ActionBtn
+                          onClick={() => void openGroup(g)}
+                          disabled={opening === g.key || catalogIndex === null}
+                        >
                           {opening === g.key ? 'Picking…' : 'Work this'}
                         </ActionBtn>
                       </td>
