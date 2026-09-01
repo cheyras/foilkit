@@ -26,19 +26,18 @@ import {
   type FnResponse,
 } from './_lib/http.ts'
 import { COOKIE_NAME, readCookie, verifySession, type SessionClaims } from './_lib/session.ts'
+import { refuseIfUnconfigured, writeConfig } from './_lib/config.ts'
 import { isWriter } from './_lib/writers.ts'
 import { assertPatternId, BadRequest, CANON_PREFIX } from './_lib/corpus.ts'
 import { commitChanges, noreplyAuthor, readFileAt, repoRef } from './_lib/github.ts'
 import { canonicalPatternId, patternById } from '@foilkit/patterns'
 
 function requireWriter(req: FnRequest, res: FnResponse): SessionClaims | null {
-  let claims: SessionClaims | null
-  try {
-    claims = verifySession(readCookie(headerValue(req, 'cookie') ?? undefined, COOKIE_NAME))
-  } catch (err) {
-    sendPrivateError(res, 500, 'not_configured', (err as Error).message)
-    return null
-  }
+  // Configuration BEFORE identity. A deployment with no GitHub token cannot
+  // write no matter who is asking, and telling a signed-out visitor to sign in
+  // first would send them round a loop that ends in the same refusal.
+  if (refuseIfUnconfigured(res, writeConfig())) return null
+  const claims = verifySession(readCookie(headerValue(req, 'cookie') ?? undefined, COOKIE_NAME))
   if (claims === null) {
     sendPrivateError(res, 401, 'sign_in_required', 'a direct write needs a signed-in writer')
     return null

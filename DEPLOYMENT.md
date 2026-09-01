@@ -24,13 +24,37 @@ setting its environment variables**, and **running the catalog bake**
 |---|---|
 | **Domain** | `foilkit.deckpal.app` — a DNS record on DeckPal's domain pointing at a **new Vercel project sourced from the foilkit repo**. Two projects, one apex domain. |
 | **Source** | `cheyras/foilkit`, branch `main` |
-| **Build** | `pnpm run build && pnpm --filter foilkit-editor run build` (in `vercel.json`) |
-| **Output** | `apps/editor/dist` |
-| **Functions** | `api/**/*.ts` on the Vercel Node runtime |
+| **Build** | `pnpm run build:vercel` (in `vercel.json`) |
+| **Output** | `.vercel/output` — the **Build Output API**, produced by `tools/build-functions.mts` |
+| **Functions** | `functions/**/*.ts`, esbuild-bundled one file per route, `nodejs22.x` |
 | **Secret store** | **foilkit's own, never DeckPal's.** Subtask 9's App credentials will live here too. |
 
 The deploy carries no shared backend and no shared env with DeckPal. The editor
 never calls DeckPal's API.
+
+### Why the build emits `.vercel/output` itself
+
+The first production deploy answered `500 FUNCTION_INVOCATION_FAILED` on every
+function — a boot crash, before any handler ran. `@vercel/node` transpiles each
+`.ts` file in place without rewriting import specifiers, so `from
+'./_lib/http.ts'` survived into the emitted JS beside a file called
+`_lib/http.js`; and workspace packages were copied into the bundle with nothing
+mapping `@foilkit/forge` to them. Both are packaging, not code.
+
+`tools/build-functions.mts` bundles each route into one self-contained file and
+writes the whole deployment — static, functions and routing table — through the
+Build Output API. Vercel then uses that directory verbatim and builds nothing of
+its own, so **the artifact deployed is the artifact verified locally**.
+
+Two consequences worth knowing before you edit anything:
+
+- **`vercel.json` is two commands and nothing else.** Its `rewrites`, `headers`,
+  `functions` and `outputDirectory` keys would be ignored, so they are gone
+  rather than misleading. The routing table lives in `tools/build-functions.mts`.
+- **The sources live in `functions/`, not `api/`.** A root-level `api/` is what
+  Vercel's zero-config detection looks for, and with the sources there BOTH
+  builders ran and wrote into the same `.func` directory. The routes are still
+  served at `/api/*`.
 
 ---
 
@@ -110,7 +134,7 @@ vercel link --yes --scope <team>        # or create it in the dashboard
 ```
 
 Root directory: the repository root (**not** `apps/editor` — the build needs the
-workspace and the functions need `api/` at the root). `vercel.json` supplies the
+workspace and the functions need `functions/` at the root). `vercel.json` supplies the
 build command, output directory and function config; nothing needs setting in
 the dashboard's build panel.
 
@@ -133,13 +157,24 @@ Point `foilkit.deckpal.app` at this project. The DNS record lives on
 `deckpal.app`; the project is foilkit's. A DNS record is not a derivative work,
 so there is no license entanglement — `RELICENSE.md` says so in a sentence.
 
-### 5. Deploy
+### 5. Check the artifact before deploying it
+
+```bash
+pnpm run build:vercel
+node --conditions source tools/verify-functions.mts
+```
+
+Boots every built function with an **empty** environment and exercises it.
+Expect `34 passed, 0 failed`. This is the check that would have caught the first
+deploy's failure, and CI runs it (`--no-network`) on every push.
+
+### 6. Deploy
 
 ```bash
 vercel --prod
 ```
 
-### 6. Verify the artifact, not the report (F7)
+### 7. Verify the artifact, not the report (F7)
 
 ```bash
 curl -sI https://foilkit.deckpal.app/                                  # 200, text/html
@@ -181,12 +216,30 @@ vercel dev
 
 ## Failure modes worth knowing before they happen
 
+### What a half-configured deployment does
+
+Configuration is checked **first**, at the top of each handler, before a cookie
+is parsed or a repository is read — so a missing variable is a named `503`, never
+a `500` and never a crash. That distinction is the whole point: a boot crash
+means the code was packaged wrong, a 500 means it hit something unexpected, and
+a 503 naming a variable means the code is fine and you have not finished setting
+up. The first deploy conflated all three.
+
+| Variables set | What works |
+|---|---|
+| *nothing* | Browsing, the queue, staging, **and `/api/image`** — card scans need no environment at all. `/api/auth/signout` still clears a stale cookie. Everything else answers `503 not_configured` naming what it needs. |
+| `FOILKIT_SESSION_SECRET` only | The above, plus `/api/me` answering `200` signed-out. Sign-in `503`s naming the OAuth app; writes `503` naming `FOILKIT_GITHUB_TOKEN`. **This is the state the site is in today.** |
+| + the OAuth pair | Sign-in works. Writes still `503` naming the token. |
+| + `FOILKIT_GITHUB_TOKEN` | Direct write commits. |
+
 | Symptom | Cause |
 |---|---|
+| `500 FUNCTION_INVOCATION_FAILED` on every route | A packaging failure, not a configuration one. Run `pnpm run build:vercel && node --conditions source tools/verify-functions.mts` — it reproduces boot crashes locally. |
+| `503 not_configured` with a variable named | Exactly what it says; see the table above. Nothing is broken. |
 | "No catalog has been baked for this site yet" | `data/catalog/` was never committed. Run `RUN-BAKE.md`. |
 | A yellow banner naming two resolver versions | The bake is older than the resolver this build ships. Re-bake; pattern assignments may have moved. |
 | "Fixture data — this catalog is synthetic" | The deploy was built with `FOILKIT_BAKE=fixture`, or a fixture bake was committed. |
 | Sign in does nothing | `FOILKIT_OAUTH_CLIENT_ID` unset, or the App's callback URL does not match `https://<host>/api/auth/callback` exactly. |
-| Save says `403 not_a_writer` | The signed-in login is not in `api/_lib/writers.ts`. Granting is a config line **and a deploy** — the list is compiled in, deliberately, so it cannot be changed without a reviewable commit. |
+| Save says `403 not_a_writer` | The signed-in login is not in `functions/_lib/writers.ts`. Granting is a config line **and a deploy** — the list is compiled in, deliberately, so it cannot be changed without a reviewable commit. |
 | Save says `502` mentioning a fast-forward | Somebody pushed between the read and the write. The commit is refused rather than discarding theirs — retry the save. |
 | A mask save is refused mentioning a frame | The raster matches no record in `data/frames.json`. A stencil cut for a picture nobody can name is worse than no stencil; this gate is doing its job. |

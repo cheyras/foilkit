@@ -13,6 +13,6 @@
     "tools/**/*.ts",
     "tools/**/*.mts",
     "tools/**/*.mjs",
-    "api/**/*.ts"
+    "functions/**/*.ts"
   ]
 }

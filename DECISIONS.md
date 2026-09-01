@@ -992,7 +992,7 @@ Measured with `curl -D -`, with and without an `Origin` header, on
 Content-Length,Content-Range`; the `OPTIONS` preflight answers `204` with
 `access-control-allow-methods: GET, OPTIONS`. A cross-origin
 `<img crossOrigin="anonymous">` therefore uploads as a WebGL texture without
-tainting the canvas. **`api/image.ts` ships regardless.**
+tainting the canvas. **`functions/image.ts` ships regardless.**
 
 **Why:** only one of the three reasons for the proxy was ever about CORS. The
 other two hold whichever way the check landed: a volunteer-run CDN should not be
@@ -1151,10 +1151,10 @@ under 400 KB, so a future change that starts persisting history fails loudly.
 
 **Decided by:** Claude Fable 5 on behalf of @cheyras
 
-**Decision:** `api/mask.ts` materialises the corpus into `/tmp` from the
+**Decision:** `functions/mask.ts` materialises the corpus into `/tmp` from the
 repository head, runs the real `writeMaskRecord` against it, and commits exactly
 what changed through the git data API with `force: false`. The writer capability
-is a list in `api/_lib/writers.ts`, mirrored in the editor, with a test that
+is a list in `functions/_lib/writers.ts`, mirrored in the editor, with a test that
 reads the editor's source and compares.
 
 **Why:** running the same `writeMaskRecord` is what keeps `derivation_method`
@@ -1253,7 +1253,7 @@ only thing that keeps a port a port.
 
 **Decided by:** Claude Fable 5 on behalf of @cheyras
 
-**Decision:** `api/mask.ts` downloads `data/frames.json` from the repository
+**Decision:** `functions/mask.ts` downloads `data/frames.json` from the repository
 head into its `/tmp` workspace and points `FOILKIT_FRAMES_FILE` at it, per
 request.
 
@@ -1286,3 +1286,99 @@ definition and never will. The corpus itself has not moved.
 disagrees with the recorded count, and does **not** fail the build over it — a
 count is a claim and the corpus is the measurement. `docs/HOSTED-EDITOR.md` was
 corrected.
+
+## 2026-09-01 — The deployment is built here, through the Build Output API
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `tools/build-functions.mts` esbuild-bundles each route into one
+self-contained `.func` and writes the whole deployment — static, functions and
+routing table — into `.vercel/output`. Vercel uses that directory verbatim.
+`vercel.json` is reduced to an install command and a build command; its
+`rewrites`, `headers`, `functions` and `outputDirectory` keys are deleted
+because the Build Output API ignores them and a misleading config is worse than
+none. The function sources move from `api/` to `functions/`.
+
+**Why:** the first production deploy answered `500 FUNCTION_INVOCATION_FAILED`
+on every function — a boot crash, before any handler ran — while every test in
+this repository passed. Two independent packaging causes, both reproduced
+locally by booting the built artifact:
+
+1. `@vercel/node` transpiles each `.ts` file **in place** and does not rewrite
+   import specifiers. `functions/image.ts` says `from './_lib/http.ts'`; the
+   emitted `image.js` still says it; the file beside it is `_lib/http.js`.
+   `ERR_MODULE_NOT_FOUND`, every function, always. The extension cannot simply
+   change: Node's native TypeScript support is strip-only, so a relative import
+   from a `.ts` file must end in `.ts`. Measured on Node 24, all three forms:
+   `./dep.ts` resolves, `./dep.js` does not, `./dep` does not. The source cannot
+   use `.js` and the Vercel builder cannot use `.ts`.
+2. Workspace packages did not resolve either. nft traced `@foilkit/forge` and
+   copied `packages/forge/dist` into the bundle, but emitted no `node_modules`
+   and no symlink, so nothing mapped the bare specifier to the files sitting
+   right there. `mask`, `canon` and `window` would each have crashed on first
+   use; the report named only `image` because `image` was exercised first.
+
+A bundle has no unresolved specifiers left to get wrong, which removes the
+category rather than the two instances.
+
+**Implications:** `esbuild` becomes an explicit root devDependency — a build
+tool, named as one; `packages/**` still has none. The `api/` → `functions/`
+move is not cosmetic: with the sources in `api/`, Vercel's zero-config detection
+ran its builder **as well as** ours, both wrote into the same `.func` directory,
+and which `handler` the `.vc-config.json` named was a race. The routes are still
+served at `/api/*`. The runtime is pinned to `nodejs22.x` on both sides because
+`engines: { node: ">=22" }` makes Vercel override the project's 24.x setting.
+
+## 2026-09-01 — A missing environment variable is a named 503, checked first
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** every write and auth handler calls `refuseIfUnconfigured()` at the
+top, before a cookie is parsed or a repository is read, and answers `503` with a
+`missing: [...]` array naming the variables. `/api/image` requires no
+environment at all. `/api/auth/signout` requires none either, so a
+half-configured deployment can still clear a stale cookie.
+
+**Why:** a boot crash, a 500 and a missing variable look identical from a
+browser and mean completely different things to whoever has to fix it — the code
+was packaged wrong, the code hit something unexpected, or the code is fine and
+setup is unfinished. The first deploy conflated all three, and the one useful
+signal ("you have not set `FOILKIT_GITHUB_TOKEN` yet") was indistinguishable
+from a packaging failure. Checking configuration *first* also stops a signed-out
+visitor being told to sign in before hitting the same refusal anyway.
+
+**Implications:** `tools/verify-functions.mts` asserts the whole ladder — empty
+environment, secret-only, and the real state production is in — against the
+BUILT artifact rather than the source, and CI runs it on every push. Card scans
+work on a deployment with nothing configured, which is deliberate: they are what
+a visitor sees before they have any reason to sign in.
+
+## 2026-09-01 — The card face was rendering upside down, and blank bases hid it
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `FoilStage` makes the face texture's orientation explicit on both
+decode paths — `createImageBitmap(..., { imageOrientation: 'flipY' })` and a
+mirrored `drawImage` in the canvas fallback — and sets `flipY = false` so three
+cannot flip it again.
+
+**Why:** the plane's `uv.y = 0` is its bottom edge and the vertex shader passes
+`uv` through untouched, so the texture's `v = 0` must be the image's bottom row.
+`Texture.flipY` defaults to true and would arrange that for an image or a
+canvas, but **not for an `ImageBitmap`**, which uploads as encoded. Every real
+card scan rendered vertically mirrored. Measured rather than argued: the render
+was correlated against the source scan in four orientations, and `as-is` scored
+**-0.37** while `flipped-Y` scored **+0.24**; after the fix the two swap to
+**+0.25** and **-0.37**.
+
+**Why nothing caught it:** the render-parity harness and the stage acceptance
+both run on **blank bases** (`uScanBase 0`), where the face is a flat colour and
+a vertical flip is invisible by construction. The editor's own end-to-end run
+stubbed the scan with a 1×1 PNG, which is the same blind spot in a different
+costume. It took a real scan on a real deploy to see it.
+
+**Implications:** the fixture scan in `apps/editor/e2e/run.mjs` is now 64×88,
+white on top and black on the bottom, and an assertion samples the rendered
+canvas and requires the top band to be brighter. The guard was checked against
+the bug it was written for — reverting the fix fails it. A flat-base test can
+never again stand in for "the card renders correctly".

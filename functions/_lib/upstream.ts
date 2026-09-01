@@ -450,7 +450,7 @@ export const defaultCache = new AssetCache();
  *   wrong body: a WebP is a RIFF container, `RIFF` at offset 0 and `WEBP` at
  *   offset 8. Anything else is rejected on the same terms.
  *
- * A rejection is deliberately NOT a 404 at the HTTP layer (see `api/image.ts`):
+ * A rejection is deliberately NOT a 404 at the HTTP layer (see `functions/image.ts`):
  * "this card has no scan" and "upstream handed us something wrong" are
  * different facts and a contributor triaging a blank editor needs to tell them
  * apart.

@@ -38,12 +38,13 @@ SPDX-FileCopyrightText = "2026 Chey Rasmussen"
 SPDX-License-Identifier = "MIT"
 
 # The hosted editor and its serverless functions (foilkit.deckpal.app).
-# `apps/editor/dist` is built output and gitignored, so it never reaches here;
+# `functions/` holds the serverless SOURCES; `.vercel/output` is the built
+# deployment and is gitignored, as is `apps/editor/dist`, so neither reaches here;
 # the BAKED CATALOG ARTIFACTS it serves are written into data/ and are covered
 # by the CC0 glob below, which is correct — they are catalog facts, not code.
 # Neither license grants any right in the trademarks those facts name; see NOTICE.
 [[annotations]]
-path = ["apps/**", "api/**", "vercel.json"]
+path = ["apps/**", "functions/**", "vercel.json"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Chey Rasmussen"
 SPDX-License-Identifier = "MIT"

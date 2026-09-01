@@ -518,6 +518,29 @@ export class FoilStage {
    * `colorSpace = NoColorSpace` is not an oversight: the foil composite is
    * authored in DISPLAY space, and letting the hardware decode sRGB at sample
    * time darkens every midtone of the scan under it.
+   *
+   * ── ORIENTATION IS EXPLICIT ON BOTH PATHS, and it has to be ──────────────
+   *
+   * The plane's `uv.y = 0` is its BOTTOM edge and the vertex shader passes uv
+   * through untouched, so the texture's `v = 0` must be the image's BOTTOM row
+   * or the card renders upside down.
+   *
+   * three's `Texture.flipY` defaults to true and would arrange exactly that —
+   * for an `HTMLImageElement` or a canvas. It does NOT happen for an
+   * `ImageBitmap`: the bitmap uploads as encoded, top-down, and the card comes
+   * out vertically mirrored. Measured rather than reasoned about: the render was
+   * correlated against the source scan in all four orientations, and `as-is`
+   * scored -0.37 while `flipped-Y` scored +0.24.
+   *
+   * It survived every check the project had because the render-parity harness
+   * and the stage acceptance both run on BLANK bases (`uScanBase 0`), where the
+   * face is a flat colour and a flip is invisible by construction. It took a
+   * real scan on a real deploy to see it.
+   *
+   * So neither path relies on the upload flag now. The source is made
+   * bottom-up at creation, and `flipY = false` says three must not flip it
+   * again — which also makes the face consistent with the mask and glyph
+   * textures, which have always been `flipY = false`.
    */
   private async load(url: string, width: number): Promise<void> {
     const entry = this.textures.get(url)
@@ -538,18 +561,27 @@ export class FoilStage {
           resizeWidth: w,
           resizeHeight: h,
           resizeQuality: 'high',
+          // Bottom-up at decode time — see the orientation note above.
+          imageOrientation: 'flipY',
         })
       } else {
         const c = document.createElement('canvas')
         c.width = w
         c.height = h
-        c.getContext('2d')!.drawImage(img, 0, 0, w, h)
+        const g = c.getContext('2d')!
+        // The same flip, by transform, so the fallback cannot disagree with the
+        // fast path about which way up a card is.
+        g.translate(0, h)
+        g.scale(1, -1)
+        g.drawImage(img, 0, 0, w, h)
         source = c
       }
       const live = this.textures.get(url)
       if (!live || this.disposed) return
       const tex = new THREE.Texture(source as unknown as HTMLCanvasElement)
       tex.colorSpace = THREE.NoColorSpace
+      // The source is already bottom-up; a second flip would undo it.
+      tex.flipY = false
       tex.anisotropy = 4
       tex.needsUpdate = true
       live.texture?.dispose()

@@ -1,26 +1,67 @@
 <!-- SPDX-License-Identifier: MIT -->
 <!-- SPDX-FileCopyrightText: 2026 Chey Rasmussen -->
 
-# `api/` — the hosted editor's serverless functions
+# `functions/` — the hosted editor's serverless functions
 
 `foilkit.deckpal.app` is a static SPA with a few Vercel Node functions behind
 it. This directory is those functions. There is no server, no database and no
 session store — each file here is one request in, one response out.
 
 ```
-api/image.ts          GET /api/image  — card scans, by reference, through a proxy
-api/_lib/upstream.ts  the URL algebra, politeness gate, fetch and warm LRU
-api/_lib/http.ts      the request/response shapes and the shared JSON error body
+image.ts          GET  /api/image           card scans, by reference, through a proxy
+me.ts             GET  /api/me              who is looking, and may they write
+auth/start.ts     GET  /api/auth/start      into GitHub's OAuth web flow
+auth/callback.ts  GET  /api/auth/callback   out of it, into a signed cookie
+auth/signout.ts   GET  /api/auth/signout    drop the cookie
+mask.ts           PUT  /api/mask            the direct write — writeMaskRecord, then a commit
+window.ts         PUT  /api/window          adjusted window geometry
+canon.ts          PUT  /api/canon           a pattern's uniform snapshot
+
+_lib/http.ts      request/response shapes, body reading, the shared JSON error body
+_lib/config.ts    what this deployment is configured to do, checked before it tries
+_lib/session.ts   the signed cookie, and the safe-return-path rule
+_lib/writers.ts   the writer capability list — the check that matters
+_lib/github.ts    blobs, trees, commits, and a fast-forward that refuses to clobber
+_lib/corpus.ts    materialising the corpus into /tmp so forge can run against it
+_lib/upstream.ts  the URL algebra, politeness gate, fetch and warm LRU
 ```
 
-Other functions (`mask`, `auth`) are landing alongside these from a different
-piece of the same work. They follow the conventions below; this file is where
-those conventions are written down once rather than five times.
+## Why this directory is not called `api/`
+
+Because a root-level `api/` is what Vercel's zero-config function detection
+looks for, and that detection is exactly what must not happen here.
+
+`@vercel/node` transpiles each `.ts` file in place and does **not** rewrite
+import specifiers, so `from './_lib/http.ts'` survives into the emitted
+`image.js` while the file beside it is `_lib/http.js`. Every function
+boot-crashed on the first deploy for that reason, and the extension cannot
+simply change: Node's native TypeScript support is strip-only, so a relative
+import from a `.ts` file must end in `.ts` or `pnpm test` cannot load it.
+Workspace packages did not resolve either — `packages/forge/dist` was copied
+into the bundle with nothing mapping `@foilkit/forge` to it.
+
+`tools/build-functions.mts` bundles each file here into one self-contained
+`.func` and emits the whole deployment through the Build Output API, so there
+are no specifiers left to resolve. With the sources still in `api/`, BOTH
+builders ran and wrote into the same directory; moving them one directory over
+is what makes the bundler the only thing that builds a function.
+
+**Consequence:** `vercel.json` is reduced to an install and a build command.
+Its `rewrites`, `headers` and `functions` keys would be ignored, so they are
+gone rather than misleading; the routing table lives in
+`tools/build-functions.mts`.
+
+## Verified as the artifact, not as source
+
+`tools/verify-functions.mts` boots every built `.func` with an EMPTY
+environment and exercises it. That check exists because the first deploy failed
+while every unit test passed: the code was right and the packaging was not, and
+nothing that imports the TypeScript source can see that.
 
 ## No npm dependencies
 
 Not "few" — none. foilkit's packages and tools run on `node --test` with no
-build step and no dependencies (`AGENTS.md`), and `api/` is held to the same
+build step and no dependencies (`AGENTS.md`), and `functions/` is held to the same
 bar. In particular **`@vercel/node` is not installed and must not be added**:
 the runtime hands a handler a Node `IncomingMessage`/`ServerResponse` pair, and
 `_lib/http.ts` declares the two structural interfaces that describe the parts we
@@ -151,6 +192,6 @@ is one CI stops running, and one nobody runs is one that rots.
 
 ## Tests
 
-`node --test` over `api/**/*.test.ts`, wired into the root `pnpm test`. No
-network: every upstream response is injected. Typechecking reaches `api/`
+`node --test` over `functions/**/*.test.ts`, wired into the root `pnpm test`. No
+network: every upstream response is injected. Typechecking reaches `functions/`
 through `tsconfig.tools.json`'s `include`.

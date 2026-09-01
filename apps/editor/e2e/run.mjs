@@ -129,11 +129,30 @@ function ok(name, condition, detail = '') {
   }
 }
 
-/** A 1x1 opaque PNG. Stands in for a card scan the fixture cannot have. */
-const FAKE_SCAN = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAGgwJ/lK3Q6wAAAABJRU5ErkJggg==',
-  'base64',
-)
+/**
+ * The stand-in card scan, and it is deliberately NOT a flat colour.
+ *
+ * Top half white, bottom half black. That asymmetry is the whole point: the
+ * face texture shipped upside down for an entire release and every check the
+ * project had missed it, because the render-parity harness and the stage
+ * acceptance both run on BLANK bases where a flip is invisible by construction.
+ * A one-pixel fixture would have hidden it here too.
+ */
+const { encodePng } = await import('@foilkit/forge')
+const SCAN_W = 64
+const SCAN_H = 88
+const FAKE_SCAN = (() => {
+  const rgba = new Uint8Array(SCAN_W * SCAN_H * 4)
+  for (let y = 0; y < SCAN_H; y++) {
+    const v = y < SCAN_H / 2 ? 255 : 0
+    for (let x = 0; x < SCAN_W; x++) {
+      const o = (y * SCAN_W + x) * 4
+      rgba[o] = rgba[o + 1] = rgba[o + 2] = v
+      rgba[o + 3] = 255
+    }
+  }
+  return encodePng({ width: SCAN_W, height: SCAN_H, rgba })
+})()
 
 const browser = await chromium.launch({
   // WebGL in headless Chromium, the same way the stage's acceptance run gets it.
@@ -337,7 +356,51 @@ try {
 
   overrides = new Map()
 
-  // ── 8. The glyph slot is present and EMPTY ───────────────────────────────
+  // ── 8. THE CARD IS THE RIGHT WAY UP ──────────────────────────────────────
+  //
+  // The scan is white on top, black on the bottom. Sample the rendered card and
+  // assert the same. This is the check that did not exist when the face texture
+  // uploaded bottom-up on every real deploy: `uScanBase 0` renders a flat base,
+  // so a vertical flip cannot be seen without a scan that has a top and a
+  // bottom. It reads the CANVAS rather than a screenshot, so it fails on the
+  // pixels rather than on a diff threshold.
+  await page.goto(`${BASE}/card?id=base1-4&v=${variantId}`, { waitUntil: 'networkidle' })
+  await page.waitForSelector('canvas', { timeout: 20000 })
+  await page.waitForTimeout(2500)
+  const orientation = await page.evaluate(() => {
+    const card = [...document.querySelectorAll('canvas')]
+      .map((c) => ({ c, r: c.getBoundingClientRect() }))
+      .filter((x) => x.r.width > 100 && x.r.width < window.innerWidth)
+      .sort((a, b) => b.r.width - a.r.width)[0]
+    if (!card) return null
+    const t = document.createElement('canvas')
+    t.width = 32
+    t.height = 32
+    const g = t.getContext('2d', { willReadFrequently: true })
+    g.drawImage(card.c, 0, 0, 32, 32)
+    const d = g.getImageData(0, 0, 32, 32).data
+    const band = (y0, y1) => {
+      let sum = 0
+      let n = 0
+      for (let y = y0; y < y1; y++)
+        for (let x = 8; x < 24; x++) {
+          const i = (y * 32 + x) * 4
+          sum += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]
+          n++
+        }
+      return sum / n
+    }
+    // Skip the outer rows: the mesh has margin inside its box.
+    return { top: band(6, 13), bottom: band(19, 26) }
+  })
+  ok('the rendered card samples its scan somewhere', orientation !== null)
+  ok(
+    'the card is the RIGHT WAY UP — the scan’s white half renders at the top',
+    orientation !== null && orientation.top > orientation.bottom + 20,
+    orientation === null ? 'no canvas' : `top ${orientation.top.toFixed(1)} vs bottom ${orientation.bottom.toFixed(1)}`,
+  )
+
+  // ── 9. The glyph slot is present and EMPTY ───────────────────────────────
   // `uGlyphOn` stays 0 and every slotted pattern renders its procedural
   // fallback. An empty index is a different claim from a 404: it says the
   // surface is here and nothing has been dropped into it, which is true, and it
@@ -349,7 +412,7 @@ try {
   ok('the glyph slot answers with an index, not a 404', glyphs !== null)
   ok('and the slot is empty, which is the shipping state', Object.keys(glyphs?.patterns ?? {}).length === 0)
 
-  // ── 9. No console errors on the happy path ───────────────────────────────
+  // ── 10. No console errors on the happy path ──────────────────────────────
   const real = consoleErrors.filter(
     (t) => !/fixture\.invalid|ERR_NAME_NOT_RESOLVED|Failed to load resource.*40[34]/.test(t),
   )

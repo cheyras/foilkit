@@ -12,14 +12,17 @@
   "scripts": {
     "build": "tsc --build tsconfig.build.json && node tools/copy-json.mjs",
     "typecheck": "tsc --build --force tsconfig.build.json && tsc --noEmit -p tsconfig.tools.json",
-    "test": "node --conditions source --test \"packages/*/src/__tests__/*.test.ts\" \"tools/rectifier/*.test.ts\" \"tools/bake/*.test.ts\" \"apps/editor/src/**/*.test.ts\" \"api/**/*.test.ts\"",
+    "test": "node --conditions source --test \"packages/*/src/__tests__/*.test.ts\" \"tools/rectifier/*.test.ts\" \"tools/bake/*.test.ts\" \"apps/editor/src/**/*.test.ts\" \"functions/**/*.test.ts\"",
     "reuse": "reuse lint",
     "test:packages": "node --conditions source --test \"packages/*/src/__tests__/*.test.ts\"",
     "demo": "node tools/parity/serve.mjs --page apps/demo/index.html --port 5200",
     "acceptance": "node apps/demo/acceptance.mjs",
-    "clean": "tsc --build --clean tsconfig.build.json"
+    "clean": "tsc --build --clean tsconfig.build.json",
+    "build:functions": "node --conditions source tools/build-functions.mts",
+    "build:vercel": "pnpm run build && pnpm --filter foilkit-editor run build && pnpm run build:functions"
   },
   "devDependencies": {
+    "esbuild": "^0.28.2",
     "@types/node": "^24.3.0",
     "@types/react": "^19.1.0",
     "@types/three": "^0.185.0",

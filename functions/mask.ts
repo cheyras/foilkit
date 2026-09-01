@@ -14,7 +14,7 @@
 // login inside a signed cookie. `apps/editor/src/writer/capability.ts` carries
 // the same list and decides what the UI offers, but it is not a boundary —
 // anybody can edit their own JavaScript. This is the check that matters, and
-// `api/_lib/writers.test.ts` keeps the two lists honest.
+// `functions/_lib/writers.test.ts` keeps the two lists honest.
 
 import {
   headerValue,
@@ -27,6 +27,7 @@ import {
   type FnResponse,
 } from './_lib/http.ts'
 import { COOKIE_NAME, readCookie, verifySession, type SessionClaims } from './_lib/session.ts'
+import { refuseIfUnconfigured, writeConfig } from './_lib/config.ts'
 import { isWriter } from './_lib/writers.ts'
 import {
   assertCardId,
@@ -47,13 +48,11 @@ import { join } from 'node:path'
 
 /** The signed-in writer, or null with the response already sent. */
 function requireWriter(req: FnRequest, res: FnResponse): SessionClaims | null {
-  let claims: SessionClaims | null
-  try {
-    claims = verifySession(readCookie(headerValue(req, 'cookie') ?? undefined, COOKIE_NAME))
-  } catch (err) {
-    sendPrivateError(res, 500, 'not_configured', (err as Error).message)
-    return null
-  }
+  // Configuration BEFORE identity. A deployment with no GitHub token cannot
+  // write no matter who is asking, and telling a signed-out visitor to sign in
+  // first would send them round a loop that ends in the same refusal.
+  if (refuseIfUnconfigured(res, writeConfig())) return null
+  const claims = verifySession(readCookie(headerValue(req, 'cookie') ?? undefined, COOKIE_NAME))
   if (claims === null) {
     // 401, and the editor reads it exactly as the old client read a 404 from
     // the dev surface: the affordance is not available here, hide it. The work

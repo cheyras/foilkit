@@ -20,7 +20,7 @@
 //
 // This module is CLIENT-SIDE and decides only what the UI offers. It is not a
 // security boundary and must never be treated as one: anybody can edit their
-// own JavaScript. `api/mask.ts` re-derives the same answer from the verified
+// own JavaScript. `functions/mask.ts` re-derives the same answer from the verified
 // GitHub identity in the session cookie before it writes anything, and that is
 // the check that matters. Both read the same list so they cannot disagree.
 

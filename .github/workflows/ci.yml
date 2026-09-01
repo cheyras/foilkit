@@ -209,6 +209,48 @@ jobs:
             apps/editor/e2e/failure.png
           if-no-files-found: warn
 
+  # THE DEPLOY ARTIFACT, built and booted. A separate job because it is the
+  # only check that looks at what actually ships.
+  #
+  # It exists because the first production deploy answered
+  # FUNCTION_INVOCATION_FAILED on every route while every test in this
+  # repository passed. The code was right and the packaging was not, and
+  # nothing that imports the TypeScript source can tell the difference.
+  deploy-artifact:
+    name: deploy artifact (build + boot every function)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Exactly what vercel.json's buildCommand runs. If this fails here, it
+      # fails there.
+      - name: Build the deployment
+        run: pnpm run build:vercel
+
+      # Boots every built .func with an EMPTY environment, asserts /api/image
+      # needs none at all, and asserts every other route degrades to a NAMED
+      # 503 rather than a 500 or a crash. `--no-network` because the runner
+      # should not depend on a volunteer CDN to pass CI; the one real upstream
+      # fetch is a local-only check.
+      - name: Boot and exercise every function
+        run: node --conditions source tools/verify-functions.mts --no-network
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: vercel-output-config
+          path: .vercel/output/config.json
+          if-no-files-found: warn
+
   reuse:
     name: REUSE compliance
     runs-on: ubuntu-latest

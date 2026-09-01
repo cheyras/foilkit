@@ -34,3 +34,9 @@ apps/editor/dist/
 data/fixture-bake/
 apps/editor/e2e/last-run.json
 apps/editor/e2e/failure.png
+
+# The Vercel link (`.vercel/project.json`) and the BUILT DEPLOYMENT
+# (`.vercel/output`), which `pnpm run build:vercel` regenerates and
+# `tools/verify-functions.mts` boots. Build output, never source.
+.vercel
+.env*

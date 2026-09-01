@@ -11,20 +11,17 @@
 import { queryValue, redirect, sendPrivateError, type FnRequest, type FnResponse } from '../_lib/http.ts'
 import { safeReturnPath, sessionCookie, signSession, SESSION_TTL_SECONDS } from '../_lib/session.ts'
 import { whoAmI } from '../_lib/github.ts'
-
-function oauthApp(): { id: string; secret: string } {
-  const id = process.env.FOILKIT_OAUTH_CLIENT_ID
-  const secret = process.env.FOILKIT_OAUTH_CLIENT_SECRET
-  if (typeof id !== 'string' || id.length === 0 || typeof secret !== 'string' || secret.length === 0) {
-    throw new Error('FOILKIT_OAUTH_CLIENT_ID / FOILKIT_OAUTH_CLIENT_SECRET are not set — see DEPLOYMENT.md')
-  }
-  return { id, secret }
-}
+import { authConfig, refuseIfUnconfigured, sessionConfig } from '../_lib/config.ts'
 
 export default async function handler(req: FnRequest, res: FnResponse): Promise<void> {
   if (req.method !== 'GET') {
     sendPrivateError(res, 405, 'method_not_allowed', 'GET only')
     return
+  }
+  if (refuseIfUnconfigured(res, authConfig() ?? sessionConfig())) return
+  const app = {
+    id: process.env.FOILKIT_OAUTH_CLIENT_ID as string,
+    secret: process.env.FOILKIT_OAUTH_CLIENT_SECRET as string,
   }
 
   // GitHub sends `error` instead of `code` when the user declines. That is a
@@ -37,14 +34,6 @@ export default async function handler(req: FnRequest, res: FnResponse): Promise<
   const code = queryValue(req, 'code')
   if (typeof code !== 'string' || code.length === 0) {
     sendPrivateError(res, 400, 'no_code', 'the callback was reached without an authorization code')
-    return
-  }
-
-  let app: { id: string; secret: string }
-  try {
-    app = oauthApp()
-  } catch (err) {
-    sendPrivateError(res, 500, 'not_configured', (err as Error).message)
     return
   }
 

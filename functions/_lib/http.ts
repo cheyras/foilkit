@@ -13,7 +13,7 @@
 // TypeScript's structural typing accepts that against these shapes without the
 // package ever being installed.
 //
-// Deliberately narrow. Only the members the functions in `api/` actually touch
+// Deliberately narrow. Only the members the functions in `functions/` actually touch
 // appear here, so a member that shows up in a handler is a member somebody had
 // to think about adding.
 
@@ -177,7 +177,7 @@ export function sanitizeMessage(text: string, maxLength = 200): string {
   return stripped.length > maxLength ? `${stripped.slice(0, maxLength - 1)}\u2026` : stripped;
 }
 
-/** The one error body shape every function in `api/` answers with. */
+/** The one error body shape every function in `functions/` answers with. */
 export interface ErrorBody {
   error: { code: string; message: string };
 }

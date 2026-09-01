@@ -143,7 +143,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    // The functions in `api/` are not run by vite. `pnpm dev` therefore sees a
+    // The functions in `functions/` are not run by vite. `pnpm dev` therefore sees a
     // 404 from /api/*, which the editor already treats as "feature
     // unavailable" — the same state the read path shipped in. `vercel dev`
     // runs them for real.

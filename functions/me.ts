@@ -11,9 +11,10 @@
 //
 // The `writer` field here is the SAME derivation the write endpoints use, so
 // the UI and the server cannot disagree about what a save will do. It is still
-// not the security boundary: `api/mask.ts` re-checks before it commits.
+// not the security boundary: `functions/mask.ts` re-checks before it commits.
 
 import { headerValue, sendPrivateError, sendPrivateJson, type FnRequest, type FnResponse } from './_lib/http.ts'
+import { refuseIfUnconfigured, sessionConfig } from './_lib/config.ts'
 import { COOKIE_NAME, readCookie, verifySession } from './_lib/session.ts'
 import { isWriter, WRITERS } from './_lib/writers.ts'
 
@@ -22,15 +23,11 @@ export default function handler(req: FnRequest, res: FnResponse): void {
     sendPrivateError(res, 405, 'method_not_allowed', 'GET only')
     return
   }
-  let claims: ReturnType<typeof verifySession> = null
-  try {
-    claims = verifySession(readCookie(headerValue(req, 'cookie') ?? undefined, COOKIE_NAME))
-  } catch (err) {
-    // A missing signing secret is a deployment fault, not a signed-out user,
-    // and collapsing the two would make it invisible.
-    sendPrivateError(res, 500, 'not_configured', (err as Error).message)
-    return
-  }
+  // A missing signing secret is a deployment fault, not a signed-out user, and
+  // collapsing the two would make it invisible. 503 with the variable named.
+  if (refuseIfUnconfigured(res, sessionConfig())) return
+
+  const claims = verifySession(readCookie(headerValue(req, 'cookie') ?? undefined, COOKIE_NAME))
 
   if (claims === null) {
     sendPrivateJson(res, 200, {

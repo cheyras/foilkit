@@ -39,7 +39,7 @@ in-repo import specifiers do not change; the rename happens at publish time.
 | [`tools/parity`](tools/parity/) | The frame-stepped zero-delta render harness. |
 | [`apps/demo`](apps/demo/) | The stress demo: several hundred cards, one WebGL context, both presentation modes, every tilt source, a live ladder readout — and the acceptance run that asserts all of it. |
 | [`apps/editor`](apps/editor/) | The hosted contribution editor at **foilkit.deckpal.app** — a static SPA with no database, a leverage-ranked queue for a home screen, and a local-first staging layer that needs no account. |
-| [`api/`](api/) | Its serverless functions: the image proxy, GitHub sign-in, and the direct-write path that commits through `writeMaskRecord`. Zero npm dependencies. |
+| [`functions/`](functions/) | Its serverless functions: the image proxy, GitHub sign-in, and the direct-write path that commits through `writeMaskRecord`. Zero npm dependencies. |
 
 `packages/webgl2`, `element` and `react` are not built yet. The one obligation
 the extraction carried for them is already met: `core`, `patterns` and `stage`

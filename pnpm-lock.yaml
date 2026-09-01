@@ -35,6 +35,9 @@ importers:
       '@types/three':
         specifier: ^0.185.0
         version: 0.185.4
+      esbuild:
+        specifier: ^0.28.2
+        version: 0.28.2
       react:
         specifier: ^19.1.0
         version: 19.2.8

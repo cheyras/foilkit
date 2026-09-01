@@ -8,7 +8,7 @@
 // JavaScript — so every write endpoint re-derives the answer here, from the
 // GitHub login inside a signed session cookie the browser cannot forge.
 //
-// The two lists are kept in step by `api/_lib/writers.test.ts`, which reads the
+// The two lists are kept in step by `functions/_lib/writers.test.ts`, which reads the
 // editor's source and compares. A duplicated list that silently diverges would
 // be the worst of both worlds: a UI that offers a save the server refuses, or
 // worse, one that hides a save the server would have allowed.

@@ -21,28 +21,18 @@
 import { redirect, sendPrivateError, type FnRequest, type FnResponse } from '../_lib/http.ts'
 import { safeReturnPath } from '../_lib/session.ts'
 import { queryValue } from '../_lib/http.ts'
-
-/** The public half of the OAuth app. Fails loudly — see DEPLOYMENT.md. */
-function clientId(): string {
-  const id = process.env.FOILKIT_OAUTH_CLIENT_ID
-  if (typeof id !== 'string' || id.length === 0) {
-    throw new Error('FOILKIT_OAUTH_CLIENT_ID is not set — see DEPLOYMENT.md')
-  }
-  return id
-}
+import { authConfig, refuseIfUnconfigured, sessionConfig } from '../_lib/config.ts'
 
 export default function handler(req: FnRequest, res: FnResponse): void {
   if (req.method !== 'GET') {
     sendPrivateError(res, 405, 'method_not_allowed', 'GET only')
     return
   }
-  let id: string
-  try {
-    id = clientId()
-  } catch (err) {
-    sendPrivateError(res, 500, 'not_configured', (err as Error).message)
-    return
-  }
+  // Both, and before anything else: signing in needs an OAuth app to send the
+  // browser to AND a secret to sign the result with. Missing either one is a
+  // 503 naming it, not a redirect into a dead end.
+  if (refuseIfUnconfigured(res, authConfig() ?? sessionConfig())) return
+  const id = process.env.FOILKIT_OAUTH_CLIENT_ID as string
 
   // Where to come back to. Validated as a same-site PATH — an open redirect in
   // an OAuth callback is how a phishing page borrows a domain's credibility.
