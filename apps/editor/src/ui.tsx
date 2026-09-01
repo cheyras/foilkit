@@ -5,8 +5,8 @@
 // (quarantine rule, roadmap/plans/foil-main.md). Moved verbatim out of
 // FoilLab.tsx for the 2026-08-02 workbench split (issues/foil/…_4aq756).
 
-import { Link } from '@tanstack/react-router'
-import type { CoreUniform } from './shader'
+import { navigate } from './router.ts'
+import type { CoreUniform } from '@foilkit/core'
 
 export function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -252,25 +252,48 @@ export function ActionBtn({
 }
 
 /**
- * The two-surface switcher (obvious navigation, per the split comment):
- *   Canon patterns — /foil-lab/canon — pattern-truth room, no card ink.
- *   Card adjust    — /foil-lab       — per-card masks + overrides + comments.
+ * The surface switcher (obvious navigation, per the split comment):
+ *   Queue          — /            — where an hour of attention moves most pixels.
+ *   Card adjust    — /card        — per-card masks + window geometry + overrides.
+ *   Canon patterns — /canon       — the pattern-truth room, no card ink.
+ *
+ * A THIRD TAB, and it is first. The old workbench opened on a card picker,
+ * which is the right tool when you already know which card you came for. 3a's
+ * measurement says the corpus does not work that way: leverage is
+ * printings ÷ (exemplars + 1), and the top of that ranking is a rule governing
+ * two thousand printings with zero human exemplars. So the home screen is a
+ * QUEUE, and the picker is what you reach for when the queue is not what you
+ * want today.
+ *
+ * `Link` came from a router this app does not have. `navigate()` is fifteen
+ * lines in router.ts — a pushState and a subscription — which is the whole
+ * routing requirement of a three-surface site.
  */
-export function SurfaceTabs({ active }: { active: 'canon' | 'card' }) {
+export function SurfaceTabs({ active }: { active: 'queue' | 'canon' | 'card' }) {
   const tab = (isActive: boolean) =>
     `flex-1 rounded-md border px-[10px] py-[7px] text-center text-[13px] font-medium ${
       isActive
         ? 'border-action-primary bg-action-primary/15 text-action-primary'
         : 'border-border-default bg-surface-secondary text-text-muted hover:text-text-primary'
     }`
+  const go = (to: string) => (e: React.MouseEvent) => {
+    // A real <a> so middle-click, cmd-click and "copy link" all work; the
+    // handler only intercepts the plain left click.
+    if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
+    e.preventDefault()
+    navigate(to)
+  }
   return (
     <nav className="flex gap-[8px]">
-      <Link to="/foil-lab/canon" className={tab(active === 'canon')}>
-        Canon patterns
-      </Link>
-      <Link to="/foil-lab" className={tab(active === 'card')}>
+      <a href="/" onClick={go('/')} className={tab(active === 'queue')}>
+        Queue
+      </a>
+      <a href="/card" onClick={go('/card')} className={tab(active === 'card')}>
         Card adjust
-      </Link>
+      </a>
+      <a href="/canon" onClick={go('/canon')} className={tab(active === 'canon')}>
+        Canon patterns
+      </a>
     </nav>
   )
 }

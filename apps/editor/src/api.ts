@@ -1,26 +1,57 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2026 Chey Rasmussen
-// foil/api.ts — self-contained read-only API client for the foil workbench.
 //
-// QUARANTINE: the foil track imports nothing from ../lib or ../components and
-// nothing imports us (except the route registration in main.tsx). This tiny
-// client duplicates the handful of read endpoints the workbench needs rather
-// than coupling to lib/api.ts — see roadmap/plans/foil-main.md.
+// api.ts — the editor's read/write client. Ported from the DeckPal workbench,
+// with the one constant that made this port cheap swapped out.
+//
+// ── WHAT CHANGED, AND WHY IT WAS ONE LINE ──────────────────────────────────
+//
+// The old client was self-contained by design: it deliberately did NOT import
+// the host app's api module, so `const BASE = '/deckscout/api'` was the entire
+// coupling to a server. `catalog/artifacts.ts` is what took its place — a
+// fetcher over baked FILES on the same origin. No Postgres at runtime, anywhere.
+//
+// ── OWNERSHIP CAME OUT ─────────────────────────────────────────────────────
+//
+// Every catalog route in the old api joined `user_set_progress` and ownership,
+// and the picker consumed all of it: an owned-only chip persisted to
+// localStorage, per-series owned counts, per-set "N owned", a per-card
+// ownership badge. There is no account behind this site, so none of it
+// survives — and it is REMOVED rather than hardcoded to false. A dead
+// parameter threaded through four query keys is worse than its absence.
+//
+// The replacement filters are contribution-shaped, not collection-shaped —
+// has a mask / no mask / has window geometry — and they live in
+// `catalog/manifest.ts`, because they are facts about the corpus rather than
+// facts about the catalog.
+//
+// ── THE WRITE PATH KEEPS THE OLD SHAPE ─────────────────────────────────────
+//
+// The old client treated a 404 from the foil-lab endpoints as "this feature is
+// not available here" and hid the affordance. That behaviour is preserved
+// exactly: a viewer without the writer capability gets 401/404 from the write
+// endpoints and the direct-write UI hides itself, while their work goes to the
+// staging layer. Read stays fully public — no login to browse, no login to open
+// a card, no login to look at a canon.
 
-const BASE = '/deckscout/api'
-
-async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, { signal })
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${path}`)
-  return res.json() as Promise<T>
-}
+import { artifactUrl, getBytes, getJson } from './catalog/artifacts.ts'
+import { Catalog, type CatalogCard, type CatalogSetShard } from './catalog/shards.ts'
+import { CorpusView, type CorpusManifest } from './catalog/manifest.ts'
+import { SearchIndex } from './catalog/search.ts'
+import { sha256Bytes } from './staging/sha.ts'
 
 // ── Types (only the fields the workbench reads) ────────────────
+//
+// `FoilSeries.progress`, `FoilSet.progress`, `FoilCardRow.ownership` and
+// `FoilVariant.quantity` are GONE from these shapes, not defaulted. If one
+// reappears, something is reading a field the bake is forbidden to emit.
 
 export interface FoilSeries {
   slug: string
   name: string
-  progress: { owned: number; total: number }
+  /** Sets in this series. Replaces the owned/total progress pair. */
+  setCount: number
+  cardCount: number
 }
 
 export interface FoilSet {
@@ -28,7 +59,6 @@ export interface FoilSet {
   name: string
   releasedOn: string | null
   cardCountTotal: number
-  progress: { complete: { owned: number; total: number } }
 }
 
 export interface FoilCardRow {
@@ -38,20 +68,19 @@ export interface FoilCardRow {
   rarity: string | null
   variantCount: number
   images: { low: string; high: string }
-  ownership: { totalQuantity: number; have: boolean }
 }
 
 export interface FoilVariant {
   variantId: number
   kind: string
   displayName: string
-  tier: 'standard' | 'special'
-  quantity: number
+  /** Derived from the variant kind by the bake — never selected from a column. */
+  tier: string
 }
 
-// ── Mask provenance (sidecar v3 — mask-pipeline SKILL.md § "Sidecar v3") ──
+// ── Mask provenance (sidecar v3/v4 — docs/MASK-PIPELINE.md) ──
 
-/** The five honest derivation methods. The API DERIVES this — we never send it. */
+/** The five honest derivation methods. The SERVER derives this — we never send it. */
 export type FoilDerivationMethod = 'layout-flatten' | 'hand' | 'hand-refined' | 'ai' | 'ai-corrected'
 
 export type FoilReviewStatus = 'human-authored' | 'human-adjusted' | 'unreviewed'
@@ -105,19 +134,14 @@ export interface FoilMaskPrior {
   invert: boolean
   feather: number
   resolverVersion: number
-  /**
-   * Optional provenance (foil/mask-refine): the hand-adjusted window geometry
-   * in effect when this mask was saved/flattened. The prior render + diff stay
-   * based on `rect` (the rule's output) so `diff.agreement` keeps measuring
-   * the RULE's error; this field records the human's geometry correction.
-   */
+  /** The hand-adjusted window geometry in effect when this mask was saved. */
   window?: { rect: [number, number, number, number]; radius: number }
   /** Machine identity — on an AI mask AND carried onto every correction of it. */
   generator?: FoilGeneratorIdentity
   parentMask?: { cardId: string; variantId: number; savedAt: string | null; method: FoilDerivationMethod }
 }
 
-/** The full sidecar as the api returns it (GET .../meta, PUT response). */
+/** The full sidecar as it is committed to `data/foil-masks`. */
 export interface FoilMaskSidecar {
   version: number
   cardId: string
@@ -131,17 +155,12 @@ export interface FoilMaskSidecar {
   reviewStatus: FoilReviewStatus
   savedAt: string
   artworkUrl: string | null
+  /** Sidecar v4 — the framing the pixels were authored in, inferred, never claimed. */
+  frame?: string
   card?: { setId: string | null; seriesSlug: string | null; name: string | null; number: string | null }
   prior: FoilMaskPrior
   diff?: { addedPx: number; removedPx: number; unchangedPx: number; agreement: number }
   correction?: FoilCorrectionRecord
-  /**
-   * Present when a GENERATOR replaced a mask that was already here. The mirror
-   * image of `correction`, and never to be read as one: nobody has agreed to
-   * this yet. The replaced mask's pixels are at the `parent` artifact and a
-   * verbatim copy of everything it had is archived at `archiveDir`, so
-   * `revert --run-id <runId>` restores it byte-for-byte.
-   */
   supersedes?: {
     parent: { cardId: string; variantId: number; savedAt: string | null; method: FoilDerivationMethod; sha256: string }
     runId: string
@@ -158,7 +177,7 @@ export interface FoilMaskSidecar {
 
 /**
  * What the editing session was SEEDED with. This — not a label — is what the
- * client is allowed to claim; the api decides `derivation_method` by diffing
+ * client is allowed to claim; the server decides `derivation_method` by diffing
  * the saved pixels against what this seed actually rasterizes to.
  */
 export interface FoilMaskDerivation {
@@ -166,17 +185,27 @@ export interface FoilMaskDerivation {
   parent?: { cardId: string; variantId: number } | null
 }
 
-/** Corpus-wide provenance report (GET /foil-lab/masks/corpus). */
+/**
+ * Corpus-wide provenance report.
+ *
+ * On the hosted editor this is DERIVED FROM THE MANIFEST rather than computed
+ * by a server walking sidecars, so two fields that the old report filled cannot
+ * be filled here and are `null` instead of zero: `corrections` needs each
+ * sidecar's correction block, and `bySet`/`bySeries` need catalog joins the
+ * manifest does not carry. Reporting `0 corrections` would be a measurement
+ * nobody took, which is exactly the failure mode `derivation_method` exists to
+ * prevent — so it says "not measured here" and means it.
+ */
 export interface FoilCorpusReport {
   generatedAt: string
   total: number
-  byMethod: Record<FoilDerivationMethod, number>
+  byMethod: Record<string, number>
   byAuthorship: Record<string, number>
   byReviewStatus: Record<string, number>
   meanAgreement: number | null
   byEra: Record<string, { n: number; byMethod: Record<string, number>; meanAgreement: number | null }>
-  bySet: Record<string, { n: number; byMethod: Record<string, number>; meanAgreement: number | null }>
-  bySeries: Record<string, { n: number; byMethod: Record<string, number>; meanAgreement: number | null }>
+  bySet: Record<string, { n: number; byMethod: Record<string, number>; meanAgreement: number | null }> | null
+  bySeries: Record<string, { n: number; byMethod: Record<string, number>; meanAgreement: number | null }> | null
   byScope: Record<string, { n: number; byMethod: Record<string, number>; meanAgreement: number | null }>
   exemplarsAvailable: { total: number; byEra: Record<string, number>; byScope: Record<string, number> }
   awaitingReview: {
@@ -204,51 +233,43 @@ export interface FoilCorpusReport {
       addedPx: number
       removedPx: number
     }[]
-  }
+  } | null
   bySidecarVersion: Record<string, number>
 }
 
-/**
- * Adjusted window geometry — data/foil-windows/<cardId>/<variantId>.json.
- * Artwork-keyed like masks (geometry is a property of the scan; scope only
- * decides inversion at render time).
- */
+/** Adjusted window geometry — `data/foil-windows/<cardId>/<variantId>.json`. */
 export interface FoilWindowEntry {
   version: 1
   cardId: string
   variantId: number
   artworkKey: string
   savedAt: string
-  /** Scope active when adjusted (provenance — geometry applies to window AND sheet). */
   scope: string
   eraId: string
-  /** UV y-up [x,y,w,h] — same space as maskForScope()/prior.rect. */
   rect: [number, number, number, number]
-  /** Corner radius, fraction of card width. */
   radius: number
   invert: boolean
-  /** The era-layout rule this geometry adjusted, at save time. */
   base: { rect: [number, number, number, number]; radius: number; resolverVersion: number }
 }
 
-/** Canon pattern defaults — data/foil-canon/<patternId>.json (surface A). */
+/** Canon pattern defaults — `data/foil-canon/<patternId>.json` (surface A). */
 export interface FoilCanonEntry {
   version: 1
   patternId: string
   savedAt: string
   /** FULL uniform snapshot — replaces recipe code defaults as the baseline. */
   uniforms: Record<string, number>
+  /** The `main()` this file was tuned against (#5's contract stamp). */
+  contract?: number
   note?: string
 }
 
-/** Per-card override — data/foil-overrides/<cardId>/<variantId>.json (surface B). */
+/** Per-card override — `data/foil-overrides/<cardId>/<variantId>.json` (surface B). */
 export interface FoilOverrideEntry {
   version: 1
   cardId: string
   variantId: number
-  /** The effective pattern these overrides tune (canonical id). */
   patternId: string
-  /** Explicit dropdown override at save time; null = Auto resolved it. */
   patternOverride: string | null
   savedAt: string
   /** SPARSE — only uniforms that differ from the canon baseline. */
@@ -256,7 +277,7 @@ export interface FoilOverrideEntry {
   baseline: { canonSavedAt: string | null }
 }
 
-/** Which video-reference assets exist per pattern dir (GET /reference). */
+/** Which video-reference assets exist per pattern. Always empty here — see below. */
 export interface FoilReferenceIndex {
   patterns: Record<string, { clip: boolean; frames: number }>
 }
@@ -269,12 +290,12 @@ export interface FoilMaskMeta {
   aliasOf: number | null
   hasPrior: boolean
   hasDiff: boolean
-  /** Provenance headers (sidecar v3) — enough to badge without a second fetch. */
   method: FoilDerivationMethod | null
   reviewStatus: FoilReviewStatus | null
+  /** sha256 of the answering PNG. The staging layer's staleness pin. */
+  sha256: string | null
 }
 
-/** One page of a set's card list (the strip is paged — promo sets run 300+). */
 export interface FoilCardPage {
   cards: FoilCardRow[]
   page: number
@@ -282,7 +303,6 @@ export interface FoilCardPage {
   total: number
 }
 
-/** A full-catalog name-search hit (GET /search). */
 export interface FoilSearchHit {
   cardId: string
   number: string
@@ -299,25 +319,11 @@ export interface FoilSearchPage {
   total: number
 }
 
-/**
- * Random catalog cards the resolver assigns a pattern to (canon-lab card
- * preview) — server-side sample from the baked inversion file
- * (GET /foil-lab/pattern-cards/:patternId, tools/foil/build-pattern-cards.mts).
- */
 export interface FoilPatternCards {
   patternId: string
-  /** Size of the pool actually sampled (assigned, or the cited fallback). */
   total: number
-  /**
-   * R7: which pool `sample` came from. 'assigned' = the resolver picks this
-   * pattern for these printings. 'cited' = the resolver picks something ELSE
-   * for them, but a cited row names this pattern for the same card — usually
-   * because the two rows describe different physical layers (see `diagnosis`).
-   */
   via: 'assigned' | 'cited'
-  /** How many printings the cited rows name (the sampled pool is capped). */
   citedTotal: number
-  /** Why the assigned pool is empty — null when it isn't. */
   diagnosis: {
     reason: 'outranked' | 'class-absent' | 'sets-absent' | 'no-cited-rows' | string
     detail: string
@@ -342,61 +348,130 @@ export interface FoilCardDetail {
   variants: FoilVariant[]
 }
 
+// ── Shared state: the artifact readers ──────────────────────────
+
+const catalog = new Catalog()
+const searchIndex = new SearchIndex()
+let corpusPromise: Promise<CorpusView> | null = null
+
+export function corpusView(signal?: AbortSignal): Promise<CorpusView> {
+  corpusPromise ??= CorpusView.load(signal)
+  return corpusPromise
+}
+
+/** Drop the cached manifest — used after a direct write changes the corpus. */
+export function invalidateCorpus(): void {
+  corpusPromise = null
+}
+
+function toCardRow(c: CatalogCard): FoilCardRow {
+  return {
+    cardId: c.cardId,
+    number: c.number,
+    name: c.name,
+    rarity: c.rarity,
+    variantCount: c.variants.length,
+    images: c.images,
+  }
+}
+
+/**
+ * Images by reference, through the proxy.
+ *
+ * `assets.tcgdex.net` does send `access-control-allow-origin: *` (measured),
+ * so a direct `<img crossOrigin>` would texture fine. The proxy is used anyway:
+ * it keeps a volunteer CDN from being hammered every time somebody scrubs a
+ * set, it survives an upstream outage, and — the one that matters for the
+ * corpus — #4's frame registry keys a framing on source URL plus raster
+ * dimensions, so a URL under our control is what keeps that key stable.
+ */
+export function proxied(url: string): string {
+  try {
+    const u = new URL(url, location.href)
+    if (u.origin !== 'https://assets.tcgdex.net') return url
+    return `/api/image?p=${encodeURIComponent(u.pathname.replace(/^\//, ''))}`
+  } catch {
+    return url
+  }
+}
+
 // ── Fetchers ───────────────────────────────────────────────────
 
 export const foilApi = {
-  // The picker browses the FULL catalog (Chey: "I'm never gonna own all the
-  // cards, and I wanna have them at least somewhat accurate"); ownedOnly=true
-  // narrows every tier to owned, which is the original workbench behavior.
+  // The picker browses the FULL catalog. There is no owned-only narrowing,
+  // because there is no account — see the header.
 
-  // Series list — full catalog, or only series with at least one owned card.
-  series: async (ownedOnly: boolean, signal?: AbortSignal): Promise<FoilSeries[]> => {
-    const d = await get<{ series: FoilSeries[] }>('/series', signal)
-    return ownedOnly ? d.series.filter((s) => s.progress.owned > 0) : d.series
+  series: async (signal?: AbortSignal): Promise<FoilSeries[]> => {
+    const idx = await catalog.loadIndex(signal)
+    if (idx === null) return []
+    return idx.series.map((s) => ({ slug: s.slug, name: s.name, setCount: s.setCount, cardCount: s.cardCount }))
   },
 
-  // Sets in a series — full catalog, or only sets with at least one owned card.
-  sets: async (seriesSlug: string, ownedOnly: boolean, signal?: AbortSignal): Promise<FoilSet[]> => {
-    const d = await get<{ sets: FoilSet[] }>(`/series/${encodeURIComponent(seriesSlug)}`, signal)
-    return ownedOnly ? d.sets.filter((s) => s.progress.complete.owned > 0) : d.sets
+  sets: async (seriesSlug: string, signal?: AbortSignal): Promise<FoilSet[]> => {
+    const shard = await catalog.seriesShard(seriesSlug, signal)
+    return shard?.sets ?? []
   },
 
-  // One page of a set's cards (paged — the connection-budget rule: never pull a
-  // whole large set in one shot; 250 is the api's max pageSize and covers most
-  // sets in a single page, promo sets append pages via the strip's More chip).
-  cards: async (setId: string, ownedOnly: boolean, page: number, signal?: AbortSignal): Promise<FoilCardPage> => {
-    const own = ownedOnly ? '&own=have' : ''
-    const d = await get<{ cards: FoilCardRow[]; pagination: { page: number; pageCount: number; total: number } }>(
-      `/sets/${encodeURIComponent(setId)}?pageSize=250&page=${page}${own}`,
-      signal,
-    )
-    return { cards: d.cards, page: d.pagination.page, pageCount: d.pagination.pageCount, total: d.pagination.total }
+  // One page of a set's cards. The paging is the bake's, at the same pageSize
+  // the old api capped at, so the strip's More chip keeps working unchanged.
+  cards: async (setId: string, page: number, signal?: AbortSignal): Promise<FoilCardPage> => {
+    const shard = await catalog.setShard(setId, page, signal)
+    if (shard === null) return { cards: [], page, pageCount: 0, total: 0 }
+    return { cards: shard.cards.map(toCardRow), page: shard.page, pageCount: shard.pageCount, total: shard.total }
   },
 
-  // Full-catalog card-name/number search (always the whole catalog — the point
-  // of search is to reach cards the browse filters would hide).
+  /** Full-catalog name/number/set search, in the browser. See catalog/search.ts. */
   search: async (text: string, page: number, signal?: AbortSignal): Promise<FoilSearchPage> => {
-    const d = await get<{ cards: FoilSearchHit[]; pagination: { page: number; pageCount: number; total: number } }>(
-      `/search?q=${encodeURIComponent(text)}&pageSize=60&page=${page}`,
-      signal,
-    )
-    return { hits: d.cards, page: d.pagination.page, pageCount: d.pagination.pageCount, total: d.pagination.total }
+    const PAGE = 60
+    const hits = await searchIndex.search(text, PAGE * 4, signal)
+    const slice = hits.slice((page - 1) * PAGE, page * PAGE)
+    // The hit list carries no rarity or image url — those live in the set
+    // shard, and pulling one shard per hit to fill a search result would be a
+    // worse trade than showing the fields the index actually has.
+    return {
+      hits: slice.map((h) => ({
+        cardId: h.cardId,
+        number: h.number,
+        name: h.name,
+        rarity: null,
+        set: { setId: h.setId, name: h.setId },
+        images: { low: '', high: '' },
+      })),
+      page,
+      pageCount: Math.max(1, Math.ceil(hits.length / PAGE)),
+      total: hits.length,
+    }
   },
 
-  cardDetail: (cardId: string, signal?: AbortSignal): Promise<FoilCardDetail> =>
-    get<FoilCardDetail>(`/cards/${encodeURIComponent(cardId)}`, signal),
+  cardDetail: async (cardId: string, signal?: AbortSignal): Promise<FoilCardDetail> => {
+    const found = await catalog.card(cardId, signal)
+    if (found === null) throw new Error(`no catalog entry for ${cardId}`)
+    const { card, shard } = found
+    return {
+      card: {
+        cardId: card.cardId,
+        name: card.name,
+        number: card.number,
+        rarity: card.rarity,
+        images: card.images,
+        set: { setId: shard.set.setId, name: shard.set.name, slug: shard.set.slug },
+        series: { slug: shard.set.slug, name: shard.set.seriesName, tcgdexId: shard.set.seriesTcgdexId },
+      },
+      variants: card.variants,
+    }
+  },
 
-  // ── foil-lab dev surface (branch api instance only; POKEDEX_FOIL_LAB=1) ──
-  // Hand masks + workbench comments land in the WORKING TREE as committed
-  // artifacts. Against prod's api these 404 — the UI treats that as "feature
-  // unavailable" and hides the affordances.
+  // ── The corpus, read as committed files ──────────────────────
+  //
+  // These used to be the "dev surface" that 404'd against production. They are
+  // now plain static reads of the repository's own data, which is why the
+  // hosted editor can show provenance to anybody with no login at all.
 
   /**
-   * Saved hand mask + its sidecar meta, or null when none exists (or no dev
-   * api). `scope` enables artwork-keyed aliasing: masks are a property of the
-   * card's scan (all variants share it), so a GET for a variant with no mask
-   * of its own resolves to a sibling variant's mask with the same recorded
-   * prior.scope — `aliasOf` says which one answered.
+   * The mask that answers for `(cardId, variantId)` at `scope`, through the
+   * same `(cardId, scope)` aliasing the server used to do — resolved from the
+   * corpus manifest, and reported in `meta.aliasOf` exactly as
+   * `X-Foil-Mask-Alias-Of` used to report it.
    */
   getMask: async (
     cardId: string,
@@ -404,59 +479,173 @@ export const foilApi = {
     scope?: string,
     signal?: AbortSignal,
   ): Promise<{ bitmap: ImageBitmap; meta: FoilMaskMeta } | null> => {
-    const q = scope ? `?scope=${encodeURIComponent(scope)}` : ''
-    const res = await fetch(`${BASE}/foil-lab/masks/${encodeURIComponent(cardId)}/${variantId}${q}`, { signal })
-    if (!res.ok) return null
-    const blob = await res.blob()
+    const view = await corpusView(signal)
+    const record = scope ? view.maskFor(cardId, scope) : (view.manifest?.masks[cardId]?.[String(variantId)] ?? null)
+    if (record === null) return null
+    const got = await getBytes(artifactUrl.maskPng(cardId, record.variantId), signal)
+    if (got === null) return null
     try {
-      const bitmap = await createImageBitmap(blob)
-      const aliasOf = res.headers.get('X-Foil-Mask-Alias-Of')
-      const meta: FoilMaskMeta = {
-        file: `data/foil-masks/${cardId}/${aliasOf ?? variantId}.png`,
-        savedAt: res.headers.get('X-Foil-Mask-Saved-At'),
-        aliasOf: aliasOf ? Number(aliasOf) : null,
-        hasPrior: res.headers.get('X-Foil-Mask-Prior') === '1',
-        hasDiff: res.headers.get('X-Foil-Mask-Diff') === '1',
-        method: (res.headers.get('X-Foil-Mask-Method') as FoilDerivationMethod | null) ?? null,
-        reviewStatus: (res.headers.get('X-Foil-Mask-Review') as FoilReviewStatus | null) ?? null,
+      const bitmap = await createImageBitmap(new Blob([got.bytes as unknown as BlobPart], { type: 'image/png' }))
+      return {
+        bitmap,
+        meta: {
+          file: `data/foil-masks/${cardId}/${record.variantId}.png`,
+          savedAt: record.savedAt,
+          aliasOf: record.variantId === variantId ? null : record.variantId,
+          // The artifacts are committed beside the mask; the manifest does not
+          // list them, so this reports the two that writeMaskRecord always
+          // produces and lets a missing one 404 into a hidden button.
+          hasPrior: true,
+          hasDiff: true,
+          method: record.method as FoilDerivationMethod,
+          reviewStatus: record.reviewStatus as FoilReviewStatus,
+          // The manifest already measured this from the bytes, so the client
+          // does not re-hash on every open — the seed pin comes free.
+          sha256: record.sha256,
+        },
       }
-      return { bitmap, meta }
     } catch {
       return null
     }
   },
 
-  /** Full sidecar for the displayed mask (provenance panel), through the same aliasing. */
+  /** The raw bytes + sha of whatever answers, for seeding and conflict probes. */
+  probeMask: async (
+    cardId: string,
+    variantId: number,
+    scope: string,
+    signal?: AbortSignal,
+  ): Promise<{ sha256: string; resolvedFrom: { cardId: string; variantId: number }; savedAt: string | null; method: string } | null> => {
+    const view = await corpusView(signal)
+    const record = view.maskFor(cardId, scope)
+    if (record === null) return null
+    return {
+      sha256: record.sha256,
+      resolvedFrom: { cardId, variantId: record.variantId },
+      savedAt: record.savedAt,
+      method: record.method,
+    }
+  },
+
   maskMeta: async (
     cardId: string,
     variantId: number,
     scope?: string,
     signal?: AbortSignal,
   ): Promise<{ aliasOf: number | null; sidecar: FoilMaskSidecar } | null> => {
-    try {
-      const q = scope ? `?scope=${encodeURIComponent(scope)}` : ''
-      const res = await fetch(`${BASE}/foil-lab/masks/${encodeURIComponent(cardId)}/${variantId}/meta${q}`, { signal })
-      if (!res.ok) return null
-      return (await res.json()) as { aliasOf: number | null; sidecar: FoilMaskSidecar }
-    } catch {
-      return null
-    }
+    const view = await corpusView(signal)
+    const record = scope ? view.maskFor(cardId, scope) : (view.manifest?.masks[cardId]?.[String(variantId)] ?? null)
+    if (record === null) return null
+    const sidecar = await getJson<FoilMaskSidecar>(artifactUrl.maskSidecar(cardId, record.variantId), signal)
+    if (sidecar === null) return null
+    return { aliasOf: record.variantId === variantId ? null : record.variantId, sidecar }
   },
 
-  /** URL of a provenance artifact PNG (prior render, rule diff, corrected parent, correction diff). */
-  maskArtifactUrl: (cardId: string, variantId: number, kind: 'prior' | 'diff' | 'parent' | 'parent-diff', scope?: string): string =>
-    `${BASE}/foil-lab/masks/${encodeURIComponent(cardId)}/${variantId}/artifact/${kind}${scope ? `?scope=${encodeURIComponent(scope)}` : ''}`,
+  maskArtifactUrl: (
+    cardId: string,
+    variantId: number,
+    kind: 'prior' | 'diff' | 'parent' | 'parent-diff',
+  ): string => artifactUrl.maskArtifact(cardId, variantId, kind),
 
-  /** Corpus-wide provenance report. Null when the dev api isn't mounted. */
+  /** See `FoilCorpusReport` for what this can and cannot measure statically. */
   maskCorpus: async (signal?: AbortSignal): Promise<FoilCorpusReport | null> => {
-    try {
-      const res = await fetch(`${BASE}/foil-lab/masks/corpus`, { signal })
-      if (!res.ok) return null
-      return (await res.json()) as FoilCorpusReport
-    } catch {
-      return null
+    const view = await corpusView(signal)
+    const m = view.manifest
+    if (m === null) return null
+    return buildStaticReport(m, await getJson<VerificationMap>('/foil-verification-map.json', signal))
+  },
+
+  getWindow: async (
+    cardId: string,
+    variantId: number,
+    signal?: AbortSignal,
+  ): Promise<{ entry: FoilWindowEntry; aliasOf: number | null } | null> => {
+    const view = await corpusView(signal)
+    // Window geometry aliases SCOPE-AGNOSTICALLY: the art box is a property of
+    // the scan, and a sheet is the same box inverted.
+    const answering = view.windowVariantFor(cardId)
+    if (answering === null) return null
+    const entry = await getJson<FoilWindowEntry>(artifactUrl.window(cardId, answering), signal)
+    if (entry === null) return null
+    return { entry, aliasOf: answering === variantId ? null : answering }
+  },
+
+  getCanon: async (signal?: AbortSignal): Promise<Record<string, FoilCanonEntry> | null> => {
+    const view = await corpusView(signal)
+    const m = view.manifest
+    if (m === null) return null
+    const ids = Object.entries(m.canon)
+      .filter(([, c]) => c.exists)
+      .map(([id]) => id)
+    const entries = await Promise.all(ids.map((id) => getJson<FoilCanonEntry>(artifactUrl.canon(id), signal)))
+    const out: Record<string, FoilCanonEntry> = {}
+    ids.forEach((id, i) => {
+      const e = entries[i]
+      if (e) out[id] = e
+    })
+    return out
+  },
+
+  /**
+   * Per-card overrides. `data/foil-overrides/` HAS NEVER EXISTED — no per-card
+   * override has ever been written — so this always answers null today. The
+   * code layer travelled with the extraction; the data did not, because there
+   * is none. Staged overrides live in the session until #9 can open a PR for
+   * one.
+   */
+  getOverride: async (_cardId: string, _variantId: number, _signal?: AbortSignal): Promise<FoilOverrideEntry | null> => {
+    return null
+  },
+
+  /**
+   * Random catalog cards the resolver assigns a pattern to — the canon lab's
+   * card preview. The old api sampled server-side from the baked inversion
+   * file; the file is now shipped, so the sampling moved into the browser.
+   * Every call reshuffles, which is what the re-randomize button wants.
+   */
+  patternCards: async (patternId: string, sample: number, signal?: AbortSignal): Promise<FoilPatternCards | null> => {
+    const file = await patternCardsFile(signal)
+    if (file === null) return null
+    const assigned = file.patterns[patternId] ?? []
+    const cited = file.alternates[patternId] ?? []
+    const pool = assigned.length > 0 ? assigned : cited
+    const via: 'assigned' | 'cited' = assigned.length > 0 ? 'assigned' : 'cited'
+    const diag = file.diagnosis[patternId] ?? null
+    return {
+      patternId,
+      total: pool.length,
+      via,
+      citedTotal: diag?.citedPrintings ?? cited.length,
+      diagnosis: diag ? { reason: diag.reason, detail: diag.detail, alternates: diag.alternates, outrankedBy: diag.outrankedBy } : null,
+      sample: reservoir(pool, sample).map((t) => ({ cardId: t[0], variantId: t[1], kind: t[2], scope: t[3] })),
+      generatedAt: file.generatedAt,
+      resolverVersion: file.resolverVersion,
     }
   },
+
+  /**
+   * `/reference` is DEFERRED, not ported.
+   *
+   * The old route streamed committed clips out of `research/foil-video-reference/`.
+   * Subtask 2 removed that media from the repository — it is cited, never
+   * vendored — and subtask 12 replaces it with embeds from the source. So the
+   * canon lab's reference pane is an EMPTY SLOT, treated exactly like the glyph
+   * slots: shipping the slot empty is how it stays possible. This returns an
+   * empty index rather than null so the pane renders its own explanation
+   * instead of silently disappearing.
+   */
+  referenceIndex: async (_signal?: AbortSignal): Promise<FoilReferenceIndex | null> => {
+    return { patterns: {} }
+  },
+
+  referenceUrl: (_slug: string, _file: string): string => '',
+
+  // ── Writes: the direct-write path ────────────────────────────
+  //
+  // A writer-capability holder saves through these; everyone else never
+  // reaches them, because the UI routes to the staging layer instead. They
+  // answer 401 for a viewer without the capability, and the surfaces treat
+  // that the way they always treated a 404 — the affordance hides itself.
 
   putMask: async (
     cardId: string,
@@ -465,57 +654,18 @@ export const foilApi = {
     width: number,
     height: number,
     prior: FoilMaskPrior,
-    /**
-     * What the canvas was SEEDED with. Not a label: the api derives the honest
-     * `derivation_method` by diffing the saved pixels against what this seed
-     * rasterizes to, so a stale or wrong claim can't mislabel the corpus.
-     */
     derivation: FoilMaskDerivation,
-    extra?: { artworkUrl?: string | null; card?: { setId: string | null; seriesSlug: string | null; name: string | null; number: string | null } },
+    extra?: { artworkUrl?: string | null; card?: { setId: string | null; seriesSlug: string | null; name: string | null; number: string | null }; comment?: string },
   ): Promise<FoilMaskSidecar> => {
-    const res = await fetch(`${BASE}/foil-lab/masks/${encodeURIComponent(cardId)}/${variantId}`, {
+    const res = await fetch('/api/mask', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ png: pngDataUrl, width, height, prior, derivation, ...extra }),
+      credentials: 'same-origin',
+      body: JSON.stringify({ cardId, variantId, png: pngDataUrl, width, height, prior, derivation, ...extra }),
     })
-    if (!res.ok) throw new Error(`mask save failed (HTTP ${res.status})`)
-    return res.json() as Promise<FoilMaskSidecar>
-  },
-
-  deleteMask: async (cardId: string, variantId: number): Promise<void> => {
-    const res = await fetch(`${BASE}/foil-lab/masks/${encodeURIComponent(cardId)}/${variantId}`, { method: 'DELETE' })
-    if (!res.ok) throw new Error(`mask delete failed (HTTP ${res.status})`)
-  },
-
-  postComment: async (text: string, context: Record<string, unknown>): Promise<{ id: string }> => {
-    const res = await fetch(`${BASE}/foil-lab/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, context }),
-    })
-    if (!res.ok) throw new Error(`comment save failed (HTTP ${res.status})`)
-    return res.json() as Promise<{ id: string }>
-  },
-
-  // ── Adjusted window geometry (foil/mask-refine — pre-flatten state) ──
-
-  /**
-   * Saved window geometry for a card/variant, or null (none saved / no dev
-   * api). Artwork-keyed: any sibling variant's geometry on the same card
-   * answers (newest savedAt), `aliasOf` says which one.
-   */
-  getWindow: async (
-    cardId: string,
-    variantId: number,
-    signal?: AbortSignal,
-  ): Promise<{ entry: FoilWindowEntry; aliasOf: number | null } | null> => {
-    try {
-      const res = await fetch(`${BASE}/foil-lab/windows/${encodeURIComponent(cardId)}/${variantId}`, { signal })
-      if (!res.ok) return null
-      return (await res.json()) as { entry: FoilWindowEntry; aliasOf: number | null }
-    } catch {
-      return null
-    }
+    if (!res.ok) throw new Error(await writeError(res, 'mask save'))
+    invalidateCorpus()
+    return (await res.json()) as FoilMaskSidecar
   },
 
   putWindow: async (
@@ -530,140 +680,219 @@ export const foilApi = {
       base: { rect: [number, number, number, number]; radius: number; resolverVersion: number }
     },
   ): Promise<FoilWindowEntry> => {
-    const res = await fetch(`${BASE}/foil-lab/windows/${encodeURIComponent(cardId)}/${variantId}`, {
+    const res = await fetch('/api/window', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      credentials: 'same-origin',
+      body: JSON.stringify({ cardId, variantId, ...body }),
     })
-    if (!res.ok) throw new Error(`window save failed (HTTP ${res.status})`)
-    return res.json() as Promise<FoilWindowEntry>
-  },
-
-  deleteWindow: async (cardId: string, variantId: number): Promise<void> => {
-    const res = await fetch(`${BASE}/foil-lab/windows/${encodeURIComponent(cardId)}/${variantId}`, {
-      method: 'DELETE',
-    })
-    if (!res.ok) throw new Error(`window delete failed (HTTP ${res.status})`)
-  },
-
-  // ── Canon pattern defaults (surface A — the canon lab) ──
-
-  /** All saved canon files, keyed by patternId. Null when no dev api. */
-  getCanon: async (signal?: AbortSignal): Promise<Record<string, FoilCanonEntry> | null> => {
-    try {
-      const res = await fetch(`${BASE}/foil-lab/canon`, { signal })
-      if (!res.ok) return null
-      const d = (await res.json()) as { patterns: Record<string, FoilCanonEntry> }
-      return d.patterns
-    } catch {
-      return null
-    }
+    if (!res.ok) throw new Error(await writeError(res, 'window save'))
+    invalidateCorpus()
+    return (await res.json()) as FoilWindowEntry
   },
 
   putCanon: async (patternId: string, uniforms: Record<string, number>, note?: string): Promise<FoilCanonEntry> => {
-    const res = await fetch(`${BASE}/foil-lab/canon/${encodeURIComponent(patternId)}`, {
+    const res = await fetch('/api/canon', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uniforms, ...(note ? { note } : {}) }),
+      credentials: 'same-origin',
+      body: JSON.stringify({ patternId, uniforms, ...(note ? { note } : {}) }),
     })
-    if (!res.ok) throw new Error(`canon save failed (HTTP ${res.status})`)
-    return res.json() as Promise<FoilCanonEntry>
+    if (!res.ok) throw new Error(await writeError(res, 'canon save'))
+    invalidateCorpus()
+    return (await res.json()) as FoilCanonEntry
   },
 
-  deleteCanon: async (patternId: string): Promise<void> => {
-    const res = await fetch(`${BASE}/foil-lab/canon/${encodeURIComponent(patternId)}`, { method: 'DELETE' })
-    if (!res.ok) throw new Error(`canon delete failed (HTTP ${res.status})`)
-  },
-
-  // ── Per-card overrides (surface B — the card adjustment surface) ──
-
-  /** Saved overrides for a card/variant, or null (none saved / no dev api). */
-  getOverride: async (cardId: string, variantId: number, signal?: AbortSignal): Promise<FoilOverrideEntry | null> => {
-    try {
-      const res = await fetch(`${BASE}/foil-lab/overrides/${encodeURIComponent(cardId)}/${variantId}`, { signal })
-      if (!res.ok) return null
-      return (await res.json()) as FoilOverrideEntry
-    } catch {
-      return null
-    }
-  },
-
+  /**
+   * Per-card overrides. Staged sessions carry them; there is no server route,
+   * because `data/foil-overrides/` has never existed and a PUT with no reader
+   * would be a promise rather than a feature. A writer-capability holder's
+   * adjusted uniforms currently live in the recipe JSON they copy out.
+   */
   putOverride: async (
-    cardId: string,
-    variantId: number,
-    body: {
+    _cardId: string,
+    _variantId: number,
+    _body: {
       patternId: string
       patternOverride: string | null
       uniforms: Record<string, number>
       baseline: { canonSavedAt: string | null }
     },
   ): Promise<FoilOverrideEntry> => {
-    const res = await fetch(`${BASE}/foil-lab/overrides/${encodeURIComponent(cardId)}/${variantId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-    if (!res.ok) throw new Error(`override save failed (HTTP ${res.status})`)
-    return res.json() as Promise<FoilOverrideEntry>
+    throw new Error('per-card overrides are staged, not written — data/foil-overrides has no records yet')
   },
 
-  deleteOverride: async (cardId: string, variantId: number): Promise<void> => {
-    const res = await fetch(`${BASE}/foil-lab/overrides/${encodeURIComponent(cardId)}/${variantId}`, {
+  deleteOverride: async (_cardId: string, _variantId: number): Promise<void> => {
+    /* nothing to delete: see putOverride */
+  },
+
+  // ── Deletions: the writer path only ──────────────────────────
+  //
+  // NOT STAGEABLE IN v1, and that is a decision rather than an omission. A
+  // contributor's first available action should not be removing ground truth,
+  // and a deletion has no diff to review — the PR would be an empty file and a
+  // claim. These stay live for a writer-capability holder and are simply
+  // absent for everybody else.
+
+  deleteMask: async (cardId: string, variantId: number): Promise<void> => {
+    const res = await fetch(`/api/mask?cardId=${encodeURIComponent(cardId)}&variantId=${variantId}`, {
       method: 'DELETE',
+      credentials: 'same-origin',
     })
-    if (!res.ok) throw new Error(`override delete failed (HTTP ${res.status})`)
+    if (!res.ok) throw new Error(await writeError(res, 'mask delete'))
+    invalidateCorpus()
   },
 
-  // ── Pattern → assigned cards (canon lab: the card preview) ──
-
-  /**
-   * A fresh random sample of catalog cards the resolver assigns `patternId`
-   * to. Every call reshuffles server-side. Null when the dev api is absent
-   * or the baked inversion file is missing (preview hides/complains).
-   */
-  patternCards: async (patternId: string, sample: number, signal?: AbortSignal): Promise<FoilPatternCards | null> => {
-    try {
-      const res = await fetch(
-        `${BASE}/foil-lab/pattern-cards/${encodeURIComponent(patternId)}?sample=${sample}`,
-        { signal },
-      )
-      if (!res.ok) return null
-      return (await res.json()) as FoilPatternCards
-    } catch {
-      return null
-    }
+  deleteWindow: async (cardId: string, variantId: number): Promise<void> => {
+    const res = await fetch(`/api/window?cardId=${encodeURIComponent(cardId)}&variantId=${variantId}`, {
+      method: 'DELETE',
+      credentials: 'same-origin',
+    })
+    if (!res.ok) throw new Error(await writeError(res, 'window delete'))
+    invalidateCorpus()
   },
 
-  // ── Reference corpus (canon lab: real tilt clips + keyframes) ──
-
-  /** Which patterns have clips/frames on disk. Null when no dev api. */
-  referenceIndex: async (signal?: AbortSignal): Promise<FoilReferenceIndex | null> => {
-    try {
-      const res = await fetch(`${BASE}/foil-lab/reference`, { signal })
-      if (!res.ok) return null
-      return (await res.json()) as FoilReferenceIndex
-    } catch {
-      return null
-    }
+  deleteCanon: async (patternId: string): Promise<void> => {
+    const res = await fetch(`/api/canon?patternId=${encodeURIComponent(patternId)}`, {
+      method: 'DELETE',
+      credentials: 'same-origin',
+    })
+    if (!res.ok) throw new Error(await writeError(res, 'canon delete'))
+    invalidateCorpus()
   },
 
-  /** URL for a committed reference asset (streams from the dev api). */
-  referenceUrl: (slug: string, file: string): string =>
-    `${BASE}/foil-lab/reference/${encodeURIComponent(slug)}/${file}`,
-
-  /** Probe: is the foil-lab dev surface mounted on this api? */
-  devSurface: async (): Promise<boolean> => {
-    // A GET for a definitely-invalid id: 400/404 from the router = mounted;
-    // the generic api 404 shape also returns 404 — distinguish via header? Keep
-    // it simple: any response other than the api-wide not_found body means
-    // mounted. Cheapest reliable probe: a mask GET that 404s with our message.
+  /** Is the write surface reachable for THIS viewer? Replaces `devSurface()`. */
+  writeSurface: async (): Promise<boolean> => {
     try {
-      const res = await fetch(`${BASE}/foil-lab/masks/probe/0`)
-      if (res.status === 400) return true // router's id validation answered
-      const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
-      return Boolean(body?.error?.message?.includes('hand mask'))
+      const res = await fetch('/api/me', { credentials: 'same-origin' })
+      if (!res.ok) return false
+      return ((await res.json()) as { writer?: boolean }).writer === true
     } catch {
       return false
     }
   },
+}
+
+async function writeError(res: Response, what: string): Promise<string> {
+  const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
+  return body?.error?.message ?? `${what} failed (HTTP ${res.status})`
+}
+
+// ── pattern-cards, sampled in the browser ───────────────────────
+
+type PatternTuple = [string, number, string, string, string?, (string | null)?]
+interface PatternCardsFile {
+  version: number
+  generatedAt: string
+  source: string
+  resolverVersion: number
+  patterns: Record<string, PatternTuple[]>
+  alternates: Record<string, PatternTuple[]>
+  diagnosis: Record<string, { reason: string; detail: string; alternates: number; citedPrintings: number; outrankedBy?: [string, number][] }>
+}
+
+let patternCardsPromise: Promise<PatternCardsFile | null> | null = null
+function patternCardsFile(signal?: AbortSignal): Promise<PatternCardsFile | null> {
+  patternCardsPromise ??= getJson<PatternCardsFile>('/foil-pattern-cards.json', signal)
+  return patternCardsPromise
+}
+
+/** An even sample, not the first N — the preview should not always show base1. */
+function reservoir<T>(pool: T[], n: number): T[] {
+  if (pool.length <= n) return [...pool]
+  const out = pool.slice(0, n)
+  for (let i = n; i < pool.length; i++) {
+    const j = Math.floor(Math.random() * (i + 1))
+    if (j < n) out[j] = pool[i]!
+  }
+  return out
+}
+
+// ── The static corpus report ────────────────────────────────────
+
+interface VerificationMap {
+  corpus?: {
+    exemplarUnits?: number
+    exemplarPools?: Record<string, { eraId: string; scope: string; exemplars: number }>
+  }
+}
+
+function buildStaticReport(m: CorpusManifest, map: VerificationMap | null): FoilCorpusReport {
+  const byMethod: Record<string, number> = {}
+  const byAuthorship: Record<string, number> = {}
+  const byReviewStatus: Record<string, number> = {}
+  const byEra: FoilCorpusReport['byEra'] = {}
+  const byScope: FoilCorpusReport['byScope'] = {}
+  const awaitingReview: FoilCorpusReport['awaitingReview'] = []
+  let agreementSum = 0
+  let agreementN = 0
+  let total = 0
+
+  const AUTHORSHIP: Record<string, string> = {
+    hand: 'human',
+    'hand-refined': 'human',
+    'layout-flatten': 'human',
+    ai: 'machine',
+    'ai-corrected': 'mixed',
+  }
+
+  for (const [cardId, byVariant] of Object.entries(m.masks)) {
+    for (const rec of Object.values(byVariant)) {
+      total++
+      byMethod[rec.method] = (byMethod[rec.method] ?? 0) + 1
+      const auth = AUTHORSHIP[rec.method] ?? 'human'
+      byAuthorship[auth] = (byAuthorship[auth] ?? 0) + 1
+      byReviewStatus[rec.reviewStatus] = (byReviewStatus[rec.reviewStatus] ?? 0) + 1
+      for (const [table, key] of [
+        [byEra, rec.eraId],
+        [byScope, rec.scope],
+      ] as const) {
+        const bucket = (table[key] ??= { n: 0, byMethod: {}, meanAgreement: null })
+        bucket.n++
+        bucket.byMethod[rec.method] = (bucket.byMethod[rec.method] ?? 0) + 1
+      }
+      if (rec.agreement !== null) {
+        agreementSum += rec.agreement
+        agreementN++
+      }
+      if (rec.method === 'ai' && rec.reviewStatus === 'unreviewed') {
+        awaitingReview.push({
+          cardId,
+          variantId: rec.variantId,
+          savedAt: rec.savedAt ?? '',
+          generator: null,
+          confidence: null,
+          exemplars: 0,
+          agreement: rec.agreement,
+          maskUrl: artifactUrl.maskPng(cardId, rec.variantId),
+        })
+      }
+    }
+  }
+
+  const exemplarPools = map?.corpus?.exemplarPools ?? {}
+  const exByEra: Record<string, number> = {}
+  const exByScope: Record<string, number> = {}
+  for (const p of Object.values(exemplarPools)) {
+    exByEra[p.eraId] = (exByEra[p.eraId] ?? 0) + p.exemplars
+    exByScope[p.scope] = (exByScope[p.scope] ?? 0) + p.exemplars
+  }
+
+  return {
+    generatedAt: m.generatedAt,
+    total,
+    byMethod,
+    byAuthorship,
+    byReviewStatus,
+    meanAgreement: agreementN === 0 ? null : Number((agreementSum / agreementN).toFixed(4)),
+    byEra,
+    // Not measurable from the manifest — see the type's doc comment. Null, not zero.
+    bySet: null,
+    bySeries: null,
+    byScope,
+    exemplarsAvailable: { total: map?.corpus?.exemplarUnits ?? 0, byEra: exByEra, byScope: exByScope },
+    awaitingReview,
+    corrections: null,
+    bySidecarVersion: {},
+  }
 }

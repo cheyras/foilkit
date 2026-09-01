@@ -155,9 +155,9 @@ and it is the input #11's queue is generated from.
   "version": 1,
   "generatedAt": "…",
   "counts": {
-    "maskRecords": 24, "maskCards": 21, "maskUnits": 22,
+    "maskRecords": 20, "maskCards": 20, "maskUnits": 20,
     "windowFiles": 1, "windowCards": 1,
-    "canonFiles": 32, "patterns": 45, "uncanonedPatterns": 13
+    "canonFiles": 32, "patterns": 45, "uncanonedPatterns": 12
   },
   "masks": {
     "base1-4": {
@@ -180,8 +180,23 @@ and it is the input #11's queue is generated from.
 `agreement` is `sidecar.diff.agreement` when present and `null` otherwise. A
 mask with no sidecar is a finding, not a row: the builder fails loudly.
 
-The 13 canon-less patterns are recorded **as absence**. Do not manufacture a
-canon entry from code defaults — that erases the signal #11 is built on.
+The canon-less patterns are recorded **as absence**. Do not manufacture a canon
+entry from code defaults — that erases the signal #11 is built on.
+
+**The number is 12, not 13, and the derived list is the truth.** Subtask 5
+records 13, which is `45 implemented patterns − 32 canon files`. That
+arithmetic counts `none`, the no-foil recipe, which has no canon by definition
+and never will. The builder derives the list rather than trusting the count,
+prints a `FINDING:` line whenever the two disagree, and does not fail the build
+over it — a count is a claim and the corpus is the measurement.
+
+One deliberate deviation from the shape above: `generatedAt` is **the newest
+`savedAt` the corpus itself carries**, not a clock reading. A wall clock would
+make the file differ on every run, which makes `--check` useless and a
+byte-identical rebuild impossible. The corpus's own newest timestamp is stable
+across clones (unlike an mtime), moves exactly when the data moves, and is the
+more useful staleness signal for an artifact whose whole job is to describe
+that data.
 
 ## 4. Verification map + pattern cards
 
@@ -211,10 +226,35 @@ landed, and only the first is about CORS:
    dimensions**. A proxy under our control keeps that key stable when upstream
    re-encodes something.
 
-`/api/image?card=<cardId>&q=<low|high>` is a pure caching proxy — no transcode,
-ever. It carries `apps/images`' politeness budget (≤5 req/s, ≤2 concurrent), its
-soft-404 trap (a `200` with `content-type: text/html` is a rejection, not a
-cache write) and its RIFF/WEBP magic-byte check.
+```
+GET|HEAD /api/image?p=<lang>/<serie>/<set>/<localId>/<low|high>.webp
+GET|HEAD /api/image?src=https://assets.tcgdex.net/<the same path>
+```
+
+e.g. `/api/image?p=en/base/base1/4/high.webp`. Exactly one of the two forms.
+`src=` exists so a **recorded source URL passes through unchanged**, which is
+what keeps #4's frame-registry key (source URL + raster dimensions) identical on
+both sides of the proxy. Every response that resolved an upstream carries
+`x-foilkit-upstream`, so that key is observable from the response rather than
+inferred.
+
+**SSRF is closed by construction, not by an allow-list check.** The function
+only ever builds `${ASSETS_ORIGIN}/${path}` from a `path` that matched a strict
+five-segment regex; a caller-supplied origin is never forwarded. `src=` is
+accepted only when its origin is exactly the assets origin *and* its pathname
+reduces to a path that passes the same regex.
+
+It is a pure caching proxy — **no transcode, ever**. It carries `apps/images`'
+politeness budget (≤5 req/s, ≤2 concurrent), its soft-404 trap (a `200` with
+`content-type: text/html` is a rejection, not a cache write) and its RIFF/WEBP
+magic-byte check. The real cache is the Vercel CDN in front of the function
+(`cache-control: public, max-age=31536000, immutable`); the per-instance LRU
+only helps a warm instance asked for the same card twice, and the code says so
+rather than pretending to be DeckPal's on-disk store.
+
+An upstream `404` answers `404` ("this card has no scan"); an upstream body that
+fails the content-type or magic-byte check answers **502** ("upstream handed us
+something wrong"). The difference matters to a caller and is not collapsed.
 
 ## 6. Never in an artifact
 

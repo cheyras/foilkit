@@ -7,3 +7,9 @@ packages:
   # query client are not things you hand-roll — and it is an APP, never
   # published. packages/* stay dependency-free; that contract is unchanged.
   - 'apps/editor'
+# esbuild ships a prebuilt native binary and its install script is what puts the
+# right one on disk. Vite does not run without it. Approved deliberately: it is
+# the only build script this workspace allows, and packages/* still install with
+# none at all.
+allowBuilds:
+  esbuild: true

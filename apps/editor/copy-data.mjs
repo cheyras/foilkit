@@ -25,11 +25,18 @@ const DIRS = [
   ['catalog', 'catalog'],
   ['search', 'search'],
 ]
+/** The committed corpus. Always from `data/`, never from a fixture bake. */
+const CORPUS_DIRS = [
+  ['foil-masks', 'foil-masks'],
+  ['foil-canon', 'foil-canon'],
+  ['foil-windows', 'foil-windows'],
+]
 const FILES = [
-  ['corpus-manifest.json', 'corpus-manifest.json'],
   ['foil-verification-map.json', 'foil-verification-map.json'],
   ['foil-pattern-cards.json', 'foil-pattern-cards.json'],
 ]
+/** Built on every build from the corpus itself, so always from `data/`. */
+const CORPUS_FILES = [['corpus-manifest.json', 'corpus-manifest.json']]
 
 let copied = 0
 let missing = 0
@@ -47,6 +54,33 @@ for (const [from, to] of DIRS) {
   report.artifacts[from] = { present: true }
   copied++
   console.log(`copy-data: ${from}/ -> dist/${to}/`)
+}
+
+for (const [from, to] of CORPUS_DIRS) {
+  const src = join(ROOT, 'data', from)
+  if (!existsSync(src)) {
+    // Unlike the bake, the corpus is committed. Its absence is a broken
+    // checkout, not an unrun job, so it is louder.
+    console.error(`copy-data: MISSING corpus directory data/${from} — this checkout is incomplete.`)
+    process.exit(1)
+  }
+  cpSync(src, join(DIST, to), { recursive: true })
+  report.artifacts[from] = { present: true }
+  copied++
+  console.log(`copy-data: data/${from}/ -> dist/${to}/`)
+}
+
+for (const [from, to] of CORPUS_FILES) {
+  const src = join(ROOT, 'data', from)
+  if (!existsSync(src)) {
+    console.error(`copy-data: MISSING data/${from} — run tools/build-corpus-manifest.mts (the prebuild step).`)
+    process.exit(1)
+  }
+  mkdirSync(dirname(join(DIST, to)), { recursive: true })
+  cpSync(src, join(DIST, to))
+  report.artifacts[from] = { present: true, bytes: statSync(src).size }
+  copied++
+  console.log(`copy-data: data/${from} -> dist/${to} (${statSync(src).size} bytes)`)
 }
 
 for (const [from, to] of FILES) {

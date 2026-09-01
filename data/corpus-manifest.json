@@ -1,0 +1,606 @@
+{
+  "canon": {
+    "big-glitter": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T22:32:20.352Z",
+      "uniforms": 20
+    },
+    "confetti": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T22:25:25.728Z",
+      "uniforms": 20
+    },
+    "cosmos": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T16:52:45.030Z",
+      "uniforms": 21
+    },
+    "cosmos-ii-pixel": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-07T23:36:58.953Z",
+      "uniforms": 20
+    },
+    "cosmos-iii-smooth": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T22:03:23.110Z",
+      "uniforms": 20
+    },
+    "cracked-ice": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-07T15:18:59.006Z",
+      "uniforms": 20
+    },
+    "detective-pikachu": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T22:31:54.653Z",
+      "uniforms": 20
+    },
+    "diagonal-sheen-left": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T19:26:52.248Z",
+      "uniforms": 20
+    },
+    "diagonal-sheen-right": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-07T22:05:53.916Z",
+      "uniforms": 20
+    },
+    "ex-emerald": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T19:44:41.628Z",
+      "uniforms": 20
+    },
+    "fireworks": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-07T22:08:38.821Z",
+      "uniforms": 20
+    },
+    "gold-secret": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T22:27:53.315Z",
+      "uniforms": 22
+    },
+    "horizontal-sheen": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-07T22:05:29.426Z",
+      "uniforms": 20
+    },
+    "mirror": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-07T03:41:20.373Z",
+      "uniforms": 20
+    },
+    "pinwheel": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T19:43:29.927Z",
+      "uniforms": 20
+    },
+    "pokeball-hologram": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-07T23:34:57.085Z",
+      "uniforms": 20
+    },
+    "radiant": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T22:16:07.890Z",
+      "uniforms": 21
+    },
+    "radiant-collection-dots": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T22:22:37.278Z",
+      "uniforms": 20
+    },
+    "rainbow-glitter": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T22:17:22.710Z",
+      "uniforms": 20
+    },
+    "rainbow-glitter-sheen": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-07T05:21:01.012Z",
+      "uniforms": 20
+    },
+    "reverse-sheet": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T19:31:17.866Z",
+      "uniforms": 20
+    },
+    "sequin": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T22:33:12.747Z",
+      "uniforms": 20
+    },
+    "shiny-vault": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T22:31:33.997Z",
+      "uniforms": 20
+    },
+    "starlight": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T19:12:34.335Z",
+      "uniforms": 20
+    },
+    "starlight-ii": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T19:14:54.117Z",
+      "uniforms": 20
+    },
+    "striped-vertical-sheen": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T19:28:35.781Z",
+      "uniforms": 20
+    },
+    "tinsel": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T22:05:25.547Z",
+      "uniforms": 20
+    },
+    "tinsel-ii": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-07T04:57:24.838Z",
+      "uniforms": 21
+    },
+    "vertical-sheen": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-07T22:05:10.918Z",
+      "uniforms": 20
+    },
+    "vertical-sheen-rainbow": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T19:46:33.284Z",
+      "uniforms": 20
+    },
+    "vstar-pearl": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-02T22:29:05.396Z",
+      "uniforms": 20
+    },
+    "water-web": {
+      "contract": 2,
+      "exists": true,
+      "savedAt": "2026-08-07T23:42:16.929Z",
+      "uniforms": 20
+    }
+  },
+  "countingUnits": {
+    "crossCardReuse": "never aliased — reprints of one illustration under different cardIds stay separate rows",
+    "generatedAt": "the NEWEST savedAt the corpus itself carries, NOT a clock reading — a wall-clock stamp would make this file differ on every build and turn --check into noise",
+    "maskCoverage": "(cardId, scope) — one mask serves every sibling variant of the card at that scope, newest savedAt wins",
+    "maskRecords": "one row per mask file on disk, before any aliasing — maskRecords >= maskUnits by construction",
+    "uncanonedPatterns": "implemented pattern ids (PATTERNS, excluding 'none') with no data/foil-canon/<id>.json — DERIVED, never hardcoded; absence is the datum #11 builds its queue on",
+    "windowGeometry": "cardId — scope-agnostic; a sheet is the same art box inverted"
+  },
+  "counts": {
+    "canonFiles": 32,
+    "maskCards": 20,
+    "maskRecords": 20,
+    "maskUnits": 20,
+    "patterns": 45,
+    "uncanonedPatterns": 12,
+    "windowCards": 1,
+    "windowFiles": 1
+  },
+  "generatedAt": "2026-08-08T15:19:46.932Z",
+  "maskUnits": {
+    "base1-10|window": 39,
+    "base1-15|window": 59,
+    "base1-1|window": 3,
+    "base1-2|window": 7,
+    "base1-4|window": 15,
+    "base1-5|window": 19,
+    "base1-6|window": 23,
+    "base1-7|window": 27,
+    "base1-8|window": 32,
+    "me05-001|sheet": 37184,
+    "me05-002|sheet": 37186,
+    "me05-003|sheet": 37188,
+    "me05-005|sheet": 37191,
+    "me05-006|sheet": 37193,
+    "me05-007|sheet": 37195,
+    "me05-010|sheet": 37200,
+    "me05-012|sheet": 77558,
+    "me05-014|sheet": 37207,
+    "me05-024|sheet": 37225,
+    "me05-029|sheet": 37234
+  },
+  "masks": {
+    "base1-1": {
+      "3": {
+        "agreement": 0.6877,
+        "eraId": "wotc",
+        "frame": "canonical",
+        "height": 704,
+        "method": "ai",
+        "reviewStatus": "unreviewed",
+        "savedAt": "2026-08-07T13:38:11.018Z",
+        "scope": "window",
+        "sha256": "395938d0e58bcf5daf1dee031b41af53ca17d7faf016d91e14934c7ca5ebdb42",
+        "variantId": 3,
+        "width": 504
+      }
+    },
+    "base1-10": {
+      "39": {
+        "agreement": 0.782,
+        "eraId": "wotc",
+        "frame": "canonical",
+        "height": 704,
+        "method": "ai",
+        "reviewStatus": "unreviewed",
+        "savedAt": "2026-08-07T13:02:47.320Z",
+        "scope": "window",
+        "sha256": "96928f6f1217a22f8b848bf06df96efaa69a5a20c12e91549f2fe6d4f9e262d2",
+        "variantId": 39,
+        "width": 504
+      }
+    },
+    "base1-15": {
+      "59": {
+        "agreement": 0.4064,
+        "eraId": "wotc",
+        "frame": "canonical",
+        "height": 704,
+        "method": "ai",
+        "reviewStatus": "unreviewed",
+        "savedAt": "2026-08-07T13:02:48.480Z",
+        "scope": "window",
+        "sha256": "a4448451e6a8f752ed1d253f3c201c95d5e782e99547b20990be0a484feb1aea",
+        "variantId": 59,
+        "width": 504
+      }
+    },
+    "base1-2": {
+      "7": {
+        "agreement": 0.6469,
+        "eraId": "wotc",
+        "frame": "canonical",
+        "height": 704,
+        "method": "ai",
+        "reviewStatus": "unreviewed",
+        "savedAt": "2026-08-07T13:02:44.284Z",
+        "scope": "window",
+        "sha256": "21b5509e40cdb0c7342ba35616745c41c92f3559e032c1d14a0c9b7cb4a55190",
+        "variantId": 7,
+        "width": 504
+      }
+    },
+    "base1-4": {
+      "15": {
+        "agreement": 0.6643,
+        "eraId": "wotc",
+        "frame": "canonical",
+        "height": 704,
+        "method": "ai",
+        "reviewStatus": "unreviewed",
+        "savedAt": "2026-08-07T13:02:45.308Z",
+        "scope": "window",
+        "sha256": "c78eece026a30b0c35702d680a7cae92b26d90f04b2fd23adc00b2963fca6af0",
+        "variantId": 15,
+        "width": 504
+      }
+    },
+    "base1-5": {
+      "19": {
+        "agreement": 0.5341,
+        "eraId": "wotc",
+        "frame": "canonical",
+        "height": 704,
+        "method": "hand-refined",
+        "reviewStatus": "human-authored",
+        "savedAt": "2026-08-08T05:52:55.654Z",
+        "scope": "window",
+        "sha256": "866342e8ab07f795e9fe87b377373cf11b98e2d4f8a92e0179f80a31f90c31d8",
+        "variantId": 19,
+        "width": 504
+      }
+    },
+    "base1-6": {
+      "23": {
+        "agreement": 0.5475,
+        "eraId": "wotc",
+        "frame": "canonical",
+        "height": 704,
+        "method": "ai-corrected",
+        "reviewStatus": "human-authored",
+        "savedAt": "2026-08-08T06:08:13.286Z",
+        "scope": "window",
+        "sha256": "d0c4a1ec43c529ef228c678dcb6bf1e08d560ee817077dad958f4b48a2776b68",
+        "variantId": 23,
+        "width": 504
+      }
+    },
+    "base1-7": {
+      "27": {
+        "agreement": 0.7311,
+        "eraId": "wotc",
+        "frame": "canonical",
+        "height": 704,
+        "method": "hand",
+        "reviewStatus": "human-authored",
+        "savedAt": "2026-08-08T06:24:36.484Z",
+        "scope": "window",
+        "sha256": "917f8300be692cf5c74aa088bb3e904085ff6a3ca6abb954524c2ff5376eb46a",
+        "variantId": 27,
+        "width": 504
+      }
+    },
+    "base1-8": {
+      "32": {
+        "agreement": 0.6419,
+        "eraId": "wotc",
+        "frame": "canonical",
+        "height": 704,
+        "method": "hand-refined",
+        "reviewStatus": "human-authored",
+        "savedAt": "2026-08-08T05:48:27.004Z",
+        "scope": "window",
+        "sha256": "b21c74ae3453cf04916aecc90b2b4e8ad115a25acec2020c77fd763c5a3e57ba",
+        "variantId": 32,
+        "width": 504
+      }
+    },
+    "me05-001": {
+      "37184": {
+        "agreement": 0.7081,
+        "eraId": "modern-sv",
+        "frame": "canonical",
+        "height": 704,
+        "method": "ai-corrected",
+        "reviewStatus": "human-authored",
+        "savedAt": "2026-08-08T03:11:36.291Z",
+        "scope": "sheet",
+        "sha256": "0b0d48d812f632dc821ce274906471aba2fb31317ff0a4111d579bcea44de184",
+        "variantId": 37184,
+        "width": 504
+      }
+    },
+    "me05-002": {
+      "37186": {
+        "agreement": 0.756,
+        "eraId": "modern-sv",
+        "frame": "canonical",
+        "height": 704,
+        "method": "ai-corrected",
+        "reviewStatus": "human-authored",
+        "savedAt": "2026-08-08T12:17:30.216Z",
+        "scope": "sheet",
+        "sha256": "b3b2bab3a0fe4919b9621d4780c1c70ff61e215eac932baf15bafd99de8be54f",
+        "variantId": 37186,
+        "width": 504
+      }
+    },
+    "me05-003": {
+      "37188": {
+        "agreement": 0.754,
+        "eraId": "modern-sv",
+        "frame": "canonical",
+        "height": 704,
+        "method": "ai-corrected",
+        "reviewStatus": "human-authored",
+        "savedAt": "2026-08-08T11:59:20.756Z",
+        "scope": "sheet",
+        "sha256": "cd9812b9768a2f7613bfbd7e3be1dad176087092b0152a4e56390eb81f0aeb0b",
+        "variantId": 37188,
+        "width": 504
+      }
+    },
+    "me05-005": {
+      "37191": {
+        "agreement": 0.756,
+        "eraId": "modern-sv",
+        "frame": "canonical",
+        "height": 704,
+        "method": "ai-corrected",
+        "reviewStatus": "human-authored",
+        "savedAt": "2026-08-08T12:16:47.896Z",
+        "scope": "sheet",
+        "sha256": "f9d9008c446ee1a490f76fbae604df91103d0c0a52afba6e619946367a455316",
+        "variantId": 37191,
+        "width": 504
+      }
+    },
+    "me05-006": {
+      "37193": {
+        "agreement": 0.7459,
+        "eraId": "modern-sv",
+        "frame": "canonical",
+        "height": 704,
+        "method": "ai-corrected",
+        "reviewStatus": "human-authored",
+        "savedAt": "2026-08-08T12:24:00.549Z",
+        "scope": "sheet",
+        "sha256": "2c2681c1d878a5f6f7c0502724e35bb40c524cc7298dbea3c05d0d1e7560e4a4",
+        "variantId": 37193,
+        "width": 504
+      }
+    },
+    "me05-007": {
+      "37195": {
+        "agreement": 0.7586,
+        "eraId": "modern-sv",
+        "frame": "canonical",
+        "height": 704,
+        "method": "hand",
+        "reviewStatus": "human-authored",
+        "savedAt": "2026-08-08T06:37:28.517Z",
+        "scope": "sheet",
+        "sha256": "d6a2b04cbd8a2ac48597aa8ba6b8a882177af3ec330efd83e223b9ea99901aed",
+        "variantId": 37195,
+        "width": 504
+      }
+    },
+    "me05-010": {
+      "37200": {
+        "agreement": 0.7448,
+        "eraId": "modern-sv",
+        "frame": "canonical",
+        "height": 704,
+        "method": "ai-corrected",
+        "reviewStatus": "human-authored",
+        "savedAt": "2026-08-08T12:29:10.387Z",
+        "scope": "sheet",
+        "sha256": "b8b49a9163adbd1183db4177a328030ea31673ba16d6fe18cf0cd6d2b0c54d1c",
+        "variantId": 37200,
+        "width": 504
+      }
+    },
+    "me05-012": {
+      "77558": {
+        "agreement": 0.7485,
+        "eraId": "modern-sv",
+        "frame": "canonical",
+        "height": 704,
+        "method": "hand-refined",
+        "reviewStatus": "human-authored",
+        "savedAt": "2026-08-08T06:54:27.057Z",
+        "scope": "sheet",
+        "sha256": "f5667f84911a62613364fb45d7140fc450aada7207f5ee67a30bfcd160d58600",
+        "variantId": 77558,
+        "width": 504
+      }
+    },
+    "me05-014": {
+      "37207": {
+        "agreement": 0.7404,
+        "eraId": "modern-sv",
+        "frame": "canonical",
+        "height": 704,
+        "method": "ai-corrected",
+        "reviewStatus": "human-authored",
+        "savedAt": "2026-08-08T15:05:36.677Z",
+        "scope": "sheet",
+        "sha256": "8321bc7e600d26cfd10ca81907f1de8a5115afd207047002e35c48975ce04cde",
+        "variantId": 37207,
+        "width": 504
+      }
+    },
+    "me05-024": {
+      "37225": {
+        "agreement": 0.7421,
+        "eraId": "modern-sv",
+        "frame": "canonical",
+        "height": 704,
+        "method": "ai-corrected",
+        "reviewStatus": "human-authored",
+        "savedAt": "2026-08-08T15:12:22.481Z",
+        "scope": "sheet",
+        "sha256": "aaa33675b40e5f0ff1064b72deebd90f214366f9bcc61c98db3c3c85a69abb61",
+        "variantId": 37225,
+        "width": 504
+      }
+    },
+    "me05-029": {
+      "37234": {
+        "agreement": 0.753,
+        "eraId": "modern-sv",
+        "frame": "canonical",
+        "height": 704,
+        "method": "ai-corrected",
+        "reviewStatus": "human-authored",
+        "savedAt": "2026-08-08T15:19:46.932Z",
+        "scope": "sheet",
+        "sha256": "c4d6fe35b5db9aeaf1651528b351ced0e02c8251d563fe2295e53db1f4b714eb",
+        "variantId": 37234,
+        "width": 504
+      }
+    }
+  },
+  "patterns": [
+    "ace-spec",
+    "acid-wash",
+    "big-glitter",
+    "confetti",
+    "cosmos",
+    "cosmos-ii-pixel",
+    "cosmos-iii-smooth",
+    "cracked-ice",
+    "crosshatch",
+    "detective-pikachu",
+    "diagonal-sheen-left",
+    "diagonal-sheen-right",
+    "disco",
+    "energy-symbols",
+    "energy-symbols-ii",
+    "ex-emerald",
+    "ex-starfoil",
+    "fireworks",
+    "gold-secret",
+    "horizontal-sheen",
+    "mirror",
+    "none",
+    "pinwheel",
+    "pokeball-hologram",
+    "pokeball-masterball",
+    "prism",
+    "prismatic-pokeball",
+    "radiant",
+    "radiant-collection-dots",
+    "rainbow-glitter",
+    "rainbow-glitter-sheen",
+    "rainbow-mirror",
+    "reverse-sheet",
+    "sequin",
+    "shiny-vault",
+    "starlight",
+    "starlight-ii",
+    "striped-vertical-sheen",
+    "tcg-classic",
+    "tinsel",
+    "tinsel-ii",
+    "vertical-sheen",
+    "vertical-sheen-rainbow",
+    "vstar-pearl",
+    "water-web"
+  ],
+  "uncanoned": [
+    "ace-spec",
+    "acid-wash",
+    "crosshatch",
+    "disco",
+    "energy-symbols",
+    "energy-symbols-ii",
+    "ex-starfoil",
+    "pokeball-masterball",
+    "prism",
+    "prismatic-pokeball",
+    "rainbow-mirror",
+    "tcg-classic"
+  ],
+  "version": 1,
+  "windows": {
+    "me05-001": [
+      37184
+    ]
+  }
+}

@@ -36,11 +36,28 @@ export const BAKE_DIR =
 export const DATA_ROUTES: { prefix: string; dir: string }[] = [
   { prefix: '/catalog/', dir: 'catalog' },
   { prefix: '/search/', dir: 'search' },
+  // The corpus itself — masks, canon, window geometry. These are COMMITTED,
+  // not baked, so they are always present and always served from `data/` even
+  // under FOILKIT_BAKE=fixture: a fixture catalog with the real corpus is the
+  // combination that makes provenance testable without a database.
+  { prefix: '/foil-masks/', dir: 'foil-masks' },
+  { prefix: '/foil-canon/', dir: 'foil-canon' },
+  { prefix: '/foil-windows/', dir: 'foil-windows' },
 ]
+
+/** Directories that live in `data/` regardless of which bake is selected. */
+export const CORPUS_DIRS = new Set(['foil-masks', 'foil-canon', 'foil-windows'])
 export const DATA_FILES: Record<string, string> = {
-  '/corpus-manifest.json': 'corpus-manifest.json',
   '/foil-verification-map.json': 'foil-verification-map.json',
   '/foil-pattern-cards.json': 'foil-pattern-cards.json',
+}
+/**
+ * Built on every build from the corpus itself rather than baked from a
+ * database, so it always comes from `data/` — a fixture catalog with the REAL
+ * corpus is the combination that makes provenance testable without Postgres.
+ */
+export const CORPUS_FILES: Record<string, string> = {
+  '/corpus-manifest.json': 'corpus-manifest.json',
 }
 
 const MIME: Record<string, string> = {
@@ -56,14 +73,22 @@ function bakeData(): Plugin {
       server.middlewares.use((req, res, next) => {
         const url = (req.url ?? '').split('?')[0] ?? ''
         let rel: string | null = DATA_FILES[url] ?? null
+        let root = BAKE_DIR
+        if (rel === null && CORPUS_FILES[url] !== undefined) {
+          rel = CORPUS_FILES[url]
+          root = join(ROOT, 'data')
+        }
         if (rel === null) {
           const route = DATA_ROUTES.find((r) => url.startsWith(r.prefix))
-          if (route) rel = join(route.dir, url.slice(route.prefix.length))
+          if (route) {
+            rel = join(route.dir, decodeURIComponent(url.slice(route.prefix.length)))
+            if (CORPUS_DIRS.has(route.dir)) root = join(ROOT, 'data')
+          }
         }
         if (rel === null) return next()
         // Path containment: the url decides a file name, so it is untrusted.
-        const abs = normalize(join(BAKE_DIR, rel))
-        if (!abs.startsWith(normalize(BAKE_DIR))) {
+        const abs = normalize(join(root, rel))
+        if (!abs.startsWith(normalize(root))) {
           res.statusCode = 400
           res.end('bad path')
           return

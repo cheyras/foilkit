@@ -23,8 +23,8 @@ import {
   type FoilCorpusReport,
   type FoilDerivationMethod,
   type FoilMaskSidecar,
-} from './api'
-import { Section } from './ui'
+} from './api.ts'
+import { Section } from './ui.tsx'
 
 /** How each method presents itself. Colors carry the review state, not the age. */
 const METHOD_STYLE: Record<FoilDerivationMethod, { label: string; short: string; cls: string; blurb: string }> = {
@@ -184,7 +184,7 @@ export function MaskProvenanceLine({
               <div className="mt-[6px] flex gap-[6px]">
                 <a
                   className="underline"
-                  href={foilApi.maskArtifactUrl(cardId, variantId, 'parent', scope)}
+                  href={foilApi.maskArtifactUrl(cardId, variantId, 'parent')}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -192,7 +192,7 @@ export function MaskProvenanceLine({
                 </a>
                 <a
                   className="underline"
-                  href={foilApi.maskArtifactUrl(cardId, variantId, 'parent-diff', scope)}
+                  href={foilApi.maskArtifactUrl(cardId, variantId, 'parent-diff')}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -224,7 +224,7 @@ export function MaskProvenanceLine({
               <div className="mt-[6px] flex gap-[6px]">
                 <a
                   className="underline"
-                  href={foilApi.maskArtifactUrl(cardId, variantId, 'parent', scope)}
+                  href={foilApi.maskArtifactUrl(cardId, variantId, 'parent')}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -232,7 +232,7 @@ export function MaskProvenanceLine({
                 </a>
                 <a
                   className="underline"
-                  href={foilApi.maskArtifactUrl(cardId, variantId, 'parent-diff', scope)}
+                  href={foilApi.maskArtifactUrl(cardId, variantId, 'parent-diff')}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -240,7 +240,7 @@ export function MaskProvenanceLine({
                 </a>
                 <a
                   className="underline"
-                  href={foilApi.maskArtifactUrl(cardId, variantId, 'diff', scope)}
+                  href={foilApi.maskArtifactUrl(cardId, variantId, 'diff')}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -271,11 +271,11 @@ export function MaskProvenanceLine({
 const METHOD_ORDER: FoilDerivationMethod[] = ['hand', 'hand-refined', 'ai-corrected', 'ai', 'layout-flatten']
 
 export function MaskCorpusPanel({
-  devSurface,
+  available,
   refreshKey,
   onPick,
 }: {
-  devSurface: boolean
+  available: boolean
   /** Bump to refetch after a save. */
   refreshKey: number
   onPick?: (cardId: string, variantId: number) => void
@@ -283,13 +283,13 @@ export function MaskCorpusPanel({
   const [report, setReport] = useState<FoilCorpusReport | null>(null)
   const [open, setOpen] = useState(false)
   useEffect(() => {
-    if (!devSurface || !open) return
+    if (!available || !open) return
     const ac = new AbortController()
     void foilApi.maskCorpus(ac.signal).then((r) => setReport(r))
     return () => ac.abort()
-  }, [devSurface, open, refreshKey])
+  }, [available, open, refreshKey])
 
-  if (!devSurface) return null
+  if (!available) return null
   return (
     <Section title="Mask corpus">
       <button onClick={() => setOpen((o) => !o)} className="mb-[8px] w-full text-left text-[12px] text-text-muted">
@@ -333,15 +333,28 @@ export function MaskCorpusPanel({
               ))}
             </div>
           )}
-          {Object.keys(report.bySet).length > 0 && (
+          {report.bySet === null ? (
             <div>
               <p className="font-semibold text-text-primary">by set</p>
-              {Object.entries(report.bySet).map(([k, b]) => (
-                <p key={k} className="tabular-nums">
-                  {k}: n={b.n} · agree {pctOf(b.meanAgreement)}
-                </p>
-              ))}
+              {/*
+                NOT MEASURED HERE, and it says so rather than showing a zero.
+                Grouping the corpus by set needs a catalog join, and this report
+                is derived from the corpus manifest — a local file walk with no
+                catalog in it. A number nobody took is worse than an absence.
+              */}
+              <p>Not measured on the hosted editor — a set breakdown needs a catalog join.</p>
             </div>
+          ) : (
+            Object.keys(report.bySet).length > 0 && (
+              <div>
+                <p className="font-semibold text-text-primary">by set</p>
+                {Object.entries(report.bySet).map(([k, b]) => (
+                  <p key={k} className="tabular-nums">
+                    {k}: n={b.n} · agree {pctOf(b.meanAgreement)}
+                  </p>
+                ))}
+              </div>
+            )
           )}
 
           <div>
@@ -362,9 +375,19 @@ export function MaskCorpusPanel({
           </div>
 
           <div>
-            <p className="font-semibold text-text-primary">corrections recorded ({report.corrections.n})</p>
-            {report.corrections.n === 0 && <p>None yet — correct an AI mask to create the first training pair.</p>}
-            {report.corrections.entries.map((c) => (
+            <p className="font-semibold text-text-primary">
+              corrections recorded {report.corrections === null ? '' : `(${report.corrections.n})`}
+            </p>
+            {report.corrections === null && (
+              // Same rule as `bySet`: the correction blocks live inside each
+              // sidecar, and the manifest does not carry them. Saying "0" would
+              // be a measurement nobody took.
+              <p>Not measured on the hosted editor — a correction census reads every sidecar.</p>
+            )}
+            {report.corrections?.n === 0 && (
+              <p>None yet — correct an AI mask to create the first training pair.</p>
+            )}
+            {(report.corrections?.entries ?? []).map((c) => (
               <p key={`${c.cardId}-${c.variantId}-${c.savedAt}`} className="tabular-nums">
                 {c.cardId}/{c.variantId} · fixed a {c.parentMethod}
                 {c.generator ? ` (${c.generator})` : ''} · agree {c.agreement} · +{c.addedPx}/−{c.removedPx}px

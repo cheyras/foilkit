@@ -9,5 +9,10 @@
     "allowJs": true,
     "checkJs": false
   },
-  "include": ["tools/**/*.ts", "tools/**/*.mts", "tools/**/*.mjs"]
+  "include": [
+    "tools/**/*.ts",
+    "tools/**/*.mts",
+    "tools/**/*.mjs",
+    "api/**/*.ts"
+  ]
 }

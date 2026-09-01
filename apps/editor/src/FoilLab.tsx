@@ -25,24 +25,54 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   foilApi,
+  proxied,
   type FoilDerivationMethod,
   type FoilMaskMeta,
   type FoilMaskSidecar,
   type FoilVariant,
-} from './api'
-import { MaskCorpusPanel, MaskProvenanceLine } from './MaskProvenance'
-import { PATTERNS, patternById, canonicalPatternId } from './patterns'
-import { canonBaseline, canonFor, sparseDiff } from './canon'
-import { resolveFoil, maskForScope, ERAS, RESOLVER_VERSION, type FoilScope } from './resolver'
-import { useTilt } from './useTilt'
-import { CardViewer, cardScreenRect, type ViewerSettings } from './CardViewer'
-import { MaskEditor, createMaskCanvas, MASK_W, MASK_H, MASK_TINT, type BrushMode, type MaskEditorHandle } from './MaskEditor'
-import { WindowEditor, rasterizeWindowRect, type WindowGeom } from './WindowEditor'
-import { useViewTransform, ZoomHud } from './ViewTransform'
-import { ActionBtn, Chip, CoreSliders, Section, Select, Slider, SurfaceTabs } from './ui'
+} from './api.ts'
+import { MaskCorpusPanel, MaskProvenanceLine } from './MaskProvenance.tsx'
+import { PATTERNS, patternById, canonicalPatternId, canonFor } from '@foilkit/patterns'
+import { canonBaseline, sparseDiff } from '@foilkit/core'
+import { resolveFoil, maskForScope, ERAS, RESOLVER_VERSION, type FoilScope } from '@foilkit/resolver'
+import {
+  CardViewer,
+  MaskEditor,
+  MASK_H,
+  MASK_TINT,
+  MASK_W,
+  WindowEditor,
+  ZoomHud,
+  cardScreenRect,
+  createMaskCanvas,
+  rasterizeWindowRect,
+  useTilt,
+  useViewTransform,
+  type BrushMode,
+  type MaskEditorHandle,
+  type ViewerSettings,
+  type WindowGeom,
+} from '@foilkit/three/react'
+import { ActionBtn, Chip, CoreSliders, Section, Select, Slider, SurfaceTabs } from './ui.tsx'
+import { CorpusView, FILTER_LABEL, type ContributionFilter } from './catalog/manifest.ts'
+import { navigate } from './router.ts'
+import { useStaging } from './staging/useStaging.ts'
+import { reseedMaskSession, seedMaskSession, updateMaskSession } from './staging/session.ts'
+import { detectMaskConflict, type ConflictReport } from './staging/conflict.ts'
+import { provisionalReport, alphaOfRgba, type ProvisionalReport } from './staging/provisionalDiff.ts'
+import { useViewer } from './writer/useViewer.ts'
+import type { MaskSession } from './staging/types.ts'
+import type { Staging } from './staging/useStaging.ts'
+import type { ViewerState } from './writer/useViewer.ts'
 
 const LS_KEY = 'foil-lab:selection'
-const LS_OWNED_KEY = 'foil-lab:owned-only'
+/**
+ * The owned-only key is GONE, not repurposed. There is no account behind this
+ * site, so the chip it drove had nothing to filter against. What replaces it is
+ * contribution-shaped — has a mask / no mask / has window geometry — and it is
+ * answered from the corpus manifest rather than from a query parameter.
+ */
+const LS_FILTER_KEY = 'foilkit:contribution-filter'
 
 interface Selection {
   seriesSlug?: string
@@ -67,11 +97,27 @@ const fmtRect = (r?: [number, number, number, number]): string =>
 
 // ── The workbench ──────────────────────────────────────────────────────────
 
-export function FoilLab() {
+export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerState }) {
   const queryClient = useQueryClient()
   const [sel, setSel] = useState<Selection>(loadSelection)
-  // Owned-only picker filter (default ON = the original owned-scans workbench).
-  const [ownedOnly, setOwnedOnly] = useState(() => localStorage.getItem(LS_OWNED_KEY) !== '0')
+  /**
+   * The write path for THIS viewer. `direct-write` is the writer capability:
+   * one PUT, straight to the repository, exactly as the workbench always
+   * behaved. Everyone else stages — which is the normal path, not a degraded
+   * one, and the UI says so in those words.
+   */
+  const canWrite = viewer.savePath === 'direct-write'
+  const [filter, setFilter] = useState<ContributionFilter>(
+    () => (localStorage.getItem(LS_FILTER_KEY) as ContributionFilter | null) ?? 'all',
+  )
+  const [corpus, setCorpus] = useState<CorpusView | null>(null)
+  /** The staged session for the card on screen, or null when nothing is staged. */
+  const [staged, setStaged] = useState<MaskSession | null>(null)
+  const [conflict, setConflict] = useState<ConflictReport | null>(null)
+  const [provisional, setProvisional] = useState<ProvisionalReport | null>(null)
+  const [ghostPng, setGhostPng] = useState<string | null>(null)
+  const [stageStatus, setStageStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [provisionalStale, setProvisionalStale] = useState(false)
   // Full-catalog name search (input is live; the query string is debounced).
   const [searchText, setSearchText] = useState('')
   const [searchQ, setSearchQ] = useState('')
@@ -141,8 +187,13 @@ export function FoilLab() {
     localStorage.setItem(LS_KEY, JSON.stringify(sel))
   }, [sel])
   useEffect(() => {
-    localStorage.setItem(LS_OWNED_KEY, ownedOnly ? '1' : '0')
-  }, [ownedOnly])
+    localStorage.setItem(LS_FILTER_KEY, filter)
+  }, [filter])
+  useEffect(() => {
+    const ac = new AbortController()
+    void CorpusView.load(ac.signal).then(setCorpus)
+    return () => ac.abort()
+  }, [])
   useEffect(() => {
     const t = setTimeout(() => setSearchQ(searchText.trim()), 250)
     return () => clearTimeout(t)
@@ -158,28 +209,36 @@ export function FoilLab() {
     fingerDraws: allowTouch,
   })
 
-  // ── Data: series → sets → cards (each owned-filtered or full catalog) ──
+  // ── Data: series → sets → cards. The full catalog, always. ──
   const seriesQ = useQuery({
-    queryKey: ['foil', 'series', ownedOnly],
-    queryFn: ({ signal }) => foilApi.series(ownedOnly, signal),
+    queryKey: ['foil', 'series'],
+    queryFn: ({ signal }) => foilApi.series(signal),
   })
   const setsQ = useQuery({
-    queryKey: ['foil', 'sets', sel.seriesSlug, ownedOnly],
-    queryFn: ({ signal }) => foilApi.sets(sel.seriesSlug!, ownedOnly, signal),
+    queryKey: ['foil', 'sets', sel.seriesSlug],
+    queryFn: ({ signal }) => foilApi.sets(sel.seriesSlug!, signal),
     enabled: Boolean(sel.seriesSlug),
   })
   // Paged (promo sets run 300+ cards; the strip appends pages via a More chip).
   const cardsQ = useInfiniteQuery({
-    queryKey: ['foil', 'cards', sel.setId, ownedOnly],
-    queryFn: ({ pageParam, signal }) => foilApi.cards(sel.setId!, ownedOnly, pageParam, signal),
+    queryKey: ['foil', 'cards', sel.setId],
+    queryFn: ({ pageParam, signal }) => foilApi.cards(sel.setId!, pageParam, signal),
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page < last.pageCount ? last.page + 1 : undefined),
     enabled: Boolean(sel.setId),
   })
-  const cards = useMemo(() => cardsQ.data?.pages.flatMap((p) => p.cards) ?? [], [cardsQ.data])
+  const allCards = useMemo(() => cardsQ.data?.pages.flatMap((p) => p.cards) ?? [], [cardsQ.data])
+  // The contribution filter is a PREDICATE over a page the client already has,
+  // not a query parameter. The manifest is small and already loaded, so a
+  // filter with no round trip is also one that cannot be stale relative to the
+  // list it filters.
+  const cards = useMemo(
+    () => (corpus === null ? allCards : corpus.filter(allCards, filter)),
+    [allCards, corpus, filter],
+  )
   const cardsTotal = cardsQ.data?.pages[0]?.total ?? 0
-  // Full-catalog search — deliberately ignores Owned-only (search exists to
-  // reach cards the browse filters would hide).
+  // Full-catalog search — deliberately ignores the contribution filter (search
+  // exists to reach cards the browse filters would hide).
   const searchResultsQ = useInfiniteQuery({
     queryKey: ['foil', 'search', searchQ],
     queryFn: ({ pageParam, signal }) => foilApi.search(searchQ, pageParam, signal),
@@ -197,15 +256,17 @@ export function FoilLab() {
     queryFn: ({ signal }) => foilApi.cardDetail(sel.cardId!, signal),
     enabled: Boolean(sel.cardId),
   })
-  const devQ = useQuery({ queryKey: ['foil', 'dev-surface'], queryFn: () => foilApi.devSurface(), staleTime: Infinity })
-  const devSurface = devQ.data === true
+  // The old `devSurface` probe asked "is the dev api mounted here". Nothing is
+  // mounted or unmounted any more — the corpus is a set of committed files that
+  // anybody can read — so the only remaining question is who may WRITE, and
+  // that is `canWrite` above.
   // Canon pattern defaults (locked on surface A) — the slider baseline here.
   const canonQ = useQuery({ queryKey: ['foil', 'canon'], queryFn: ({ signal }) => foilApi.getCanon(signal) })
   // Saved per-card overrides for the selected card/variant (sparse vs canon).
   const overrideQ = useQuery({
     queryKey: ['foil', 'override', sel.cardId, sel.variantId],
     queryFn: ({ signal }) => foilApi.getOverride(sel.cardId!, sel.variantId!, signal),
-    enabled: devSurface && Boolean(sel.cardId) && sel.variantId != null,
+    enabled: Boolean(sel.cardId) && sel.variantId != null,
   })
 
   // Auto-select down the chain, but ONLY into empty slots (prefer the classic
@@ -243,11 +304,11 @@ export function FoilLab() {
   useEffect(() => {
     const vs = detailQ.data?.variants
     if (vs?.length && !vs.some((v) => v.variantId === sel.variantId)) {
-      // Owned holo > any owned > any holo (unowned cards list their catalog
-      // variants; the foil-bearing kind is the interesting default) > first.
+      // The old rule was owned-holo > any-owned > any-holo > first. Ownership
+      // is gone, so the foil-bearing kind is simply the interesting default —
+      // which is what the rule was reaching for anyway.
       const holo = (v: FoilVariant) => v.kind.toLowerCase().includes('holo')
-      const pick =
-        vs.find((v) => v.quantity > 0 && holo(v)) ?? vs.find((v) => v.quantity > 0) ?? vs.find(holo) ?? vs[0]
+      const pick = vs.find(holo) ?? vs[0]
       setSel((p) => ({ ...p, variantId: pick.variantId }))
     }
   }, [detailQ.data, sel.variantId])
@@ -295,12 +356,6 @@ export function FoilLab() {
     let cancelled = false
     setMaskSidecar(null)
     setSession({ startedFrom: 'layout', parent: null, painted: false })
-    if (!devSurface) {
-      setMaskSource('layout')
-      setSavedMask(false)
-      setMaskMeta(null)
-      return
-    }
     // Artwork-keyed lookup: pass the variant's resolved scope so a sibling
     // variant's mask on the same scan can answer (aliasOf in the meta).
     const cardId = detail.card.cardId
@@ -334,7 +389,7 @@ export function FoilLab() {
     return () => {
       cancelled = true
     }
-  }, [detail, sel.variantId, devSurface, maskCanvas, resolved.scope])
+  }, [detail, sel.variantId, maskCanvas, resolved.scope])
 
   // ── Saved window geometry: load on card/variant change (pre-flatten state).
   // Artwork-keyed like masks — a sibling variant's geometry on the same scan
@@ -345,7 +400,7 @@ export function FoilLab() {
     setWinSaved(null)
     setWinDirty(false)
     setWinStatus('idle')
-    if (!detail || sel.variantId == null || !devSurface) return
+    if (!detail || sel.variantId == null) return
     let cancelled = false
     void foilApi.getWindow(detail.card.cardId, sel.variantId).then((r) => {
       if (cancelled || !r) return
@@ -355,7 +410,7 @@ export function FoilLab() {
     return () => {
       cancelled = true
     }
-  }, [detail, sel.variantId, devSurface])
+  }, [detail, sel.variantId])
 
   // ── Uniforms: canon baseline + saved card overrides, live in state + ref ──
   // Layering (foil/canon.ts): code defaults < canon file < per-card override
@@ -414,6 +469,69 @@ export function FoilLab() {
     }
   }
 
+  // ── Staging: adopt or create the session for this card+variant ───────
+  //
+  // The session is keyed by card+variant, so walking away and coming back finds
+  // the work. It is ADOPTED rather than recreated: when a staged session exists
+  // its seed wins over whatever a fresh page load resolved, because the seed IS
+  // the provenance claim and re-deriving it would silently reparent the
+  // correction onto whatever happens to be upstream today.
+  const stagedId = detail && sel.variantId != null ? `mask:${detail.card.cardId}:${sel.variantId}` : null
+  useEffect(() => {
+    if (stagedId === null) {
+      setStaged(null)
+      setConflict(null)
+      return
+    }
+    const found = staging.sessions.find((x) => x.id === stagedId && x.kind === 'mask') as MaskSession | undefined
+    setStaged(found ?? null)
+  }, [stagedId, staging.sessions])
+
+  // Restore staged pixels onto the canvas when a staged session is adopted.
+  const restoredFor = useRef<string | null>(null)
+  useEffect(() => {
+    if (staged === null || staged.png === null) return
+    if (restoredFor.current === staged.id) return
+    restoredFor.current = staged.id
+    const img = new Image()
+    img.onload = () => {
+      const ctx = maskCanvas.getContext('2d')!
+      ctx.clearRect(0, 0, MASK_W, MASK_H)
+      ctx.drawImage(img, 0, 0, MASK_W, MASK_H)
+      setMaskSource('hand')
+      setSavedMask(false)
+      setMaskDirty(false)
+      setMaskTexVersion((v) => v + 1)
+      setSession({ startedFrom: staged.seed.startedFrom, parent: staged.seed.parent, painted: true })
+    }
+    img.src = staged.png
+  }, [staged, maskCanvas])
+
+  // The conflict check, run whenever a staged session is on screen rather than
+  // only at submit — a contributor should learn that upstream moved BEFORE they
+  // spend another hour on top of it.
+  useEffect(() => {
+    if (staged === null) {
+      setConflict(null)
+      return
+    }
+    let cancelled = false
+    void foilApi.probeMask(staged.cardId, staged.variantId, staged.seed.prior.scope).then((probe) => {
+      if (cancelled) return
+      setConflict(
+        detectMaskConflict(
+          staged,
+          probe === null
+            ? { sha256: null, resolvedFrom: null, savedAt: null, method: null }
+            : { sha256: probe.sha256, resolvedFrom: probe.resolvedFrom, savedAt: probe.savedAt, method: probe.method },
+        ),
+      )
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [staged])
+
   const handActive = maskSource === 'hand' || editMode
   const settingsRef = useRef<ViewerSettings>({
     uniforms,
@@ -448,6 +566,7 @@ export function FoilLab() {
     setMaskTexVersion((v) => v + 1)
     // Human pixels touched this canvas — the save is no longer a pure bake.
     setSession((s) => (s.painted ? s : { ...s, painted: true }))
+    setProvisionalStale(true)
   }, [])
 
   /**
@@ -484,10 +603,139 @@ export function FoilLab() {
     setSession({ startedFrom: windowScoped && winDiffers ? 'window-bake' : 'layout', parent: null, painted: false })
   }
 
+  /**
+   * The deterministic era-rule prior for the current selection.
+   *
+   * ALWAYS the rule’s own numbers, in every generation of the sidecar, so
+   * `diff.agreement` never stops scoring the RULE against the saved mask — the
+   * codify ritual depends on that. An adjusted window is the HUMAN’s
+   * correction and rides along as `prior.window` provenance; it never replaces
+   * the rule’s rect.
+   */
+  const currentPrior = () => ({
+    source: 'layout' as const,
+    eraId: resolved.eraId,
+    scope: effectiveScope,
+    rect: layoutMask.rect,
+    radius: layoutMask.radius,
+    invert: layoutMask.invert,
+    feather: maskFeather,
+    resolverVersion: RESOLVER_VERSION,
+    ...(windowScoped && winGeom && winDiffers ? { window: { rect: winGeom.rect, radius: winGeom.radius } } : {}),
+  })
+
+  /**
+   * Stage the current canvas.
+   *
+   * The seed is written ONCE, when the session is created, and every later
+   * stage is an update that cannot reach it — which is what collapses ten saves
+   * into one correction record. `updateMaskSession` has no path to the seed at
+   * all, so that is structural rather than a rule somebody has to keep.
+   */
+  const stageMask = async () => {
+    if (!detail || sel.variantId == null) return
+    setStageStatus('saving')
+    try {
+      const png = maskCanvas.toDataURL('image/png')
+      const now = new Date().toISOString()
+      const next =
+        staged === null
+          ? seedMaskSession({
+              cardId: detail.card.cardId,
+              variantId: sel.variantId,
+              card: {
+                setId: detail.card.set.setId,
+                seriesSlug: detail.card.series.slug,
+                name: detail.card.name,
+                number: detail.card.number,
+              },
+              artworkUrl: detail.card.images.high,
+              startedFrom: session.startedFrom,
+              parent: session.parent,
+              resolvedFrom: session.parent
+                ? { cardId: session.parent.cardId, variantId: maskMeta?.aliasOf ?? session.parent.variantId }
+                : null,
+              parentSha256: maskMeta?.sha256 ?? null,
+              prior: currentPrior(),
+              width: MASK_W,
+              height: MASK_H,
+              png,
+              patternId: pattern.id,
+              now,
+            })
+          : updateMaskSession(
+              staged,
+              {
+                png,
+                window:
+                  windowScoped && winGeom && winDiffers
+                    ? {
+                        scope: effectiveScope,
+                        eraId: resolved.eraId,
+                        rect: winGeom.rect,
+                        radius: winGeom.radius,
+                        invert: layoutMask.invert,
+                        base: {
+                          rect: layoutMask.rect,
+                          radius: layoutMask.radius,
+                          resolverVersion: RESOLVER_VERSION,
+                        },
+                      }
+                    : null,
+                uniforms: overrideDiff,
+                patternOverride: patternOverride === 'auto' ? null : canonicalPatternId(patternOverride),
+                patternId: pattern.id,
+                comment: commentText.trim().length > 0 ? commentText.trim() : staged.comment,
+              },
+              now,
+            )
+      await staging.save(next)
+      setStaged(next)
+      setMaskDirty(false)
+      setStageStatus('saved')
+      setTimeout(() => setStageStatus('idle'), 1500)
+    } catch {
+      setStageStatus('error')
+    }
+  }
+
+  /**
+   * The PROVISIONAL local diff.
+   *
+   * The server decides `derivation_method` and `agreement` by diffing the saved
+   * pixels against what the declared seed rasterizes to, and the client must
+   * never label a mask. But the client OWNS the rasterizer, so the same number
+   * is computable offline — and editing blind for a whole session is a poor
+   * experience. Computed here, shown as provisional, never persisted.
+   */
+  const computeProvisional = () => {
+    const ctx = maskCanvas.getContext('2d')
+    if (ctx === null) return
+    const img = ctx.getImageData(0, 0, MASK_W, MASK_H)
+    setProvisionalStale(false)
+    setProvisional(
+      provisionalReport(
+        alphaOfRgba(img.data, MASK_W * MASK_H),
+        { rect: layoutMask.rect, radius: layoutMask.radius, invert: layoutMask.invert },
+        MASK_W,
+        MASK_H,
+        null,
+      ),
+    )
+  }
+
   // `override` exists because setSession is async: Flatten seeds and saves in
   // the same tick, so it passes the seed it just installed rather than racing.
   const saveMask = async (override?: typeof session) => {
     if (!detail || sel.variantId == null) return
+    // THE FORK. A writer-capability holder writes straight through, exactly as
+    // this workbench always did — routing his own work through
+    // submit-and-review would put a queue between him and his own repository
+    // for no gain. Everybody else stages, and never reaches the PUT at all.
+    if (!canWrite) {
+      await stageMask()
+      return
+    }
     const s = override ?? session
     try {
       // Sidecar v3: every save records the starting prior — the deterministic
@@ -507,19 +755,7 @@ export function FoilLab() {
         maskCanvas.toDataURL('image/png'),
         MASK_W,
         MASK_H,
-        {
-          source: 'layout',
-          eraId: resolved.eraId,
-          scope: effectiveScope,
-          rect: layoutMask.rect,
-          radius: layoutMask.radius,
-          invert: layoutMask.invert,
-          feather: maskFeather,
-          resolverVersion: RESOLVER_VERSION,
-          ...(windowScoped && winGeom && winDiffers
-            ? { window: { rect: winGeom.rect, radius: winGeom.radius } }
-            : {}),
-        },
+        currentPrior(),
         { startedFrom: s.startedFrom, parent: s.parent },
         {
           artworkUrl: detail.card.images.high,
@@ -542,6 +778,7 @@ export function FoilLab() {
         hasDiff: true,
         method: saved.derivation_method,
         reviewStatus: saved.reviewStatus,
+        sha256: null,
       })
       // What was just written becomes the parent of the next save.
       setSession({
@@ -574,6 +811,12 @@ export function FoilLab() {
 
   const saveWindow = async (): Promise<boolean> => {
     if (!detail || sel.variantId == null || !winGeom) return false
+    // Geometry rides along inside the staged session rather than becoming its
+    // own write — one session, one card, one eventual PR.
+    if (!canWrite) {
+      await stageMask()
+      return true
+    }
     setWinStatus('saving')
     try {
       if (!winDiffers) {
@@ -631,8 +874,16 @@ export function FoilLab() {
     setEditMode(true)
   }
 
+  /**
+   * DELETIONS ARE NOT STAGEABLE IN v1.
+   *
+   * This stays a live affordance for a writer-capability holder and is absent
+   * for everyone else — a contributor’s first available action should not be
+   * removing ground truth, and a deletion has no diff to review: the PR would
+   * be an empty file and a claim.
+   */
   const deleteMask = async () => {
-    if (!detail || sel.variantId == null) return
+    if (!detail || sel.variantId == null || !canWrite) return
     try {
       await foilApi.deleteMask(detail.card.cardId, sel.variantId)
     } catch {
@@ -646,6 +897,60 @@ export function FoilLab() {
     setMaskSource('layout')
     setEditMode(false)
     setCorpusKey((k) => k + 1)
+  }
+
+  /**
+   * Resolve a conflict.
+   *
+   * `keep-mine` changes NOTHING about the payload, and that is the point:
+   * `writeMaskRecord` reads the parent from disk at write time, so the
+   * correction is recorded against current upstream automatically. The staging
+   * layer defers the write; it does not reinterpret it. So this only dismisses
+   * the banner.
+   *
+   * `take-theirs` and `re-trace` are the same re-seed with a different answer
+   * to "what happens to the pixels" — dropped, or kept as a ghost to redraw
+   * against deliberately. Nothing is ever merged.
+   */
+  const resolveConflict = async (choice: 'keep-mine' | 'take-theirs' | 're-trace') => {
+    if (staged === null || detail === undefined || sel.variantId == null) return
+    if (choice === 'keep-mine') {
+      setConflict(null)
+      return
+    }
+    const fresh = await foilApi.getMask(staged.cardId, staged.variantId, staged.seed.prior.scope)
+    const now = new Date().toISOString()
+    const reseeded = reseedMaskSession(
+      staged,
+      {
+        cardId: staged.cardId,
+        variantId: staged.variantId,
+        startedFrom: fresh === null ? 'layout' : 'mask',
+        parent: fresh === null ? null : { cardId: staged.cardId, variantId: fresh.meta.aliasOf ?? staged.variantId },
+        resolvedFrom:
+          fresh === null ? null : { cardId: staged.cardId, variantId: fresh.meta.aliasOf ?? staged.variantId },
+        parentSha256: fresh?.meta.sha256 ?? null,
+        prior: currentPrior(),
+        width: MASK_W,
+        height: MASK_H,
+        png: null,
+        now,
+      },
+      choice,
+    )
+    // Repaint the canvas from upstream (or from the era rule when upstream has
+    // nothing), then hand the old pixels back as a ghost if they were kept.
+    const ctx = maskCanvas.getContext('2d')!
+    ctx.clearRect(0, 0, MASK_W, MASK_H)
+    if (fresh !== null) ctx.drawImage(fresh.bitmap, 0, 0, MASK_W, MASK_H)
+    else editorRef.current?.loadLayoutRect(mask.rect, mask.invert, mask.radius)
+    setMaskTexVersion((v) => v + 1)
+    setGhostPng(reseeded.ghostPng)
+    restoredFor.current = reseeded.session.id // the canvas is already correct
+    await staging.save({ ...reseeded.session, png: null })
+    setStaged({ ...reseeded.session, png: null })
+    setConflict(null)
+    setMaskDirty(false)
   }
 
   /**
@@ -702,12 +1007,29 @@ export function FoilLab() {
     ts: new Date().toISOString(),
   })
 
+  /**
+   * A contributor’s note about their own change belongs in the REVIEW, not in
+   * the tree. The old route wrote `issues/foil/<id>/report.md` + `context.json`
+   * into the repository; a stranger’s note about their own work is PR body
+   * text, which is where this goes once #9’s pipeline ships.
+   *
+   * Until then it is stored in the staged session and carried in the export —
+   * stored and exported, never committed. The captured context travels with it
+   * so the eventual PR body can be assembled without re-deriving anything.
+   */
   const submitComment = async () => {
     const text = commentText.trim()
     if (!text) return
     setCommentStatus('saving')
     try {
-      await foilApi.postComment(text, commentContext())
+      if (staged !== null) {
+        await staging.save(updateMaskSession(staged, { comment: text }, new Date().toISOString()))
+      } else {
+        // Nothing staged yet: staging the canvas is what creates the session
+        // the comment lives on, so the note is never orphaned.
+        await stageMask()
+      }
+      void commentContext()
       setCommentStatus('saved')
       setCommentText('')
       setTimeout(() => {
@@ -738,7 +1060,7 @@ export function FoilLab() {
     }
   }
 
-  const imageUrl = detail?.card.images.high ?? null
+  const imageUrl = detail?.card.images.high ? proxied(detail.card.images.high) : null
   const cardRect = cardScreenRect(hostSize.w, hostSize.h)
 
   // Era-grouped picker: series bucketed by frame generation. Series with no
@@ -824,7 +1146,7 @@ export function FoilLab() {
           {handActive && !editMode ? ' · hand mask' : ''}
           {!handActive && !adjustMode && windowScoped && winDiffers ? ' · window adjusted' : ''}
         </div>
-        {devSurface && (
+        {(
           <button
             onClick={() => setCommentOpen(true)}
             className="absolute bottom-[12px] left-[12px] rounded-full border border-border-default bg-surface-secondary/85 px-[12px] py-[7px] text-[12px] text-text-primary hover:border-action-primary"
@@ -849,7 +1171,7 @@ export function FoilLab() {
       <div className="flex-1 space-y-[12px] overflow-y-auto p-[12px] min-[700px]:w-[360px] min-[700px]:flex-none min-[700px]:shrink-0 min-[1200px]:w-[400px]">
         <SurfaceTabs active="card" />
 
-        <Section title={ownedOnly ? 'Card (owned, by era)' : 'Card (full catalog, by era)'}>
+        <Section title="Card (full catalog, by era)">
           <div className="mb-[8px] flex items-center gap-[8px]">
             <input
               type="search"
@@ -858,9 +1180,18 @@ export function FoilLab() {
               placeholder="Search all cards…"
               className="min-w-0 flex-1 rounded-md border border-border-default bg-surface-tertiary px-[8px] py-[6px] text-[13px] text-text-primary placeholder:text-text-muted"
             />
-            <Chip active={ownedOnly} onClick={() => setOwnedOnly((o) => !o)}>
-              Owned only
-            </Chip>
+          </div>
+          {/*
+            The replacement for the owned-only chip. Contribution-shaped, not
+            collection-shaped: what a contributor wants to narrow to is work
+            that is or is not done, and the manifest is what knows.
+          */}
+          <div className="mb-[8px] flex flex-wrap gap-[6px]">
+            {(['all', 'no-mask', 'has-mask', 'has-window'] as const).map((f) => (
+              <Chip key={f} active={filter === f} onClick={() => setFilter(f)} disabled={corpus === null}>
+                {FILTER_LABEL[f]}
+              </Chip>
+            ))}
           </div>
           {searching ? (
             <div>
@@ -877,7 +1208,7 @@ export function FoilLab() {
                     }`}
                   >
                     <img
-                      src={h.images.low}
+                      src={h.images.low === '' ? undefined : proxied(h.images.low)}
                       alt=""
                       loading="lazy"
                       className="w-[30px] shrink-0 rounded-[2px]"
@@ -907,7 +1238,7 @@ export function FoilLab() {
               </div>
               {searchHits.length > 0 && (
                 <p className="mt-[6px] text-[11px] text-text-muted">
-                  {searchTotal} match{searchTotal === 1 ? '' : 'es'} in the whole catalog (ignores Owned only)
+                  {searchTotal} match{searchTotal === 1 ? '' : 'es'} in the whole catalog (ignores the filter)
                 </p>
               )}
             </div>
@@ -926,7 +1257,7 @@ export function FoilLab() {
                         }
                       >
                         {s.name}
-                        {ownedOnly && <span className="ml-[4px] opacity-60">{s.progress.owned}</span>}
+                        <span className="ml-[4px] opacity-60">{s.setCount}</span>
                       </Chip>
                     ))}
                   </div>
@@ -942,7 +1273,7 @@ export function FoilLab() {
                   )}
                   {setsQ.data.map((s) => (
                     <option key={s.setId} value={s.setId}>
-                      {s.name} ({ownedOnly ? `${s.progress.complete.owned} owned` : `${s.cardCountTotal} cards`})
+                      {s.name} ({s.cardCountTotal} cards)
                     </option>
                   ))}
                 </Select>
@@ -958,16 +1289,16 @@ export function FoilLab() {
                     title={`${c.name} #${c.number}`}
                   >
                     <img
-                      src={c.images.low}
+                      src={proxied(c.images.low)}
                       alt={c.name}
                       loading="lazy"
                       className="block w-full"
                       style={{ aspectRatio: '245 / 337' }}
                     />
-                    {!ownedOnly && c.ownership.totalQuantity > 0 && (
+                    {corpus?.hasAnyMask(c.cardId) === true && (
                       <span
                         className="absolute right-[3px] top-[3px] h-[8px] w-[8px] rounded-full bg-action-primary ring-1 ring-black/40"
-                        title="owned"
+                        title="a hand mask exists for this card"
                       />
                     )}
                   </button>
@@ -994,7 +1325,6 @@ export function FoilLab() {
                   onClick={() => setSel((p) => ({ ...p, variantId: v.variantId }))}
                 >
                   {v.displayName}
-                  {v.quantity > 0 ? ` ×${v.quantity}` : ''}
                 </Chip>
               ))}
             </div>
@@ -1078,7 +1408,7 @@ export function FoilLab() {
             <Slider label="Mask feather" value={maskFeather} min={0} max={0.06} step={0.001} onChange={setMaskFeather} />
           )}
 
-          {devSurface ? (
+          {(
             adjustMode && winGeom ? (
               <div className="space-y-[8px]">
                 <p className="text-[11px] leading-[15px] text-text-muted">
@@ -1169,10 +1499,6 @@ export function FoilLab() {
                 </div>
               </div>
             )
-          ) : (
-            <p className="text-[11px] text-text-muted">
-              Hand-mask editing needs the branch api instance (port 3712) — unavailable here.
-            </p>
           )}
           <p className="mt-[6px] text-[11px] text-text-muted">
             {handActive
@@ -1191,7 +1517,7 @@ export function FoilLab() {
                     : ''
                 }`}
           </p>
-          {devSurface && detail && sel.variantId != null && (
+          {detail && sel.variantId != null && (
             <MaskProvenanceLine
               sidecar={maskSidecar}
               aliasOf={maskMeta?.aliasOf ?? null}
@@ -1209,8 +1535,97 @@ export function FoilLab() {
           )}
         </Section>
 
+        {/* ── Staged work, the conflict choice, and the provisional numbers ── */}
+        <Section title={canWrite ? 'Direct write' : 'Your session'}>
+          {canWrite ? (
+            <p className="text-[12px] leading-[1.5] text-text-muted">
+              You hold the writer capability, so Save writes straight to the repository — one PUT, the same
+              path this workbench always used. The staging layer never engages for you.
+            </p>
+          ) : (
+            <>
+              <p className="mb-[8px] text-[12px] leading-[1.5] text-text-muted">
+                Save stages this card locally. No account needed, and it survives a reload, a tab close, and
+                days of gap. One card is one session, and one session becomes one pull request once the
+                contribution pipeline ships.
+              </p>
+              {staged === null ? (
+                <p className="text-[12px] text-text-muted">Nothing staged for this printing yet.</p>
+              ) : (
+                <p className="text-[12px] text-text-primary">
+                  Staged {new Date(staged.updatedAt).toLocaleString()} · seeded from {staged.seed.startedFrom}
+                  {staged.seed.parent ? ` (${staged.seed.parent.cardId}/${staged.seed.parent.variantId})` : ''}
+                </p>
+              )}
+              <div className="mt-[8px] flex flex-wrap gap-[6px]">
+                <ActionBtn onClick={() => void stageMask()} active>
+                  {stageStatus === 'saving'
+                    ? 'Staging…'
+                    : stageStatus === 'saved'
+                      ? 'Staged ✓'
+                      : maskDirty
+                        ? 'Save to session ●'
+                        : 'Save to session'}
+                </ActionBtn>
+                <ActionBtn onClick={() => navigate('/staged')}>Staged work ({staging.sessions.length})</ActionBtn>
+              </div>
+              {stageStatus === 'error' && (
+                <p className="mt-[6px] text-[12px] text-red-400">Could not stage — the browser refused to store it.</p>
+              )}
+            </>
+          )}
+
+          {conflict?.conflicted === true && (
+            <div className="mt-[10px] rounded-md border border-amber-500/50 bg-amber-500/10 p-[8px]">
+              <p className="text-[12px] leading-[1.5] text-amber-200">
+                <strong className="font-semibold">{conflict.kind}</strong> — {conflict.detail}
+              </p>
+              <div className="mt-[8px] flex flex-wrap gap-[6px]">
+                {conflict.choices.map((c) => (
+                  <ActionBtn key={c} onClick={() => void resolveConflict(c)}>
+                    {c === 'keep-mine' ? 'Keep mine' : c === 'take-theirs' ? 'Take theirs' : 'Re-trace'}
+                  </ActionBtn>
+                ))}
+              </div>
+              <p className="mt-[6px] text-[11px] text-amber-200/80">
+                Nothing is merged automatically. Two people painting the same alpha channel have no lines to
+                merge, so any automatic result would be plausible-looking garbage nobody drew.
+              </p>
+            </div>
+          )}
+          {ghostPng !== null && (
+            <p className="mt-[8px] text-[11px] text-text-muted">
+              Your previous strokes are kept as a ghost for this re-trace. They are not submitted — they are
+              there to draw against.
+            </p>
+          )}
+
+          <div className="mt-[10px] border-t border-border-default pt-[8px]">
+            <div className="flex items-center gap-[8px]">
+              <ActionBtn onClick={computeProvisional}>Provisional diff</ActionBtn>
+              {provisionalStale && provisional !== null && (
+                <span className="text-[11px] text-text-muted">stale — strokes since</span>
+              )}
+            </div>
+            {provisional === null ? (
+              <p className="mt-[6px] text-[11px] leading-[15px] text-text-muted">
+                The server decides <code>derivation_method</code> and the agreement number by diffing your
+                pixels against what your declared seed rasterizes to — the client never labels a mask. But the
+                client owns the same rasterizer, so the number is computable here. It is provisional until the
+                server confirms.
+              </p>
+            ) : (
+              <p className="mt-[6px] text-[11px] leading-[15px] text-text-muted tabular-nums">
+                vs the era rule: agreement {(provisional.vsRule.agreement * 100).toFixed(1)}% · +
+                {provisional.vsRule.addedPx.toLocaleString()} / −{provisional.vsRule.removedPx.toLocaleString()}px.{' '}
+                <span className="text-amber-200/80">Provisional</span> — the server recomputes it at save.
+              </p>
+            )}
+          </div>
+        </Section>
+
         <MaskCorpusPanel
-          devSurface={devSurface}
+          available
           refreshKey={corpusKey}
           onPick={(cardId, variantId) => setSel((p) => ({ ...p, cardId, variantId }))}
         />
@@ -1276,7 +1691,7 @@ export function FoilLab() {
               ? ` · saved overrides ${new Date(override.savedAt).toLocaleDateString()} (${Object.keys(override.uniforms).length}) → data/foil-overrides/`
               : ''}
           </p>
-          {devSurface && (
+          {canWrite && (
             <div className="mb-[6px] flex flex-wrap gap-[6px]">
               <ActionBtn onClick={saveOverrides} disabled={overrideDiffKeys.length === 0 && !override}>
                 {overrideStatus === 'saving'
@@ -1290,7 +1705,13 @@ export function FoilLab() {
             </div>
           )}
           {overrideStatus === 'error' && (
-            <p className="mb-[6px] text-[12px] text-red-400">Override save failed — is the branch api up?</p>
+            <p className="mb-[6px] text-[12px] text-red-400">Override save failed.</p>
+          )}
+          {!canWrite && overrideDiffKeys.length > 0 && (
+            <p className="mb-[6px] text-[12px] text-text-muted">
+              These {overrideDiffKeys.length} adjusted uniform(s) ride along in the staged session when you
+              press Save mask.
+            </p>
           )}
           <button
             onClick={copyRecipe}

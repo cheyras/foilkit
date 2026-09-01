@@ -17,14 +17,20 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { foilApi } from './api'
-import { PATTERNS, patternById, type FoilPattern } from './patterns'
-import { canonBaseline, canonFor, referenceSlug, sparseDiff } from './canon'
-import { maskForScope, resolveFoil, type FoilScope } from './resolver'
-import { useTilt } from './useTilt'
-import { CardViewer, type ViewerSettings } from './CardViewer'
-import { createMaskCanvas, MASK_W, MASK_H } from './MaskEditor'
-import { ActionBtn, Chip, COMPOSITE_KEYS, CoreSliders, Section, Select, Slider, SurfaceTabs } from './ui'
+import { foilApi } from './api.ts'
+import { PATTERNS, patternById, canonFor, referenceSlug } from '@foilkit/patterns'
+import { canonBaseline, sparseDiff, type FoilPattern } from '@foilkit/core'
+import { maskForScope, resolveFoil, type FoilScope } from '@foilkit/resolver'
+import { CardViewer, MASK_H, MASK_W, createMaskCanvas, useTilt, type ViewerSettings } from '@foilkit/three/react'
+import { ActionBtn, Chip, COMPOSITE_KEYS, CoreSliders, Section, Select, Slider, SurfaceTabs } from './ui.tsx'
+import { CorpusView } from './catalog/manifest.ts'
+import { useStaging } from './staging/useStaging.ts'
+import { seedCanonSession, updateCanonSession } from './staging/session.ts'
+import { sha256Uniforms } from './staging/sha.ts'
+import { useViewer } from './writer/useViewer.ts'
+import type { CanonSession } from './staging/types.ts'
+import type { Staging } from './staging/useStaging.ts'
+import type { ViewerState } from './writer/useViewer.ts'
 
 const LS_PATTERN_KEY = 'foil-lab:canon-pattern'
 const LS_TONE_KEY = 'foil-lab:canon-tone'
@@ -202,7 +208,7 @@ function CanonCardPreview({
 
 // ── The canon lab ───────────────────────────────────────────────────────────
 
-export function CanonLab() {
+export function CanonLab({ staging, viewer }: { staging: Staging; viewer: ViewerState }) {
   const queryClient = useQueryClient()
   const [patternId, setPatternId] = useState<string>(loadPatternId)
   const [tone, setTone] = useState<Tone>(loadTone)
@@ -225,8 +231,16 @@ export function CanonLab() {
 
   const tilt = useTilt()
 
-  const devQ = useQuery({ queryKey: ['foil', 'dev-surface'], queryFn: () => foilApi.devSurface(), staleTime: Infinity })
-  const devSurface = devQ.data === true
+  /**
+   * CANON EDITS BREAK THE ONE-SESSION-PER-CARD RULE, so they get their own
+   * session type.
+   *
+   * A canon file is per-PATTERN and global — it does not belong to any card, so
+   * it cannot ride a card-keyed session. Same staging machinery, keyed by
+   * `patternId`, its own eventual PR.
+   */
+  const canWrite = viewer.savePath === 'direct-write'
+  const [canonStatus, setCanonStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const canonQ = useQuery({ queryKey: ['foil', 'canon'], queryFn: ({ signal }) => foilApi.getCanon(signal) })
   const refIndexQ = useQuery({
     queryKey: ['foil', 'reference-index'],
@@ -283,7 +297,46 @@ export function CanonLab() {
     }
   }, [uniforms, mask, maxTiltDeg])
 
+  /**
+   * Stage a canon edit. A canon file is a FULL uniform snapshot rather than a
+   * delta, so the session carries the whole thing on both sides — the seed and
+   * the current state — and the conflict comparison is a hash over the
+   * canonicalised snapshot.
+   */
+  const stageCanon = async () => {
+    setCanonStatus('saving')
+    try {
+      const now = new Date().toISOString()
+      const id = `canon:${pattern.id}`
+      const existing = staging.sessions.find((x) => x.id === id && x.kind === 'canon') as CanonSession | undefined
+      const next =
+        existing === undefined
+          ? updateCanonSession(
+              seedCanonSession({
+                patternId: pattern.id,
+                uniforms: baseline,
+                savedAt: canon?.savedAt ?? null,
+                sha256: canon ? await sha256Uniforms(canon.uniforms) : null,
+                contract: canon?.contract ?? null,
+                now,
+              }),
+              { uniforms },
+              now,
+            )
+          : updateCanonSession(existing, { uniforms }, now)
+      await staging.save(next)
+      setCanonStatus('saved')
+      setTimeout(() => setCanonStatus('idle'), 1500)
+    } catch {
+      setCanonStatus('error')
+    }
+  }
+
   const saveCanon = async () => {
+    if (!canWrite) {
+      await stageCanon()
+      return
+    }
     setSaveStatus('saving')
     try {
       await foilApi.putCanon(pattern.id, uniforms)
@@ -311,7 +364,11 @@ export function CanonLab() {
     [pattern],
   )
   const applyToFamily = async () => {
-    if (!familySibs.length) return
+    // A family apply writes a canon file for every sibling. That is a bulk
+    // repository change, and bulk changes are a writer-capability action — not
+    // because a contributor could not mean it, but because a PR containing
+    // eleven canon files nobody looked at individually is not reviewable.
+    if (!familySibs.length || !canWrite) return
     setFamilyStatus('saving')
     try {
       const dials: Record<string, number> = {}
@@ -328,7 +385,9 @@ export function CanonLab() {
     }
   }
 
+  /** Not stageable in v1 — see the note on FoilLab’s deleteMask. */
   const deleteCanon = async () => {
+    if (!canWrite) return
     try {
       await foilApi.deleteCanon(pattern.id)
       await queryClient.invalidateQueries({ queryKey: ['foil', 'canon'] })
@@ -349,21 +408,29 @@ export function CanonLab() {
     }
   }
 
+  /**
+   * The note becomes the PR body when #9 ships. Stored in the canon session
+   * until then — stored and exported, never committed into the tree.
+   */
   const submitComment = async () => {
     const text = commentText.trim()
     if (!text) return
     setCommentStatus('saving')
     try {
-      await foilApi.postComment(text, {
-        surface: 'canon-lab',
-        pattern: pattern.id,
-        canonSavedAt: canon?.savedAt ?? null,
-        canonDirty: dirty,
-        tiltMode: tilt.mode,
-        uniforms,
-        viewport: `${window.innerWidth}x${window.innerHeight}`,
-        ts: new Date().toISOString(),
-      })
+      const now = new Date().toISOString()
+      const id = `canon:${pattern.id}`
+      const existing = staging.sessions.find((x) => x.id === id && x.kind === 'canon') as CanonSession | undefined
+      const base =
+        existing ??
+        seedCanonSession({
+          patternId: pattern.id,
+          uniforms: baseline,
+          savedAt: canon?.savedAt ?? null,
+          sha256: canon ? await sha256Uniforms(canon.uniforms) : null,
+          contract: canon?.contract ?? null,
+          now,
+        })
+      await staging.save(updateCanonSession(base, { uniforms, comment: text }, now))
       setCommentStatus('saved')
       setCommentText('')
       setTimeout(() => {
@@ -386,7 +453,6 @@ export function CanonLab() {
   const pcQ = useQuery({
     queryKey: ['foil', 'pattern-cards', pattern.id],
     queryFn: ({ signal }) => foilApi.patternCards(pattern.id, 12, signal),
-    enabled: devSurface,
     staleTime: 5 * 60_000,
   })
   useEffect(() => setPreviewIdx(0), [pattern.id])
@@ -452,7 +518,7 @@ export function CanonLab() {
                   : 'canon pattern lab · on an assigned card'
                 : 'canon pattern lab · blank card, no ink'}
             </div>
-            {devSurface && pcQ.data && previewVia === 'cited' && previewTotal > 0 && (
+            {pcQ.data && previewVia === 'cited' && previewTotal > 0 && (
               <div className="mt-[3px] max-w-[min(88vw,420px)] whitespace-normal rounded-[6px] bg-surface-primary/85 px-[6px] py-[3px] text-amber-500/90">
                 no card RESOLVES to this pattern — previewing {pcQ.data.citedTotal.toLocaleString()} printing
                 {pcQ.data.citedTotal === 1 ? '' : 's'} the research names for it
@@ -461,19 +527,19 @@ export function CanonLab() {
                   : ''}
               </div>
             )}
-            {devSurface && pcQ.data && previewTotal === 0 && (
+            {pcQ.data && previewTotal === 0 && (
               <div className="mt-[3px] max-w-[min(88vw,420px)] whitespace-normal rounded-[6px] bg-surface-primary/85 px-[6px] py-[3px] text-amber-500/90">
                 no catalog cards{previewWhy ? ` — ${previewWhy.detail}` : ''}
               </div>
             )}
-            {devSurface && pcQ.isFetched && pcQ.data === null && (
-              <div className="text-amber-500/90">preview index missing — run tools/foil/build-pattern-cards.mts</div>
+            {pcQ.isFetched && pcQ.data === null && (
+              <div className="text-amber-500/90">preview index missing — it is an output of tools/bake-catalog.mts (RUN-BAKE.md)</div>
             )}
           </div>
           <div className="pointer-events-none absolute right-[12px] top-[10px] rounded-full bg-surface-secondary/70 px-[8px] py-[2px] text-[11px] text-text-muted">
             {tilt.mode}
           </div>
-          {devSurface && (
+          {(
             <div className="absolute bottom-[12px] right-[12px] flex gap-[6px]">
               <Chip active={!previewOn} onClick={() => setPreviewOn(false)}>
                 blank
@@ -488,7 +554,7 @@ export function CanonLab() {
               )}
             </div>
           )}
-          {devSurface && (
+          {(
             <button
               onClick={() => setCommentOpen(true)}
               className="absolute bottom-[12px] left-[12px] rounded-full border border-border-default bg-surface-secondary/85 px-[12px] py-[7px] text-[12px] text-text-primary hover:border-action-primary"
@@ -586,33 +652,48 @@ export function CanonLab() {
               {dirty ? ` ${dirtyKeys.length} unsaved change${dirtyKeys.length === 1 ? '' : 's'}.` : ''}
             </p>
           )}
-          {devSurface ? (
-            <div className="flex flex-wrap gap-[6px]">
-              <ActionBtn onClick={saveCanon} active>
-                {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved ✓' : dirty ? 'Save canon ●' : 'Save canon'}
+          <div className="flex flex-wrap gap-[6px]">
+            <ActionBtn onClick={saveCanon} active>
+              {canWrite
+                ? saveStatus === 'saving'
+                  ? 'Saving…'
+                  : saveStatus === 'saved'
+                    ? 'Saved ✓'
+                    : dirty
+                      ? 'Save canon ●'
+                      : 'Save canon'
+                : canonStatus === 'saving'
+                  ? 'Staging…'
+                  : canonStatus === 'saved'
+                    ? 'Staged ✓'
+                    : dirty
+                      ? 'Stage canon ●'
+                      : 'Stage canon'}
+            </ActionBtn>
+            {canon && dirty && <ActionBtn onClick={() => setUniforms(baseline)}>Reset to canon</ActionBtn>}
+            <ActionBtn onClick={() => setUniforms(canonBaseline(pattern, undefined))}>Code defaults</ActionBtn>
+            {canWrite && canon && <ActionBtn onClick={deleteCanon}>Delete canon</ActionBtn>}
+            {canWrite && familySibs.length > 0 && (
+              <ActionBtn onClick={applyToFamily} disabled={familyStatus === 'saving'}>
+                {familyStatus === 'saving'
+                  ? `Applying to ${familySibs.length}…`
+                  : familyStatus === 'done'
+                    ? `Applied to ${familySibs.length} ✓`
+                    : `Apply composite → ${pattern.family} (${familySibs.length})`}
               </ActionBtn>
-              {canon && dirty && <ActionBtn onClick={() => setUniforms(baseline)}>Reset to canon</ActionBtn>}
-              <ActionBtn onClick={() => setUniforms(canonBaseline(pattern, undefined))}>Code defaults</ActionBtn>
-              {canon && <ActionBtn onClick={deleteCanon}>Delete canon</ActionBtn>}
-              {familySibs.length > 0 && (
-                <ActionBtn onClick={applyToFamily} disabled={familyStatus === 'saving'}>
-                  {familyStatus === 'saving'
-                    ? `Applying to ${familySibs.length}…`
-                    : familyStatus === 'done'
-                      ? `Applied to ${familySibs.length} ✓`
-                      : `Apply composite → ${pattern.family} (${familySibs.length})`}
-                </ActionBtn>
-              )}
-            </div>
-          ) : (
-            <p className="text-[11px] text-text-muted">
-              Saving canon needs the foil branch api instance — unavailable here.
+            )}
+          </div>
+          {!canWrite && (
+            <p className="mt-[6px] text-[11px] leading-[15px] text-text-muted">
+              A canon file is per-pattern and global, so it stages as its own session rather than riding a
+              card’s. Submission opens PRs once the contribution pipeline ships; until then it stays in this
+              browser and in your export.
             </p>
           )}
-          {saveStatus === 'error' && (
-            <p className="mt-[6px] text-[12px] text-red-400">Save failed — is the foil branch api up?</p>
+          {(saveStatus === 'error' || canonStatus === 'error') && (
+            <p className="mt-[6px] text-[12px] text-red-400">Save failed.</p>
           )}
-          {devSurface && familySibs.length > 0 && (
+          {canWrite && familySibs.length > 0 && (
             <p className="mt-[6px] text-[11px] leading-[15px] text-text-muted">
               “Apply composite” copies only the on-card dials ({COMPOSITE_KEYS.join(', ')}) to the{' '}
               {familySibs.length} other <b>{pattern.family}</b> recipe{familySibs.length === 1 ? '' : 's'}. Pattern
@@ -621,7 +702,7 @@ export function CanonLab() {
             </p>
           )}
           {familyStatus === 'error' && (
-            <p className="mt-[6px] text-[12px] text-red-400">Family apply failed — nothing was rolled back; check the api.</p>
+            <p className="mt-[6px] text-[12px] text-red-400">Family apply failed — nothing was rolled back.</p>
           )}
         </Section>
 
