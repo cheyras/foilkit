@@ -21,10 +21,11 @@ Each pattern directory holds:
 - `gemini-spec.md` — a vision-model reading of the frames, produced by the
   `pipeline/` rubric.
 
-Neither carries the creator's words. The `## Transcript excerpt` section every
-`notes.md` used to end with was dropped when this corpus left DeckPal, and the
-four specs that quoted the transcript inside their own prose now attribute by
-chapter timestamp instead. The analysis is original; the captions were not.
+Neither carries the creator's words. The auto-caption block every `notes.md`
+used to end with was dropped when this corpus left DeckPal — all 44 of them —
+and the four specs that quoted those captions inside their own prose now
+attribute by chapter timestamp instead. The analysis is original; the captions
+were not.
 
 `pipeline/` holds the scripts and job files that produced the specs via
 OpenRouter (`google/gemini-3.1-pro-preview`); every model call ran as a verified
