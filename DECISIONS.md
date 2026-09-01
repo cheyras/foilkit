@@ -686,3 +686,90 @@ neither is CC0-dedicatable by us. This closeout was scoped to the YouTube
 narration and deliberately did not widen itself. **It is the obvious next
 scrub**, and it is recorded here so that deleting the origin branches does not
 delete the knowledge that it is outstanding.
+
+---
+
+## 2026-09-01 — The written sources are paraphrase too: the 340 the closeout flagged
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** The follow-up scrub named in the previous entry has been done. The
+**340 non-YouTube `sources[].quote` strings** in
+`data/foil-card-assignments.json` and `data/foil-pattern-usage.json` — **9,632
+words**, none of them marked — are now **340 paraphrases in the maintainer's
+voice, 6,984 words, all 340 marked**. Combined with the 162 video citations the
+closeout rewrote, **all 502 quote strings in both files are marked paraphrase
+and 0 are unmarked, from any source.**
+
+| Source | Quotes | Longest original |
+|---|---:|---:|
+| Bulbapedia (CC-BY-SA 2.5) | 177 | 56 w |
+| Collexy (all rights reserved) | 124 | 83 w |
+| PokeBeach | 14 | 58 w |
+| pkmn.gg | 10 | 30 w |
+| Bleeding Cool | 9 | 34 w |
+| Sleeve No Card Behind | 6 | 22 w |
+| **Total** | **340** | **83 w** |
+
+Attribution was normalised the way the video citations were, to the same
+`Paraphrase (…) — ` form: publication name plus the page title the URL already
+names, with the `url` field unchanged beside it — `Paraphrase (Bulbapedia,
+'Holofoil') — …`, `Paraphrase (Collexy, 'XY era holofoil overview') — …`,
+`Paraphrase (pkmn.gg, 'Silver Tempest Trainer Gallery' set list) — …`. Nothing
+was invented to fill a field: none of these URLs carries a section anchor, so
+none of the citations claims one, exactly as the video citations say "timestamp
+not recorded" rather than guessing a timestamp. Both files' `$comment` policy
+note now covers **every** quote rather than only the video ones, and says why.
+
+**Why:** The closeout's rule has not changed — `data/**` is CC0, and a CC0
+dedication can only cover material this project has standing to dedicate. What
+changed is the recognition that the written sources are the *worse* half of the
+problem, not the lesser one:
+
+- **Bulbapedia is CC-BY-SA 2.5.** That is not merely "not ours to dedicate", it
+  is a **direct licence conflict inside a CC0-declared file**: CC-BY-SA is
+  copyleft, it requires attribution and share-alike on any reuse, and CC0 is a
+  waiver of exactly those conditions. 177 CC-BY-SA strings sitting under a CC0
+  notice made the notice false about a third of the file's citations, and would
+  have propagated a share-alike obligation to every downstream user who took the
+  dataset at its word. A paraphrase of a fact carries no such obligation:
+  CC-BY-SA covers the expression, and the facts about which foil pattern a set
+  used are not copyrightable in the first place.
+- **Collexy, PokeBeach, Bleeding Cool and Sleeve No Card Behind reserve their
+  rights outright.** The 83-word Collexy passage was the single largest block of
+  third-party prose anywhere in the repository, larger than any video quote the
+  closeout removed.
+- **pkmn.gg stays cited, for the reason given last time.** Its ten entries were
+  already the project's own restatements of set-list counts; they are now marked
+  and attributed like the rest. Citing a source is not copying it.
+
+**Implications and verification.**
+
+- **The guesses did not move.** The resolver digest probe re-ran over the same
+  **10,312 inputs** and returned
+  `8541aa1b389d5a8b04508aa237189dce196ef470f358dc913c8c9584beafc367` —
+  **identical to `RECEIPT.md` and to both receipt files**, with the same tier
+  split (4,160 `facet`, 2,664 `set`, 2,520 `series`, 880 `card`, 88
+  `heuristic`) and `RESOLVER_VERSION` 5. Citation text is evidence *for* a row,
+  never an input *to* it, and the digest is what proves that rather than
+  asserting it.
+- **Both derived indexes regenerate byte-identically.**
+  `tools/build-assignments-index.mjs` (125 rows, 21 facets) and
+  `tools/build-usage-index.mjs` (122 rows) produce no diff at all — not even a
+  citation-text change, because neither index carries quote text, only
+  hostnames.
+- **177/177 tests pass; `reuse lint` is clean** (575/575 files carry copyright
+  and licence information; CC0-1.0 and MIT, no bad or deprecated licences).
+- **Longest remaining verbatim-looking run: 19 words, and it is a list of
+  Pokémon names** — "Ho-Oh, Lugia, Pikachu, Wobbuffet, Hoothoot, Noctowl,
+  Feraligatr, Meganium, Typhlosion, Latias, Latios, Cleffa, Smoochum, Shuckle,
+  Raikou, Entei, Suicune, Porygon" — which is the enumerated fact itself and is
+  not expression anyone can own. The next two are set names in a list (11 and 10
+  words, both "Wizards Black Star Promos, Southern Islands and Best of Game").
+  **The longest run containing any connective prose at all is 8 words** —
+  "Raichu came in the Supreme Victors Value Pack", five of them proper nouns.
+  Mean shared run across all 340 is 4.4 words. The longest paraphrase in the
+  file is 46 words, against an 83-word longest original.
+
+This closes the item the previous entry flagged. Nothing about the source-quote
+policy is now outstanding in either evidence file.

@@ -1,5 +1,5 @@
 {
- "$comment": "foil-pattern-usage.json - resolver base guess: (era/set-range, rarity/variant class) -> pattern slug. Slugs match research/foil-patterns.md and research/foil-video-reference/. Generated 2026-08-02 on branch foil/video-reference. Source-quote policy (2026-09-01): every citation of a video source in this file is a PARAPHRASE in the maintainer's voice, marked as such and attributed by video id + chapter/timestamp. No third-party narration is reproduced here — this file is CC0 and may only contain material the project can dedicate. Follow the URL for the creator's own words.",
+ "$comment": "foil-pattern-usage.json - resolver base guess: (era/set-range, rarity/variant class) -> pattern slug. Slugs match research/foil-patterns.md and research/foil-video-reference/. Generated 2026-08-02 on branch foil/video-reference. Source-quote policy (2026-09-01): every sources[].quote in this file is a PARAPHRASE in the maintainer's voice, marked as such and attributed — video sources by video id + chapter/timestamp, written sources by publication name + page title, with the URL alongside. No third-party wording is reproduced here, from any source: this file is CC0 and may only contain material the project can dedicate, and several of the cited works are licensed on terms (CC-BY-SA, all rights reserved) that a CC0 dedication cannot absorb. Follow the URL for each author's own words.",
  "method": "7 era-scoped research lanes run under Ringer (opencode workers; 6x openrouter/z-ai/glm-5.2 passed incl. the dp-hgss rerun; 1 nvidia/nemotron free-model attempt failed and was rerun on glm-5.2). Every lane's rows passed pipeline/validate_usage.py (schema + min-rows + citation presence) plus an honesty check on findings.md. Orchestrator spot-checks: Bulbapedia tinsel quote verified near-verbatim; Collexy DP cosmos citation verified in substance but the 'quote' was a paraphrase - treat source quotes as lossy pointers, follow the URL for exact wording.",
  "sources_of_record": [
   "https://youtu.be/wQ2TvnHVdys (Sleeve No Card Behind - All 39 Pokemon Card Holo Patterns Explained)",
@@ -42,11 +42,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Tinsel Holofoil was used on standard Holo cards between Black & White until Legendary Treasures, along with various promotional cards. It consists of horizontal stripes across the image."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Tinsel was the standard holo finish from Black & White to Legendary Treasures, plus assorted promos — horizontal banding across the art."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-black-white-era/",
-     "quote": "The Tinsel Holofoil pattern is the standard holofoil pattern used in the Black & White era... a holofoil pattern with horizonal lines, which have slight different shades of the color of the holofoil."
+     "quote": "Paraphrase (Collexy, 'Black & White era holofoil overview') — Tinsel is the era's standard holo — horizontal lines in slightly varying shades of the foil colour."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -72,7 +72,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-black-white-era/",
-     "quote": "In the standard sets of the Black & White era, the Set Reverse Holofoil Pattern is the Mirror Pattern in Black & White Base Set. As from Emerging Powers, the Set Reverse Holofoil Pattern is the Energy Pattern."
+     "quote": "Paraphrase (Collexy, 'Black & White era holofoil overview') — Black & White base uses a mirror reverse; from Emerging Powers onward the set reverse is the Energy Pattern."
     }
    ],
    "conflicts": null,
@@ -103,7 +103,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-black-white-era/",
-     "quote": "As from Emerging Powers, the Set Reverse Holofoil Pattern is the Energy Pattern... for Pokemon cards it is the Type of the Pokemon, and for Trainer cards it is a pattern of Pokemon balls."
+     "quote": "Paraphrase (Collexy, 'Black & White era holofoil overview') — From Emerging Powers on, the set reverse is the Energy Pattern: type symbols on Pokemon cards, Poke Balls on Trainers."
     }
    ],
    "conflicts": "Splitting the energy reverse into 'energy-symbols' (BW) vs 'energy-symbols-ii' (XY) is inferred from the visual layout change; sources name both only as 'Energy Pattern'.",
@@ -163,11 +163,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Sheen Holofoil is used for all Holo cards from XY... international releases have the same effect as Japanese cards, but only cover the image, and the direction is from bottom right to top left."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Sheen covers every holo from XY onward; the international printings use the same effect as the Japanese cards but confine it to the image, running bottom-right to top-left."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-xy-era/",
-     "quote": "in the XY era the Sheen Holofoil pattern is used for all cards that have the rarity Holo Rare. The main exception to this rule is Evolutions, which uses the Starlight Holofoil pattern."
+     "quote": "Paraphrase (Collexy, 'XY era holofoil overview') — In the XY era sheen covers every Holo Rare, the notable exception being Evolutions, which uses starlight."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -203,11 +203,11 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-xy-era/",
-     "quote": "In the XY era, the Set Reverse Holofoil Pattern for all sets, except for Evolutions, is the Energy Pattern."
+     "quote": "Paraphrase (Collexy, 'XY era holofoil overview') — Every XY-era set except Evolutions uses the Energy Pattern for its set reverse."
     },
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Emerging Powers to Steam Siege feature the card's respective Type symbol in the background of the card (Poke Balls for Trainer cards, and a variant of the Colorless symbol for Special Energy cards)."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Between Emerging Powers and Steam Siege the reverse background carries the card's type symbol; Trainers get Poke Balls and Special Energy a Colorless-symbol variant."
     }
    ],
    "conflicts": "The 'ii' suffix distinguishing the XY layout from the BW 'energy-symbols' is inferred; both sources call it only 'Energy Pattern'.",
@@ -229,7 +229,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-xy-era/",
-     "quote": "contrary to this principle, the Starlight Holofoil pattern was used in Evolutions for all cards with the rarity Holo Rare."
+     "quote": "Paraphrase (Collexy, 'XY era holofoil overview') — Against the rule, Evolutions puts starlight on all its Holo Rares."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -286,7 +286,7 @@
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-xy-era/",
-     "quote": "Trainers' Mail has one extra variant from the Battle Arena Decks: Black Kyurem vs White Kyurem... Delinquent... from the Battle Arena Decks: Mega Charizard X vs Mega Blastoise"
+     "quote": "Paraphrase (Collexy, 'XY era holofoil overview') — Trainers' Mail has an extra variant from the Black Kyurem vs White Kyurem Battle Arena decks, and Delinquent one from the Mega Charizard X vs Mega Blastoise decks."
     }
    ],
    "conflicts": "Collexy labels the Battle Arena deck reprints simply as Sheen Holofoil variants and does not single out a 'secret' Moltres-EX Plasma Storm variant or use the 'diagonal-sheen-right' name.",
@@ -316,7 +316,7 @@
     },
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Cosmos Holofoil was introduced for all Holo cards in Base Set 2 and was used for all Holo cards until Call of Legends, along with various promotional cards."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Cosmos arrives with Base Set 2 and stays the holo finish through Call of Legends, plus assorted promos."
     }
    ],
    "conflicts": "The 'cosmos-ii-pixel' slug is defined only by the video; Bulbapedia/Collexy use the generic 'Cosmos' name and do not distinguish a 'pixel' sub-variant for promos. McDonald's sets actually use the separate 'confetti' pattern (see confetti row), so cosmos-ii-pixel applies to the non-McDonald's promo population.",
@@ -367,11 +367,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Pixel or Confetti Holofoil is used primarily for cards in the McDonalds Collection sets but was also featured on the Celebrations Classic Collection."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Pixel/confetti is mostly a McDonald's Collection finish, and also appears on the Celebrations Classic Collection."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-xy-era/",
-     "quote": "the Confetti Holofoil was used for the McDonalds sets released in the XY era... McDonalds Collection 2014, 2015 and 2016 the Confetti Holofoil pattern is the holofoil pattern used for all the cards."
+     "quote": "Paraphrase (Collexy, 'XY era holofoil overview') — Confetti is the finish on the XY-era McDonald's sets — every card in McDonald's Collection 2014, 2015 and 2016 uses it."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -399,11 +399,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Crosshatch Holofoil is generally used only for cards awarded at Play! Pokemon events. The pattern consists of intersecting diagonal lines that form a reflective grid across the card."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Crosshatch is reserved almost entirely for Play! Pokemon award cards; it shows as a grid of crossing diagonal lines."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-xy-era/",
-     "quote": "The special variants, with e.g. the 'Pokemon League'-stamp, do not have the Energy Pattern but have the Crosshatch Pattern."
+     "quote": "Paraphrase (Collexy, 'XY era holofoil overview') — The special stamped variants, Pokemon League among them, take crosshatch rather than the Energy Pattern."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -431,11 +431,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Cracked Ice Holofoil was first used for the exclusive version of the featured card in Theme Decks from the Platinum Series. Its use has continued in Theme Decks... into the Sword & Shield Series... also seen on promotional cards in Blister Packs from Platinum onwards."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Cracked ice started on the exclusive featured card in Platinum theme decks and continued in theme decks as far as Sword & Shield, as well as on blister promos from Platinum onward."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-black-white-era/",
-     "quote": "In Black & White Base Set, some Masters have additional variants with the Cracked Ice Holofoil pattern."
+     "quote": "Paraphrase (Collexy, 'Black & White era holofoil overview') — Some Black & White base masters carry extra cracked-ice variants."
     }
    ],
    "conflicts": null,
@@ -462,11 +462,11 @@
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-black-white-era/",
-     "quote": "In the standard sets, the Confetti Holofoil pattern only appears in Legendary Treasures, specifically the subset Radiant Collection."
+     "quote": "Paraphrase (Collexy, 'Black & White era holofoil overview') — Within the standard sets, confetti appears only in Legendary Treasures, in the Radiant Collection subset."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-xy-era/",
-     "quote": "In some sets, specifically Ancient Origins and BREAKthrough, there are some Masters that have Reverse Holofoil variants with the Mirror Pattern."
+     "quote": "Paraphrase (Collexy, 'XY era holofoil overview') — Some masters in Ancient Origins and BREAKthrough have mirror-pattern reverse variants."
     }
    ],
    "conflicts": "Collexy labels the Legendary Treasures RC cards as 'Confetti Holofoil' rather than 'radiant-collection-dots', and does not use the 'Radiant Collection' name for the Generations subset at all; only the video supplies the dot-overprint description.",
@@ -488,7 +488,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-xy-era/",
-     "quote": "In the XY era, the Set Reverse Holofoil Pattern for all sets, except for Evolutions, is the Energy Pattern."
+     "quote": "Paraphrase (Collexy, 'XY era holofoil overview') — Every XY-era set except Evolutions uses the Energy Pattern for its set reverse."
     }
    ],
    "conflicts": "Collexy states Evolutions is an exception to the Energy Pattern but does not name its actual reverse pattern; the 'energy-symbols-ii' assignment here is a placeholder and unverified.",
@@ -516,11 +516,11 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-black-white-era/",
-     "quote": "the Mirror Finish did make a sporadic return in other Black & White era standard sets. This resulted in 6 masters having one extra variant with the Reverse Holofoil with the Mirror Finish."
+     "quote": "Paraphrase (Collexy, 'Black & White era holofoil overview') — The mirror finish reappeared sporadically later in the era, giving six masters one additional mirror-reverse variant."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-xy-era/",
-     "quote": "In some sets, specifically Ancient Origins and BREAKthrough, there are some Masters that have Reverse Holofoil variants with the Mirror Pattern."
+     "quote": "Paraphrase (Collexy, 'XY era holofoil overview') — Some masters in Ancient Origins and BREAKthrough have mirror-pattern reverse variants."
     }
    ],
    "conflicts": null,
@@ -554,11 +554,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Cosmos Holofoil was introduced for all Holo cards in Base Set 2 and was used for all Holo cards until Call of Legends, along with various promotional cards."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Cosmos arrives with Base Set 2 and stays the holo finish through Call of Legends, plus assorted promos."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
-     "quote": "The Cosmos Holofoil pattern is the go-to holofoil pattern in the EX Series as well... used for all cards that have the rarity Holo Rare, Ultra Rare and Secret Rare in the EX Series era."
+     "quote": "Paraphrase (Collexy, 'EX Series holofoil overview') — Cosmos is the default of the EX Series, covering every Holo Rare, Ultra Rare and Secret Rare."
     }
    ],
    "conflicts": null,
@@ -580,11 +580,11 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
-     "quote": "In EX Hidden Legends, there are 3 cards with the rarity Ultra Rare that received the Cracked Ice Holofoil pattern, i.e. Regice ex, Regirock ex, and Registeel ex."
+     "quote": "Paraphrase (Collexy, 'EX Series holofoil overview') — Three EX Hidden Legends Ultra Rares take cracked ice — Regice ex, Regirock ex and Registeel ex."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
-     "quote": "The Cracked Ice Holofoil is the first newly introduced holofoil pattern in the EX Series era, specifically in EX Hidden Legends and EX FireRed & LeafGreen."
+     "quote": "Paraphrase (Collexy, 'EX Series holofoil overview') — Cracked ice is the first new finish of the EX Series, appearing in EX Hidden Legends and EX FireRed & LeafGreen."
     }
    ],
    "conflicts": "Video lane claims only name cracked-ice for 'FRLG legendary-bird ex promos + POP Series' and do not mention the EX Hidden Legends Regi trio; Collexy documents the Regi trio cracked-ice cards, so the video claim is incomplete rather than contradicted.",
@@ -606,7 +606,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
-     "quote": "This set also contains 3 cards with the rarity Ultra Rare that received the Cracked Ice Holofoil pattern, i.e. Articuno ex, Moltres ex and Zapdos ex."
+     "quote": "Paraphrase (Collexy, 'EX Series holofoil overview') — The set also has three cracked-ice Ultra Rares — Articuno ex, Moltres ex and Zapdos ex."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -661,11 +661,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "In EX Delta Species, the Holofoil rare design changed exclusively for δ Delta Species Pokémon, with the card border and Pokémon itself featuring a plain Holofoil treatment."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — In EX Delta Species the Holo Rare design changed for the delta Delta Species Pokemon only, putting a plain foil on the border and the Pokemon."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
-     "quote": "The Refractor Holofoil pattern can be described as an inverse pattern as the Pokémon itself receives a reflective foil treatment, whereas the background does not have any holofoil pattern."
+     "quote": "Paraphrase (Collexy, 'EX Series holofoil overview') — Refractor is the inverse arrangement — the Pokemon takes the reflective foil and the background takes none."
     }
    ],
    "conflicts": "No slug in the provided vocabulary matches a 'refractor' inverse foil. Collexy explicitly labels these sets' Holo Rares 'Refractor Holofoil'; Bulbapedia instead frames the EX Delta Species treatment as a Cosmos variation. The 'cosmos' slug is used here as the closest available match per Bulbapedia, but the observable pattern is distinct from a standard Cosmos field.",
@@ -688,7 +688,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
-     "quote": "The second brandnew holofoil pattern is Sheen Holofoil, which was introduced on the energy cards in EX Holon Phantoms and EX Power Keepers."
+     "quote": "Paraphrase (Collexy, 'EX Series holofoil overview') — The second new finish of the era is sheen, introduced on the energy cards of EX Holon Phantoms and EX Power Keepers."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -717,11 +717,11 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
-     "quote": "the first Set Reverse Holofoil pattern used was the Mirror Pattern, i.e. a Reverse Holofoil that has a reflective pattern without any additional specific pattern."
+     "quote": "Paraphrase (Collexy, 'EX Series holofoil overview') — The era's first set reverse was mirror — reflective, with nothing patterned over it."
     },
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Expedition Base Set to EX Team Magma vs Team Aqua feature a flat holographic finish over every aspect of the card aside from its art."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — From Expedition through EX Team Magma vs Team Aqua the reverse is a flat holographic wash over everything except the artwork."
     }
    ],
    "conflicts": null,
@@ -743,11 +743,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "EX Hidden Legends's holographic pattern differs substantially from previous sets. It places its holographic pattern inside the card's artwork, featuring an array of energy symbols placed behind the Pokémon."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — EX Hidden Legends breaks with earlier sets by moving the holo inside the artwork, as a field of energy symbols behind the Pokemon."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
-     "quote": "the Set Reverse pattern changed to the Energy Pattern, which is a Reverse Holofoil with a pattern that contains energy symbols in a vertical sequence where the same energy symbols appear underneath each other."
+     "quote": "Paraphrase (Collexy, 'EX Series holofoil overview') — The set reverse moved to the Energy Pattern — energy symbols stacked in vertical runs, the same symbol repeating down each column."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -774,11 +774,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "EX FireRed & LeafGreen, similar to Hidden Legends, features an energy symbol holo pattern in the picture window, with a Poké Ball shape appearing as a faint foil symbol in the attack box on Rare cards."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — EX FireRed & LeafGreen uses an energy-symbol holo inside the picture window like Hidden Legends, and rares carry a faint foil Poke Ball in the attack box."
     },
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "EX Team Rocket Returns features the same pattern as EX FireRed & LeafGreen, but with the addition of the set logo in the bottom right corner of the card's artwork."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — EX Team Rocket Returns repeats the EX FireRed & LeafGreen pattern and adds the set logo at the lower right of the artwork."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -804,11 +804,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "EX Deoxys features a \"pinwheel\" holo pattern and the set logo in the bottom right of the card's artwork."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — EX Deoxys uses a pinwheel holo with the set logo at the lower right of the artwork."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
-     "quote": "a new Reverse Holofoil pattern was introduced, the Wheel pattern... looks like a wheel or fan, with an alternating darker and lighter part (10 parts in total)."
+     "quote": "Paraphrase (Collexy, 'EX Series holofoil overview') — A new reverse pattern, the Wheel, arrives — a fan or wheel of ten alternating light and dark segments."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -834,11 +834,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "EX Emerald features a Poké Ball and stars holo pattern and the set logo in the bottom right of the picture window."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — EX Emerald's holo is Poke Balls and stars, with the set logo at the lower right of the art window."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
-     "quote": "another Reverse Holofoil pattern was introduced in EX Emerald as the Set Reverse Holofoil pattern. The new Reverse Holofoil pattern was the Poké Ball pattern."
+     "quote": "Paraphrase (Collexy, 'EX Series holofoil overview') — EX Emerald introduced another set reverse, the Poke Ball pattern."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -864,11 +864,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "EX Unseen Forces features a similar pattern to EX Emerald, but with a 3D Poké Ball pattern instead and the usual set logo in the bottom right of the picture window."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — EX Unseen Forces is close to EX Emerald but swaps in a 3D Poke Ball pattern, with the usual set logo at the lower right of the picture window."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
-     "quote": "The same principle as EX Emerald applies for EX Unseen Forces the Set Reverse Holofoil pattern is the Poké Ball pattern."
+     "quote": "Paraphrase (Collexy, 'EX Series holofoil overview') — EX Unseen Forces follows EX Emerald — the set reverse is the Poke Ball pattern."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -898,11 +898,11 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
-     "quote": "The last Reverse Holofoil pattern in the EX Series era was introduced in EX Delta Species, the Plain pattern. The Plain Finish can best be described as a faint holofoil with a sheen reflective effect"
+     "quote": "Paraphrase (Collexy, 'EX Series holofoil overview') — The last new reverse of the EX Series, the Plain pattern, came in with EX Delta Species — a faint foil with a sheen-like reflection."
     },
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "EX Delta Species to EX Power Keepers feature a plain holographic Reverse Holo pattern similar to Expedition Base Set, however this pattern appears within the background of the cards' artwork"
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — EX Delta Species through EX Power Keepers use a plain holographic reverse like Expedition's, except that it sits inside the artwork background."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -928,7 +928,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
-     "quote": "EX Legend Maker diverted from the Reverse Holofoil pattern with Plain pattern and used the Cosmos pattern instead, in the art box of the Pokémon instead of the rest of the card."
+     "quote": "Paraphrase (Collexy, 'EX Series holofoil overview') — EX Legend Maker departs from the Plain reverse and uses cosmos instead, placed in the Pokemon's art box rather than over the rest of the card."
     }
    ],
    "conflicts": "Single source (Collexy); Bulbapedia's reverse-pattern bullet groups EX Delta Species to EX Power Keepers as a single 'plain holographic' run and does not single out EX Legend Maker as a Cosmos exception, so Bulbapedia neither confirms nor denies this.",
@@ -950,7 +950,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
-     "quote": "In Nintendo Black Star Promos, some Masters have a variant with the Cosmos Holofoil pattern. The Cosmos Holofoil pattern treatment was not applied to every Master in this set."
+     "quote": "Paraphrase (Collexy, 'EX Series holofoil overview') — Some Nintendo Black Star Promos masters have a cosmos variant; it was not applied across the whole set."
     }
    ],
    "conflicts": "Collexy notes the tin-print promo versions of Articuno ex / Moltres ex / Zapdos ex use Cosmos, whereas the EX FireRed & LeafGreen set versions of the same birds use cracked-ice (see cracked-ice rows). The video's 'FRLG legendary-bird ex promos' cracked-ice claim may conflate these two printings.",
@@ -972,7 +972,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
-     "quote": "In Nintendo Black Star Promos, the Reverse Holofoil pattern used was the Mirror pattern. There are only 3 Masters that have a Reverse Holofoil variant."
+     "quote": "Paraphrase (Collexy, 'EX Series holofoil overview') — The reverse used in Nintendo Black Star Promos is mirror, and only three masters have a reverse variant at all."
     }
    ],
    "conflicts": null,
@@ -998,7 +998,7 @@
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-ex-series-era/",
-     "quote": "Darkness Energy has the rarity 'Rare', but has two extra variants with the Cosmos Holofoil pattern... with the 'winner' stamp. Both distributed at the Pokémon League."
+     "quote": "Paraphrase (Collexy, 'EX Series holofoil overview') — Darkness Energy is a Rare but has two extra cosmos variants carrying the Winner stamp, both handed out at the Pokemon League."
     }
    ],
    "conflicts": "The video names a distinct 'acid-wash' pattern for these ~2006 League energies, but Collexy describes the same League-distributed Darkness/Metal/Multi Energy promos as Cosmos Holofoil with 'winner' stamps, not as a separate acid-wash pattern. Pattern identity is therefore disputed.",
@@ -1031,7 +1031,7 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Pixel or Confetti Holofoil is used primarily for cards in the McDonalds Collection sets but was also featured on the Celebrations Classic Collection."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Pixel/confetti is mostly a McDonald's Collection finish, and also appears on the Celebrations Classic Collection."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -1057,7 +1057,7 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Pixel or Confetti Holofoil is used primarily for cards in the McDonalds Collection sets but was also featured on the Celebrations Classic Collection."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Pixel/confetti is mostly a McDonald's Collection finish, and also appears on the Celebrations Classic Collection."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -1085,7 +1085,7 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "The Sequin holofoil was first introduced in August, 2017, and is exclusively used for General Mills promotional cards, including the General Mills Sun & Moon Mini Packs..."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Sequin dates from August 2017 and is exclusive to General Mills promos, including the General Mills Sun & Moon Mini Packs."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -1113,7 +1113,7 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Crosshatch Holofoil is generally used only for cards awarded at Play! Pokémon events. The pattern consists of intersecting diagonal lines that form a reflective grid across the card."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Crosshatch is kept for Play! Pokemon award cards — crossing diagonals forming a reflective grid."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -1166,7 +1166,7 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Cracked Ice Holofoil was first used for the exclusive version of the featured card in Theme Decks from the Platinum Series. Its use has continued in Theme Decks throughout the HeartGold & SoulSilver Series and into the Sword & Shield Series."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Cracked ice began on the exclusive featured card of Platinum-era theme decks and stayed in theme decks through HeartGold & SoulSilver and into Sword & Shield."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -1192,7 +1192,7 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Cracked Ice Holofoil has also been seen on a number of promotional cards included in Blister Packs from Platinum onwards."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Cracked ice also shows up on a range of blister-pack promos from Platinum onward."
     }
    ],
    "conflicts": "The video frames cracked ice primarily as a theme-deck window finish and does not explicitly call out blister-pack promos; Bulbapedia extends it to blister promos.",
@@ -1214,11 +1214,11 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-wotc-era/",
-     "quote": "The Cosmos Holofoil pattern also appeared in the non-standard sets, specifically in the Wizards Black Star Promos and WOTC Energies."
+     "quote": "Paraphrase (Collexy, 'WOTC-era holofoil overview') — Cosmos also appears in the non-standard sets, specifically Wizards Black Star Promos and the WOTC energies."
     },
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Cosmos Holofoil was introduced for all Holo cards in Base Set 2 and was used for all Holo cards until Call of Legends, along with various promotional cards."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Cosmos arrives with Base Set 2 and stays the holo finish through Call of Legends, plus assorted promos."
     }
    ],
    "conflicts": "Bulbapedia only states cosmos was used on 'various promotional cards' generally; the specific Wizards Black Star Promo list (7 masters) comes from Collexy.",
@@ -1240,7 +1240,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-wotc-era/",
-     "quote": "In the WOTC Energies, each Master has one variant, which has the Cosmos Holofoil pattern."
+     "quote": "Paraphrase (Collexy, 'WOTC-era holofoil overview') — Each WOTC energy master has a single variant, and it is cosmos."
     }
    ],
    "conflicts": null,
@@ -1262,7 +1262,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-wotc-era/",
-     "quote": "In Best of Game, there are 5 masters, where each Master has at least 1 variant with the Reverse Holofoil pattern and Cosmos Pattern, i.e. English unlimited edition."
+     "quote": "Paraphrase (Collexy, 'WOTC-era holofoil overview') — Best of Game has five masters, each with at least one English unlimited cosmos-pattern reverse variant."
     }
    ],
    "conflicts": null,
@@ -1284,7 +1284,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-wotc-era/",
-     "quote": "In Wizards Black Star Promos, there are 2 masters, where each Master has at least 1 variant each with the Reverse Holofoil pattern and Cosmos Pattern."
+     "quote": "Paraphrase (Collexy, 'WOTC-era holofoil overview') — Wizards Black Star Promos has two masters, each with at least one cosmos-pattern reverse variant."
     }
    ],
    "conflicts": null,
@@ -1312,7 +1312,7 @@
     },
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Cosmos Holofoil was introduced for all Holo cards in Base Set 2 and was used for all Holo cards until Call of Legends, along with various promotional cards."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Cosmos arrives with Base Set 2 and stays the holo finish through Call of Legends, plus assorted promos."
     }
    ],
    "conflicts": "Bulbapedia collapses all cosmos variants under a single 'Cosmos' label and does not split cosmos-ii-pixel / cosmos-iii-smooth; the subdivision into denser-pixel vs smooth-HD cosmos comes only from the video's slug taxonomy.",
@@ -1378,7 +1378,7 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Pok%C3%A9mon_Trading_Card_Game_Classic",
-     "quote": "The cards feature a Star-Imprint Holofoil pattern first used on Generation V coins, and are functionally the same as when initially released, with the card text converted to modern wording."
+     "quote": "Paraphrase (Bulbapedia, 'Pokémon Trading Card Game Classic') — The cards use a star-imprint foil first seen on Generation V coins and play the same as their original printings, with the text updated to modern wording."
     }
    ],
    "conflicts": "The video's lane claims did not explicitly name TCG Classic; the tcg-classic slug is inferred from Bulbapedia's 'Star-Imprint' description of this product.",
@@ -1400,7 +1400,7 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "EX Unseen Forces features a similar pattern to EX Emerald, but with a 3D Poké Ball pattern instead and the usual set logo in the bottom right of the picture window."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — EX Unseen Forces is close to EX Emerald but swaps in a 3D Poke Ball pattern, with the usual set logo at the lower right of the picture window."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -1435,7 +1435,7 @@
    },
    "sources": [
     {
-     "quote": "Water Web Holofoil is the standard Holofoil pattern used for cards from Sun & Moon expansion to Cosmic Eclipse. It consists of a wavy pattern similar to flowing water.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Water web is the standard holo finish from Sun & Moon to Cosmic Eclipse — a wavy pattern that reads like moving water.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     },
     {
@@ -1505,7 +1505,7 @@
      "url": "https://youtu.be/wQ2TvnHVdys"
     },
     {
-     "quote": "Sun & Moon to Cosmic Eclipse use an updated design similar to the one used from Emerging Powers to Steam Siege, but with a large version of the card's Type symbol (or Poke Ball) on the left side of the card.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Sun & Moon to Cosmic Eclipse update the Emerging Powers-Steam Siege design, adding a large type symbol (or Poke Ball) at the left of the card.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     }
    ],
@@ -1536,11 +1536,11 @@
    },
    "sources": [
     {
-     "quote": "Sun & Moon to Cosmic Eclipse use an updated design similar to the one used from Emerging Powers to Steam Siege, but with a large version of the card's Type symbol (or Poke Ball) on the left side of the card.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Sun & Moon to Cosmic Eclipse update the Emerging Powers-Steam Siege design, adding a large type symbol (or Poke Ball) at the left of the card.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     },
     {
-     "quote": "In standard sets of the XY era, the Set Reverse Holofoil Pattern is the Energy Pattern... for Pokemon cards it is the Type of the Pokemon, and for Trainer cards it is a pattern of Pokemon balls.",
+     "quote": "Paraphrase (Collexy, 'XY era holofoil overview') — XY-era standard sets use the Energy Pattern for the set reverse — type symbols on Pokemon cards, Poke Balls on Trainers.",
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-xy-era/"
     }
    ],
@@ -1577,7 +1577,7 @@
    },
    "sources": [
     {
-     "quote": "Line Holofoil was used for standard Holo cards from Sword & Shield through Crown Zenith. The pattern consists of thin vertical lines that refract light from the top to the bottom of the Pokemon's image.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Line is the standard holo finish from Sword & Shield through Crown Zenith — fine vertical lines refracting down the length of the Pokemon image.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     },
     {
@@ -1655,7 +1655,7 @@
    },
    "sources": [
     {
-     "quote": "Sword & Shield to Crown Zenith use a \"tile\" design with the Type symbol or Poke Ball inside each \"tile.\"",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Sword & Shield to Crown Zenith use a tile layout with a type symbol or Poke Ball set inside each tile.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     }
    ],
@@ -1740,7 +1740,7 @@
    },
    "sources": [
     {
-     "quote": "The Sequin holofoil was first introduced in August, 2017, and is exclusively used for General Mills promotional cards, including the General Mills Sun & Moon Mini Packs... and the General Mills 25th Anniversary Mini Packs.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Sequin dates from August 2017 and is used only on General Mills promos — the Sun & Moon Mini Packs and the 25th Anniversary Mini Packs.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     },
     {
@@ -1768,7 +1768,7 @@
    },
    "sources": [
     {
-     "quote": "Pixel or Confetti Holofoil is used primarily for cards in the McDonalds Collection sets but was also featured on the Celebrations Classic Collection. The pattern consists of small, blocky reflective shapes... resembling pieces of confetti.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Pixel/confetti is chiefly a McDonald's Collection finish and also appears on the Celebrations Classic Collection; it reads as small blocky reflective flecks.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     },
     {
@@ -1797,7 +1797,7 @@
    },
    "sources": [
     {
-     "quote": "Cracked Ice Holofoil has... continued in Theme Decks throughout the HeartGold & SoulSilver Series and into the Sword & Shield Series.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Cracked ice stayed in theme decks through HeartGold & SoulSilver and into Sword & Shield.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     },
     {
@@ -1823,11 +1823,11 @@
    },
    "sources": [
     {
-     "quote": "Crosshatch Holofoil is generally used only for cards awarded at Play! Pokemon events. The pattern consists of intersecting diagonal lines that form a reflective grid across the card.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Crosshatch is reserved almost entirely for Play! Pokemon award cards; it shows as a grid of crossing diagonal lines.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     },
     {
-     "quote": "The special variants, with e.g. the 'Pokemon League'-stamp, do not have the Energy Pattern but have the Crosshatch Pattern.",
+     "quote": "Paraphrase (Collexy, 'XY era holofoil overview') — The special stamped variants, Pokemon League among them, take crosshatch rather than the Energy Pattern.",
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-xy-era/"
     },
     {
@@ -1882,7 +1882,7 @@
    },
    "sources": [
     {
-     "quote": "Holofoil cards are typically Pokemon cards... In older expansions, Holofoil Rare cards may be pulled from booster packs... They are rarer than non-holofoil Rare cards.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Holofoils are typically Pokemon cards; in older expansions Holo Rares came out of boosters and are scarcer than plain rares.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     }
    ],
@@ -1937,11 +1937,11 @@
    },
    "sources": [
     {
-     "quote": "Mirage Holofoil was introduced with the Scarlet & Violet Series. It is visually similar to the Sheen Holofoil used during the XY Series, but refracts light horizontally rather than diagonally. Standard Holo cards also have Holofoil silver borders.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Mirage foil arrives with Scarlet & Violet; it looks much like the XY sheen but throws its light sideways rather than on the diagonal, and standard holos also get foil silver borders.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     },
     {
-     "quote": "Scarlet & Violet's foil cards will feature a \"horizontal sheen.\" The borders of the cards will also be foil, thanks to the loss of yellow borders.",
+     "quote": "Paraphrase (PokeBeach, 2022-12 'Scarlet & Violet Holo Effects Revealed') — Scarlet & Violet foils use a horizontal sheen, and with the yellow borders gone the borders are foil too.",
      "url": "https://www.pokebeach.com/2022/12/scarlet-violet-holo-effects-revealed-includes-foil-card-borders"
     },
     {
@@ -1971,7 +1971,7 @@
      "url": "https://youtu.be/wQ2TvnHVdys"
     },
     {
-     "quote": "Mirage Holofoil was introduced with the Scarlet & Violet Series. It is visually similar to the Sheen Holofoil used during the XY Series, but refracts light horizontally rather than diagonally.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Mirage arrives with Scarlet & Violet, resembling the XY sheen but refracting horizontally rather than diagonally.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     }
    ],
@@ -2004,7 +2004,7 @@
    },
    "sources": [
     {
-     "quote": "Pokemon ex will feature a \"slanted sheen\" and an additional \"star layer.\" This will give Pokemon ex more pzazz.",
+     "quote": "Paraphrase (PokeBeach, 2022-12 'Scarlet & Violet Holo Effects Revealed') — Pokemon ex get a slanted sheen plus an extra star layer on top of it.",
      "url": "https://www.pokebeach.com/2022/12/scarlet-violet-holo-effects-revealed-includes-foil-card-borders"
     },
     {
@@ -2042,7 +2042,7 @@
    },
    "sources": [
     {
-     "quote": "Pokemon ex will feature a \"slanted sheen\" and an additional \"star layer.\" This will give Pokemon ex more pzazz.",
+     "quote": "Paraphrase (PokeBeach, 2022-12 'Scarlet & Violet Holo Effects Revealed') — Pokemon ex get a slanted sheen plus an extra star layer on top of it.",
      "url": "https://www.pokebeach.com/2022/12/scarlet-violet-holo-effects-revealed-includes-foil-card-borders"
     },
     {
@@ -2105,11 +2105,11 @@
    },
    "sources": [
     {
-     "quote": "Scarlet & Violet to Black Bolt & White Flare use a more intricate tile design that incorporates type symbols of different sizes. The set symbol is black-on-white, as opposed to white-on-black on non-Reverse Holo cards.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Scarlet & Violet through Black Bolt & White Flare use a busier tile layout of mixed-size type symbols, and the set symbol is printed black on white rather than white on black as on non-reverse cards.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     },
     {
-     "quote": "This set uses a mirror foil base for reverse \"holofoil\" cards, technically making the name inaccurate as they lack any of the colour scattering expected from holofoil cards.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — The set's reverse 'holofoil' cards sit on a mirror foil base, so the name is a misnomer — none of the colour scattering a holofoil produces is there.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     }
    ],
@@ -2142,7 +2142,7 @@
    },
    "sources": [
     {
-     "quote": "This set uses a mirror foil base for reverse \"holofoil\" cards, technically making the name inaccurate as they lack any of the colour scattering expected from holofoil cards.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — The set's reverse 'holofoil' cards sit on a mirror foil base, so the name is a misnomer — none of the colour scattering a holofoil produces is there.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     }
    ],
@@ -2164,11 +2164,11 @@
    },
    "sources": [
     {
-     "quote": "Mega Evolution onward returns to featuring the plain holographic background.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — From Mega Evolution onward the reverse background is plain holographic again.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     },
     {
-     "quote": "After all mega evolution sets come out i will update this page for now only the ones that are out",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — An editor's note on the page says it currently covers only the Mega Evolution sets already released, and will be updated as the rest arrive.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     }
    ],
@@ -2313,7 +2313,7 @@
      "url": "https://youtu.be/wQ2TvnHVdys"
     },
     {
-     "quote": "Scarlet & Violet to Black Bolt & White Flare use a more intricate tile design that incorporates type symbols of different sizes. The set symbol is black-on-white, as opposed to white-on-black on non-Reverse Holo cards.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Scarlet & Violet through Black Bolt & White Flare use a busier tile layout of mixed-size type symbols, and the set symbol is printed black on white rather than white on black as on non-reverse cards.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     }
    ],
@@ -2402,7 +2402,7 @@
    },
    "sources": [
     {
-     "quote": "Cracked Ice Holofoil was first used for the exclusive version of the featured card in Theme Decks from the Platinum Series. Its use has continued in Theme Decks throughout the HeartGold & SoulSilver Series and into the Sword & Shield Series.",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Cracked ice began on the exclusive featured card of Platinum-era theme decks and stayed in theme decks through HeartGold & SoulSilver and into Sword & Shield.",
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil"
     }
    ],
@@ -2426,11 +2426,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Starlight Holofoil was the pattern used for Holo cards in the Base, Jungle, and Fossil sets. It consists of starbursts of different sizes spread across the image, with a slightly blurry appearance."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Base, Jungle and Fossil holos use Starlight — varied starbursts over the art, with a soft, slightly out-of-focus look."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-wotc-era/",
-     "quote": "In the Base Set, the Starlight Holofoil pattern was used for some variants of all Masters with the rarity Holo Rare."
+     "quote": "Paraphrase (Collexy, 'WOTC-era holofoil overview') — In Base Set, starlight covers some variants of every Holo Rare master."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -2463,11 +2463,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Cosmos Holofoil was introduced for all Holo cards in Base Set 2 and was used for all Holo cards until Call of Legends, along with various promotional cards."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Cosmos arrives with Base Set 2 and stays the holo finish through Call of Legends, plus assorted promos."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-wotc-era/",
-     "quote": "As from Base Set 2, the Cosmos Holofoil pattern was used for all variants (including English) until Neo Destiny, with the exception of Legendary Collection."
+     "quote": "Paraphrase (Collexy, 'WOTC-era holofoil overview') — From Base Set 2 to Neo Destiny cosmos covers all variants, English included, with Legendary Collection the exception."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -2493,7 +2493,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-wotc-era/",
-     "quote": "The Starlight Holofoil pattern made a brief return in the Legendary Collection for, in principle, all Masters with the rarity Holo Rare (the set was only printed in English)."
+     "quote": "Paraphrase (Collexy, 'WOTC-era holofoil overview') — Starlight came back briefly for Legendary Collection, in principle on every Holo Rare master; the set was English-only."
     }
    ],
    "conflicts": "Bulbapedia's Starlight section names only Base/Jungle/Fossil and does not list Legendary Collection, so the LC standard-holo starlight claim rests on Collexy alone; the video's Starlight chapter also does not mention LC.",
@@ -2517,11 +2517,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Cosmos Holofoil was introduced for all Holo cards in Base Set 2 and was used for all Holo cards until Call of Legends..."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Cosmos came in with Base Set 2 and remained the holo finish until Call of Legends."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-wotc-era/",
-     "quote": "For Aquapolis and Skyridge, there are masters that have either a Cosmos Holofoil variant (e.g. Ampharos H1/H32) or a Non-Holofoil and a Reverse Holofoil variant."
+     "quote": "Paraphrase (Collexy, 'WOTC-era holofoil overview') — In Aquapolis and Skyridge, masters have either a cosmos variant (Ampharos H1/H32, for instance) or a non-holofoil plus a reverse-holo variant."
     }
    ],
    "conflicts": null,
@@ -2543,7 +2543,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-wotc-era/",
-     "quote": "The Refractor Holofoil pattern was introduced for the first time in Neo Destiny... the Pokemon itself receives a reflective foil treatment, whereas the background does not have any holofoil pattern."
+     "quote": "Paraphrase (Collexy, 'WOTC-era holofoil overview') — Refractor debuts in Neo Destiny — reflective foil on the Pokemon with no foil on the background."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -2569,11 +2569,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Legendary Collection features a 'fireworks' design over the entire body of the card, aside from the card's artwork."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Legendary Collection uses a fireworks design across the whole card body except the artwork."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-wotc-era/",
-     "quote": "the Set Reverse Holofoil pattern used in Legendary Collection has a Fireworks pattern... resembles an exploding firework. This pattern only appeared in this set."
+     "quote": "Paraphrase (Collexy, 'WOTC-era holofoil overview') — Legendary Collection's set reverse is the Fireworks pattern, which looks like a firework bursting; no other set used it."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -2601,11 +2601,11 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-wotc-era/",
-     "quote": "The Reverse Holofoil pattern was changed in Expedition, Aquapolis and Skyridge. This Reverse Holofoil pattern resembles a mirror-like effect without any specific pattern, a so-called Mirror pattern."
+     "quote": "Paraphrase (Collexy, 'WOTC-era holofoil overview') — Expedition, Aquapolis and Skyridge switched the reverse to a plain mirror — reflective, with no pattern over it."
     },
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Expedition Base Set to EX Team Magma vs Team Aqua feature a flat holographic finish over every aspect of the card aside from its art."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — From Expedition through EX Team Magma vs Team Aqua the reverse is a flat holographic wash over everything except the artwork."
     }
    ],
    "conflicts": "Collexy calls this e-series reverse 'Mirror pattern'; Bulbapedia calls it a 'flat holographic finish' and does not use the name mirror. The video reserves the 'mirror' slug for the Neo Destiny Shining refractor and does not explicitly cover the e-series reverse, so the mirror slug is reused here on Collexy's naming.",
@@ -2629,7 +2629,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-wotc-era/",
-     "quote": "the variants in the non-standard sets that do have a Reverse Holofoil variant... have some variants with the Cosmos Pattern... could be found in Wizards Black Star Promos, Southern Islands and Best of Game."
+     "quote": "Paraphrase (Collexy, 'WOTC-era holofoil overview') — Among the non-standard sets, the ones that do have reverse variants include some with the cosmos pattern — Wizards Black Star Promos, Southern Islands and Best of Game."
     }
    ],
    "conflicts": "Only Collexy documents this Cosmos-pattern reverse for the non-standard sets; Bulbapedia and the video do not break these out by name.",
@@ -2651,7 +2651,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-wotc-era/",
-     "quote": "Machamp... has one variant in English that was printed with the Cosmos Holofoil pattern and the WOTC copyright year (c) 1999 from the 2-Player CD-ROM Starter Set."
+     "quote": "Paraphrase (Collexy, 'WOTC-era holofoil overview') — One English Machamp variant was printed with cosmos and the (c) 1999 WOTC copyright year, from the 2-Player CD-ROM Starter Set."
     }
    ],
    "conflicts": null,
@@ -2673,7 +2673,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-wotc-era/",
-     "quote": "due to an unofficial WOTC release there are some variants that erroneously received the Cosmos Holofoil pattern."
+     "quote": "Paraphrase (Collexy, 'WOTC-era holofoil overview') — An unofficial WOTC release left some variants carrying cosmos in error."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -2699,7 +2699,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-wotc-era/",
-     "quote": "In the WOTC Energies, each Master has one variant, which has the Cosmos Holofoil pattern."
+     "quote": "Paraphrase (Collexy, 'WOTC-era holofoil overview') — Each WOTC energy master has a single variant, and it is cosmos."
     }
    ],
    "conflicts": null,
@@ -2823,11 +2823,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Many English expansions released by Wizards of the Coast gave non-holofoil counterparts to cards originally released only in holofoil in Japan... In the e-Card Series, Japanese releases also had non-holofoil variants of otherwise holofoil cards, as holofoil cards cannot be scanned by the e-Reader."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Many English Wizards expansions gave non-holo counterparts to cards that were holo-only in Japan; in the e-Card series the Japanese releases also had non-holo versions, because the e-Reader cannot scan a holofoil."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-wotc-era/",
-     "quote": "Charizard... has one extra variant that has a Non-Holofoil pattern from the Lava Theme Deck."
+     "quote": "Paraphrase (Collexy, 'WOTC-era holofoil overview') — Charizard has one extra non-holofoil variant, from the Lava theme deck."
     }
    ],
    "conflicts": null,
@@ -2855,11 +2855,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Cosmos Holofoil was introduced for all Holo cards in Base Set 2 and was used for all Holo cards until Call of Legends... It consists of dots and circles of different sizes."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Cosmos arrived with Base Set 2 and ran until Call of Legends; it is dots and rings at varying sizes."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-diamond-pearl-era/",
-     "quote": "In principle, the Cosmos Holofoil pattern is used for all cards that have the rarity Holo Rare, Ultra Rare and Secret Rare in the Diamond & Pearl era."
+     "quote": "Paraphrase (Collexy, 'Diamond & Pearl era holofoil overview') — As a rule the Diamond & Pearl era puts cosmos on every Holo Rare, Ultra Rare and Secret Rare."
     }
    ],
    "conflicts": "The Sleeve No Card Behind video (https://youtu.be/wQ2TvnHVdys, ch. 'Vertical Sheen') calls this era's standard-set default holo 'vertical-sheen', describing a smooth directional sheen, whereas both Bulbapedia and Collexy explicitly describe it as a dot/circle 'Cosmos' pattern. The two taxonomies disagree on the physical pattern; the video may be distinguishing a foil that Bulbapedia/Collexy lump under 'Cosmos'.",
@@ -2887,7 +2887,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-diamond-pearl-era/",
-     "quote": "In the Diamond & Pearl era, the Set Reverse Holofoil pattern is always the Mirror Pattern, i.e. a Reverse Holofoil that has a reflective pattern without any additional specific pattern."
+     "quote": "Paraphrase (Collexy, 'Diamond & Pearl era holofoil overview') — The Diamond & Pearl set reverse is always mirror — reflective, with no pattern over it."
     }
    ],
    "conflicts": null,
@@ -2912,7 +2912,7 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Cosmos Holofoil was introduced for all Holo cards in Base Set 2 and was used for all Holo cards until Call of Legends... It consists of dots and circles of different sizes."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Cosmos arrived with Base Set 2 and ran until Call of Legends; it is dots and rings at varying sizes."
     }
    ],
    "conflicts": "The video (https://youtu.be/wQ2TvnHVdys, ch. 'Vertical Sheen') states vertical-sheen runs 'through Platinum, Call of Legends...', i.e. it classes the Platinum-era standard holo as a sheen, not cosmos. No Collexy Platinum-era article was available to break the tie; Bulbapedia's single statement (Cosmos through Call of Legends) is the only direct set-level source.",
@@ -2937,11 +2937,11 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-diamond-pearl-era/",
-     "quote": "In the Diamond & Pearl era, the Set Reverse Holofoil pattern is always the Mirror Pattern, i.e. a Reverse Holofoil that has a reflective pattern without any additional specific pattern."
+     "quote": "Paraphrase (Collexy, 'Diamond & Pearl era holofoil overview') — The Diamond & Pearl set reverse is always mirror — reflective, with no pattern over it."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-heartgold-soulsilver-era/",
-     "quote": "In the HeartGold & SoulSilver era, the Set Reverse Holofoil Pattern is always the Mirror Pattern, i.e. a Reverse Holofoil that has a reflective pattern without any additional specific pattern."
+     "quote": "Paraphrase (Collexy, 'HeartGold & SoulSilver era holofoil overview') — The HeartGold & SoulSilver set reverse is always mirror — reflective, with no pattern over it."
     }
    ],
    "conflicts": "No source directly states the Platinum-era set reverse pattern; this row is an inference from the two adjacent eras (Collexy has no Platinum-era article).",
@@ -2967,11 +2967,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Cosmos Holofoil was introduced for all Holo cards in Base Set 2 and was used for all Holo cards until Call of Legends... It consists of dots and circles of different sizes."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Cosmos arrived with Base Set 2 and ran until Call of Legends; it is dots and rings at varying sizes."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-heartgold-soulsilver-era/",
-     "quote": "the Cosmos Holofoil pattern is used for all cards that have the rarity Rare (only applies to the three Alph Lithographs), Holo Rare, Ultra Rare and Secret Rare in the HeartGold & SoulSilver era."
+     "quote": "Paraphrase (Collexy, 'HeartGold & SoulSilver era holofoil overview') — In the HGSS era cosmos covers Holo Rare, Ultra Rare and Secret Rare, plus the Rare rarity in the case of the three Alph Lithographs."
     }
    ],
    "conflicts": "The video (https://youtu.be/wQ2TvnHVdys, ch. 'Vertical Sheen') names HGSS as the namesake of the 'vertical-sheen' default holo and extends it 'through Platinum, Call of Legends, Black and White, and XY', contradicting Bulbapedia/Collexy which label the HGSS/CoL standard holo as dot-and-circle 'Cosmos'. Same terminological conflict as the DP-era row.",
@@ -2997,7 +2997,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-heartgold-soulsilver-era/",
-     "quote": "In the HeartGold & SoulSilver era, the Set Reverse Holofoil Pattern is always the Mirror Pattern, i.e. a Reverse Holofoil that has a reflective pattern without any additional specific pattern."
+     "quote": "Paraphrase (Collexy, 'HeartGold & SoulSilver era holofoil overview') — The HeartGold & SoulSilver set reverse is always mirror — reflective, with no pattern over it."
     }
    ],
    "conflicts": null,
@@ -3021,11 +3021,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Cracked Ice Holofoil was first used for the exclusive version of the featured card in Theme Decks from the Platinum Series. Its use has continued in Theme Decks throughout the HeartGold & SoulSilver Series."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Cracked ice began on the exclusive featured card in Platinum theme decks and carried on through the HeartGold & SoulSilver theme decks."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-heartgold-soulsilver-era/",
-     "quote": "The Cracked Ice Holofoil, which appeared in the EX Series era, Diamond & Pearl era and the Platinum era, made its return in the HeartGold & SoulSilver era."
+     "quote": "Paraphrase (Collexy, 'HeartGold & SoulSilver era holofoil overview') — Cracked ice, seen in the EX Series, Diamond & Pearl and Platinum eras, returns in HeartGold & SoulSilver."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -3054,15 +3054,15 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Crosshatch Holofoil is generally used only for cards awarded at Play! Pokémon events. The pattern consists of intersecting diagonal lines that form a reflective grid across the card."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Crosshatch is kept for Play! Pokemon award cards — crossing diagonals forming a reflective grid."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-diamond-pearl-era/",
-     "quote": "There were no new Holofoil patterns, except for a new Reverse Holofoil pattern, Crosshatch Reverse Holofoil pattern."
+     "quote": "Paraphrase (Collexy, 'Diamond & Pearl era holofoil overview') — The era brought no new holo patterns apart from one new reverse, crosshatch."
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-heartgold-soulsilver-era/",
-     "quote": "the Crosshatch Pattern is only occasionally used and deviates from the Set Reverse Holofoil Pattern, i.e. Mirror Pattern."
+     "quote": "Paraphrase (Collexy, 'HeartGold & SoulSilver era holofoil overview') — Crosshatch is used only occasionally, in place of the era's mirror set reverse."
     },
     {
      "url": "https://youtu.be/wQ2TvnHVdys",
@@ -3092,7 +3092,7 @@
    "sources": [
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-diamond-pearl-era/",
-     "quote": "In the Diamond & Pearl Promos, some Masters have a variant with the Cosmos Holofoil pattern. The Cosmos Holofoil pattern treatment was not applied to every Master in this set, as the other cards received a Non-Holofoil treatment."
+     "quote": "Paraphrase (Collexy, 'Diamond & Pearl era holofoil overview') — Some Diamond & Pearl promo masters have a cosmos variant; the rest of the set is non-holofoil."
     }
    ],
    "conflicts": "The video dates the denser 'cosmos-ii-pixel' promo pattern to the Platinum series, implying DP-era promos still use the original Cosmos pattern; Collexy labels DP promos simply 'Cosmos' without the pixel/smooth distinction.",
@@ -3122,7 +3122,7 @@
     },
     {
      "url": "https://insights.collexy.com/database-insight-holofoil-overview-heartgold-soulsilver-era/",
-     "quote": "In HeartGold & SoulSilver Promos, there are 19 Masters, where each Master has 1 variant with the Cosmos Holofoil."
+     "quote": "Paraphrase (Collexy, 'HeartGold & SoulSilver era holofoil overview') — HGSS Promos has 19 masters, each with one cosmos variant."
     }
    ],
    "conflicts": "Collexy labels the HGSS promo foil generically as 'Cosmos' and does not distinguish the denser pixel variant that the video isolates as 'cosmos-ii-pixel'; the two likely describe the same physical promo foil at different granularity.",
@@ -3144,7 +3144,7 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
-     "quote": "Cracked Ice Holofoil has also been seen on a number of promotional cards included in Blister Packs from Platinum onwards."
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Cracked ice also shows up on a range of blister-pack promos from Platinum onward."
     }
    ],
    "conflicts": null,
@@ -3218,7 +3218,7 @@
     },
     {
      "url": "https://sleevenocardbehind.com/gold-pokemon-cards-everything-you-need-to-know/",
-     "quote": "special embossed gold holofoil cards ... Gold cards fall into the 'secret rare' category, appearing in every set as booster pack pulls"
+     "quote": "Paraphrase (Sleeve No Card Behind, 'Gold Pokemon Cards: Everything You Need To Know') — Gold cards are embossed gold holofoil; they sit in the secret-rare tier and turn up in every set as a booster pull."
     }
    ],
    "conflicts": "Era-wide claim (video + collector article, no per-set source); catalog 'secret rare' buckets mix rainbow and gold treatments - split via the 'gold' facet or rarity strings, not this row alone."
@@ -3241,7 +3241,7 @@
     },
     {
      "url": "https://sleevenocardbehind.com/gold-pokemon-cards-everything-you-need-to-know/",
-     "quote": "special embossed gold holofoil cards"
+     "quote": "Paraphrase (Sleeve No Card Behind, 'Gold Pokemon Cards: Everything You Need To Know') — Gold cards are embossed gold holofoil."
     },
     {
      "url": "https://youtu.be/8CvE7sXbJOo",
@@ -3264,11 +3264,11 @@
    "sources": [
     {
      "url": "https://sleevenocardbehind.com/gold-pokemon-cards-everything-you-need-to-know/",
-     "quote": "Gold cards fall into the 'secret rare' category, appearing in every set as booster pack pulls with extremely low pull rates."
+     "quote": "Paraphrase (Sleeve No Card Behind, 'Gold Pokemon Cards: Everything You Need To Know') — Gold cards sit in the secret-rare tier, appear in every set as booster pulls, and are pulled very rarely."
     },
     {
      "url": "https://bleedingcool.com/games/a-holographic-history-of-the-pokemon-tcg-gold-shiny-pokemon/",
-     "quote": "(series article on gold Shiny Pokemon cards - gold treatment continuity across eras)"
+     "quote": "Paraphrase (Bleeding Cool, 'A Holographic History of the Pokemon TCG: Gold Shiny Pokemon') — The instalment of the series covering gold Shiny Pokemon cards, on how the gold treatment carries across eras."
     }
    ],
    "conflicts": "Emboss-depth differences per era are collector claims; corpus footage covers SWSH only."
@@ -3295,11 +3295,11 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Pok%C3%A9mon_VSTAR_(TCG)",
-     "quote": "Pokémon VSTAR cards have a white, pearlescent border with gold accents, in contrast to Pokémon V's black border and white accents."
+     "quote": "Paraphrase (Bulbapedia, 'Pokémon VSTAR (TCG)') — VSTAR borders are pearlescent white with gold accents, where Pokemon V use black borders with white accents."
     },
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Pok%C3%A9mon_VSTAR_(TCG)",
-     "quote": "All Pokémon VSTAR cards are etched, including the Regular prints. All Regular prints of Pokémon VSTAR depict the Pokémon surrounded by a golden aura."
+     "quote": "Paraphrase (Bulbapedia, 'Pokémon VSTAR (TCG)') — Every VSTAR print is etched, regular prints included, and the regular prints show the Pokemon ringed by a golden aura."
     },
     {
      "url": "https://youtu.be/wRDwJyv-aP8",
@@ -3326,11 +3326,11 @@
    "sources": [
     {
      "url": "https://bleedingcool.com/games/a-holographic-history-of-the-pokemon-tcg-baby-shiny-pokemon/",
-     "quote": "textured, silver foil with a burst of sparkles that recreates the in-game animation of encountering a Shiny ... even the border area of the card has a tactile difference to a smooth common card"
+     "quote": "Paraphrase (Bleeding Cool, 'A Holographic History of the Pokemon TCG: Baby Shiny Pokemon') — A textured silver foil scattered with sparkles, standing in for the in-game shiny encounter animation; even the border feels different to the touch from a smooth common."
     },
     {
      "url": "https://bleedingcool.com/games/a-holographic-history-of-the-pokemon-tcg-shiny-pokemon-gx/",
-     "quote": "The background of these cards is pure textured, white foil which takes on a silvery look when it hits the light."
+     "quote": "Paraphrase (Bleeding Cool, 'A Holographic History of the Pokemon TCG: Shiny Pokemon GX') — The background is entirely textured white foil, reading silvery under light."
     },
     {
      "url": "https://youtu.be/_cyddOc1SMU",
@@ -3356,7 +3356,7 @@
    "sources": [
     {
      "url": "https://bleedingcool.com/games/a-holographic-history-of-the-pokemon-tcg-baby-shiny-pokemon/",
-     "quote": "Hidden Fates versions feature more subtle, paler sparkles [while Shining Fates has] much brighter, yellow sparkles [and] a reddish-purple streak effect surrounding the Pokémon to enhance the burst of sparkles"
+     "quote": "Paraphrase (Bleeding Cool, 'A Holographic History of the Pokemon TCG: Baby Shiny Pokemon') — Hidden Fates keeps its sparkles pale and restrained; Shining Fates makes them brighter and yellower and rings the Pokemon with a reddish-purple streak that plays up the burst."
     }
    ],
    "conflicts": "Brighter-sparkle variant of the same slug; if per-set tuning is wanted it is a uniform tweak, not a new type."
@@ -3399,7 +3399,7 @@
    "sources": [
     {
      "url": "https://bleedingcool.com/games/a-holographic-history-of-the-pokemon-tcg-shining-pokemon/",
-     "quote": "The set reintroduced Shiny Pokémon by rendering the Pokémon itself [in] textured, gleaming foil."
+     "quote": "Paraphrase (Bleeding Cool, 'A Holographic History of the Pokemon TCG: Shining Pokemon') — The set brought Shiny Pokemon back by printing the Pokemon itself in textured, gleaming foil."
     }
    ],
    "conflicts": "Subject-scoped variant kept on the shiny-vault slug at low confidence rather than minted as its own type; revisit if footage shows a materially different animation."
@@ -3421,7 +3421,7 @@
    "sources": [
     {
      "url": "https://bulbapedia.bulbagarden.net/wiki/Detective_Pikachu_(TCG)",
-     "quote": "Each booster pack contained four Holofoil cards."
+     "quote": "Paraphrase (Bulbapedia, 'Detective Pikachu (TCG)') — Each booster pack held four holofoil cards."
     },
     {
      "url": "https://youtu.be/WjuDazguHnE",
