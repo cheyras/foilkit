@@ -905,3 +905,58 @@ which is the reason three hundred cards hold six textures rather than three
 hundred and six. Changing a template's geometry requires changing its
 `maskVectorId`; the cache key is the id and the size, not the function
 identity.
+
+## 2026-09-01 — The dead band probes, because a one-way ladder is not a ladder
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** After `probeAfterMs` (default 5s) sitting in the dead band — under
+budget, but without the clear headroom a fast climb needs — the ladder steps up
+ONE rung to see whether that rung holds. A probe undone by a drop within
+`probeGraceMs` counts as refused and the probe interval doubles, to a 60s
+ceiling; clear headroom resets it.
+
+**Why:** CI found this, on the same run as the pixel-ratio bug, and it is the
+more interesting of the two. The GitHub runner's resting frame work landed
+inside the dead band. That made it stable at step 0 — correctly, nothing was
+over budget — but it also made it stable at step 5 after a transient, because
+climbing required headroom the machine never had. The run recovered 8 → 5 and
+stopped, and a page in that state is quietly worse until it reloads. "It climbs
+back up as headroom returns" cannot be true if the ladder is a one-way door: a
+stall becomes indistinguishable from a correct answer.
+
+The dead band's *width* is what makes this bite. It is 0.6 to 1.0 of the target
+budget — 10ms to 16.7ms at 60fps — which is a large and entirely ordinary place
+for a real machine to live.
+
+**Implications:** a transient can no longer permanently degrade quality; the
+worst case is a machine that oscillates between two adjacent rungs, and the
+backoff makes that rare and then rarer. Two tests pin it: a transient followed
+by 40s of dead-band work must return to step 0, and a rung-dependent workload
+where the step above genuinely does not hold must produce fewer than 30 rung
+changes over 320 simulated seconds — where a fixed 500ms probe would produce
+about twelve hundred.
+
+## 2026-09-01 — Boxes handed to a renderer are in CSS pixels
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `cardGlBox` returns CSS pixels, and everything the stage hands
+three.js is in that unit. The only device-pixel arithmetic left is the blit's
+`drawImage` source rect, which reads the drawing buffer directly.
+
+**Why:** three multiplies every `setViewport`/`setScissor` by its own
+`_pixelRatio` on the way to GL. The stage was converting to device pixels first,
+so the ratio went on twice. That is the identity at ratio 1 and invisible; at
+0.5 it draws every card into the wrong quarter of the screen. It survived local
+testing and four green checks in the same CI run for one reason: this machine's
+ladder rests at step 0, so every screenshot was taken at ratio 1. The runner's
+rests lower, and both modes screenshotted flat background — one distinct colour,
+luma 14 to 14 — while contexts, programs, textures and draw calls all still read
+correct. The cards were being drawn perfectly, somewhere else.
+
+**Implications:** the acceptance now screenshots each mode a second time with
+the ladder PINNED to a reduced-resolution step. A bug invisible at full quality
+is not caught by a test that only ever runs at full quality, and waiting for a
+slow machine to reveal it is not a test — it is luck, and this time the luck
+belonged to CI rather than to a user.

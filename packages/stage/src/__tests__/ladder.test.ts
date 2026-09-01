@@ -106,14 +106,96 @@ test('headroom climbs back, and only after it is sustained', () => {
   assert.equal(ladder.step, 0, 'sustained headroom returns full quality')
 })
 
-test('the dead band holds the rung instead of oscillating', () => {
+test('the dead band holds the rung rather than flapping', () => {
   // 14ms of work: inside the 16.6ms budget (so no drop) but above the 60%
-  // headroom gate (so no climb). A ladder without a dead band flaps here.
-  const ladder = createLadder({ dropAfterMs: 100, climbAfterMs: 200, warmupFrames: 2 })
+  // headroom gate (so no fast climb). A ladder without a dead band flaps here.
+  const ladder = createLadder({
+    dropAfterMs: 100,
+    climbAfterMs: 200,
+    warmupFrames: 2,
+    probeAfterMs: 100000,
+  })
   let now = run(ladder, 120, 1200)
   const settled = ladder.step
   now = run(ladder, 14, 4000, now)
-  assert.equal(ladder.step, settled, 'the dead band must be stable')
+  assert.equal(ladder.step, settled, 'the dead band must be stable inside the probe window')
+})
+
+test('a transient does not degrade the page until it reloads', () => {
+  // The failure this exists to prevent, and it was a real CI run: a machine
+  // whose resting work lands in the dead band is stable WHEREVER it happens to
+  // be, so one transient knocks it down a rung it can never climb out of. The
+  // ladder must probe its way back up.
+  const ladder = createLadder({
+    dropAfterMs: 100,
+    climbAfterMs: 1500,
+    warmupFrames: 2,
+    probeAfterMs: 1000,
+  })
+  let now = run(ladder, 120, 3000) // the transient
+  assert.ok(ladder.step >= 8, `precondition: knocked well down, got ${ladder.step}`)
+  // 14ms is the dead band at every 60fps step: never over budget, never clear
+  // headroom. The old ladder sat here forever.
+  now = run(ladder, 14, 40000, now)
+  assert.equal(ladder.step, 0, 'a probing ladder finds its way back to full quality')
+})
+
+test('probing is slower than climbing on clear headroom', () => {
+  const opts = { dropAfterMs: 100, climbAfterMs: 300, warmupFrames: 2, probeAfterMs: 3000 }
+  const stepsToClimb = (workMs: number) => {
+    const ladder = createLadder(opts)
+    let now = run(ladder, 120, 3000)
+    const from = ladder.step
+    let elapsed = 0
+    while (ladder.step > 0 && elapsed < 200000) {
+      now = run(ladder, workMs, 500, now)
+      elapsed += 500
+    }
+    return { from, elapsed }
+  }
+  const fast = stepsToClimb(2)
+  const probed = stepsToClimb(14)
+  assert.equal(fast.from, probed.from)
+  assert.ok(
+    probed.elapsed > fast.elapsed * 3,
+    `probe path ${probed.elapsed}ms should be much slower than headroom path ${fast.elapsed}ms`,
+  )
+})
+
+test('a refused probe backs off instead of flapping forever', () => {
+  // Work that depends on the rung: expensive at high resolution, affordable
+  // once the ratio is down. The step above genuinely does not hold, so every
+  // probe is refused — and the ladder must stop asking so often.
+  const ladder = createLadder({
+    dropAfterMs: 100,
+    climbAfterMs: 100000,
+    warmupFrames: 2,
+    probeAfterMs: 500,
+    probeGraceMs: 1000,
+  })
+  let now = 0
+  let last = ladder.step
+  let transitions = 0
+  for (let i = 0; i < 20000; i++) {
+    now += 16
+    const plan = ladder.observe(plan0(ladder), now)
+    if (plan.step !== last) {
+      transitions += 1
+      last = plan.step
+    }
+  }
+  function plan0(l: ReturnType<typeof createLadder>): number {
+    return l.plan.pixelRatioScale > 0.5 ? 40 : 12
+  }
+  assert.ok(ladder.step >= 3, `it should settle where the work fits, got ${ladder.step}`)
+  // The interval doubles from 500ms to the 60s ceiling — 500, 1000, 2000, 4000,
+  // 8000, 16000, 32000, then 60000 — so 320 seconds buys about eleven probes and
+  // twice that many rung changes. Without the backoff it would be six hundred
+  // probes, which is a visibly pulsing page.
+  assert.ok(
+    transitions < 30,
+    `${transitions} rung changes over 320s is flapping, not backing off`,
+  )
 })
 
 test('a lower cadence is judged against its own budget', () => {

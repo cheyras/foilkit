@@ -50,7 +50,15 @@ Two details that are easy to get wrong and are therefore load-bearing:
   Rung 2 lengthens that gap on purpose; a ladder reading its own cadence as
   evidence of load could never climb back.
 - Dropping is judged against the cadence being run; climbing against the
-  cadence being aimed at. The gap between them is the hysteresis.
+  cadence being aimed at. The gap between them is the **dead band**, where a
+  correctly-chosen rung sits.
+- The dead band is where a naive ladder becomes a **one-way door**: a machine
+  whose resting work lands in it is stable wherever it happens to be, so one
+  transient knocks it down a rung it can never climb out of. So after
+  `probeAfterMs` in the dead band the ladder **probes** one step up to see
+  whether that step holds. A probe undone by a drop counts as refused and the
+  interval doubles, to a ceiling — a machine that genuinely cannot hold the
+  step above settles instead of pulsing.
 
 ## Tilt sources
 

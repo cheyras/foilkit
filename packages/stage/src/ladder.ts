@@ -102,10 +102,30 @@ export interface LadderOptions {
   climbAfterMs?: number
   /**
    * Fraction of the TARGET frame budget the smoothed work time must sit under
-   * before the ladder climbs. Default 0.6 — the gap between this and 1.0 is
-   * the hysteresis that stops a rung oscillating.
+   * before the ladder climbs on the fast path. Default 0.6 — the gap between
+   * this and 1.0 is the dead band, where a correctly-chosen rung sits.
    */
   climbHeadroom?: number
+  /**
+   * How long the ladder sits in the DEAD BAND — under budget, but without
+   * clear headroom — before it probes one step up to see whether the step
+   * above holds. Default 5000ms.
+   *
+   * Without this the ladder is a one-way door. A machine whose resting work
+   * lands in the dead band is stable wherever it happens to be, so a single
+   * transient — one big decode, one GC pause — knocks it down a rung it can
+   * never climb out of, and the page is quietly worse until it reloads. "It
+   * climbs back up as headroom returns" has to mean this too, or a stall is
+   * indistinguishable from a correct answer.
+   */
+  probeAfterMs?: number
+  /**
+   * A probe that is undone by a drop within this window counts as refused, and
+   * the probe interval doubles. Default 3000ms.
+   */
+  probeGraceMs?: number
+  /** Ceiling for the doubling. Default 60000ms. */
+  maxProbeMs?: number
   /** EMA weight for a new sample. Default 0.2. */
   smoothing?: number
   /** Frames ignored at startup, where shader compilation dominates. Default 10. */
@@ -146,6 +166,9 @@ export function createLadder(options: LadderOptions = {}): Ladder {
   const climbHeadroom = options.climbHeadroom ?? 0.6
   const alpha = options.smoothing ?? 0.2
   const warmup = options.warmupFrames ?? 10
+  const probeAfterMs = options.probeAfterMs ?? 5000
+  const probeGraceMs = options.probeGraceMs ?? 3000
+  const maxProbeMs = options.maxProbeMs ?? 60000
 
   const targetBudget = 1000 / targetFps
 
@@ -154,10 +177,14 @@ export function createLadder(options: LadderOptions = {}): Ladder {
   let seen = 0
   let overSince = Number.NaN
   let underSince = Number.NaN
+  let deadSince = Number.NaN
+  let probeMs = probeAfterMs
+  let probedAt = Number.NaN
 
   const clearTimers = () => {
     overSince = Number.NaN
     underSince = Number.NaN
+    deadSince = Number.NaN
   }
 
   return {
@@ -179,6 +206,8 @@ export function createLadder(options: LadderOptions = {}): Ladder {
       step = 0
       ema = Number.NaN
       seen = 0
+      probeMs = probeAfterMs
+      probedAt = Number.NaN
       clearTimers()
     },
     observe(workMs: number, nowMs: number): StagePlan {
@@ -194,23 +223,45 @@ export function createLadder(options: LadderOptions = {}): Ladder {
       const climbBudget = targetBudget * climbHeadroom
 
       if (ema > runningBudget) {
-        underSince = Number.NaN
         if (Number.isNaN(overSince)) overSince = nowMs
+        underSince = Number.NaN
+        deadSince = Number.NaN
         if (nowMs - overSince >= dropAfterMs && step < LADDER_STEPS.length - 1) {
+          // A probe undone this quickly was refused: back off before trying
+          // that step again, so a machine that genuinely cannot hold it
+          // settles instead of flapping.
+          if (!Number.isNaN(probedAt) && nowMs - probedAt <= probeGraceMs) {
+            probeMs = Math.min(probeMs * 2, maxProbeMs)
+          }
           step += 1
+          probedAt = Number.NaN
           clearTimers()
         }
       } else if (ema <= climbBudget) {
-        overSince = Number.NaN
         if (Number.isNaN(underSince)) underSince = nowMs
+        overSince = Number.NaN
+        deadSince = Number.NaN
         if (nowMs - underSince >= climbAfterMs && step > 0) {
           step -= 1
+          // Clear headroom is evidence the machine changed, not a guess:
+          // reset the backoff so the next stall is judged afresh.
+          probeMs = probeAfterMs
+          probedAt = Number.NaN
           clearTimers()
         }
       } else {
-        // The dead band between "over budget" and "clear headroom". Holding
-        // here on purpose: this is the state a correctly-chosen rung sits in.
-        clearTimers()
+        // The dead band: under budget, but without clear headroom. This is
+        // where a correctly-chosen rung SITS, so nothing happens quickly — but
+        // something has to happen eventually, or the ladder is a one-way door
+        // and one transient degrades the page until it reloads. So it probes.
+        if (Number.isNaN(deadSince)) deadSince = nowMs
+        overSince = Number.NaN
+        underSince = Number.NaN
+        if (nowMs - deadSince >= probeMs && step > 0) {
+          step -= 1
+          probedAt = nowMs
+          clearTimers()
+        }
       }
       return LADDER_STEPS[step]!
     },
