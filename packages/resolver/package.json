@@ -22,8 +22,5 @@
   "sideEffects": false,
   "dependencies": {
     "@foilkit/patterns": "workspace:*"
-  },
-  "scripts": {
-    "build": "tsc -b && node ../../tools/copy-json.mjs packages/resolver"
   }
 }

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Chey Rasmussen
 // tools/migrate-corpus-frame.mts — cut the mask corpus over to canonical space.
 //
 //   node --conditions source tools/migrate-corpus-frame.mts --dry-run

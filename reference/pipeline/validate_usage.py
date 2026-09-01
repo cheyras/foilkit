@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Chey Rasmussen
 """Executed check for an era-lane usage-research deliverable (usage-rows.json).
 
 Prints WHY it fails: schema, allowed pattern slugs, per-row citations with quotes,

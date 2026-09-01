@@ -16,8 +16,5 @@
   "files": [
     "dist"
   ],
-  "sideEffects": false,
-  "scripts": {
-    "build": "tsc -b && node ../../tools/copy-json.mjs packages/core"
-  }
+  "sideEffects": false
 }

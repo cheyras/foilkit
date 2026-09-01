@@ -1,0 +1,384 @@
+{
+  "generatedAt": "2026-09-01T05:53:20.547Z",
+  "before": [
+    245,
+    337
+  ],
+  "after": [
+    63,
+    88
+  ],
+  "cardBox": {
+    "x": 177,
+    "y": 55,
+    "w": 526,
+    "h": 722
+  },
+  "interiorBox": {
+    "x": 191,
+    "y": 66,
+    "w": 498,
+    "h": 701
+  },
+  "control": {
+    "before": {
+      "meanAE": 0,
+      "meanAECard": 0,
+      "meanAEInterior": 0,
+      "maxAE": 0,
+      "pctChanged": 0
+    },
+    "after": {
+      "meanAE": 0,
+      "meanAECard": 0,
+      "meanAEInterior": 0,
+      "maxAE": 0,
+      "pctChanged": 0
+    }
+  },
+  "results": {
+    "big-glitter": {
+      "meanAE": 6.028775601150431,
+      "meanAECard": 11.485437753882023,
+      "meanAEInterior": 11.297658537145251,
+      "maxAE": 167.66666666666666,
+      "pctChanged": 37.754829204409035
+    },
+    "confetti": {
+      "meanAE": 24.844738349881734,
+      "meanAECard": 47.50715604800897,
+      "meanAEInterior": 47.803928027860024,
+      "maxAE": 234,
+      "pctChanged": 40.879488158899925
+    },
+    "cosmos": {
+      "meanAE": 1.964129288078708,
+      "meanAECard": 3.7064826615264064,
+      "meanAEInterior": 3.432892769365276,
+      "maxAE": 233.66666666666666,
+      "pctChanged": 32.80816872203427
+    },
+    "cosmos-ii-pixel": {
+      "meanAE": 6.941993615628179,
+      "meanAECard": 13.246128378782048,
+      "meanAEInterior": 13.325711786757504,
+      "maxAE": 239.66666666666666,
+      "pctChanged": 32.079968350976756
+    },
+    "cosmos-iii-smooth": {
+      "meanAE": 5.318442376949757,
+      "meanAECard": 10.127263200023418,
+      "meanAEInterior": 9.77258725820873,
+      "maxAE": 155.33333333333334,
+      "pctChanged": 36.24686238131616
+    },
+    "cracked-ice": {
+      "meanAE": 2.4073497580845875,
+      "meanAECard": 4.502034554064816,
+      "meanAEInterior": 3.9826056484607384,
+      "maxAE": 168.66666666666666,
+      "pctChanged": 21.727054458146895
+    },
+    "detective-pikachu": {
+      "meanAE": 0.6244807013713055,
+      "meanAECard": 1.102640531687227,
+      "meanAEInterior": 0.4824767448300055,
+      "maxAE": 113.33333333333333,
+      "pctChanged": 32.12594128560515
+    },
+    "diagonal-sheen-left": {
+      "meanAE": 1.0504119829749565,
+      "meanAECard": 1.8976701810558634,
+      "meanAEInterior": 1.1272068779157733,
+      "maxAE": 195,
+      "pctChanged": 33.22547200698461
+    },
+    "diagonal-sheen-right": {
+      "meanAE": 1.1888005202080485,
+      "meanAECard": 2.1993485565022555,
+      "meanAEInterior": 1.5034402947022971,
+      "maxAE": 134.33333333333334,
+      "pctChanged": 38.067772563570884
+    },
+    "ex-emerald": {
+      "meanAE": 1.8304048892280929,
+      "meanAECard": 3.416432315529222,
+      "meanAEInterior": 2.9744121516992608,
+      "maxAE": 115,
+      "pctChanged": 37.38950125504748
+    },
+    "fireworks": {
+      "meanAE": 14.675777129033998,
+      "meanAECard": 28.11882217049637,
+      "meanAEInterior": 28.86597173286702,
+      "maxAE": 154.33333333333334,
+      "pctChanged": 45.376923496671395
+    },
+    "gold-secret": {
+      "meanAE": 8.189324820837685,
+      "meanAECard": 15.656011150550537,
+      "meanAEInterior": 15.567354534638904,
+      "maxAE": 223.66666666666666,
+      "pctChanged": 50.3324511622831
+    },
+    "horizontal-sheen": {
+      "meanAE": 1.4456837280368406,
+      "meanAECard": 2.6284016023654044,
+      "meanAEInterior": 1.8907307785589094,
+      "maxAE": 157.66666666666666,
+      "pctChanged": 40.19957983193277
+    },
+    "mirror": {
+      "meanAE": 1.3079272618143318,
+      "meanAECard": 2.3989270755443814,
+      "meanAEInterior": 1.4398860300922447,
+      "maxAE": 141.66666666666666,
+      "pctChanged": 39.31095165338863
+    },
+    "pinwheel": {
+      "meanAE": 4.051089526720293,
+      "meanAECard": 7.698843867725097,
+      "meanAEInterior": 7.503024938556827,
+      "maxAE": 148.66666666666666,
+      "pctChanged": 42.89561279057077
+    },
+    "pokeball-hologram": {
+      "meanAE": 5.126152279095996,
+      "meanAECard": 9.695542764259526,
+      "meanAEInterior": 8.887096650991705,
+      "maxAE": 241,
+      "pctChanged": 39.13197097020627
+    },
+    "radiant": {
+      "meanAE": 2.70304576375992,
+      "meanAECard": 5.096642195843603,
+      "meanAEInterior": 4.683099492596973,
+      "maxAE": 124,
+      "pctChanged": 30.62152133580705
+    },
+    "radiant-collection-dots": {
+      "meanAE": 3.0513787333119526,
+      "meanAECard": 5.79224903363166,
+      "meanAEInterior": 5.571233101689897,
+      "maxAE": 237.33333333333334,
+      "pctChanged": 18.593528320419075
+    },
+    "rainbow-glitter": {
+      "meanAE": 6.791643020844261,
+      "meanAECard": 12.92082003588034,
+      "meanAEInterior": 12.530405979602419,
+      "maxAE": 241,
+      "pctChanged": 40.00491105533122
+    },
+    "rainbow-glitter-sheen": {
+      "meanAE": 8.9861067154131,
+      "meanAECard": 17.12614937383411,
+      "meanAEInterior": 16.86103329151033,
+      "maxAE": 241,
+      "pctChanged": 43.55369420495471
+    },
+    "reverse-sheet": {
+      "meanAE": 5.401342355127272,
+      "meanAECard": 10.216406159491584,
+      "meanAEInterior": 9.566061678960585,
+      "maxAE": 183.66666666666666,
+      "pctChanged": 32.408599803557784
+    },
+    "sequin": {
+      "meanAE": 2.5532358397906156,
+      "meanAECard": 4.83144799160224,
+      "meanAEInterior": 4.341495320320956,
+      "maxAE": 228,
+      "pctChanged": 19.45419076721598
+    },
+    "shiny-vault": {
+      "meanAE": 4.1722748190191705,
+      "meanAECard": 7.815308483336676,
+      "meanAEInterior": 6.905290205043087,
+      "maxAE": 241,
+      "pctChanged": 47.45580050201899
+    },
+    "starlight": {
+      "meanAE": 5.007836771073492,
+      "meanAECard": 9.523715106259484,
+      "meanAEInterior": 9.216823547162756,
+      "maxAE": 228.33333333333334,
+      "pctChanged": 42.77692895339954
+    },
+    "starlight-ii": {
+      "meanAE": 4.598055585872015,
+      "meanAECard": 8.738012105511205,
+      "meanAEInterior": 8.381123161215422,
+      "maxAE": 241,
+      "pctChanged": 42.75769398668559
+    },
+    "striped-vertical-sheen": {
+      "meanAE": 5.067441976791485,
+      "meanAECard": 9.686931457121345,
+      "meanAEInterior": 9.724741094670328,
+      "maxAE": 143.66666666666666,
+      "pctChanged": 28.531867292371494
+    },
+    "tinsel": {
+      "meanAE": 0.8613195278111747,
+      "meanAECard": 1.5681838927917977,
+      "meanAEInterior": 1.0736383479709357,
+      "maxAE": 192.66666666666666,
+      "pctChanged": 21.221079340827238
+    },
+    "tinsel-ii": {
+      "meanAE": 0.850275110044043,
+      "meanAECard": 1.5542509716356196,
+      "meanAEInterior": 1.120362572496273,
+      "maxAE": 101,
+      "pctChanged": 25.38483575248281
+    },
+    "vertical-sheen": {
+      "meanAE": 2.2435319582376487,
+      "meanAECard": 4.154048569492282,
+      "meanAEInterior": 3.5849790030306123,
+      "maxAE": 158,
+      "pctChanged": 30.720970206264326
+    },
+    "vertical-sheen-rainbow": {
+      "meanAE": 1.383631634472596,
+      "meanAECard": 2.439658531962334,
+      "meanAEInterior": 1.2219405439154751,
+      "maxAE": 198,
+      "pctChanged": 32.068099967259634
+    },
+    "vstar-pearl": {
+      "meanAE": 2.4513891920401023,
+      "meanAECard": 4.463896759107861,
+      "meanAEInterior": 2.999622837522911,
+      "maxAE": 241,
+      "pctChanged": 45.59655680454
+    },
+    "water-web": {
+      "meanAE": 3.4259635672440902,
+      "meanAECard": 6.415794213366411,
+      "meanAEInterior": 5.379129451703548,
+      "maxAE": 196,
+      "pctChanged": 42.567663429007965
+    }
+  },
+  "note": "4b Part 8 — canon recheck across the composite-contract bump (1 -> 2). See docs/CANON-ASPECT-RECHECK.md. Regenerate with two runs of tools/parity/run.mjs (one per law) through tools/parity/compare.mjs. Rank on meanAEInterior: it excludes the card OUTLINE, which moved because CardViewer builds PlaneGeometry(1, CARD_ASPECT).",
+  "contract": {
+    "from": 1,
+    "to": 2
+  },
+  "reverification": {
+    "at": "2026-09-01T06:38:46.768Z",
+    "why": "The original driver ran the harness with stdout ignored, so canon.applied and pageErrors were never asserted — every number here rested on \"the PNG exists\". The driver now captures and asserts the harness report; see research/foil-canon-aspect-recheck.md.",
+    "spotSet": [
+      "confetti",
+      "cosmos",
+      "detective-pikachu",
+      "fireworks",
+      "horizontal-sheen",
+      "mirror"
+    ],
+    "renders": {
+      "before/confetti": {
+        "canonApplied": true,
+        "canonFilesLoaded": 32,
+        "canonRequestsServed": 2,
+        "framesRun": 300,
+        "pageErrors": 0
+      },
+      "before/cosmos": {
+        "canonApplied": true,
+        "canonFilesLoaded": 32,
+        "canonRequestsServed": 2,
+        "framesRun": 300,
+        "pageErrors": 0
+      },
+      "before/detective-pikachu": {
+        "canonApplied": true,
+        "canonFilesLoaded": 32,
+        "canonRequestsServed": 2,
+        "framesRun": 300,
+        "pageErrors": 0
+      },
+      "before/fireworks": {
+        "canonApplied": true,
+        "canonFilesLoaded": 32,
+        "canonRequestsServed": 2,
+        "framesRun": 300,
+        "pageErrors": 0
+      },
+      "before/horizontal-sheen": {
+        "canonApplied": true,
+        "canonFilesLoaded": 32,
+        "canonRequestsServed": 2,
+        "framesRun": 300,
+        "pageErrors": 0
+      },
+      "before/mirror": {
+        "canonApplied": true,
+        "canonFilesLoaded": 32,
+        "canonRequestsServed": 2,
+        "framesRun": 300,
+        "pageErrors": 0
+      },
+      "before-control/cosmos": {
+        "canonApplied": true,
+        "canonFilesLoaded": 32,
+        "canonRequestsServed": 2,
+        "framesRun": 300,
+        "pageErrors": 0
+      },
+      "after/confetti": {
+        "canonApplied": true,
+        "canonFilesLoaded": 32,
+        "canonRequestsServed": 2,
+        "framesRun": 300,
+        "pageErrors": 0
+      },
+      "after/cosmos": {
+        "canonApplied": true,
+        "canonFilesLoaded": 32,
+        "canonRequestsServed": 2,
+        "framesRun": 300,
+        "pageErrors": 0
+      },
+      "after/detective-pikachu": {
+        "canonApplied": true,
+        "canonFilesLoaded": 32,
+        "canonRequestsServed": 2,
+        "framesRun": 300,
+        "pageErrors": 0
+      },
+      "after/fireworks": {
+        "canonApplied": true,
+        "canonFilesLoaded": 32,
+        "canonRequestsServed": 2,
+        "framesRun": 300,
+        "pageErrors": 0
+      },
+      "after/horizontal-sheen": {
+        "canonApplied": true,
+        "canonFilesLoaded": 32,
+        "canonRequestsServed": 2,
+        "framesRun": 300,
+        "pageErrors": 0
+      },
+      "after/mirror": {
+        "canonApplied": true,
+        "canonFilesLoaded": 32,
+        "canonRequestsServed": 2,
+        "framesRun": 300,
+        "pageErrors": 0
+      },
+      "after-control/cosmos": {
+        "canonApplied": true,
+        "canonFilesLoaded": 32,
+        "canonRequestsServed": 2,
+        "framesRun": 300,
+        "pageErrors": 0
+      }
+    },
+    "controlReproduced": true,
+    "resultsBitIdentical": true
+  }
+}

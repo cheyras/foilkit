@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Chey Rasmussen
 // tools/build-assignments-index.mjs — derive the workbench resolver's
 // per-card/per-set assignment index from the research corpus.
 //

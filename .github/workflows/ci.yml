@@ -1,0 +1,77 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Chey Rasmussen
+#
+# The whole suite, on every push and every pull request.
+#
+# An extraction requirement, and the reason is specific: the tests are the only
+# automated check that the authoring stack survived the move, and they encode the
+# invariants the teaching loop runs on — a machine may not overwrite a human, and
+# machine output may never re-enter as evidence. A suite that only runs when
+# someone remembers to run it does not enforce anything.
+#
+# No browser, no database, no network. `node --test` on the sources with the
+# `source` export condition, so cross-package imports resolve without a build
+# step; the build and the typechecks run separately because they check different
+# things.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: tests, typecheck, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Every package plus the rectifier: 177 tests, no dependencies.
+      - name: Test
+        run: pnpm test
+
+      # The packages, as a project-reference build. This is also what produces
+      # the dist/ the browser-side harness loads.
+      - name: Build
+        run: pnpm run build
+
+      # Two typechecks, because tools/ is outside the workspace projects and
+      # would otherwise never be checked at all — which is exactly how a build
+      # script rots.
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      # core and patterns must compile AND RUN with three.js absent. Cheap to
+      # verify, expensive to lose: it is what keeps a WebGL2 or custom-element
+      # adapter an addition rather than a rewrite.
+      - name: Renderer independence
+        run: node tools/check-independence.mjs
+
+      # The corpus reads: canon files load and validate against the stamped
+      # contract, sidecars normalise, mask rasters are canonical.
+      - name: Data receipt
+        run: node --conditions source tools/parity/data-receipt.mjs
+
+  reuse:
+    name: REUSE compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The license split is per FILE and it is machine-readable. Removing a
+      # REUSE.toml glob silently un-licenses a whole corpus, which is not a
+      # formatting change — so it is checked rather than trusted.
+      - uses: fsfe/reuse-action@v5

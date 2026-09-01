@@ -15,18 +15,39 @@ guessed wrong. The shader is what renders the answer; the dataset is the answer.
 
 ## Status
 
-**Pre-extraction.** This repository holds the license split, the engineering
-contracts, the documentation skeleton — and one piece of working code:
-[`tools/rectifier/`](tools/rectifier/), which turns a detected card quad into a
-canonical 504 × 704 raster and diffs a pair of them. It is dependency-free and
-defines the canonical card space everything else will be measured in.
+**Extracted, not released.** The library and the corpus landed on 2026-09-01,
+moved out of the repository the foil work began in. Nothing is published to npm
+and every package is `0.0.0` — but the code runs, the tests pass, and the
+measurements are here.
 
-The library packages — `core`, `three`, `webgl2`, `element`, `react`,
-`patterns`, `resolver`, `masks` — land in a subsequent extraction pass from
-their origin repository, along with 45 pattern recipes, 32 canon files, the mask
-corpus and the resolver.
+| | |
+|---|---|
+| [`packages/core`](packages/core/) | The shader ABI — canonical card space, the uniform contract, `PREAMBLE + pattern.glsl + MAIN`, canon layering. **Zero dependencies, no renderer.** |
+| [`packages/patterns`](packages/patterns/) | The 45 recipes as data, individually importable. |
+| [`packages/three`](packages/three/) | The three.js binding, plus the React card viewer and the mask/window drawing surfaces. |
+| [`packages/resolver`](packages/resolver/) | Which foil a printing carries. Pokémon-specific and optional by construction. |
+| [`packages/forge`](packages/forge/) | The authoring stack: provenance, the mask corpus, the generator, edge tracing, vector templates. `node:` builtins only. |
+| [`data/`](data/) | 32 canon files, 21 card directories of masks in canonical 504 × 704, the frame registry, the resolver's cited evidence. |
+| [`tools/rectifier`](tools/rectifier/) | Four detected corners into a canonical raster, and the pair diff that needs it. |
+| [`tools/parity`](tools/parity/) | The frame-stepped zero-delta render harness. |
 
-Nothing is installable yet. Issues and discussion are open.
+`packages/webgl2`, `element` and `react` are not built yet. The one obligation
+the extraction carried for them is already met: `core` imports nothing from
+three.js, and CI proves it on every push, so each of them is a later *addition*
+rather than a later rewrite.
+
+**The move came with a receipt.** 45 of 45 recipes render byte-identically
+before and after; 177 tests pass; the resolver returns an identical digest over
+10,312 probes built from the assignment corpus itself; and `core` compiles and
+runs with three.js absent from `node_modules`. See [`RECEIPT.md`](RECEIPT.md).
+
+```
+pnpm install
+pnpm test          # 177 tests, no build step
+pnpm run build
+```
+
+Issues and discussion are open.
 
 ## The license split
 
@@ -76,9 +97,11 @@ AI contributors alike.
 
 | Where | What |
 |---|---|
-| [`docs/`](docs/) | Contract documents — the shader ABI, the provenance model, the resolver tiers (arriving with the extraction) |
-| [Wiki](https://github.com/cheyras/foilkit/wiki) | Narrative, research and history: the pattern taxonomy, the provenance model deep-dive, pre-history. **Not live yet** — the pages are written and staged in [`wiki-staging/`](wiki-staging/) pending one manual step, so wiki links 404 for now |
+| [`docs/`](docs/) | Contract documents — the shader ABI, the provenance model, the mask pipeline, the pattern taxonomy, the verification run |
+| [Wiki](https://github.com/cheyras/foilkit/wiki) | Narrative, research and history: pre-history, the deep-dive companions, the contribution ledger. Where a wiki page has a companion in `docs/`, **the document in `docs/` is canonical** |
 | [`DECISIONS.md`](DECISIONS.md) | Dated audit trail of every decision and correction |
+| [`RECEIPT.md`](RECEIPT.md) | The moving receipt — the evidence that the extraction changed nothing |
+| [`reference/`](reference/) | The foil reference corpus: notes, specs, and a script that fetches the media it cites |
 
 ## Origin
 

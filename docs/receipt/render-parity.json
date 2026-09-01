@@ -1,0 +1,234 @@
+{
+  "a": "<shots>/origin",
+  "b": "<shots>/foilkit",
+  "patterns": 45,
+  "identical": 45,
+  "differing": 0,
+  "rows": [
+    {
+      "id": "ace-spec",
+      "status": "identical",
+      "sha256": "2a5a348c651c23a8b71da69a9eed2108bbbe0e15a96730a0c20a6bddcb1b3ca2"
+    },
+    {
+      "id": "acid-wash",
+      "status": "identical",
+      "sha256": "8f0cb9f036bc5c32b4480b6cb981a282c74960c9abc7a995103f11fb80adf980"
+    },
+    {
+      "id": "big-glitter",
+      "status": "identical",
+      "sha256": "5805acb07fd666566bf215079952b0bb4d2bfb0c73d298e223e8564aecf39384"
+    },
+    {
+      "id": "confetti",
+      "status": "identical",
+      "sha256": "5372e986586406dd76e0def3c51eec1b910573c1e81d0b5d9f5dae8211234fec"
+    },
+    {
+      "id": "cosmos",
+      "status": "identical",
+      "sha256": "7fa206a2f3ef3d599ab38a0c6973f3ed011ca7ca108ecb9386dc3636aba27f14"
+    },
+    {
+      "id": "cosmos-ii-pixel",
+      "status": "identical",
+      "sha256": "bc9555e731b25bf87d6eb5a94d7e4c660981ac556f75bbe9026c3b655f4cfe1f"
+    },
+    {
+      "id": "cosmos-iii-smooth",
+      "status": "identical",
+      "sha256": "2673fbb2ea25b6b1771075bbb4e03e5fd67394124e076bdb3c3244bbaf08d35a"
+    },
+    {
+      "id": "cracked-ice",
+      "status": "identical",
+      "sha256": "c331a1f02d14f86ff4bf979facd91f12364a9825b947806d9e88c187e2d5aafc"
+    },
+    {
+      "id": "crosshatch",
+      "status": "identical",
+      "sha256": "6a42b91c549085f7a66309c1a397c1f24137edd3f309a16c1a55d4a22f5fbd72"
+    },
+    {
+      "id": "detective-pikachu",
+      "status": "identical",
+      "sha256": "17a77bae3b2aeb7b0a0e785a885c6962b6b3ec16703689ca7e8f22f7bfa9a30f"
+    },
+    {
+      "id": "diagonal-sheen-left",
+      "status": "identical",
+      "sha256": "ac548e8ba4625b2a58d12ac6ec66a345bd1be1d916e08a05773ebd0d6961fa9d"
+    },
+    {
+      "id": "diagonal-sheen-right",
+      "status": "identical",
+      "sha256": "bb4a8772b143c494faf337a165c079aed17d71abdbf0490c2bd1c47d0df0adf9"
+    },
+    {
+      "id": "disco",
+      "status": "identical",
+      "sha256": "3fef80f83a3133fc3bbb7d6c7693e318edda097d82d8c8d0edd4b99300df0d19"
+    },
+    {
+      "id": "energy-symbols",
+      "status": "identical",
+      "sha256": "d6e01009a4e2262bd47eeb02393bbe51b18cef01983cab0b9f3ee34a157077c1"
+    },
+    {
+      "id": "energy-symbols-ii",
+      "status": "identical",
+      "sha256": "605837e83326477c96c3787d957a335ab712963f58520ac23d33b7f344e8e74d"
+    },
+    {
+      "id": "ex-emerald",
+      "status": "identical",
+      "sha256": "822c8df0834fbda5da63ae025c84f629f057795de40531740775a5e20c7a13e4"
+    },
+    {
+      "id": "ex-starfoil",
+      "status": "identical",
+      "sha256": "2b7d96bfd7a0a08f730fedb74507b2143da60ee596a7fe917389cc0a432f6f47"
+    },
+    {
+      "id": "fireworks",
+      "status": "identical",
+      "sha256": "7e2c4edcb2a1b5ba62329a447b6c681aed7228a1a58672b2e85e883c95ec6a31"
+    },
+    {
+      "id": "gold-secret",
+      "status": "identical",
+      "sha256": "80a4a792b1f3df884a3fd60e998fca2e0df4368f1d2832198ed70aad1f112c70"
+    },
+    {
+      "id": "horizontal-sheen",
+      "status": "identical",
+      "sha256": "a49cf652afb458f40b9fb719524f46d0a5398bf4dfff9d8b2f9ae717df1df1cb"
+    },
+    {
+      "id": "mirror",
+      "status": "identical",
+      "sha256": "5c37e8119fb977be27bf7efdbb73f49fefa8cf90984778fbec34153457ed7676"
+    },
+    {
+      "id": "none",
+      "status": "identical",
+      "sha256": "2bd99f7de8310bc2b8578c1593e71c75fc71f7dd60349a717c34cafc1dd68075"
+    },
+    {
+      "id": "pinwheel",
+      "status": "identical",
+      "sha256": "99aea2d6c63e5a96a6da5915e42f186040636346d635486767211de6cc953a71"
+    },
+    {
+      "id": "pokeball-hologram",
+      "status": "identical",
+      "sha256": "7d10dc06ded7aa5ed2288714a10dbf387c58c3db86ba451f525fa0eb5ffc4ea8"
+    },
+    {
+      "id": "pokeball-masterball",
+      "status": "identical",
+      "sha256": "948f03c75071e9370952b2ff4da53942c7d771e6290757f7bc1069f308375442"
+    },
+    {
+      "id": "prism",
+      "status": "identical",
+      "sha256": "55b1c66c46f24b69d819d226286a4763741b2eadfa05877763c9444c883f7528"
+    },
+    {
+      "id": "prismatic-pokeball",
+      "status": "identical",
+      "sha256": "2a0b16db70de14b21f1b2997147d45d995263d693b1040cc8395d2338bd106d2"
+    },
+    {
+      "id": "radiant",
+      "status": "identical",
+      "sha256": "72667bad2eaa4d73a279fe5915a189e395e28ff87cb0f6bbca907031ceaf19b7"
+    },
+    {
+      "id": "radiant-collection-dots",
+      "status": "identical",
+      "sha256": "52bef65225b1a3b0fcb3b1a361af5fdd7513709a59b6b10ea5fb1bc7586e55ea"
+    },
+    {
+      "id": "rainbow-glitter",
+      "status": "identical",
+      "sha256": "1fe31401fa40e53fb2950cf86fcbf9a4396db966acd885ab6c2db99283a0803e"
+    },
+    {
+      "id": "rainbow-glitter-sheen",
+      "status": "identical",
+      "sha256": "7df333e5d8d3656d140dd9b2eb150b80dae9ee7187851c52c0c555253b672d0d"
+    },
+    {
+      "id": "rainbow-mirror",
+      "status": "identical",
+      "sha256": "e861105113d53e13941e3ae07f08ec985a137b3067089891606c72e7d6ced916"
+    },
+    {
+      "id": "reverse-sheet",
+      "status": "identical",
+      "sha256": "b905c44e476fca5bd3a73f4d4e12d03f4b0e4d9a57e91be115b8b12a0f11ef0c"
+    },
+    {
+      "id": "sequin",
+      "status": "identical",
+      "sha256": "f330de868f459382ddb16771bf5108ca032c4a34c953577e8adffe6aee46292e"
+    },
+    {
+      "id": "shiny-vault",
+      "status": "identical",
+      "sha256": "3cf7a9b871b89072978f05acad7c47528ff36bfb4cddda459d40c72ee74e05fe"
+    },
+    {
+      "id": "starlight",
+      "status": "identical",
+      "sha256": "b2b1dc13c8405886f2c27402b9fc05b039f77c4d089209cb62778b848879b379"
+    },
+    {
+      "id": "starlight-ii",
+      "status": "identical",
+      "sha256": "2f2e53a68ab6a3fd4633eba04fbed547200f063c04654243abfc6bb20b7b33ad"
+    },
+    {
+      "id": "striped-vertical-sheen",
+      "status": "identical",
+      "sha256": "70f55fb1d63e04f99d56f319d2d6c3ba35c0928402ed946a4772eaa6a052503f"
+    },
+    {
+      "id": "tcg-classic",
+      "status": "identical",
+      "sha256": "f6cf107238297bebfaaf896771c40ef4dbd4f72f41b3b78eddebfa04b0d734f1"
+    },
+    {
+      "id": "tinsel",
+      "status": "identical",
+      "sha256": "10bd3a02c4ad2bdf2e61e33ae9fe3ff041cc11b269b5c6811662de0eca63c5f7"
+    },
+    {
+      "id": "tinsel-ii",
+      "status": "identical",
+      "sha256": "0e65d4e16e43018a545f0dcb3269a9d026a05343efa714c29ecf896d375de721"
+    },
+    {
+      "id": "vertical-sheen",
+      "status": "identical",
+      "sha256": "b0f51a4d1064ecf182c4596d34db9051c739534e49ef9dddf7d945daf0f86079"
+    },
+    {
+      "id": "vertical-sheen-rainbow",
+      "status": "identical",
+      "sha256": "303cf53b8b6f93436fc590dbfd6f51f06efc7af5654a063b970ab4a2bf97d1fa"
+    },
+    {
+      "id": "vstar-pearl",
+      "status": "identical",
+      "sha256": "12b3c6c6e095c9123a4cb54cfe0fdc3361275541f7e179214619f043a4099f39"
+    },
+    {
+      "id": "water-web",
+      "status": "identical",
+      "sha256": "eb8ecb0653c1ecd3366a8de06724c66594d4fcdab39ebba91620bd43d28f473e"
+    }
+  ]
+}

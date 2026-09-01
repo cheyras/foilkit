@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Chey Rasmussen
 // tools/build-frames.mts — derive data/frames.json from 4a's measured survey.
 //
 //   node --conditions source tools/build-frames.mts \

@@ -1,0 +1,27 @@
+{
+  "contract": 2,
+  "canon": {
+    "files": 32,
+    "fullSnapshots": 32,
+    "carryingFreezeRecord": 32
+  },
+  "masks": {
+    "cards": 21,
+    "sidecars": 20,
+    "normalised": 20,
+    "pngs": 86,
+    "canonicalRaster": "504x704"
+  },
+  "sidecarVersion": 4,
+  "byFrame": {
+    "canonical": 20
+  },
+  "byDerivationMethod": {
+    "ai": 5,
+    "ai-corrected": 10,
+    "hand": 2,
+    "hand-refined": 3
+  },
+  "windows": 1,
+  "problems": []
+}

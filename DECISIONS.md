@@ -400,3 +400,194 @@ a settled destination (`@foilkit/core`, per task 4b).
 
 **Implications:** `packages/` and the dataset remain empty and the extraction is
 still outstanding. The rest of that pending entry stands unchanged.
+
+---
+
+## 2026-09-01 — The extraction landed: five packages, one corpus, one receipt
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** The foil runtime, authoring stack and corpus were extracted from
+DeckPal's `foil/main` (`b803b43`) into
+`packages/{core,patterns,three,resolver,forge}`, `data/`, `docs/` and
+`reference/`. `RECEIPT.md` records the evidence that nothing changed in transit;
+its four measurements are 45/45 byte-identical renders, 177 passing tests, an
+identical resolver digest over 10,312 probes, and core compiling *and running*
+with three.js absent from `node_modules`.
+
+**Why:** The origin branches are scheduled for deletion, and a move is only
+safely reversible-by-inspection if it arrives with proof. The receipt is a
+one-time artifact and says so: once read, the harness goes back to being a tool
+rather than a gate.
+
+**Implications:** The pending item above — "`packages/` and the dataset remain
+empty" — is now closed. Nothing is published: every package is `0.0.0` and no
+release has been cut.
+
+---
+
+## 2026-09-01 — Canonical space has exactly one definition, and the rectifier re-exports it
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `packages/core/src/card-space.json` (the datum) and
+`canonical-space.ts` (the derivation) are the single definition of canonical
+card space. `tools/rectifier/constants.ts` is now a re-export from
+`@foilkit/core`, and its contract test follows the definition rather than the
+shim.
+
+**Why:** DeckPal carried two copies of the same arithmetic because its api
+`tsconfig.json` pinned `rootDir` and could not import its web sources; the
+rectifier, written here before the extraction, was a third. Its own header
+predicted this move. Three copies of an expression are three chances to
+disagree.
+
+**Implications:** The rectifier's `CARD_ASPECT` is width/height and the shader's
+is height/width, so the shim maps them explicitly (`CARD_ASPECT_WH` /
+`CARD_ASPECT_HW`) rather than star-exporting — a silent swap there is a 1.95×
+error nobody would notice until a mask was cut wrong.
+
+**Still duplicated, and recorded as such:** `tools/rectifier/png.ts` and
+`packages/forge/src/png.ts` are two hand-rolled PNG codecs over `node:zlib`.
+Both work, both are tested, and unifying them would touch the rectifier's own
+proofs. A follow-up, not a blocker.
+
+---
+
+## 2026-09-01 — CARD_ASPECT derives from millimetres, not from era-layouts.json
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `@foilkit/core`'s `CARD_ASPECT` is `CARD_ASPECT_HW`, computed from
+the millimetre datum. It previously read `era-layouts.json`'s `cardAspect`.
+
+**Why:** `era-layouts.json` belongs to `@foilkit/resolver`, which is
+Pokémon-specific and optional by construction — someone rendering Magic cards
+wants the shader and not the resolver. Core reading it would have made the
+optional package mandatory.
+
+**Implications:** Identical to every decimal the shader emits (`1.39683`,
+`0.0476`), which the render receipt confirms at the byte level. The layout
+contract test still asserts that `era-layouts.json` agrees with the expression,
+so the two cannot drift apart silently.
+
+---
+
+## 2026-09-01 — Three DeckPal routes became configuration
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** The glyph asset route, the artwork-citation URL a sidecar records,
+and the mask route a corpus report names are now configurable, each defaulting
+to a relative path a static host satisfies for free. DeckPal's `@deckscout/db`
+import became an injectable pool (`registerAssetPool`).
+
+**Why:** A hardcoded host prefix in an extracted library means nothing anywhere
+else, and depending on a database this repository does not have would break
+`@foilkit/forge`'s "node: builtins only" property — which is what lets it run
+with no install and no build step.
+
+**Implications:** Nothing registered means nothing to look up, which is exactly
+the pre-existing unreachable-database path: a fallback, not a crash. The
+sidecar's `artworkUrl` stays a CITATION and never an asset; the pixels are never
+carried.
+
+---
+
+## 2026-09-01 — pg is not a dependency, and build-pattern-cards says why
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `tools/build-pattern-cards.mts` resolves `pg` at run time out of
+whichever project supplies the catalog (`PG_HOST_PACKAGE`), rather than foilkit
+depending on it.
+
+**Why:** That tool INVERTS the resolver — it walks every printing in a catalog
+and records which ones each pattern governs. foilkit ships measurements *of*
+printings, not a list of them, and will not grow a database to keep one tool
+happy.
+
+**Implications:** The tool still runs in both offline modes
+(`--evidence-only`, `--fixture`) with no catalog at all, which is what CI and a
+contributor without one use. Subtask 7 turns this into a build-time input
+question, because the hosted editor has no database at read time.
+
+---
+
+## 2026-09-01 — The pipeline job prompts were stripped too
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** The auto-caption block embedded in 39 of the 44
+`reference/pipeline/jobs/*.json` prompts was removed, alongside the transcript
+sections in all 44 `notes.md` and the inline quotes in the 4 `gemini-spec.md`
+files the content rules named.
+
+**Why:** The rules named the notes and the four specs. They did not name the job
+files — but the job files carried considerably MORE transcript than the notes
+did, and the rule's reason (the creator's words are the creator's, exactly as
+the frames are) covers them exactly. Following the letter would have missed the
+larger half.
+
+**Implications:** Each prompt now carries a note saying what was there and that
+`fetch-reference.sh` writes it back locally, from a source the operator fetched
+themselves. The prompt rubric — the part that is ours — is untouched, so the
+pipeline stays reproducible for anyone who has the media.
+
+---
+
+## 2026-09-01 — The parity harness renders both sides through ONE page
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `tools/parity/` takes its shader, material, pattern and canon
+sources as URL parameters. The moving receipt was measured by pointing the same
+page at foilkit's `packages/*/dist` and at a plain `tsc` build of DeckPal's
+`shader.ts` + `patterns.ts`.
+
+**Why:** The plan called for running DeckPal's harness in DeckPal and foilkit's
+in foilkit. Those are two different pages, and a byte difference between them
+would have been unattributable — different chrome, different backdrop, different
+card rect. Holding the page fixed makes the code the only variable, which is the
+claim the receipt is trying to support.
+
+**Implications:** A deviation from the plan, and a strengthening one. It also
+leaves a general instrument rather than a one-off: the same harness re-runs the
+canon recheck under a future contract bump (one run per law, compared on mean
+absolute error), and it is the seed of subtask 6's stress demo.
+
+---
+
+## 2026-09-01 — Canon files frozen; tunedUnderContract deliberately not moved
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** All 32 canon files now record every contract uniform and every
+declared param explicitly, at the value already in effect. 22 widened — the 21
+saved on 2026-08-02, plus `tinsel-ii`, which lacked only `uP4`. Ten were already
+full. `tunedUnderContract` was not touched.
+
+**Why:** A canon file claims to be a full snapshot. Twenty-one inherited the
+eight R4–R6 composite dials from `GLOBAL_DEFAULTS` at read time, which is a
+promise to track a code constant — harmless while the constant lived next door,
+not harmless once it lives in a separately versioned package.
+
+**Implications:** Recording an inherited default is not a tuning decision, so
+those 21 are still `tunedUnderContract: 1` and still in the retune queue. The
+zero-delta harness re-ran 45/45 byte-identical after the freeze, which is the
+only acceptable evidence for a "nothing changed visually" claim. Undeclared
+params and `uScanBase` are not written, for the same reason: writing them would
+assert decisions nobody made.
+
+---
+
+## 2026-09-01 — The lab shell did not come across
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `FoilLab.tsx`, `CanonLab.tsx`, `MaskProvenance.tsx`, `ui.tsx` and
+the `api.ts` HTTP client stayed in DeckPal. The coupling-free view code —
+`CardViewer`, `useTilt`, `ViewTransform`, `MaskEditor`, `WindowEditor` — came,
+under `@foilkit/three/react`.
+
+**Why:** The extraction plan's package map named `buildFoilMaterial`,
+`CardViewer` and `useTilt` for `@foilkit/three` and nothing else. The lab shell
+is bound to DeckPal's router, its query client and its API prefix; the hosted
+contribution editor is its replacement, not its port.
+
+**Implications:** This is a real loss if the origin branches are deleted before
+anyone decides otherwise — roughly 2,700 lines of working editor UI, including
+the canon lab's slider layout and the provenance panel. **Flagged for the
+maintainer rather than settled here.** The drawing surfaces subtask 8 would
+rebuild around are the part that came, which was the expensive half.

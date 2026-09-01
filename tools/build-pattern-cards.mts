@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Chey Rasmussen
 // tools/build-pattern-cards.mts — invert the foil resolver over the
 // whole catalog: pattern id → every (cardId, variantId) the v5 resolver
 // actually assigns that pattern to. Powers the canon-lab CARD PREVIEW

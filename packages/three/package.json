@@ -34,8 +34,5 @@
     "react": {
       "optional": true
     }
-  },
-  "scripts": {
-    "build": "tsc -b"
   }
 }

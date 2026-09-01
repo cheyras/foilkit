@@ -19,8 +19,5 @@
   "sideEffects": false,
   "dependencies": {
     "@foilkit/core": "workspace:*"
-  },
-  "scripts": {
-    "build": "tsc -b"
   }
 }

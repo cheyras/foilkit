@@ -32,7 +32,7 @@ SPDX-FileCopyrightText = "2026 Chey Rasmussen"
 SPDX-License-Identifier = "MIT"
 
 [[annotations]]
-path = ["tools/**", "scripts/**", "examples/**"]
+path = ["tools/**", "scripts/**", "examples/**", "reference/**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Chey Rasmussen"
 SPDX-License-Identifier = "MIT"
@@ -50,7 +50,7 @@ SPDX-License-Identifier = "MIT"
 
 # Repository metadata that carries no header of its own.
 [[annotations]]
-path = [".gitignore", ".gitattributes", "NOTICE", "REUSE.toml"]
+path = [".gitignore", ".gitattributes", "NOTICE", "REUSE.toml", "pnpm-lock.yaml", "LICENSE", "LICENSE-DATA"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Chey Rasmussen"
 SPDX-License-Identifier = "MIT"
@@ -71,11 +71,31 @@ precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Chey Rasmussen"
 SPDX-License-Identifier = "CC0-1.0"
 
-# Canon files and resolver tables live next to the code they parameterise
-# rather than under data/. They are measurements regardless of where they sit,
-# so the license follows the file, not the directory.
+# The glyph drop slot. Empty today, and its README states the originals-only
+# rule BEFORE any asset can arrive — a drop directory with no review step is
+# exactly where an un-owned file would otherwise enter the dataset.
+# Anything landing here carries its own notice file (NOTICE-CONVENTIONS.md);
+# that notice, not this glob, is what makes the dedication real.
 [[annotations]]
-path = ["**/*.canon.json", "**/*.resolver.json", "**/era-layouts.json"]
+path = "assets/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Chey Rasmussen"
+SPDX-License-Identifier = "CC0-1.0"
+
+# Canon files, resolver tables and the canonical-space datum live next to the
+# code they parameterise rather than under data/. They are measurements
+# regardless of where they sit, so the license follows the file, not the
+# directory. card-space.json in particular is FOUR MEASURED NUMBERS and their
+# provenance; the arithmetic derived from it, next door, is code and is MIT.
+[[annotations]]
+path = [
+  "**/*.canon.json",
+  "**/*.resolver.json",
+  "**/era-layouts.json",
+  "**/assignments-index.json",
+  "**/usage-index.json",
+  "**/card-space.json",
+]
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Chey Rasmussen"
 SPDX-License-Identifier = "CC0-1.0"
@@ -94,7 +114,7 @@ SPDX-License-Identifier = "CC0-1.0"
 # ---------------------------------------------------------------------------
 
 [[annotations]]
-path = ["docs/**", "wiki-staging/**", "*.md"]
+path = ["docs/**", "*.md", "**/README.md"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Chey Rasmussen"
 SPDX-License-Identifier = "MIT"

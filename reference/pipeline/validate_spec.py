@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Chey Rasmussen
 """Executed check for a per-pattern Gemini vision spec (gemini-spec.md).
 
 Validates substance, prints WHY it fails:

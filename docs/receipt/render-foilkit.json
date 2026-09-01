@@ -1,0 +1,598 @@
+{
+  "generatedAt": "2026-09-01T07:44:19.574Z",
+  "origin": "http://127.0.0.1:5199",
+  "params": {
+    "tone": "dark"
+  },
+  "frames": 300,
+  "tone": "dark",
+  "patterns": 45,
+  "pageErrors": [],
+  "results": [
+    {
+      "id": "none",
+      "sha256": "2bd99f7de8310bc2b8578c1593e71c75fc71f7dd60349a717c34cafc1dd68075",
+      "framesRun": 300,
+      "canon": null,
+      "canonUniforms": 0,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "starlight",
+      "sha256": "b2b1dc13c8405886f2c27402b9fc05b039f77c4d089209cb62778b848879b379",
+      "framesRun": 300,
+      "canon": "2026-08-02T19:12:34.335Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "starlight-ii",
+      "sha256": "2f2e53a68ab6a3fd4633eba04fbed547200f063c04654243abfc6bb20b7b33ad",
+      "framesRun": 300,
+      "canon": "2026-08-02T19:14:54.117Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "cosmos",
+      "sha256": "7fa206a2f3ef3d599ab38a0c6973f3ed011ca7ca108ecb9386dc3636aba27f14",
+      "framesRun": 300,
+      "canon": "2026-08-02T16:52:45.030Z",
+      "canonUniforms": 21,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "vertical-sheen",
+      "sha256": "b0f51a4d1064ecf182c4596d34db9051c739534e49ef9dddf7d945daf0f86079",
+      "framesRun": 300,
+      "canon": "2026-08-07T22:05:10.918Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "horizontal-sheen",
+      "sha256": "a49cf652afb458f40b9fb719524f46d0a5398bf4dfff9d8b2f9ae717df1df1cb",
+      "framesRun": 300,
+      "canon": "2026-08-07T22:05:29.426Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "diagonal-sheen-right",
+      "sha256": "bb4a8772b143c494faf337a165c079aed17d71abdbf0490c2bd1c47d0df0adf9",
+      "framesRun": 300,
+      "canon": "2026-08-07T22:05:53.916Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "diagonal-sheen-left",
+      "sha256": "ac548e8ba4625b2a58d12ac6ec66a345bd1be1d916e08a05773ebd0d6961fa9d",
+      "framesRun": 300,
+      "canon": "2026-08-02T19:26:52.248Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "striped-vertical-sheen",
+      "sha256": "70f55fb1d63e04f99d56f319d2d6c3ba35c0928402ed946a4772eaa6a052503f",
+      "framesRun": 300,
+      "canon": "2026-08-02T19:28:35.781Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "reverse-sheet",
+      "sha256": "b905c44e476fca5bd3a73f4d4e12d03f4b0e4d9a57e91be115b8b12a0f11ef0c",
+      "framesRun": 300,
+      "canon": "2026-08-02T19:31:17.866Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "cracked-ice",
+      "sha256": "c331a1f02d14f86ff4bf979facd91f12364a9825b947806d9e88c187e2d5aafc",
+      "framesRun": 300,
+      "canon": "2026-08-07T15:18:59.006Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "fireworks",
+      "sha256": "7e2c4edcb2a1b5ba62329a447b6c681aed7228a1a58672b2e85e883c95ec6a31",
+      "framesRun": 300,
+      "canon": "2026-08-07T22:08:38.821Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "mirror",
+      "sha256": "5c37e8119fb977be27bf7efdbb73f49fefa8cf90984778fbec34153457ed7676",
+      "framesRun": 300,
+      "canon": "2026-08-07T03:41:20.373Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "rainbow-mirror",
+      "sha256": "e861105113d53e13941e3ae07f08ec985a137b3067089891606c72e7d6ced916",
+      "framesRun": 300,
+      "canon": null,
+      "canonUniforms": 0,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "big-glitter",
+      "sha256": "5805acb07fd666566bf215079952b0bb4d2bfb0c73d298e223e8564aecf39384",
+      "framesRun": 300,
+      "canon": "2026-08-02T22:32:20.352Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "energy-symbols",
+      "sha256": "d6e01009a4e2262bd47eeb02393bbe51b18cef01983cab0b9f3ee34a157077c1",
+      "framesRun": 300,
+      "canon": null,
+      "canonUniforms": 0,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "energy-symbols-ii",
+      "sha256": "605837e83326477c96c3787d957a335ab712963f58520ac23d33b7f344e8e74d",
+      "framesRun": 300,
+      "canon": null,
+      "canonUniforms": 0,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "pinwheel",
+      "sha256": "99aea2d6c63e5a96a6da5915e42f186040636346d635486767211de6cc953a71",
+      "framesRun": 300,
+      "canon": "2026-08-02T19:43:29.927Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "ex-emerald",
+      "sha256": "822c8df0834fbda5da63ae025c84f629f057795de40531740775a5e20c7a13e4",
+      "framesRun": 300,
+      "canon": "2026-08-02T19:44:41.628Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "pokeball-hologram",
+      "sha256": "7d10dc06ded7aa5ed2288714a10dbf387c58c3db86ba451f525fa0eb5ffc4ea8",
+      "framesRun": 300,
+      "canon": "2026-08-07T23:34:57.085Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "vertical-sheen-rainbow",
+      "sha256": "303cf53b8b6f93436fc590dbfd6f51f06efc7af5654a063b970ab4a2bf97d1fa",
+      "framesRun": 300,
+      "canon": "2026-08-02T19:46:33.284Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "cosmos-ii-pixel",
+      "sha256": "bc9555e731b25bf87d6eb5a94d7e4c660981ac556f75bbe9026c3b655f4cfe1f",
+      "framesRun": 300,
+      "canon": "2026-08-07T23:36:58.953Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "cosmos-iii-smooth",
+      "sha256": "2673fbb2ea25b6b1771075bbb4e03e5fd67394124e076bdb3c3244bbaf08d35a",
+      "framesRun": 300,
+      "canon": "2026-08-02T22:03:23.110Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "tinsel",
+      "sha256": "10bd3a02c4ad2bdf2e61e33ae9fe3ff041cc11b269b5c6811662de0eca63c5f7",
+      "framesRun": 300,
+      "canon": "2026-08-02T22:05:25.547Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "tinsel-ii",
+      "sha256": "0e65d4e16e43018a545f0dcb3269a9d026a05343efa714c29ecf896d375de721",
+      "framesRun": 300,
+      "canon": "2026-08-07T04:57:24.838Z",
+      "canonUniforms": 21,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "prism",
+      "sha256": "55b1c66c46f24b69d819d226286a4763741b2eadfa05877763c9444c883f7528",
+      "framesRun": 300,
+      "canon": null,
+      "canonUniforms": 0,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "water-web",
+      "sha256": "eb8ecb0653c1ecd3366a8de06724c66594d4fcdab39ebba91620bd43d28f473e",
+      "framesRun": 300,
+      "canon": "2026-08-07T23:42:16.929Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "radiant",
+      "sha256": "72667bad2eaa4d73a279fe5915a189e395e28ff87cb0f6bbca907031ceaf19b7",
+      "framesRun": 300,
+      "canon": "2026-08-02T22:16:07.890Z",
+      "canonUniforms": 21,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "rainbow-glitter",
+      "sha256": "1fe31401fa40e53fb2950cf86fcbf9a4396db966acd885ab6c2db99283a0803e",
+      "framesRun": 300,
+      "canon": "2026-08-02T22:17:22.710Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "rainbow-glitter-sheen",
+      "sha256": "7df333e5d8d3656d140dd9b2eb150b80dae9ee7187851c52c0c555253b672d0d",
+      "framesRun": 300,
+      "canon": "2026-08-07T05:21:01.012Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "ace-spec",
+      "sha256": "2a5a348c651c23a8b71da69a9eed2108bbbe0e15a96730a0c20a6bddcb1b3ca2",
+      "framesRun": 300,
+      "canon": null,
+      "canonUniforms": 0,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "pokeball-masterball",
+      "sha256": "948f03c75071e9370952b2ff4da53942c7d771e6290757f7bc1069f308375442",
+      "framesRun": 300,
+      "canon": null,
+      "canonUniforms": 0,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "prismatic-pokeball",
+      "sha256": "2a0b16db70de14b21f1b2997147d45d995263d693b1040cc8395d2338bd106d2",
+      "framesRun": 300,
+      "canon": null,
+      "canonUniforms": 0,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "radiant-collection-dots",
+      "sha256": "52bef65225b1a3b0fcb3b1a361af5fdd7513709a59b6b10ea5fb1bc7586e55ea",
+      "framesRun": 300,
+      "canon": "2026-08-02T22:22:37.278Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "ex-starfoil",
+      "sha256": "2b7d96bfd7a0a08f730fedb74507b2143da60ee596a7fe917389cc0a432f6f47",
+      "framesRun": 300,
+      "canon": null,
+      "canonUniforms": 0,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "sequin",
+      "sha256": "f330de868f459382ddb16771bf5108ca032c4a34c953577e8adffe6aee46292e",
+      "framesRun": 300,
+      "canon": "2026-08-02T22:33:12.747Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "crosshatch",
+      "sha256": "6a42b91c549085f7a66309c1a397c1f24137edd3f309a16c1a55d4a22f5fbd72",
+      "framesRun": 300,
+      "canon": null,
+      "canonUniforms": 0,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "tcg-classic",
+      "sha256": "f6cf107238297bebfaaf896771c40ef4dbd4f72f41b3b78eddebfa04b0d734f1",
+      "framesRun": 300,
+      "canon": null,
+      "canonUniforms": 0,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "confetti",
+      "sha256": "5372e986586406dd76e0def3c51eec1b910573c1e81d0b5d9f5dae8211234fec",
+      "framesRun": 300,
+      "canon": "2026-08-02T22:25:25.728Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "acid-wash",
+      "sha256": "8f0cb9f036bc5c32b4480b6cb981a282c74960c9abc7a995103f11fb80adf980",
+      "framesRun": 300,
+      "canon": null,
+      "canonUniforms": 0,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "disco",
+      "sha256": "3fef80f83a3133fc3bbb7d6c7693e318edda097d82d8c8d0edd4b99300df0d19",
+      "framesRun": 300,
+      "canon": null,
+      "canonUniforms": 0,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "gold-secret",
+      "sha256": "80a4a792b1f3df884a3fd60e998fca2e0df4368f1d2832198ed70aad1f112c70",
+      "framesRun": 300,
+      "canon": "2026-08-02T22:27:53.315Z",
+      "canonUniforms": 22,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "vstar-pearl",
+      "sha256": "12b3c6c6e095c9123a4cb54cfe0fdc3361275541f7e179214619f043a4099f39",
+      "framesRun": 300,
+      "canon": "2026-08-02T22:29:05.396Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "shiny-vault",
+      "sha256": "3cf7a9b871b89072978f05acad7c47528ff36bfb4cddda459d40c72ee74e05fe",
+      "framesRun": 300,
+      "canon": "2026-08-02T22:31:33.997Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    },
+    {
+      "id": "detective-pikachu",
+      "sha256": "17a77bae3b2aeb7b0a0e785a885c6962b6b3ec16703689ca7e8f22f7bfa9a30f",
+      "framesRun": 300,
+      "canon": "2026-08-02T22:31:54.653Z",
+      "canonUniforms": 20,
+      "clip": {
+        "x": 254,
+        "y": 56,
+        "width": 492,
+        "height": 688
+      }
+    }
+  ]
+}

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Chey Rasmussen
 """Call an OpenRouter vision model with local image frames + a text prompt.
 
 Usage: gemini_vision.py <job.json> [out_override]

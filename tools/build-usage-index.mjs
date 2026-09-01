@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Chey Rasmussen
 // tools/build-usage-index.mjs — derive the workbench resolver's usage
 // index from the research corpus.
 //
