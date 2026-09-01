@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-31T15:10:56.993Z",
+  "generatedAt": "2026-09-01T12:54:25.604Z",
   "source": "catalog",
   "resolverVersion": 5,
   "countingUnits": {
@@ -34,8 +34,8 @@
     "windowGeometryFiles": 1,
     "windowGeometryCards": 1,
     "exemplarPools": {
-      "modern-sv|window": {
-        "eraId": "modern-sv",
+      "modern-swsh|window": {
+        "eraId": "modern-swsh",
         "scope": "window",
         "exemplars": 0,
         "records": 0,
@@ -55,6 +55,15 @@
           "ai-corrected": 9
         },
         "rejected": 9
+      },
+      "modern-sv|window": {
+        "eraId": "modern-sv",
+        "scope": "window",
+        "exemplars": 0,
+        "records": 0,
+        "weight": 0,
+        "byMethod": {},
+        "rejected": 20
       },
       "modern-sv|full": {
         "eraId": "modern-sv",
@@ -95,15 +104,6 @@
           "ai-corrected": 1
         },
         "rejected": 16
-      },
-      "modern-swsh|window": {
-        "eraId": "modern-swsh",
-        "scope": "window",
-        "exemplars": 0,
-        "records": 0,
-        "weight": 0,
-        "byMethod": {},
-        "rejected": 20
       },
       "wotc|sheet": {
         "eraId": "wotc",
@@ -445,9 +445,9 @@
       "printings": 2454,
       "distinctCards": 2447,
       "confidence": {
+        "medium": 2071,
         "high": 372,
-        "low": 11,
-        "medium": 2071
+        "low": 11
       },
       "exemplars": 11,
       "exemplarRecords": 11,
