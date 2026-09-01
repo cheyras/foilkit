@@ -29,6 +29,88 @@ export interface FnRequest {
    * that only supplies `url`; `queryValue` falls back to parsing `url`.
    */
   query?: Record<string, string | string[] | undefined> | undefined;
+  /**
+   * Vercel parses a JSON request body onto `req.body` when the content-type
+   * says so. Optional, because a plain Node server (or a test harness) hands
+   * over a stream instead — `readJsonBody` handles both.
+   */
+  body?: unknown;
+  /** Present when the body has to be read off the wire. */
+  [Symbol.asyncIterator]?: () => AsyncIterator<Uint8Array>;
+}
+
+/** How large a request body the write endpoints will read. A canonical mask
+ *  PNG is single-digit KB; a data URL of one is under 50 KB. 8 MB is enormous
+ *  by that standard and still small enough not to be a memory problem. */
+export const MAX_BODY_BYTES = 8 * 1024 * 1024;
+
+export class BodyTooLarge extends Error {}
+
+/**
+ * The request body as JSON, from wherever it actually is.
+ *
+ * Returns `null` rather than throwing on malformed JSON: a handler answers 400
+ * with its own message, which is more useful than a parse error the caller
+ * cannot act on.
+ */
+export async function readJsonBody(req: FnRequest): Promise<unknown> {
+  if (req.body !== undefined && req.body !== null) {
+    if (typeof req.body === 'string') {
+      try {
+        return JSON.parse(req.body);
+      } catch {
+        return null;
+      }
+    }
+    return req.body;
+  }
+  const iterate = req[Symbol.asyncIterator];
+  if (typeof iterate !== 'function') return null;
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for await (const chunk of { [Symbol.asyncIterator]: iterate.bind(req) }) {
+    total += chunk.length;
+    if (total > MAX_BODY_BYTES) throw new BodyTooLarge(`request body exceeds ${MAX_BODY_BYTES} bytes`);
+    chunks.push(chunk);
+  }
+  if (chunks.length === 0) return null;
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A JSON answer for an AUTHENTICATED endpoint.
+ *
+ * Identical to `sendJson` except that it does NOT send
+ * `access-control-allow-origin: *`. That header is right for the image proxy,
+ * whose whole job is to be readable from anywhere; on an endpoint that answers
+ * differently depending on a cookie it would be an invitation to read someone
+ * else's answer, and `no-store` alone is not a substitute.
+ */
+export function sendPrivateJson(res: FnResponse, status: number, body: unknown): void {
+  const encoded = JSON.stringify(body);
+  res.statusCode = status;
+  res.setHeader('content-type', 'application/json; charset=utf-8');
+  res.setHeader('content-length', String(Buffer.byteLength(encoded)));
+  res.setHeader('cache-control', 'no-store');
+  res.setHeader('vary', 'Cookie');
+  res.end(encoded);
+}
+
+export function sendPrivateError(res: FnResponse, status: number, code: string, message: string): void {
+  sendPrivateJson(res, status, { error: { code, message: sanitizeMessage(message) } });
+}
+
+/** A 302 that also (optionally) sets cookies. */
+export function redirect(res: FnResponse, location: string, cookies: string[] = []): void {
+  res.statusCode = 302;
+  res.setHeader('location', location);
+  if (cookies.length > 0) res.setHeader('set-cookie', cookies);
+  res.setHeader('cache-control', 'no-store');
+  res.end();
 }
 
 /** What a Vercel Node function receives as its second argument. */

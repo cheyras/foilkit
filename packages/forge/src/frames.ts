@@ -31,7 +31,27 @@ function repoRoot(): string {
   throw new Error('repo root not found');
 }
 
-export const FRAMES_FILE = join(repoRoot(), 'data', 'frames.json');
+/**
+ * Where the frame registry lives.
+ *
+ * Resolved LAZILY, and overridable by `FOILKIT_FRAMES_FILE`, for one concrete
+ * reason: a serverless function has no repository checkout. The hosted editor's
+ * write endpoint runs `writeMaskRecord` — which gates on the frame registry —
+ * inside a Vercel function whose bundle contains no `pnpm-workspace.yaml`, so
+ * the walk below finds nothing and used to THROW AT IMPORT TIME, before any
+ * caller could hand over a path.
+ *
+ * The env var does not weaken the gate. A mask whose raster matches no record
+ * still refuses to save; this only says which registry file to read, and the
+ * function points it at a copy fetched from the repository it is about to
+ * commit to, so the registry and the corpus are the same generation.
+ */
+let framesFileCache: string | null = null;
+export function framesFile(): string {
+  if (framesFileCache !== null) return framesFileCache;
+  framesFileCache = process.env.FOILKIT_FRAMES_FILE ?? join(repoRoot(), 'data', 'frames.json');
+  return framesFileCache;
+}
 
 /** Row-major 3x3, SOURCE pixel coords -> CANONICAL pixel coords. */
 export type Homography = [[number, number, number], [number, number, number], [number, number, number]];
@@ -106,21 +126,22 @@ export interface FrameRegistry {
 
 let cached: FrameRegistry | null = null;
 
-export function loadFrames(file: string = FRAMES_FILE): FrameRegistry {
-  if (cached && file === FRAMES_FILE) return cached;
-  const reg = JSON.parse(readFileSync(file, 'utf8')) as FrameRegistry;
+export function loadFrames(file?: string): FrameRegistry {
+  const resolved = file ?? framesFile();
+  if (cached && resolved === framesFile()) return cached;
+  const reg = JSON.parse(readFileSync(resolved, 'utf8')) as FrameRegistry;
   if (reg.canonical.width !== CANONICAL_W || reg.canonical.height !== CANONICAL_H) {
     throw new Error(
-      `${file} was built against ${reg.canonical.width}x${reg.canonical.height} but canonical space is ` +
+      `${resolved} was built against ${reg.canonical.width}x${reg.canonical.height} but canonical space is ` +
         `${CANONICAL_W}x${CANONICAL_H} — rebuild it with tools/build-frames.mts`,
     );
   }
   const ids = new Set<string>();
   for (const f of reg.frames) {
-    if (ids.has(f.id)) throw new Error(`${file}: duplicate frame id ${f.id}`);
+    if (ids.has(f.id)) throw new Error(`${resolved}: duplicate frame id ${f.id}`);
     ids.add(f.id);
   }
-  if (file === FRAMES_FILE) cached = reg;
+  if (resolved === framesFile()) cached = reg;
   return reg;
 }
 
