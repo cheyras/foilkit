@@ -591,3 +591,98 @@ anyone decides otherwise — roughly 2,700 lines of working editor UI, including
 the canon lab's slider layout and the provenance panel. **Flagged for the
 maintainer rather than settled here.** The drawing surfaces subtask 8 would
 rebuild around are the part that came, which was the expensive half.
+
+---
+
+## 2026-09-01 — Extraction closeout: the evidence JSONs carry no third-party narration
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** Five things, all of them consequences of one rule — `data/**` is
+CC0, and a CC0 dedication can only cover material this project has standing to
+dedicate.
+
+**1. The quote scrub.** `data/foil-card-assignments.json` and
+`data/foil-pattern-usage.json` carried **162 YouTube-attributed
+`sources[].quote` strings, ~2,517 words**, of which **127 were not marked as
+paraphrase**, the longest verbatim run was 39 words, and one was labelled
+"cleaned auto-caption" in the file itself. Every one of the 162 has been
+rewritten as a short paraphrase in the maintainer's voice, prefixed
+`Paraphrase (…)`, with the factual claim preserved — set names, pattern
+identifications, physical descriptions, demo cards — and the attribution
+normalised to video id (the `url`) plus chapter and timestamp. **162 of 162 are
+now marked; 0 unmarked.** Where a timestamp was never recorded the text says so
+rather than inventing one. Both files also carry a `$comment` stating the policy,
+so the next contributor reads the rule before adding a row.
+
+**2. The caption write-back that did not exist.** `reference/README.md` and all
+39 `pipeline/jobs/*.json` prompts claimed `fetch-reference.sh` "writes the
+caption block back into this slot". No such capability existed. Rather than
+delete the claim, it was made true and honest: the docs now say the captions
+were **removed from the repository** because they are third-party narration, and
+`fetch-reference.sh --captions` (`--captions-only` to skip the video cut) slices
+each pattern's chapter range out of yt-dlp's auto-subtitles into
+`reference-media/.captions/<slug>.txt`, which the existing `reference-media/`
+gitignore rule already covers. Each of the 39 jobs names that path in a new
+`captionsFile` field; `pipeline/gemini_vision.py` appends the text when the file
+is present and runs on the frames alone when it is not. `RECEIPT.md` carries a
+dated correction of the same claim.
+
+**3. The pkmn.gg citations stay.** Ten `sources[].url` entries in
+`data/foil-card-assignments.json` (and the ten hostnames the derived index
+keeps) point at pkmn.gg. **They are kept.** pkmn.gg was ruled out as an ASSET
+source — we do not ship its images or its data — and that ruling says nothing
+about citing it. These are provenance records of where an observation came from:
+nominative use of the name, a URL, and our own restatement of what it showed.
+Deleting them would make the corpus *less* checkable while removing nothing that
+was ever copied.
+
+**4. The usage index no longer knows a host.** `tools/build-usage-index.mjs`
+hard-coded `http://127.0.0.1:3712/deckscout/api` for its optional coverage
+report — a DeckPal address, in a repository with no catalog. The URL is now an
+opt-in `--api <base-url>` flag or `FOILKIT_CATALOG_API` env var **with no default
+baked in**; with neither, the report is skipped cleanly and the output file is
+unaffected, as it always was. Both index builders also had stale extraction
+paths (`../../research/*` → `apps/web/src/foil/*`) and could not run at all;
+they now read `data/` and write `packages/resolver/src/`. Regenerating with the
+fixed paths reproduces both committed indexes **byte for byte**, which is the
+evidence that the path fix is right and that no quote text ever reached them.
+`reference/fetch-reference.sh` additionally had a latent `set -u` failure —
+`local id="$1" out="…$id…"` aborts under bash 5.2 — fixed in the same pass.
+
+**5. Verification.** The resolver digest probe re-ran over the same 10,312
+inputs: `8541aa1b389d5a8b04508aa237189dce196ef470f358dc913c8c9584beafc367`,
+**identical to the receipt**, and the two output files diff clean line for line —
+the scrub moved no guess. 177/177 tests pass, `reuse lint` clean.
+
+**Why:** Third-party narration in a CC0 file is the one defect that makes the
+dedication itself false, and the dataset is the half of this project that other
+people are meant to be able to take. The evidentiary value of a citation is the
+claim plus the pointer, not the wording; paraphrase keeps all of the first and
+loses none of the second.
+
+**Implications:** These were the last open items before DeckPal's `foil/*`
+branches are deleted. Four verification footnotes belong with them, because each
+one looks like a discrepancy until it is explained:
+
+- **The contract stamp is 2, not 4.** The extraction spec says canon files stamp
+  contract 4; revision 4b renumbered the contract sequence, and 2 is the value
+  that survived. The spec's "4" is superseded, not violated.
+- **`foil/tooling-research` was a path SUBSET of `foil/main`.** Nothing was lost
+  by extracting from `foil/main` alone; there was no second corpus to merge.
+- **The literal string "Transcript excerpt" appears in two mid-history commit
+  READMEs.** It is a *reference to* the section that was stripped, not the
+  section's content. `git grep -ci transcript` at HEAD hits four files, all of
+  them meta.
+- **`MANIFEST.json`'s frame check is width-only.** Heights were verified by hand
+  this round: 344/344 frames at 270 px, matching the recorded 480 × 270.
+
+**Flagged, not fixed — for the maintainer.** The scan that closed item 1 also
+looked at the **340 non-YouTube quotes** in the same two files, and they have the
+same shape of exposure: the longest is **83 words from insights.collexy.com**,
+with 177 Bulbapedia quotes (longest 56 words), 14 PokeBeach (58) and 9
+BleedingCool (34). Bulbapedia is CC-BY-SA and Collexy reserves its rights;
+neither is CC0-dedicatable by us. This closeout was scoped to the YouTube
+narration and deliberately did not widen itself. **It is the obvious next
+scrub**, and it is recorded here so that deleting the origin branches does not
+delete the knowledge that it is outstanding.
