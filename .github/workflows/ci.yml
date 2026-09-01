@@ -67,6 +67,19 @@ jobs:
       - name: Data receipt
         run: node --conditions source tools/parity/data-receipt.mjs
 
+      # The corpus manifest is a BUILD STEP of the hosted editor, so a
+      # committed one that no longer matches data/ would ship a site whose
+      # contribution filters quietly disagree with the corpus they describe.
+      # `--check` builds it in memory and fails if the committed file differs.
+      - name: Corpus manifest is current
+        run: node --conditions source tools/build-corpus-manifest.mts --check
+
+      # The editor's own typecheck. It is a separate tsconfig (DOM lib, JSX,
+      # the `source` customCondition) and `pnpm typecheck` above does not see
+      # it, which is exactly how a front end rots while CI stays green.
+      - name: Typecheck the editor
+        run: pnpm --filter foilkit-editor exec tsc --noEmit -p tsconfig.json
+
   # A SEPARATE JOB on purpose. It needs a browser, a built dist/ and a server,
   # and it takes minutes rather than seconds — hanging that off the fast suite
   # would make every contributor wait for a GPU-less Chromium to finish before
@@ -133,6 +146,67 @@ jobs:
           # files by default — so without this the artifact is empty exactly
           # when it is needed, which is on a failure.
           include-hidden-files: true
+          if-no-files-found: warn
+
+  # The hosted editor, driven end to end over its BUILT OUTPUT against a
+  # fixture bake. A separate job for the same reason the stage acceptance is
+  # one: it needs a browser and minutes, and a unit-test failure should not
+  # wait behind a GPU-less Chromium.
+  #
+  # It runs against the FIXTURE catalog, never the real one — the real bake
+  # needs a Postgres connection this runner does not have and should not want.
+  # The corpus half (masks, canon, window geometry) is the real committed data,
+  # which is what makes the provenance and conflict assertions meaningful.
+  editor:
+    name: editor acceptance (headless Chromium)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build the packages
+        run: pnpm run build
+
+      - name: Fixture bake + corpus manifest
+        run: |
+          node --conditions source tools/bake-fixture.mts --out data/fixture-bake
+          node --conditions source tools/build-corpus-manifest.mts
+
+      - name: Build the editor
+        run: pnpm --filter foilkit-editor run build
+        env:
+          FOILKIT_BAKE: fixture
+
+      - name: Install Playwright
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw"
+          cd "$RUNNER_TEMP/pw"
+          npm init -y > /dev/null
+          npm i --no-audit --no-fund playwright@1.62.1
+          npx playwright install --with-deps chromium
+
+      # Browse the queue, open a card, draw a stroke, stage it, reload, export,
+      # re-import, and move upstream under it until the conflict UI appears.
+      - name: Editor acceptance
+        run: node apps/editor/e2e/run.mjs
+        env:
+          PW_ROOT: ${{ runner.temp }}/pw/package.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: editor-acceptance
+          path: |
+            apps/editor/e2e/last-run.json
+            apps/editor/e2e/failure.png
           if-no-files-found: warn
 
   reuse:

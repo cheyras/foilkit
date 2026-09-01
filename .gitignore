@@ -32,3 +32,5 @@ apps/demo/.acceptance/
 # file rather than a stale one.
 apps/editor/dist/
 data/fixture-bake/
+apps/editor/e2e/last-run.json
+apps/editor/e2e/failure.png

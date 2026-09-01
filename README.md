@@ -20,6 +20,12 @@ moved out of the repository the foil work began in. Nothing is published to npm
 and every package is `0.0.0` — but the code runs, the tests pass, and the
 measurements are here.
 
+The workspace names are `@foilkit/*` and they stay that way. **When these are
+published, it will be under `@cheyras/foilkit-*`** — there is no npm
+organisation behind this, and one person's scope is a more honest home for it
+than an org that exists only to hold a name. The directory names and the
+in-repo import specifiers do not change; the rename happens at publish time.
+
 | | |
 |---|---|
 | [`packages/core`](packages/core/) | The shader ABI — canonical card space, the uniform contract, `PREAMBLE + pattern.glsl + MAIN`, canon layering. **Zero dependencies, no renderer.** |
@@ -32,6 +38,8 @@ measurements are here.
 | [`tools/rectifier`](tools/rectifier/) | Four detected corners into a canonical raster, and the pair diff that needs it. |
 | [`tools/parity`](tools/parity/) | The frame-stepped zero-delta render harness. |
 | [`apps/demo`](apps/demo/) | The stress demo: several hundred cards, one WebGL context, both presentation modes, every tilt source, a live ladder readout — and the acceptance run that asserts all of it. |
+| [`apps/editor`](apps/editor/) | The hosted contribution editor at **foilkit.deckpal.app** — a static SPA with no database, a leverage-ranked queue for a home screen, and a local-first staging layer that needs no account. |
+| [`api/`](api/) | Its serverless functions: the image proxy, GitHub sign-in, and the direct-write path that commits through `writeMaskRecord`. Zero npm dependencies. |
 
 `packages/webgl2`, `element` and `react` are not built yet. The one obligation
 the extraction carried for them is already met: `core`, `patterns` and `stage`
@@ -51,6 +59,18 @@ pnpm test              # 224 tests, no build step, no browser, no database
 pnpm run build
 pnpm run demo          # the stress demo: several hundred cards, one context
 ```
+
+To run the contribution editor locally, against a synthetic catalog:
+
+```
+node --conditions source tools/bake-fixture.mts --out data/fixture-bake
+node --conditions source tools/build-corpus-manifest.mts
+cd apps/editor && FOILKIT_BAKE=fixture pnpm dev
+```
+
+The real catalog is a manual bake against a database — see
+[`RUN-BAKE.md`](RUN-BAKE.md) — and the deploy is
+[`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 Issues and discussion are open.
 

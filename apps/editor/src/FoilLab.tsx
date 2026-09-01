@@ -55,7 +55,7 @@ import {
 } from '@foilkit/three/react'
 import { ActionBtn, Chip, CoreSliders, Section, Select, Slider, SurfaceTabs } from './ui.tsx'
 import { CorpusView, FILTER_LABEL, type ContributionFilter } from './catalog/manifest.ts'
-import { navigate } from './router.ts'
+import { navigate, setParam } from './router.ts'
 import { useStaging } from './staging/useStaging.ts'
 import { reseedMaskSession, seedMaskSession, updateMaskSession } from './staging/session.ts'
 import { detectMaskConflict, type ConflictReport } from './staging/conflict.ts'
@@ -81,11 +81,36 @@ interface Selection {
   variantId?: number
 }
 
+/**
+ * Where the card on screen comes from, in priority order.
+ *
+ * THE URL WINS. `/card?id=base1-4&v=3` has to open that card, because it is how
+ * the queue hands you a printing to work on, how the staged list gets you back
+ * to one, and how one person sends another a card. Falling back to the last
+ * localStorage selection when the URL says nothing is the workbench's old
+ * behaviour and is right for "I came back to keep going".
+ */
 function loadSelection(): Selection {
+  let stored: Selection = {}
   try {
-    return JSON.parse(localStorage.getItem(LS_KEY) ?? '{}') as Selection
+    stored = JSON.parse(localStorage.getItem(LS_KEY) ?? '{}') as Selection
   } catch {
-    return {}
+    stored = {}
+  }
+  if (typeof location === 'undefined') return stored
+  const params = new URLSearchParams(location.search)
+  const id = params.get('id')
+  if (id === null) return stored
+  const v = params.get('v')
+  const variantId = v === null ? undefined : Number(v)
+  return {
+    ...stored,
+    cardId: id,
+    variantId: Number.isInteger(variantId) ? variantId : undefined,
+    // The series/set chain is re-derived from the card detail, so a deep link
+    // does not have to carry it and cannot carry a stale version of it.
+    seriesSlug: undefined,
+    setId: undefined,
   }
 }
 
@@ -185,6 +210,12 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
 
   useEffect(() => {
     localStorage.setItem(LS_KEY, JSON.stringify(sel))
+    // Keep the address bar honest, with replaceState so scrubbing a set does
+    // not fill the back button with every card passed on the way.
+    if (sel.cardId !== undefined) {
+      setParam('id', sel.cardId)
+      setParam('v', sel.variantId === undefined ? null : String(sel.variantId))
+    }
   }, [sel])
   useEffect(() => {
     localStorage.setItem(LS_FILTER_KEY, filter)

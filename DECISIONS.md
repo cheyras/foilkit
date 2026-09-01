@@ -960,3 +960,329 @@ the ladder PINNED to a reduced-resolution step. A bug invisible at full quality
 is not caught by a test that only ever runs at full quality, and waiting for a
 slow machine to reveal it is not a test — it is luck, and this time the luck
 belonged to CI rather than to a user.
+
+## 2026-09-01 — npm publishes will use `@cheyras/foilkit-*`; the repo does not rename
+
+**Decided by:** @cheyras
+
+**Decision:** the workspace keeps `@foilkit/core`, `@foilkit/patterns` and the
+rest. When these are published it will be under **`@cheyras/foilkit-*`**,
+because there is no npm organisation behind this project and one person's scope
+is a more honest home for it than an org created only to hold a name. Nothing in
+the repository is renamed now.
+
+**Why:** the scope a package is published under and the specifier the source
+imports are different questions, and conflating them costs a churn commit across
+every file for zero behaviour. Subtask 1 reserved `foilkit` on npm; the org was
+never created, so `@foilkit/*` is not actually held.
+
+**Implications:** `README.md` states the publish name so a reader is not
+surprised. The rename happens once, at publish time, and the packages' `name`
+fields are the only thing it touches — `packages/*` directory names,
+`pnpm-workspace.yaml` and every import specifier stay as they are.
+
+## 2026-09-01 — `assets.tcgdex.net` sends `access-control-allow-origin: *`, and the proxy ships anyway
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** the CORS question subtask 7 opened is **answered: permissive**.
+Measured with `curl -D -`, with and without an `Origin` header, on
+`https://assets.tcgdex.net/en/base/base1/4/high.webp` — `200`,
+`access-control-allow-origin: *`, `access-control-expose-headers:
+Content-Length,Content-Range`; the `OPTIONS` preflight answers `204` with
+`access-control-allow-methods: GET, OPTIONS`. A cross-origin
+`<img crossOrigin="anonymous">` therefore uploads as a WebGL texture without
+tainting the canvas. **`api/image.ts` ships regardless.**
+
+**Why:** only one of the three reasons for the proxy was ever about CORS. The
+other two hold whichever way the check landed: a volunteer-run CDN should not be
+hammered every time somebody scrubs a set, and — the one that matters for the
+corpus — subtask 4's frame registry resolves a framing from **source URL +
+raster dimensions**, so a URL under our control is what keeps that key stable
+when upstream re-encodes something. A green CORS result means dropping the proxy
+stays *available* later; it is not a reason to skip it now.
+
+**Implications:** the frame registry's key is `/api/image?p=…` for anything the
+editor draws over, and it stays that way even if upstream's URL structure moves.
+The `src=` form exists so a recorded source URL passes through byte-identically.
+SSRF is closed by construction rather than by an allow-list check: the function
+only ever builds `${ASSETS_ORIGIN}/${path}` from a path that matched a strict
+five-segment regex.
+
+## 2026-09-01 — The client-side search index is ~700 KB, and is partitioned anyway
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** the static search index is **601–741 KB raw / 75–223 KB gzipped**
+at catalog scale, partitioned by normalized first letter into 27 buckets loaded
+on demand.
+
+**Why (the measurement, n stated):** `/search` was a Postgres full-text query;
+static means an index in the browser, and subtask 7 flagged it as the one place
+in the read path with real size implications. It was measured rather than
+guessed: the real emitter was run over 20,500 synthetic cards / 41,471 printings
+/ 184 sets — the catalog's own scale, taken from `data/foil-pattern-cards.json`
+— with **cardId lengths drawn from the real measured distribution** in
+`data/foil-card-assignments.json` (n = 341, mean 10.32 chars, min 6, max 15) and
+card-name length swept at 11/14/18 chars under two entropy models to bracket
+gzip. That range is the answer; the fixture bake measures 9.6 KB raw / 3.4 KB
+gzipped at 300 cards.
+
+**Implications:** 700 KB is small enough to ship whole, so partitioning is not
+load-bearing — it is there so a first keystroke does not pay for the
+twenty-five buckets it excluded, and because a bucket is the unit that grows
+when the catalog does. `data/search/index.json` records the measured byte
+totals, so the decision stays answerable against a number. RUN-BAKE.md names
+~2 MB raw / ~600 KB gzipped as the threshold that would justify revisiting it.
+
+## 2026-09-01 — Ownership comes out of the editor; the replacement filters are contribution-shaped
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `ownedOnly`, the owned-only chip, the per-series owned counts, the
+per-set "N owned" and the per-card ownership badge are **removed** from the
+hosted editor — not hardcoded to `false`. They are replaced by
+**has-mask / no-mask / has-window-geometry**, answered from
+`data/corpus-manifest.json` rather than from a query parameter.
+
+**Why:** there is no DeckPal account behind `foilkit.deckpal.app`, so an
+owned-only filter has nothing to filter against. A dead parameter threaded
+through four `useQuery` calls is worse than its absence, because the next person
+has to work out whether it does anything. And the replacement is not a
+substitute for the old filter — it answers the question a contributor actually
+has, which is "what work is and is not done".
+
+**Implications:** the baked catalog shards must never carry a user column, a
+collection count or an internal id; `tools/bake/guards.ts` asserts that
+structurally by walking every emitted object for a forbidden key. The ownership
+dot on a card thumbnail became a MASK dot — the contribution fact in the same
+three pixels.
+
+## 2026-09-01 — The editor's home screen is a queue, not a card picker
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras, on 3a's measurement
+
+**Decision:** `/` renders the verification map's rule groups ranked by leverage
+(`printings ÷ (exemplars + 1)`). The card picker lives on `/card` and is what
+you reach for when you already know which printing you came for.
+
+**Why:** 3a produced the ranking specifically to answer "is the editor a card
+picker or a queue", and the answer is in the numbers: the top group is
+`modern-swsh / sheet / energy-symbols-ii / set` governing **2,041 printings with
+zero human exemplars**, and the top five all govern 500+ printings each. A
+picker asks which card you came for; most of the time the honest answer is
+"whichever one teaches the rule the most".
+
+**Implications:** the queue draws no progress bar and no completion state, and
+the end-to-end run asserts there is no `<progress>` element anywhere. Nothing in
+this corpus is ever blank — a card with no human attention is *guessed*, not
+missing — so a completion bar would be a lie about both halves. Groups above a
+leverage floor are labelled as a **regeneration pass** rather than offered as a
+button, because that is a tool run against the corpus, not a thing a browser
+does.
+
+## 2026-09-01 — A staged session's seed is immutable, which is what makes one correction per session free
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `updateMaskSession` has no path to `session.seed`. Every
+intermediate save updates pixels, geometry, uniforms and the comment; the seed
+is written once, when the session is created, and the single PUT at submit
+carries `derivation { startedFrom, parent }` from it.
+
+**Why:** the old lab rewrote `session` on every Save so the mask just written
+became the parent of the next — ten saves on a card produced ten correction
+records, ten parent PNGs, ten diffs. Collapsing that to one needed **no change
+to the provenance contract at all**: `writeMaskRecord` reads the parent from
+disk at write time and derives `derivation_method` by diffing saved pixels
+against what the declared seed rasterizes to. Making the seed structurally
+unreachable turns "one correction per session" from a discipline into a
+property.
+
+**Implications:** `keep-mine` on a conflict changes nothing about the payload —
+the correction lands against current upstream automatically, which is exactly
+what "reparented onto current upstream" means. The trade is ten weak training
+samples for one strong one per card, which is right for the corpus and is worth
+remembering when #10 recalibrates exemplar weights.
+
+## 2026-09-01 — Conflicts compare the resolved answer, not the seeded file
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** conflict detection runs **two** comparisons: the sha256 of the
+mask that answers now against the one stashed at seed time, AND the identity of
+the record that answered. Five outcomes — `none`, `parent-changed`,
+`alias-moved`, `parent-vanished`, `parent-appeared` — and three choices,
+`keep-mine` / `take-theirs` / `re-trace`. Never a merge.
+
+**Why:** masks alias across variants by `prior.scope`, so upstream can grow a
+*sibling* mask that changes which record answers for the staged variant
+**without touching the file that was seeded from**. A sha comparison against the
+seeded file sees nothing. The pixels are not in conflict in that case; the
+provenance parent is, and a correction recorded against the wrong parent is a
+lie in the training signal.
+
+**Implications:** the probe carries an identity as well as a hash, and the
+end-to-end run asserts the alias case separately from the sha case — with
+identical pixels on both sides, so a test that only moved the sha would pass
+while the bug shipped. Nothing auto-merges: two people painting the same alpha
+channel have no lines to reason about, and any automatic result is
+plausible-looking garbage nobody drew.
+
+## 2026-09-01 — The undo stack is not persisted
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** a staged session persists current pixels, the seed, and the parent
+sha. Not the undo history.
+
+**Why (measured):** mask PNGs average 7.7 KB and the whole 96-file corpus is
+738 KB — masks were never the constraint. `MaskEditor` keeps 12 `ImageData`
+snapshots at canonical raster, ~1.4 MB each, ~16 MB per card. Persisting three
+orders of magnitude more data to preserve a 12-step history through a tab close
+is a bad trade.
+
+**Implications:** IndexedDB is still the right store (binary-friendly, async,
+quota in hundreds of megabytes), but it was chosen against the undo number
+rather than the mask number. The end-to-end run asserts a stored session is
+under 400 KB, so a future change that starts persisting history fails loudly.
+
+## 2026-09-01 — A direct write is a commit; the writer list is compiled in
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `api/mask.ts` materialises the corpus into `/tmp` from the
+repository head, runs the real `writeMaskRecord` against it, and commits exactly
+what changed through the git data API with `force: false`. The writer capability
+is a list in `api/_lib/writers.ts`, mirrored in the editor, with a test that
+reads the editor's source and compares.
+
+**Why:** running the same `writeMaskRecord` is what keeps `derivation_method`
+server-derived — a second implementation of that rule would be a second place
+for it to be wrong. Compiling the list in rather than reading it from an env var
+means granting the second writer is a reviewable commit rather than a dashboard
+click, and the mirror test means the UI can never offer a save the server
+refuses, or hide one it would have allowed.
+
+**Implications:** `@foilkit/forge`'s `FRAMES_FILE` had to become lazy and
+`FOILKIT_FRAMES_FILE`-overridable, because it walked for a `pnpm-workspace.yaml`
+at import time and threw inside a bundle that has none. The gate is not
+weakened: a raster matching no frame record still refuses to save.
+**Attribution limitation, stated rather than hidden:** the commit's committer is
+the project token's account and the author is the signed-in writer
+(`<id>+<login>@users.noreply.github.com`). Subtask 9's GitHub App collapses the
+two; this is the honest interim. The `force: false` on the ref update is the
+same principle as the conflict UI one layer up — if somebody pushed in between,
+refuse rather than discard.
+
+## 2026-09-01 — Deletions are not stageable in v1
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `deleteMask` / `deleteWindow` / `deleteCanon` stay live for a
+writer-capability holder and are **absent** from the staging layer. There is no
+"stage a deletion" path and no flag to flip.
+
+**Why:** a contributor's first available action should not be removing ground
+truth. A deletion also has no diff to review — the PR would be an empty file and
+a claim — so there is nothing for #9's pipeline to put in front of a reviewer.
+
+**Implications:** re-open it when there is a reviewer flow that can weigh one.
+Deleting a canon file is recorded in its commit message as "this pattern is
+recorded as never canon'd again", because that absence is real signal for #11's
+queue rather than a reset to defaults.
+
+## 2026-09-01 — Canon edits get a second session type, keyed by patternId
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** the staging layer holds two session kinds —
+`mask:<cardId>:<variantId>` and `canon:<patternId>` — sharing a store, an export
+bundle and the conflict machinery, with their own eventual PRs.
+
+**Why:** a canon file is per-*pattern* and global. It does not belong to any
+card, so it cannot ride the one-session-per-card rule without lying about what
+it is.
+
+**Implications:** a canon conflict is sha-only — a full uniform snapshot has no
+aliasing — and offers `keep-mine` / `take-theirs` and no `re-trace`, because
+there is nothing to ghost underneath a slider. The hash is taken over a
+canonicalised (key-sorted) serialisation, so two files differing only in key
+order are the same canon.
+
+## 2026-09-01 — A contributor's comment becomes PR body text, not a committed file
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** the comment box no longer writes `issues/foil/<id>/report.md` +
+`context.json` into the repository. The text is stored in the staged session and
+carried in the export; it becomes the PR body when #9's pipeline ships.
+
+**Why:** a stranger's note about their own change belongs in the review, not in
+the tree. Committing it also means every drive-by note is a permanent file
+somebody has to prune later.
+
+**Implications:** stored and exported, never committed — so nothing is lost in
+the interim, and the eventual PR body can be assembled without re-deriving
+anything. A direct write puts the note in the **commit message body** instead,
+which is the same idea in the place a writer already has.
+
+## 2026-09-01 — The provisional local diff is built, and is labelled provisional everywhere
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** the editor computes an offline agreement number by rasterizing the
+seed client-side. It is shown as provisional, never persisted into a session,
+and never sent in a payload.
+
+**Why:** the server decides `derivation_method` and `agreement` by diffing the
+saved pixels against what the declared seed rasterizes to, and the client must
+never label a mask. But the client owns the same rasterizer, and editing
+entirely blind for a whole session hides the one number that says whether the
+work is improving the shared rule or fighting it.
+
+**Implications:** `provisionalDiff.ts` is a **line-for-line port** of forge's
+`rasterizePriorAlpha` and `diffMask`, because forge reaches `node:zlib` through
+its PNG codec and cannot enter a browser bundle. A parity test runs in Node —
+where both are importable — and asserts byte-equality across seven geometries
+including the inverted sheet, a zero-area rect and a radius larger than its box.
+If forge's rasterizer moves and the port does not, that test fails. That is the
+only thing that keeps a port a port.
+
+## 2026-09-01 — `data/frames.json` is fetched, not bundled, by the write endpoint
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `api/mask.ts` downloads `data/frames.json` from the repository
+head into its `/tmp` workspace and points `FOILKIT_FRAMES_FILE` at it, per
+request.
+
+**Why:** the frame gate is what stops a mask being authored over a scan nobody
+can name, and a stencil cut for an unnamed picture is worse than no stencil.
+Bundling the registry into the function would freeze it at deploy time, so a
+`data/frames.json` update would authorise masks against numbers the corpus no
+longer uses — and the drift would be silent, which is the failure mode the gate
+exists to prevent.
+
+**Implications:** one extra API read per write, on a path that already makes
+several. The registry and the pixels it authorises are the same generation, by
+construction.
+
+## 2026-09-01 — The uncanon'd pattern count is 12, not 13
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision:** `data/corpus-manifest.json` derives the uncanon'd list rather than
+trusting a count, and the derived answer is **12**: `ace-spec`, `acid-wash`,
+`crosshatch`, `disco`, `energy-symbols`, `energy-symbols-ii`, `ex-starfoil`,
+`pokeball-masterball`, `prism`, `prismatic-pokeball`, `rainbow-mirror`,
+`tcg-classic`.
+
+**Why:** subtask 5 recorded 13, which is `45 implemented patterns − 32 canon
+files`. That arithmetic counts `none`, the no-foil recipe, which has no canon by
+definition and never will. The corpus itself has not moved.
+
+**Implications:** the builder prints a `FINDING:` line whenever the derived list
+disagrees with the recorded count, and does **not** fail the build over it — a
+count is a claim and the corpus is the measurement. `docs/HOSTED-EDITOR.md` was
+corrected.

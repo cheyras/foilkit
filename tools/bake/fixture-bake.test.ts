@@ -69,8 +69,17 @@ test('fixture bake: catalog/index.json carries the staleness stamp §1 requires'
   assert.equal(typeof index.resolverVersion, 'number')
   assert.ok(index.resolverVersion > 0)
   assert.equal(index.series.length, index.counts.series)
-  assert.equal(index.counts.series, 2, '2 series, per the fixture')
-  assert.equal(index.counts.sets, 4, '4 sets, per the fixture')
+  // Three series: two entirely invented, plus the CORPUS-OVERLAP one. That
+  // third series carries the real catalog ids the committed mask corpus covers
+  // (invented names, real ids — an id is a coordinate, a name is a trademark),
+  // and it exists so the editor's end-to-end run can open a card whose real
+  // hand mask loads. Without it every fixture card resolves to scope 'none' and
+  // there is nothing to draw.
+  assert.equal(index.counts.series, 3, '2 invented series + the corpus-overlap one')
+  assert.equal(index.counts.sets, 5, '4 invented sets + base1')
+  const overlap = index.series.find((s) => s.slug === 'base')
+  assert.ok(overlap, 'the corpus-overlap series is present')
+  assert.equal(overlap.setCount, 1)
 })
 
 test('fixture bake: the counts in index.json agree with the shards they summarize', () => {

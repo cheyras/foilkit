@@ -23,7 +23,7 @@
 // A test fixture is the easiest place in a repository to accidentally vendor
 // somebody else's trademark, and the hardest place to notice it afterwards.
 
-import { writeFileSync, mkdirSync } from 'node:fs'
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { RESOLVER_VERSION } from '@foilkit/resolver'
@@ -113,7 +113,79 @@ function makeSet(setId: string, name: string, releasedOn: string, count: number,
   return { setId, name, releasedOn, cardCountTotal: count, cards }
 }
 
+/**
+ * THE CORPUS-OVERLAP SET.
+ *
+ * Everything above is invented, which is right for exercising the emitter and
+ * wrong for exercising the EDITOR: a card the resolver has never heard of gets
+ * scope 'none', renders no foil, and offers no mask to draw. So one set carries
+ * the real catalog ids the committed mask corpus actually covers.
+ *
+ * A card ID IS A FACT — `base1-4` is a coordinate, not a trademark, and
+ * `data/foil-masks/base1-4/` is already in this repository. The NAMES stay
+ * invented, because a name is the part F2 is about. That split is deliberate
+ * and is the only reason this set is allowed to exist.
+ *
+ * What it buys: the end-to-end test can browse to a card whose real hand mask
+ * loads out of the committed corpus, draw on top of it, and stage a session
+ * whose seed pins a real sha256 — which is the only way the conflict path is
+ * testable at all without a database.
+ */
+interface OverlapManifest {
+  masks: Record<string, Record<string, { variantId: number; scope: string }>>
+}
+
+function corpusOverlapSet(): BakeSet {
+  let manifest: OverlapManifest | null = null
+  try {
+    manifest = JSON.parse(readFileSync(join(ROOT, 'data', 'corpus-manifest.json'), 'utf8')) as OverlapManifest
+  } catch {
+    // No manifest in this checkout: the overlap set is simply empty, and the
+    // fixture is still a valid bake. It just cannot exercise the corpus half.
+    manifest = null
+  }
+  const ids = Object.keys(manifest?.masks ?? {})
+    .filter((id) => id.startsWith('base1-'))
+    .sort((a, b) => Number(a.slice(6)) - Number(b.slice(6)))
+  const cards: BakeCard[] = ids.map((cardId, i) => {
+    const number = cardId.slice('base1-'.length)
+    const records = Object.values(manifest?.masks[cardId] ?? {})
+    // The real variant id the mask is filed under, so `aliasOf` is null and the
+    // provenance line shows the ordinary case rather than the aliased one.
+    const realVariant = records[0]?.variantId ?? 900000 + i
+    return {
+      cardId,
+      number,
+      name: `${GREEK[i % GREEK.length]!} Overlap`,
+      rarity: 'Fixture Rare Holo',
+      images: {
+        low: `https://fixture.invalid/base1/${number}/low.webp`,
+        high: `https://fixture.invalid/base1/${number}/high.webp`,
+      },
+      variants: [
+        { variantId: realVariant, kind: 'holo', displayName: variantDisplayName('holo'), tier: variantTier('holo') },
+        {
+          variantId: 990000 + i,
+          kind: 'normal',
+          displayName: variantDisplayName('normal'),
+          tier: variantTier('normal'),
+        },
+      ],
+    }
+  })
+  return { setId: 'base1', name: 'Fixture Overlap Base', releasedOn: '1999-01-09', cardCountTotal: cards.length, cards }
+}
+
 const series: BakeSeries[] = [
+  {
+    // The real series slug, because the resolver keys its era table on it —
+    // `base` is what makes these cards resolve to the WOTC window rule rather
+    // than to nothing.
+    slug: 'base',
+    name: 'Fixture Overlap',
+    tcgdexId: 'base',
+    sets: [corpusOverlapSet()],
+  },
   {
     slug: 'fixture-prime',
     name: 'Fixture Prime',
