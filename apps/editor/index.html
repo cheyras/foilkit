@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: MIT -->
+<!-- SPDX-FileCopyrightText: 2026 Chey Rasmussen -->
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <!--
+      viewport-fit=cover + user-scalable=no: the authoring surface is an iPad
+      with a Pencil, and a two-finger pinch inside the mask canvas must be a
+      canvas gesture rather than a page zoom. The cost is real (pinch-to-zoom
+      is an accessibility affordance), so the editor provides its own zoom
+      control on the viewer instead of taking one away with nothing behind it.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="color-scheme" content="dark" />
+    <title>foilkit — contribution editor</title>
+    <meta
+      name="description"
+      content="Author foil masks, window geometry and canon uniforms for real card printings. Public to read; no account needed to work."
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

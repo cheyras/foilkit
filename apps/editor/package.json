@@ -1,0 +1,36 @@
+{
+  "name": "foilkit-editor",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The hosted contribution editor at foilkit.deckpal.app — static read path, local-first staging, direct write for the writer list.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "prebuild": "node ../../tools/build-corpus-manifest.mts",
+    "build": "vite build && node ./copy-data.mjs",
+    "dev": "vite",
+    "preview": "vite preview --port 5173",
+    "e2e": "node ./e2e/run.mjs"
+  },
+  "dependencies": {
+    "@foilkit/core": "workspace:*",
+    "@foilkit/patterns": "workspace:*",
+    "@foilkit/resolver": "workspace:*",
+    "@foilkit/stage": "workspace:*",
+    "@foilkit/three": "workspace:*",
+    "@tanstack/react-query": "^5.62.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@types/three": "^0.185.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.0"
+  }
+}

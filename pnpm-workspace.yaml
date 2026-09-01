@@ -2,3 +2,8 @@
 # SPDX-FileCopyrightText: 2026 Chey Rasmussen
 packages:
   - 'packages/*'
+  # apps/editor is the hosted contribution editor (foilkit.deckpal.app). It is
+  # the one place in this repository with npm dependencies — React, Vite and a
+  # query client are not things you hand-roll — and it is an APP, never
+  # published. packages/* stay dependency-free; that contract is unchanged.
+  - 'apps/editor'

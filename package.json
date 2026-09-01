@@ -12,7 +12,7 @@
   "scripts": {
     "build": "tsc --build tsconfig.build.json && node tools/copy-json.mjs",
     "typecheck": "tsc --build --force tsconfig.build.json && tsc --noEmit -p tsconfig.tools.json",
-    "test": "node --conditions source --test \"packages/*/src/__tests__/*.test.ts\" \"tools/rectifier/*.test.ts\"",
+    "test": "node --conditions source --test \"packages/*/src/__tests__/*.test.ts\" \"tools/rectifier/*.test.ts\" \"tools/bake/*.test.ts\" \"apps/editor/src/**/*.test.ts\" \"api/**/*.test.ts\"",
     "reuse": "reuse lint",
     "test:packages": "node --conditions source --test \"packages/*/src/__tests__/*.test.ts\"",
     "demo": "node tools/parity/serve.mjs --page apps/demo/index.html --port 5200",

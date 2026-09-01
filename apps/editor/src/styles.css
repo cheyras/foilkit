@@ -1,0 +1,69 @@
+/* SPDX-License-Identifier: MIT */
+/* SPDX-FileCopyrightText: 2026 Chey Rasmussen */
+
+/*
+ * The nine design tokens the two lab surfaces were written against.
+ *
+ * They came from DeckPal's design system, which does not travel with this
+ * repository — so rather than port a whole system for nine names, the names
+ * themselves are re-declared here as Tailwind theme colors. Every
+ * `bg-surface-secondary` / `text-text-muted` / `border-border-default` in
+ * FoilLab.tsx, CanonLab.tsx and ui.tsx keeps resolving, and the port stays a
+ * port instead of becoming a restyle.
+ *
+ * The palette is dark by construction. Foil is screen-blended light: a light
+ * chrome around a foil card makes the effect unreadable, which is why the
+ * workbench was dark in the first place. This is a deliberate single-theme
+ * design, not a missing light mode.
+ */
+
+@import 'tailwindcss';
+
+@theme {
+  --color-surface-primary: #0b0c10;
+  --color-surface-secondary: #14161d;
+  --color-surface-tertiary: #1c1f28;
+  --color-border-default: #2a2e3a;
+  --color-text-primary: #e8eaf0;
+  --color-text-muted: #8b91a3;
+  --color-action-primary: #6ea8fe;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-surface-primary);
+  color: var(--color-text-primary);
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* The mask canvas owns its own gestures; the page must not steal them. */
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+/*
+ * Pencil authoring: the drawing surfaces set `touch-action: none` themselves,
+ * but Safari also fires a synthetic double-tap zoom that arrives after the
+ * pointer events and cannot be preventDefault'd from a passive listener.
+ * Disabling it globally is the only thing that makes a fast two-stroke
+ * correction feel like drawing rather than like fighting the browser.
+ */
+canvas {
+  touch-action: none;
+}
+
+/* A focus ring that survives the dark palette — keyboard users exist on the
+   desktop vector surface, which is the whole point of shipping one. */
+:focus-visible {
+  outline: 2px solid var(--color-action-primary);
+  outline-offset: 2px;
+}

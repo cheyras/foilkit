@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node", "vite/client"],
+    "customConditions": ["source"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "e2e/**/*.mjs"]
+}
