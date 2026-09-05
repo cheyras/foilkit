@@ -1834,3 +1834,55 @@ mock that answered anything.
 **Implications:** any future call that puts a ref in a path uses `refPath`. The
 pull request lookup still uses `encodeURIComponent`, correctly — `head=owner:branch`
 is a query parameter and the slashes there *are* data.
+
+---
+
+## 2026-09-05 — The tilt strip reads the canvas; `page.screenshot` is not portable enough to gate a merge
+
+**Decided by:** Claude Fable 5, on behalf of @cheyras
+
+**Decision:** `tools/parity/tilt-strip.mjs` captures each frame by calling
+`toDataURL()` on the renderer's own canvas — armed by `window.__grabNext()` and
+serviced by the render loop in the same task as the draw, while the drawing
+buffer is still valid — and crops the card rect in Node from `__cardRect`.
+`tools/parity/run.mjs` keeps using `page.screenshot({ clip })` and is unchanged.
+
+**Why:** `page.screenshot` asks the BROWSER COMPOSITOR for a frame. On a GitHub
+Linux runner that call logged `fonts loaded` and then sat until it timed out;
+on a Windows Chromium build it returned fine. Three CI runs went into the
+diagnosis, and neither of the first two hypotheses was right:
+
+1. `animations: 'disabled'` makes Playwright wait for the page to settle, and
+   settling includes an animation frame this harness has stubbed. Removing it
+   changed nothing.
+2. A page whose rAF loop has stopped calling itself never asks for a compositor
+   frame. Restoring the real `requestAnimationFrame` at the fixpoint — which was
+   proved not to move a pixel, sha256 `b905f883968bb761…` before and after —
+   changed nothing either.
+
+The compositor is not part of the measurement. It contributes a font pass, a
+device-scale negotiation, a viewport and a surface capture, none of which the
+card render depends on, and all of which vary by platform. Taking it out of the
+path deletes the class rather than the instance.
+
+**Implications:**
+
+- The strip is no longer byte-comparable with anything produced by the
+  screenshot path. That is fine and is stated in the file header: determinism is
+  a **run-to-run** property, and it holds — a control pair of `base1-4/15` gives
+  `8cc84702a88a5d94…` twice.
+- `preserveDrawingBuffer` stays **off**. Turning it on would change the
+  renderer's configuration for every consumer of this page, the moving receipt
+  included. Arming a flag the loop services is what makes it unnecessary.
+- The card rect is now arithmetic (the page's own inverse of its `fit()`
+  projection) rather than a `boundingBox()`, so the crop cannot depend on
+  layout, scrollbars or a window manager.
+- **`run.mjs` has never been run headlessly on Linux.** `apps/demo/acceptance.mjs`
+  screenshots happily in CI and does *not* stub rAF, which is why nobody had met
+  this. If the moving receipt is ever run on a runner and hangs, this entry is
+  the answer — and switching it to canvas capture is a separate decision that
+  needs its own control pair, because its recorded sha256s are compared against
+  other builds of the same modules.
+- Found by opening a throwaway pull request and watching the workflow. Nothing
+  short of that would have found it: the offline structural check, actionlint,
+  shellcheck and four green local renders all passed the whole time.

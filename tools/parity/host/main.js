@@ -198,6 +198,34 @@ async function main() {
   const start = performance.now()
   let frames = 0
 
+  /**
+   * DIRECT CANVAS CAPTURE, for a caller that cannot use `page.screenshot`.
+   *
+   * `page.screenshot` asks the BROWSER COMPOSITOR for a frame, and that turned
+   * out to be the single least portable thing in this harness: on a GitHub
+   * Linux runner it logs "fonts loaded" and then times out, while returning
+   * fine on a Windows Chromium build. Three CI runs went into learning that,
+   * and none of them were about the pixels.
+   *
+   * `toDataURL()` on the renderer's own canvas answers from the DRAWING BUFFER
+   * instead, so there is no compositor, no font pass, no device-scale
+   * negotiation and no viewport in the path at all. It must be called while
+   * that buffer is still valid, which is why this is a flag the render loop
+   * services rather than a function a caller invokes: `__grabNext()` arms it,
+   * and the next frame captures immediately after `renderer.render()`, inside
+   * the same task.
+   *
+   * `tools/parity/run.mjs` still screenshots. It is the moving receipt and its
+   * recorded sha256s are compared against other builds, so changing how it
+   * captures is a separate decision with its own control pair.
+   */
+  let grabArmed = false
+  window.__capture = null
+  window.__grabNext = () => {
+    window.__capture = null
+    grabArmed = true
+  }
+
   const loop = () => {
     requestAnimationFrame(loop)
     tilt.x += (TILT.x - tilt.x) * 0.12
@@ -217,6 +245,14 @@ async function main() {
     u.uMaskTexOn.value = MASK_URL && mat.uniforms.uMaskTex.value ? 1 : 0
     u.uScanBase.value = 0 // blank base — the classic composite, canon truth
     renderer.render(scene, camera)
+    if (grabArmed) {
+      // Same task as the draw. A tick later the buffer is gone —
+      // `preserveDrawingBuffer` is deliberately NOT set, because turning it on
+      // would change the renderer's configuration for every consumer of this
+      // page including the moving receipt.
+      grabArmed = false
+      window.__capture = renderer.domElement.toDataURL('image/png')
+    }
     frames++
   }
   loop()

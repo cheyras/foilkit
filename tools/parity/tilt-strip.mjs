@@ -28,10 +28,30 @@
 //
 // Every trick in `run.mjs` applies here and for the same reasons — rAF stubbed
 // and stepped, performance.now frozen, ~300 frames to the easing's fixpoint,
-// clip screenshots only, SwiftShader. Each tilt step is a fresh page load with
-// its own parked target, so the eight frames are eight independent fixpoints
-// rather than eight samples of one animation, and two runs of this tool on the
-// same inputs produce byte-identical strips.
+// SwiftShader. Each tilt step is a fresh page load with its own parked target,
+// so the eight frames are eight independent fixpoints rather than eight samples
+// of one animation, and two runs of this tool on the same inputs produce
+// byte-identical strips.
+//
+// ── ONE DEPARTURE: THE PIXELS COME OFF THE CANVAS, NOT OFF THE COMPOSITOR ──
+//
+// `run.mjs` uses `page.screenshot({ clip })`. This tool does not, and three CI
+// runs bought that sentence: `page.screenshot` asks the BROWSER COMPOSITOR for
+// a frame, and on a GitHub Linux runner that call logs "fonts loaded" and then
+// sits there until it times out — while returning perfectly well on a Windows
+// Chromium build, so every local run was green. Neither disabling the animation
+// wait nor restoring the page's real `requestAnimationFrame` changed it.
+//
+// So the compositor comes out of the path. The host page exposes `__grabNext()`,
+// which arms a flag that the render loop services by calling `toDataURL()` on
+// the renderer's own canvas in the SAME TASK as the draw, while the drawing
+// buffer is still valid. No compositor, no font pass, no device-scale
+// negotiation, no viewport. The card rect is then cropped in Node, from
+// `__cardRect`, which is arithmetic rather than a bounding box.
+//
+// That is a strictly better capture for something that must run unattended, and
+// it is why this file's output is not comparable byte-for-byte with `run.mjs`'s
+// — different capture, same render.
 //
 // Usage:
 //   node tools/parity/serve.mjs --port 5199 &
@@ -41,7 +61,7 @@
 
 import { createRequire } from 'node:module'
 import { createHash } from 'node:crypto'
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { decodePng, encodePng, resampleRgba } from '@foilkit/forge'
@@ -117,6 +137,7 @@ function initScript() {
     }
     return window.__framesRun
   }
+
 }
 
 const browser = await chromium.launch({
@@ -183,19 +204,32 @@ try {
     const err2 = await page.evaluate(() => window.__parityError ?? null)
     if (err2) throw new Error(`${PATTERN} @ tilt ${tiltx}: ${err2}`)
 
+    // Arm the capture, then step ONE more frame — which renders and grabs the
+    // drawing buffer in the same task. The easing is at its fixpoint, so that
+    // frame is identical to the 300 before it.
+    await page.evaluate(() => window.__grabNext())
+    await page.evaluate(() => window.__stepFrames(1))
+    const dataUrl = await page.evaluate(() => window.__capture)
+    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/png;base64,')) {
+      throw new Error(`${PATTERN} @ tilt ${tiltx}: the canvas capture came back empty`)
+    }
+    const full = decodePng(Buffer.from(dataUrl.slice('data:image/png;base64,'.length), 'base64'))
+
+    // The card rect out of the host canvas. Arithmetic, from the page's own
+    // inverse of its fit() projection — not a bounding box, so it cannot depend
+    // on layout, scrollbars or a window manager.
     const rect = await page.evaluate(() => window.__cardRect)
-    const host = await page.locator('#host').boundingBox()
-    const x = Math.ceil(host.x + rect.x)
-    const y = Math.ceil(host.y + rect.y)
-    const clip = {
-      x,
-      y,
-      width: Math.floor(host.x + rect.x + rect.width) - x,
-      height: Math.floor(host.y + rect.y + rect.height) - y,
+    const x = Math.ceil(rect.x)
+    const y = Math.ceil(rect.y)
+    const clip = { x, y, width: Math.floor(rect.x + rect.width) - x, height: Math.floor(rect.y + rect.height) - y }
+    const cropped = { width: clip.width, height: clip.height, rgba: new Uint8Array(clip.width * clip.height * 4) }
+    for (let row = 0; row < clip.height; row++) {
+      const src = ((y + row) * full.width + x) * 4
+      cropped.rgba.set(full.rgba.subarray(src, src + clip.width * 4), row * clip.width * 4)
     }
     const file = path.join(tmp, `${TILTS.indexOf(tiltx)}.png`)
-    await page.screenshot({ path: file, clip, animations: 'disabled' })
-    frames.push({ tiltx, file, image: decodePng(readFileSync(file)) })
+    writeFileSync(file, encodePng(cropped))
+    frames.push({ tiltx, file, image: cropped })
     process.stdout.write(`  tilt ${String(tiltx).padStart(5)}  ${clip.width}×${clip.height}\n`)
   }
 
