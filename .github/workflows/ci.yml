@@ -152,7 +152,11 @@ jobs:
           node tools/parity/serve.mjs --page apps/demo/index.html --port 5200 &
           SERVER=$!
           trap 'kill $SERVER 2>/dev/null || true' EXIT
-          for i in $(seq 1 30); do
+          # `_` rather than `i`: the counter is never read, and shellcheck says
+          # so (SC2034) through actionlint. Naming an unused variable after
+          # something is how the next person spends a minute looking for the
+          # use that is not there.
+          for _ in $(seq 1 30); do
             curl -sf http://127.0.0.1:5200/ > /dev/null && break
             sleep 1
           done

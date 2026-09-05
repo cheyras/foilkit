@@ -27,6 +27,7 @@
 // key becomes in some parsers and is the single most confusing failure in this
 // format.
 
+import { spawnSync } from 'node:child_process'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -193,3 +194,36 @@ if (problems.length > 0) {
   process.exit(1)
 }
 console.log('\nok — structure, SPDX, permissions, and the pr-evidence safety guards')
+
+// ── The real parser, when this machine happens to have it ──────────────────
+//
+// Opportunistic, and NEVER a failure when it is absent. actionlint is a Go
+// binary with no npm package, so requiring it here would make `pnpm run
+// workflows` depend on a download; CI runs it unconditionally in its own job,
+// and that is the gate.
+//
+// When it IS on PATH, running it closes the exact gap that produced the one
+// finding this file could never have made: actionlint shells every `run:` block
+// out to shellcheck, and shellcheck caught an unused loop variable in ci.yml
+// that no amount of line-matching would have seen.
+// `ACTIONLINT` overrides the binary, which is what Windows needs: Node's spawn
+// does not apply PATHEXT, so a bare `actionlint` never resolves `actionlint.exe`
+// there. No `shell: true` — passing args through a shell is a deprecated,
+// unescaped concatenation, and buying a Windows convenience with an injection
+// shape is not a trade this repository makes.
+const ACTIONLINT = process.env.ACTIONLINT ?? 'actionlint'
+const probe = spawnSync(ACTIONLINT, ['-version'], { encoding: 'utf8' })
+if (probe.error === undefined && probe.status === 0) {
+  const lint = spawnSync(ACTIONLINT, [], { cwd: ROOT, stdio: 'inherit' })
+  if (lint.status !== 0) {
+    console.error('\nactionlint disagreed — trust it over the checks above.')
+    process.exit(1)
+  }
+  console.log(`actionlint ${String(probe.stdout).split('\n')[0].trim()}: clean`)
+} else {
+  console.log(
+    'actionlint was not found — CI runs it in its own job, which is the gate. For the same check\n' +
+      'locally (including shellcheck over every `run:` block, which is what caught SC2034 in ci.yml),\n' +
+      'install github.com/rhysd/actionlint and put it on PATH, or set ACTIONLINT=<path to the binary>.',
+  )
+}
