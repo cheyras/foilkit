@@ -91,6 +91,7 @@ const TILTS = [-1, -0.7, -0.35, -0.1, 0.1, 0.35, 0.7, 1]
 
 function initScript() {
   const FROZEN = 1000
+  const nativeRaf = window.requestAnimationFrame.bind(window)
   const queue = []
   const cbs = new Map()
   let nextId = 1
@@ -116,6 +117,35 @@ function initScript() {
       window.__framesRun++
     }
     return window.__framesRun
+  }
+
+  /**
+   * HAND THE PAGE BACK ITS REAL ANIMATION FRAME, once the easing is done.
+   *
+   * `page.screenshot` waits for the renderer to produce a compositor frame, and
+   * a page whose rAF loop has stopped calling itself never asks for one. On the
+   * Linux runner that is a hang: the call logs "fonts loaded" and then sits
+   * until it times out. It happens to return on some Chromium builds, which is
+   * what made a green local run worthless.
+   *
+   * SAFE, and this is the part that matters. The tilt easing is already at its
+   * float64 underflow fixpoint and `performance.now` stays frozen, so every
+   * further frame renders the SAME pixels — that is the whole reason the
+   * harness steps to a fixpoint rather than to a frame count. Determinism is
+   * preserved, and `tilt-strip` asserts it: two runs of the same inputs still
+   * produce byte-identical strips.
+   */
+  window.__resumeRaf = () => {
+    window.requestAnimationFrame = nativeRaf
+    // Re-queue whatever the loop asked for on its last stepped frame, so it
+    // starts driving itself again instead of stopping one callback short.
+    const pending = queue.splice(0, queue.length)
+    for (const id of pending) {
+      const cb = cbs.get(id)
+      cbs.delete(id)
+      if (cb) nativeRaf(cb)
+    }
+    return pending.length
   }
 }
 
@@ -182,6 +212,14 @@ try {
     await page.evaluate((n) => window.__stepFrames(n), FRAMES)
     const err2 = await page.evaluate(() => window.__parityError ?? null)
     if (err2) throw new Error(`${PATTERN} @ tilt ${tiltx}: ${err2}`)
+
+    // The easing is at its fixpoint; give the page its real animation frame
+    // back so the compositor has something to hand the screenshot, and let two
+    // land before asking. See `__resumeRaf` for why this cannot move a pixel.
+    await page.evaluate(() => window.__resumeRaf())
+    await page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(null)))),
+    )
 
     const rect = await page.evaluate(() => window.__cardRect)
     const host = await page.locator('#host').boundingBox()
