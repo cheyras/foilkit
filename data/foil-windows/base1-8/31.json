@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "cardId": "base1-8",
+  "variantId": 31,
+  "artworkKey": "base1-8",
+  "savedAt": "2026-09-05T19:07:24.531Z",
+  "scope": "window",
+  "eraId": "wotc",
+  "rect": [
+    0.11,
+    0.098,
+    0.78,
+    0.375
+  ],
+  "radius": 0.02,
+  "invert": false,
+  "base": {
+    "rect": [
+      0.11,
+      0.098,
+      0.78,
+      0.375
+    ],
+    "radius": 0.02,
+    "resolverVersion": 5
+  }
+}
