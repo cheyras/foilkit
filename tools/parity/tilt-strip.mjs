@@ -194,7 +194,25 @@ try {
       height: Math.floor(host.y + rect.y + rect.height) - y,
     }
     const file = path.join(tmp, `${TILTS.indexOf(tiltx)}.png`)
-    await page.screenshot({ path: file, clip, animations: 'disabled' })
+    // NO `animations: 'disabled'`, and this one cost a CI run to find.
+    //
+    // That option makes Playwright disable CSS animations and then WAIT for the
+    // page to settle, and part of settling is an animation frame. This harness
+    // has stubbed `requestAnimationFrame` and stopped flushing it, so the frame
+    // never arrives: on the Linux runner the call sat at "fonts loaded" until it
+    // timed out at 30 s. It happens to return on this machine's Chromium build,
+    // which is exactly the kind of difference that makes a green local run
+    // worthless — the same trap `tools/parity/README.md` records for ELEMENT
+    // screenshots, one option over.
+    //
+    // Nothing is lost by dropping it. The page has no CSS animation and no
+    // transition; the only thing that ever moved is the stepped rAF loop, and
+    // that has already been driven to its fixpoint.
+    //
+    // `tools/parity/run.mjs` still passes the option. It is the moving receipt,
+    // it is run by hand rather than in CI, and changing it is a separate
+    // decision — but if it ever hangs headlessly on Linux, this is why.
+    await page.screenshot({ path: file, clip, timeout: 20_000 })
     frames.push({ tiltx, file, image: decodePng(readFileSync(file)) })
     process.stdout.write(`  tilt ${String(tiltx).padStart(5)}  ${clip.width}×${clip.height}\n`)
   }
