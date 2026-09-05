@@ -26,6 +26,9 @@ import { ActionBtn, Chip, COMPOSITE_KEYS, CoreSliders, Section, Select, Slider, 
 import { CorpusView } from './catalog/manifest.ts'
 import { useStaging } from './staging/useStaging.ts'
 import { seedCanonSession, updateCanonSession } from './staging/session.ts'
+import { buildCanonContribution, type SubmissionResult } from './staging/submit.ts'
+import { detectCanonConflict } from './staging/conflict.ts'
+import { SubmitOutcome } from './SubmitOutcome.tsx'
 import { sha256Uniforms } from './staging/sha.ts'
 import { useViewer } from './writer/useViewer.ts'
 import type { CanonSession } from './staging/types.ts'
@@ -241,6 +244,13 @@ export function CanonLab({ staging, viewer }: { staging: Staging; viewer: Viewer
    */
   const canWrite = viewer.savePath === 'direct-write'
   const [canonStatus, setCanonStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  // "Open as PR instead" — the writer's route through the contribution
+  // pipeline, for a canon file. Same reasoning as FoilLab's: a canon change is
+  // a change to how a whole PATTERN renders on every card that carries it, and
+  // the tilt-sweep evidence on a pull request is worth more there than almost
+  // anywhere else in this repository.
+  const [prBusy, setPrBusy] = useState(false)
+  const [prResult, setPrResult] = useState<SubmissionResult | null>(null)
   const canonQ = useQuery({ queryKey: ['foil', 'canon'], queryFn: ({ signal }) => foilApi.getCanon(signal) })
   const refIndexQ = useQuery({
     queryKey: ['foil', 'reference-index'],
@@ -346,6 +356,38 @@ export function CanonLab({ staging, viewer }: { staging: Staging; viewer: Viewer
       setTimeout(() => setSaveStatus('idle'), 1500)
     } catch {
       setSaveStatus('error')
+    }
+  }
+
+  const openAsPr = async () => {
+    setPrBusy(true)
+    setPrResult(null)
+    try {
+      await stageCanon()
+      const s = await staging.store.get(`canon:${pattern.id}`)
+      if (s === null || s.kind !== 'canon') throw new Error('the session was not staged')
+      // Probed rather than assumed fresh: a canon lab left open while somebody
+      // else re-tuned the same recipe has a stale seed, and submitting it as
+      // `fresh` would put a sentence in the pull request that is not true.
+      const upstream = await foilApi.getCanon()
+      const entry = upstream?.[pattern.id] ?? null
+      const conflict = detectCanonConflict(s, {
+        sha256: entry === null ? null : await sha256Uniforms(entry.uniforms),
+        savedAt: entry?.savedAt ?? null,
+        contract: entry?.contract ?? null,
+      })
+      setPrResult(await foilApi.submitContribution(buildCanonContribution(s, conflict)))
+    } catch (err) {
+      setPrResult({
+        ok: false,
+        kind: 'failed',
+        message: err instanceof Error ? err.message : String(err),
+        checks: [],
+        failures: [],
+        missing: [],
+      })
+    } finally {
+      setPrBusy(false)
     }
   }
 
@@ -670,6 +712,11 @@ export function CanonLab({ staging, viewer }: { staging: Staging; viewer: Viewer
                       ? 'Stage canon ●'
                       : 'Stage canon'}
             </ActionBtn>
+            {canWrite && (
+              <ActionBtn onClick={() => void openAsPr()} disabled={prBusy}>
+                {prBusy ? 'Opening a pull request…' : 'Open as PR instead'}
+              </ActionBtn>
+            )}
             {canon && dirty && <ActionBtn onClick={() => setUniforms(baseline)}>Reset to canon</ActionBtn>}
             <ActionBtn onClick={() => setUniforms(canonBaseline(pattern, undefined))}>Code defaults</ActionBtn>
             {canWrite && canon && <ActionBtn onClick={deleteCanon}>Delete canon</ActionBtn>}
@@ -686,10 +733,14 @@ export function CanonLab({ staging, viewer }: { staging: Staging; viewer: Viewer
           {!canWrite && (
             <p className="mt-[6px] text-[11px] leading-[15px] text-text-muted">
               A canon file is per-pattern and global, so it stages as its own session rather than riding a
-              card’s. Submission opens PRs once the contribution pipeline ships; until then it stays in this
-              browser and in your export.
+              card’s. Submit it from{' '}
+              <a className="underline hover:text-text-primary" href="/staged">
+                Staged work
+              </a>{' '}
+              and it opens a pull request in your name, with the tilt-sweep evidence rendered onto it.
             </p>
           )}
+          <SubmitOutcome state={{ busy: prBusy, result: prResult }} viewer={viewer} />
           {(saveStatus === 'error' || canonStatus === 'error') && (
             <p className="mt-[6px] text-[12px] text-red-400">Save failed.</p>
           )}

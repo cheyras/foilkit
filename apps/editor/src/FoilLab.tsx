@@ -60,6 +60,9 @@ import { useStaging } from './staging/useStaging.ts'
 import { reseedMaskSession, seedMaskSession, updateMaskSession } from './staging/session.ts'
 import { detectMaskConflict, type ConflictReport } from './staging/conflict.ts'
 import { provisionalReport, alphaOfRgba, type ProvisionalReport } from './staging/provisionalDiff.ts'
+import { buildMaskContribution, type SubmissionResult } from './staging/submit.ts'
+import { provisionalOf } from './staging/provisionalPixels.ts'
+import { SubmitOutcome } from './SubmitOutcome.tsx'
 import { useViewer } from './writer/useViewer.ts'
 import type { MaskSession } from './staging/types.ts'
 import type { Staging } from './staging/useStaging.ts'
@@ -220,6 +223,12 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   /** Save status for the DIRECT-WRITE path, and the server's own words when it refused. */
   const [maskSaveStatus, setMaskSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [maskSaveError, setMaskSaveError] = useState<string | null>(null)
+  // "Open as PR instead" — the writer's route through the contribution
+  // pipeline. Separate state from the direct write, because they are separate
+  // acts with separate outcomes and one of them can succeed while the other
+  // has not been attempted.
+  const [prBusy, setPrBusy] = useState(false)
+  const [prResult, setPrResult] = useState<SubmissionResult | null>(null)
   const editorRef = useRef<MaskEditorHandle | null>(null)
   const zeroTilt = useRef({ x: 0, y: 0 })
   /** Which staged session's pixels are on the canvas. Reset when the card changes. */
@@ -939,6 +948,59 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
     }
   }
 
+  /**
+   * OPEN AS PR INSTEAD — the writer's route through the contribution pipeline.
+   *
+   * WHY A WRITER GETS THIS AT ALL. The direct write exists because routing
+   * Chey's own work through submit-and-review would put a queue between him and
+   * his own repository for no gain, and that is still true for a mask he is
+   * confident about. It stops being true the moment a change wants a second
+   * look — a re-trace of somebody else's window, a supersede, anything he wants
+   * the render evidence for before it lands on `main`. So the affordance is a
+   * SECOND button rather than a mode: same session, same rails as every
+   * contributor's, and the choice is per-save.
+   *
+   * The second reason is less noble and more important: it makes the pipeline
+   * LIVE-TESTABLE by the one person who can fix it. A contribution path only
+   * the maintainer cannot exercise is a contribution path nobody notices has
+   * broken.
+   *
+   * The conflict is PROBED here rather than assumed fresh. A lab tab left open
+   * for an hour has a seed that may no longer match upstream, and submitting it
+   * as `fresh` would put a sentence in the pull request that is not true.
+   */
+  const openAsPr = async () => {
+    if (!detail || sel.variantId == null) return
+    setPrBusy(true)
+    setPrResult(null)
+    try {
+      // Stage first, unconditionally: the pipeline submits a SESSION, and the
+      // session is also what survives if the submission fails.
+      await stageMask()
+      const s = await staging.store.get(`mask:${detail.card.cardId}:${sel.variantId}`)
+      if (s === null || s.kind !== 'mask') throw new Error('the session was not staged')
+      const probe = await foilApi.probeMask(s.cardId, s.variantId, s.seed.prior.scope)
+      const conflict = detectMaskConflict(
+        s,
+        probe === null
+          ? { sha256: null, resolvedFrom: null, savedAt: null, method: null }
+          : { sha256: probe.sha256, resolvedFrom: probe.resolvedFrom, savedAt: probe.savedAt, method: probe.method },
+      )
+      setPrResult(await foilApi.submitContribution(buildMaskContribution(s, conflict, await provisionalOf(s))))
+    } catch (err) {
+      setPrResult({
+        ok: false,
+        kind: 'failed',
+        message: err instanceof Error ? err.message : String(err),
+        checks: [],
+        failures: [],
+        missing: [],
+      })
+    } finally {
+      setPrBusy(false)
+    }
+  }
+
   // ── Adjusted-window actions (handles → save/flatten) ──
 
   const startAdjust = () => {
@@ -1167,11 +1229,13 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
    * A contributor’s note about their own change belongs in the REVIEW, not in
    * the tree. The old route wrote `issues/foil/<id>/report.md` + `context.json`
    * into the repository; a stranger’s note about their own work is PR body
-   * text, which is where this goes once #9’s pipeline ships.
+   * text, and that is now literally where it goes: `composePrBody` puts it at
+   * the top of the pull request, under “What the contributor said”.
    *
-   * Until then it is stored in the staged session and carried in the export —
-   * stored and exported, never committed. The captured context travels with it
-   * so the eventual PR body can be assembled without re-deriving anything.
+   * It is stored in the staged session and carried in the export — stored,
+   * exported and submitted, never committed into the tree. The captured
+   * context travels with it, which is why the pull request body can be
+   * assembled without re-deriving anything.
    */
   const submitComment = async () => {
     const text = commentText.trim()
@@ -1705,6 +1769,11 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
                           ? 'Save mask ●'
                           : 'Save mask'}
                   </ActionBtn>
+                  {canWrite && (
+                    <ActionBtn onClick={() => void openAsPr()} disabled={prBusy}>
+                      {prBusy ? 'Opening a pull request…' : 'Open as PR instead'}
+                    </ActionBtn>
+                  )}
                   <ActionBtn onClick={() => setEditMode(false)}>Done</ActionBtn>
                 </div>
               </div>
@@ -1725,6 +1794,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
           {maskSaveStatus === 'saved' && (
             <p className="mt-[6px] text-[12px] text-action-primary">Committed to the repository ✓</p>
           )}
+          <SubmitOutcome state={{ busy: prBusy, result: prResult }} viewer={viewer} />
           <p className="mt-[6px] text-[11px] text-text-muted">
             {handActive
               ? `Hand mask ${savedMask ? '(saved)' : '(unsaved)'}${maskDirty ? ' — unsaved strokes' : ''}${
@@ -1771,8 +1841,8 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
             <>
               <p className="mb-[8px] text-[12px] leading-[1.5] text-text-muted">
                 Save stages this card locally. No account needed, and it survives a reload, a tab close, and
-                days of gap. One card is one session, and one session becomes one pull request once the
-                contribution pipeline ships.
+                days of gap. One card is one session, and one session becomes one pull request — submit it
+                from Staged work, and your name goes on it as a co-author.
               </p>
               {staged === null ? (
                 <p className="text-[12px] text-text-muted">Nothing staged for this printing yet.</p>

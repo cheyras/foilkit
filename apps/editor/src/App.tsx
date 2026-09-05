@@ -83,7 +83,7 @@ function Shell(): React.ReactElement {
         {surface === 'staged' && (
           <div className="mx-auto flex max-w-[900px] flex-col gap-[12px] p-[12px]">
             <SurfaceTabs active="queue" />
-            <StagePanel staging={staging} />
+            <StagePanel staging={staging} viewer={viewer} />
           </div>
         )}
       </Suspense>

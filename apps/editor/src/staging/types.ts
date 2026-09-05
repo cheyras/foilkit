@@ -116,11 +116,11 @@ export interface MaskSession {
   /** The effective pattern, recorded so a stale resolver is detectable. */
   patternId: string | null
   /**
-   * The contributor's note about their own change. This becomes the PR BODY
-   * when #9's pipeline ships — a stranger's note about their own work belongs
-   * in the review, not committed into the tree as `issues/foil/<id>/report.md`.
-   * Until then it is stored here and included in the export, so nothing is
-   * lost; it is deliberately NOT committed anywhere.
+   * The contributor's note about their own change. This BECOMES THE PULL
+   * REQUEST BODY — a stranger's note about their own work belongs in the
+   * review, not committed into the tree as `issues/foil/<id>/report.md`. It is
+   * stored here, included in the export, and sent to `/api/contribute` at
+   * submit; it is deliberately NOT committed anywhere.
    */
   comment: string
   createdAt: string

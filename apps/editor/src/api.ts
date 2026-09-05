@@ -39,6 +39,7 @@ import { Catalog, type CatalogCard, type CatalogSetShard } from './catalog/shard
 import { CorpusView, type CorpusManifest } from './catalog/manifest.ts'
 import { SearchIndex } from './catalog/search.ts'
 import { sha256Bytes } from './staging/sha.ts'
+import type { SubmissionCheck, SubmissionRefusal, SubmissionResult } from './staging/submit.ts'
 
 // ── Types (only the fields the workbench reads) ────────────────
 //
@@ -750,6 +751,82 @@ export const foilApi = {
     })
     if (!res.ok) throw new Error(await writeError(res, 'canon delete'))
     invalidateCorpus()
+  },
+
+  // ── The contribution path ────────────────────────────────────
+  //
+  // The OTHER write path, and the one everybody not on the writer list uses: a
+  // staged session becomes a branch, a commit and a pull request, opened by the
+  // foilkit contribution App with the contributor as `Co-authored-by`.
+  //
+  // EVERY REFUSAL IS A RESULT, NOT A THROW. A rejected submission is normal
+  // traffic here in a way a rejected direct write is not — validation runs
+  // server-side before the branch exists, so "your session is not ready yet,
+  // and here is each thing that was checked" is an ANSWER rather than an error.
+  // Throwing it would force every caller to parse a message back into a list,
+  // and the surface would end up showing a sentence where a checklist belongs.
+
+  submitContribution: async (payload: unknown): Promise<SubmissionResult> => {
+    let res: Response
+    try {
+      res = await fetch('/api/contribute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload),
+      })
+    } catch (err) {
+      return {
+        ok: false,
+        kind: 'failed',
+        message: `could not reach the contribution endpoint: ${err instanceof Error ? err.message : String(err)}`,
+        checks: [],
+        failures: [],
+        missing: [],
+      }
+    }
+    const body = (await res.json().catch(() => null)) as {
+      pr?: { url: string; number: number; updated: boolean } | null
+      branch?: string
+      validation?: { checks?: SubmissionCheck[] }
+      checks?: SubmissionCheck[]
+      failures?: string[]
+      message?: string
+      error?: { code?: string; message?: string; missing?: string[] }
+    } | null
+
+    if (res.ok) {
+      return {
+        ok: true,
+        pr: body?.pr ?? null,
+        branch: body?.branch,
+        checks: body?.validation?.checks ?? [],
+        message: body?.message,
+      }
+    }
+    // 404 is what `vite dev` answers, because the functions are not running
+    // there at all. It means the same thing to this editor as a 503 does: the
+    // affordance is unavailable here and the session is untouched.
+    const kind: SubmissionRefusal['kind'] =
+      res.status === 401
+        ? 'sign-in'
+        : res.status === 503 || res.status === 404
+          ? 'not-configured'
+          : res.status === 422
+            ? 'invalid'
+            : 'failed'
+    return {
+      ok: false,
+      kind,
+      message:
+        body?.error?.message ??
+        (res.status === 404
+          ? 'the contribution endpoint is not running on this deployment'
+          : `submission failed (HTTP ${res.status})`),
+      checks: body?.checks ?? [],
+      failures: body?.failures ?? [],
+      missing: body?.error?.missing ?? [],
+    }
   },
 
   /** Is the write surface reachable for THIS viewer? Replaces `devSurface()`. */
