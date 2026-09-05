@@ -15,6 +15,13 @@
 // rendering from the same file at another, and that has to stay legible rather
 // than silent. This endpoint never invents one — it preserves what the file
 // had, or takes what the client sends, and does not guess.
+//
+// THE FILE IS COMPOSED IN `_lib/canon-entry.ts`, not here. `functions/contribute.ts`
+// writes canon files too, through a pull request, and two composers would grow
+// two dialects of the same file. Sharing one is also what fixed two fields this
+// endpoint used to drop on every rewrite: `tunedUnderContract`, which
+// `tools/parity/data-receipt.mjs` fails without, and `frozen`, which is a human
+// decision a machine may not roll back (AGENTS.md F4).
 
 import {
   headerValue,
@@ -30,6 +37,13 @@ import { refuseIfUnconfigured, writeConfig } from './_lib/config.ts'
 import { isWriter } from './_lib/writers.ts'
 import { assertPatternId, BadRequest, CANON_PREFIX } from './_lib/corpus.ts'
 import { commitChanges, noreplyAuthor, readFileAt, repoRef } from './_lib/github.ts'
+import {
+  composeCanonEntry,
+  normalizeUniforms,
+  parseExisting,
+  sameCanon,
+  serializeCanonEntry,
+} from './_lib/canon-entry.ts'
 import { canonicalPatternId, patternById } from '@foilkit/patterns'
 
 function requireWriter(req: FnRequest, res: FnResponse): SessionClaims | null {
@@ -49,20 +63,6 @@ function requireWriter(req: FnRequest, res: FnResponse): SessionClaims | null {
   return claims
 }
 
-/** Sorted keys, finite numbers only. Two orderings are the same canon. */
-function uniforms(value: unknown): Record<string, number> {
-  if (typeof value !== 'object' || value === null) throw new BadRequest('uniforms must be an object')
-  const out: Record<string, number> = {}
-  for (const key of Object.keys(value as Record<string, unknown>).sort()) {
-    if (!/^u[A-Za-z0-9]{1,32}$/.test(key)) throw new BadRequest(`uniform name ${JSON.stringify(key)} is not a uniform`)
-    const n = Number((value as Record<string, unknown>)[key])
-    if (!Number.isFinite(n)) throw new BadRequest(`uniform ${key} is not a finite number`)
-    out[key] = n
-  }
-  if (Object.keys(out).length === 0) throw new BadRequest('a canon file is a full snapshot; this one is empty')
-  return out
-}
-
 export default async function handler(req: FnRequest, res: FnResponse): Promise<void> {
   if (req.method === 'PUT') return void (await put(req, res))
   if (req.method === 'DELETE') return void (await del(req, res))
@@ -74,8 +74,9 @@ async function put(req: FnRequest, res: FnResponse): Promise<void> {
   if (writer === null) return
 
   let patternId: string
-  let entry: Record<string, unknown>
   let note: string | null
+  let rawUniforms: unknown
+  let explicitContract: number | undefined
   try {
     const raw = await readJsonBody(req)
     if (typeof raw !== 'object' || raw === null) throw new BadRequest('expected a JSON object')
@@ -85,14 +86,11 @@ async function put(req: FnRequest, res: FnResponse): Promise<void> {
     // and it would show up in the manifest as coverage that is not there.
     if (patternById(patternId).id !== patternId) throw new BadRequest(`${patternId} is not an implemented recipe`)
     note = typeof b.note === 'string' && b.note.trim().length > 0 ? b.note.trim() : null
-    entry = {
-      version: 1,
-      patternId,
-      savedAt: new Date().toISOString(),
-      uniforms: uniforms(b.uniforms),
-      ...(typeof b.contract === 'number' ? { contract: b.contract } : {}),
-      ...(note === null ? {} : { note }),
-    }
+    rawUniforms = b.uniforms
+    explicitContract = typeof b.contract === 'number' ? b.contract : undefined
+    // Parse the uniforms here so a malformed body is a 400 rather than a 502
+    // from inside the write. `composeCanonEntry` runs the same normaliser.
+    normalizeUniforms(rawUniforms)
   } catch (err) {
     sendPrivateError(res, 400, 'bad_request', (err as Error).message)
     return
@@ -100,39 +98,29 @@ async function put(req: FnRequest, res: FnResponse): Promise<void> {
 
   const path = `${CANON_PREFIX}/${patternId}.json`
   try {
-    const existing = await readFileAt(repoRef(), path)
-    if (existing !== null && entry.contract === undefined) {
-      // Preserve the contract stamp the file already carried. Dropping it would
-      // turn a file that names its `main()` into one that does not, which is
-      // the exact silence the stamp exists to end.
-      try {
-        const prev = JSON.parse(existing.toString('utf8')) as { contract?: number }
-        if (typeof prev.contract === 'number') entry.contract = prev.contract
-      } catch {
-        /* an unparseable existing file is replaced, not preserved */
-      }
-    }
-    const content = Buffer.from(JSON.stringify(entry, null, 2) + '\n', 'utf8')
-    if (existing !== null) {
-      // `savedAt` moves on every write, so compare the parts that carry meaning
-      // rather than the bytes — otherwise every no-op save is a commit.
-      try {
-        const prev = JSON.parse(existing.toString('utf8')) as Record<string, unknown>
-        const same =
-          JSON.stringify(prev.uniforms ?? {}) === JSON.stringify(entry.uniforms) &&
-          (prev.note ?? null) === (entry.note ?? null) &&
-          (prev.contract ?? null) === (entry.contract ?? null)
-        if (same) {
-          sendPrivateJson(res, 200, { ...entry, savedAt: prev.savedAt, commit: null, unchanged: true })
-          return
-        }
-      } catch {
-        /* fall through and replace */
-      }
+    // ONE COMPOSER, TWO PATHS. `functions/contribute.ts` writes canon files too,
+    // and the two must produce identical bytes for identical uniforms or the
+    // corpus grows two dialects. `composeCanonEntry` is also what carries
+    // `tunedUnderContract` (which the data receipt requires) and `frozen` (a
+    // human decision a machine may not roll back — AGENTS.md F4) through a
+    // rewrite; this endpoint dropped both before it shared the composer.
+    const previous = parseExisting(await readFileAt(repoRef(), path))
+    const entry = composeCanonEntry({
+      patternId,
+      uniforms: rawUniforms,
+      note,
+      savedAt: new Date().toISOString(),
+      previous,
+      contract: explicitContract,
+      tunedNow: true,
+    })
+    if (sameCanon(previous, entry)) {
+      sendPrivateJson(res, 200, { ...entry, savedAt: previous?.savedAt ?? entry.savedAt, commit: null, unchanged: true })
+      return
     }
     const commit = await commitChanges(
       repoRef(),
-      [{ path, content }],
+      [{ path, content: serializeCanonEntry(entry) }],
       `Canon: ${patternId}\n\n${note === null ? '' : `${note}\n\n`}Tuned at foilkit.deckpal.app by @${writer.login}.\n`,
       noreplyAuthor({ login: writer.login, id: writer.id, name: writer.name, avatar_url: writer.avatarUrl }),
     )

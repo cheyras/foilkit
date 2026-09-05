@@ -20,6 +20,21 @@ export interface RepoRef {
   owner: string
   repo: string
   branch: string
+  /**
+   * The token every READ in this module should use.
+   *
+   * Absent means "the project's own PAT", which is what the direct-write path
+   * wants. The CONTRIBUTION path sets it to a one-hour GitHub App installation
+   * token, because a deployment can have the App configured and no PAT at all —
+   * and because falling back to the PAT would let a contribution read the
+   * repository with the maintainer's credential. Reads are threaded rather than
+   * duplicated: `materialise` builds the same /tmp tree either way.
+   *
+   * WRITES ARE NOT THREADED THROUGH HERE. `commitChanges` fast-forwards `main`
+   * and stays on `repoToken()` deliberately; a contribution commits through
+   * `pr.ts`, which takes its token as an explicit argument on every call.
+   */
+  token?: string
 }
 
 export class GithubError extends Error {
@@ -108,6 +123,7 @@ export async function listDir(ref: RepoRef, dirPath: string): Promise<RepoFile[]
   try {
     const rows = await gh<{ path: string; sha: string; size: number; type: string }[]>(
       `/repos/${ref.owner}/${ref.repo}/contents/${encodeURI(dirPath)}?ref=${encodeURIComponent(ref.branch)}`,
+      { token: ref.token },
     )
     return rows.filter((r) => r.type === 'file').map((r) => ({ path: r.path, sha: r.sha, size: r.size }))
   } catch (err) {
@@ -121,7 +137,7 @@ export async function readBlob(ref: RepoRef, sha: string): Promise<Buffer> {
   const res = await fetch(`${API}/repos/${ref.owner}/${ref.repo}/git/blobs/${sha}`, {
     headers: {
       accept: 'application/vnd.github.raw',
-      authorization: `Bearer ${repoToken()}`,
+      authorization: `Bearer ${ref.token ?? repoToken()}`,
       'x-github-api-version': '2022-11-28',
       'user-agent': 'foilkit-editor (+https://github.com/cheyras/foilkit)',
     },
@@ -135,6 +151,7 @@ export async function readFileAt(ref: RepoRef, filePath: string): Promise<Buffer
   try {
     const row = await gh<{ sha: string; type: string }>(
       `/repos/${ref.owner}/${ref.repo}/contents/${encodeURI(filePath)}?ref=${encodeURIComponent(ref.branch)}`,
+      { token: ref.token },
     )
     if (row.type !== 'file') return null
     return await readBlob(ref, row.sha)

@@ -67,7 +67,40 @@ export function writeConfig(): MissingConfig | null {
         missing,
         what:
           'direct writes are not configured on this deployment — stage the session instead; ' +
-          'it is not lost, and submission opens PRs once the contribution pipeline ships',
+          'it is not lost, and submission opens a pull request instead',
+      }
+}
+
+/**
+ * Opening a pull request needs a signing secret AND the contribution App.
+ *
+ * A SEPARATE LADDER FROM `writeConfig`, deliberately. The two paths use
+ * different credentials for different acts: a direct write commits to `main`
+ * with the project's PAT, and a contribution opens a branch and a pull request
+ * as the App. A deployment can legitimately have either, both or neither, and
+ * every combination has a different honest answer:
+ *
+ *   * neither    → stage locally and export a bundle; nothing is lost
+ *   * PAT only   → the maintainer writes directly; nobody else can submit
+ *   * App only   → everybody submits, the maintainer included
+ *
+ * Naming the exact variables is what turns "Submit is broken" into "somebody
+ * has not finished installing the App yet", which is a different day.
+ */
+export function contributeConfig(): MissingConfig | null {
+  const missing = [
+    'FOILKIT_SESSION_SECRET',
+    'FOILKIT_APP_ID',
+    'FOILKIT_APP_PRIVATE_KEY',
+    'FOILKIT_APP_INSTALLATION_ID',
+  ].filter(absent)
+  return missing.length === 0
+    ? null
+    : {
+        missing,
+        what:
+          'the contribution pipeline is not configured on this deployment — your session stays staged ' +
+          'and is not lost; export it and submit once the App is installed',
       }
 }
 
