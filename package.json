@@ -14,6 +14,7 @@
     "typecheck": "tsc --build --force tsconfig.build.json && tsc --noEmit -p tsconfig.tools.json",
     "test": "node --conditions source --test \"packages/*/src/__tests__/*.test.ts\" \"tools/rectifier/*.test.ts\" \"tools/bake/*.test.ts\" \"apps/editor/src/**/*.test.ts\" \"functions/**/*.test.ts\"",
     "reuse": "reuse lint",
+    "workflows": "node tools/check-workflows.mjs",
     "test:packages": "node --conditions source --test \"packages/*/src/__tests__/*.test.ts\"",
     "demo": "node tools/parity/serve.mjs --page apps/demo/index.html --port 5200",
     "acceptance": "node apps/demo/acceptance.mjs",

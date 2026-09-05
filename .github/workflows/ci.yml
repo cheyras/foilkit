@@ -80,6 +80,30 @@ jobs:
       - name: Typecheck the editor
         run: pnpm --filter foilkit-editor exec tsc --noEmit -p tsconfig.json
 
+      # A BROKEN WORKFLOW DOES NOT FAIL — it does not RUN, and a job that never
+      # ran looks exactly like a job that had nothing to do. `pr-evidence.yml`
+      # is the render evidence AND the GLSL compile gate, so a silently inert
+      # one would let a shader that does not link reach `main` with every check
+      # on the pull request green. This is the offline half; `actionlint` in the
+      # job below is the real parser.
+      - name: Workflow structure
+        run: pnpm run workflows
+
+  # actionlint, in its OWN JOB so a syntax error in a workflow is reported as a
+  # syntax error in a workflow rather than as "the test job failed". It parses
+  # the YAML properly, type-checks every `${{ }}` expression and shellchecks
+  # every `run:` block — which is the class of mistake that otherwise only shows
+  # up on a runner, at the moment somebody needed the job to work.
+  workflows:
+    name: actionlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker://rhysd/actionlint:1.7.7
+        with:
+          args: -color
+
   # A SEPARATE JOB on purpose. It needs a browser, a built dist/ and a server,
   # and it takes minutes rather than seconds — hanging that off the fast suite
   # would make every contributor wait for a GPU-less Chromium to finish before

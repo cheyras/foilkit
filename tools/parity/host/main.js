@@ -20,6 +20,15 @@
 //   materialUrl  module exporting buildFoilMaterial
 //   patternsUrl  module exporting PATTERNS + patternById
 //   canonUrl     directory serving <patternId>.json canon snapshots ('' = none)
+//   maskUrl      a mask PNG to bind as uMaskTex ('' = the full-face rect)
+//   canonFile    one canon JSON to fetch instead of <canonUrl>/<pattern>.json
+//
+// THE MASK PARAMETER EXISTS FOR PULL REQUEST EVIDENCE, and it is deliberately a
+// mask over the BLANK BASE rather than over a card scan. AGENTS.md F2 — ship
+// nothing we do not own outright — means a rendered card scan may not be
+// committed anywhere, and the evidence strip is committed. The blank base is
+// also the better picture: it shows how the foil behaves under tilt inside the
+// region the human actually drew, with no printed ink competing for attention.
 //
 // WHY IT LOOKS LIKE THIS. Every deviation from the canon lab's viewer is a
 // pixel difference, so there are none: same PerspectiveCamera(32) and the same
@@ -45,6 +54,8 @@ const SHADER_URL = q.get('shaderUrl') ?? '/packages/core/dist/shader.js'
 const MATERIAL_URL = q.get('materialUrl') ?? '/packages/three/dist/material.js'
 const PATTERNS_URL = q.get('patternsUrl') ?? '/packages/patterns/dist/patterns.js'
 const CANON_URL = q.get('canonUrl') ?? '/data/foil-canon'
+const MASK_URL = q.get('maskUrl') ?? ''
+const CANON_FILE = q.get('canonFile') ?? ''
 
 // The canon lab's four blank bases. Foil is screen-blended, so a dark base
 // shows the pattern purely; the white base previews how foil dies over light
@@ -94,12 +105,20 @@ async function main() {
   const pattern = patternById(PATTERN)
 
   let canon = null
-  if (CANON_URL) {
+  // An explicit file wins over the directory: the evidence workflow points this
+  // at the canon file the pull request PROPOSES, which is not the one on disk.
+  const canonHref = CANON_FILE || (CANON_URL ? `${CANON_URL}/${pattern.id}.json` : '')
+  if (canonHref) {
     try {
-      const res = await fetch(`${CANON_URL}/${pattern.id}.json`)
+      const res = await fetch(canonHref)
       if (res.ok) canon = await res.json()
-    } catch {
-      /* no canon file for this recipe — code defaults ARE the right baseline */
+      else if (CANON_FILE) throw new Error(`canonFile ${CANON_FILE} -> HTTP ${res.status}`)
+    } catch (err) {
+      // A MISSING DIRECTORY ENTRY IS FINE — code defaults are the right
+      // baseline for a recipe nobody has canon'd. A missing EXPLICIT file is
+      // not: the caller asked for a specific rendering and would otherwise get
+      // a different one, silently, and call it evidence.
+      if (CANON_FILE) throw err
     }
   }
   const uniforms = canonBaseline(pattern, GLOBAL_DEFAULTS, canon)
@@ -137,6 +156,30 @@ async function main() {
   // data: URL is an <img> decode, a TASK and not an animation frame, so it
   // lands on its own while rAF is stubbed.
   let faceReady = false
+  // The submitted mask, when there is one. A FAILURE HERE IS FATAL rather than
+  // a fallback: rendering the full-face rect instead would produce a picture
+  // that looks like evidence and is not, which is the worst available outcome
+  // for a file whose entire job is to be believed.
+  let maskReady = MASK_URL === ''
+  if (MASK_URL) {
+    new THREE.TextureLoader().load(
+      MASK_URL,
+      (tex) => {
+        // NoColorSpace for the same reason the base uses it: a ShaderMaterial
+        // writes gl_FragColor raw. Only `.a` is read, but a decoded sample
+        // would still be the wrong bytes.
+        tex.colorSpace = THREE.NoColorSpace
+        mat.uniforms.uMaskTex.value = tex
+        maskReady = true
+      },
+      undefined,
+      () => {
+        window.__parityError = `mask ${MASK_URL} failed to load`
+        state.textContent = window.__parityError
+      },
+    )
+  }
+
   new THREE.TextureLoader().load(toneUrl(TONE), (tex) => {
     // NOT SRGBColorSpace: a ShaderMaterial writes gl_FragColor raw, so an
     // sRGB-decoded sample would render the scan in linear values displayed as
@@ -171,7 +214,7 @@ async function main() {
     u.uMaskFeather.value = 0.008
     u.uMaskInvert.value = 0
     u.uMaskView.value = 0
-    u.uMaskTexOn.value = 0
+    u.uMaskTexOn.value = MASK_URL && mat.uniforms.uMaskTex.value ? 1 : 0
     u.uScanBase.value = 0 // blank base — the classic composite, canon truth
     renderer.render(scene, camera)
     frames++
@@ -187,7 +230,7 @@ async function main() {
     width: cardW,
     height: cardH,
   }
-  window.__ready = () => faceReady
+  window.__ready = () => faceReady && maskReady
   window.__frames = () => frames
   say({
     ready: true,
@@ -195,6 +238,8 @@ async function main() {
     tone: TONE,
     canon: canon ? canon.savedAt : null,
     canonUniforms: canon ? Object.keys(canon.uniforms).length : 0,
+    mask: MASK_URL || null,
+    tilt: { x: TILT.x, y: TILT.y },
     cardAspect: CARD_ASPECT,
     host: { w, h },
     cardRect: window.__cardRect,

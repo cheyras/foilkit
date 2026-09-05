@@ -1,0 +1,256 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2026 Chey Rasmussen
+#
+# RENDER EVIDENCE, on every pull request that changes something you can look at.
+#
+# A foil measurement is a claim about how a surface behaves when you MOVE it,
+# and no diff can carry that claim. GitHub renders a mask PNG as a pink blob and
+# a canon file as twenty changed numbers; neither tells a reviewer whether the
+# change is right. So this job renders the SUBMITTED STATE through the
+# frame-stepped zero-delta harness at eight tilt angles and posts the strip as a
+# comment on the pull request.
+#
+# ── IT IS ALSO THE COMPILE GATE ───────────────────────────────────────────
+#
+# `functions/_lib/validate.ts` checks the assembled shader STRUCTURALLY — the
+# pattern ABI, brace balance, no `#version`, every canon uniform actually
+# declared — and explains at length why there is no GLSL compiler in the submit
+# function: foilkit's composite is GLSL ES 1.00, and every zero-native-dep WASM
+# validator on npm compiles a different dialect and would reject valid input.
+#
+# The compile happens HERE instead, on SwiftShader, which is a real GL driver
+# and the same one CI's stage acceptance runs on. That is not a fallback; it is
+# a stronger gate than any of the rejected options, at the cost of landing as a
+# pull request check rather than as a submit-time refusal. Recorded in
+# DECISIONS.md, 2026-09-05.
+#
+# ── SAFE FOR A PULL REQUEST FROM ANYWHERE ─────────────────────────────────
+#
+# `pull_request`, not `pull_request_target`. The render needs NO secrets — it is
+# a static server, a headless browser and committed data — so the job runs on a
+# fork's code with a read-only token and nothing it could exfiltrate. The two
+# steps that need write access (push the strip, post the comment) are guarded on
+# the head branch living in THIS repository, which is the case for every branch
+# the contribution App creates. A fork pull request still gets its strip, as a
+# downloadable workflow artifact; it just cannot have it posted for it.
+#
+# ── WHERE THE STRIP LIVES, AND WHY NOT ON THE PULL REQUEST BRANCH ─────────
+#
+# On an ORPHAN `pr-evidence` BRANCH, at `pr-<number>/<name>.png`, referenced
+# from the comment by its `raw.githubusercontent.com` URL. GitHub proxies that
+# and renders it inline, which is the whole requirement.
+#
+# The obvious alternative — commit the strip into the pull request's own branch
+# under `evidence/` — also renders inline and was rejected for two reasons. It
+# would merge into `main` unless somebody remembers to delete it, and a
+# merge-cleanup step nobody is blocked on is a step that gets forgotten; and it
+# would put a generated binary the contributor did not author into the diff that
+# is the entire subject of the review. The orphan branch never merges anywhere,
+# is one file per pull request, and can be deleted wholesale at any time without
+# touching a single contribution.
+#
+# THE ONE THING THIS DEPENDS ON: cheyras/foilkit is PUBLIC, so raw URLs are
+# fetchable by GitHub's image proxy. If the repository ever goes private, the
+# images stop rendering and the comment should fall back to naming the workflow
+# artifact — the strip is uploaded either way, so nothing is lost.
+
+name: PR evidence
+
+on:
+  pull_request:
+    paths:
+      - 'data/foil-masks/**'
+      - 'data/foil-canon/**'
+      - 'packages/patterns/**'
+      - 'packages/core/src/shader.ts'
+
+# One run per pull request. A contributor who fixes a validation complaint and
+# submits again force-updates the branch, and a superseded render is a
+# superseded render — finishing it would spend eight minutes to post a picture
+# of code that is no longer there.
+concurrency:
+  group: pr-evidence-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+# Read-only by default. The two write steps below are guarded on a same-repo
+# head, and a fork pull request gets this token as read-only regardless.
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  evidence:
+    name: tilt sweep (headless Chromium)
+    runs-on: ubuntu-latest
+    steps:
+      # The MERGE ref, not the head: the evidence should be a picture of what
+      # merging this pull request would produce, which is what a reviewer is
+      # actually deciding about. `actions/checkout` defaults to exactly that on
+      # a `pull_request` event.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The harness loads packages/*/dist through an import map — plain ESM, no
+      # bundler between the source and the pixels.
+      - name: Build the packages
+        run: pnpm run build
+
+      # Playwright is deliberately NOT a repository dependency: the library and
+      # the unit suite need none, and this is an instrument rather than a gate
+      # on `pnpm install`. Same PW_ROOT contract as the acceptance jobs.
+      - name: Install Playwright
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw"
+          cd "$RUNNER_TEMP/pw"
+          npm init -y > /dev/null
+          npm i --no-audit --no-fund playwright@1.62.1
+          npx playwright install --with-deps chromium
+
+      - name: What did this pull request change?
+        run: |
+          git diff --name-only \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}" > "$RUNNER_TEMP/changed.txt"
+          echo "changed files:"
+          cat "$RUNNER_TEMP/changed.txt"
+
+      # Renders every changed mask and canon file, resolving each card's recipe
+      # out of the committed assignment bake — a picture of the right mask
+      # through the wrong foil is worse than no picture, because it looks like
+      # one. Starts and stops its own static server, so there is no
+      # start-in-one-step-use-in-the-next race.
+      - name: Render the tilt sweep
+        run: |
+          node --conditions source tools/pr-evidence.mjs \
+            --out "$RUNNER_TEMP/evidence" \
+            --pr "${{ github.event.pull_request.number }}" \
+            --changed-from "$RUNNER_TEMP/changed.txt"
+        env:
+          PW_ROOT: ${{ runner.temp }}/pw/package.json
+
+      # ALWAYS, and before the write steps. A fork pull request gets its
+      # evidence here and nowhere else, and a failed render is exactly when the
+      # artifact is worth having.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr-evidence
+          path: ${{ runner.temp }}/evidence
+          if-no-files-found: warn
+
+      - name: Is there anything to post?
+        id: check
+        run: |
+          if [ -s "$RUNNER_TEMP/evidence/comment.md" ]; then
+            echo "post=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "post=false" >> "$GITHUB_OUTPUT"
+            echo "nothing renderable changed — no comment"
+          fi
+
+      # ── The two steps that need write access ───────────────────────────────
+      #
+      # Guarded on the head branch living in this repository. Every branch the
+      # contribution App creates does; a fork's does not, and a fork's token is
+      # read-only anyway, so this is belt and braces rather than either alone.
+
+      - name: Push the strips to the orphan pr-evidence branch
+        if: >-
+          steps.check.outputs.post == 'true' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -eu
+          # A FRESH EMPTY DIRECTORY, not the checkout. The orphan branch shares
+          # no history with main, and doing this dance in the working tree that
+          # was just used to render would be a fine way to commit the repository
+          # onto a branch that is supposed to hold eight pictures.
+          work="$RUNNER_TEMP/evidence-branch"
+          rm -rf "$work"
+          mkdir -p "$work"
+          cd "$work"
+          git init -q
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git fetch -q --depth 1 origin pr-evidence 2>/dev/null; then
+            git checkout -q -B pr-evidence FETCH_HEAD
+          else
+            # First ever run. `--orphan` on an empty repository is just the
+            # initial branch; the name is what matters.
+            git checkout -q --orphan pr-evidence
+          fi
+          rm -rf "pr-${PR}"
+          mkdir -p "pr-${PR}"
+          cp "$RUNNER_TEMP/evidence"/*.png "pr-${PR}/"
+          cp "$RUNNER_TEMP/evidence/manifest.json" "pr-${PR}/"
+          cat > README.md <<'EOF'
+          # pr-evidence
+
+          Render evidence for open pull requests, one directory per pull request.
+
+          **This branch is generated and never merges into `main`.** It shares no history with it. The
+          `PR evidence` workflow force-replaces a pull request's directory on every run; deleting the
+          whole branch loses nothing but a set of pictures that can be rendered again.
+
+          Each strip is an 8-frame tilt sweep produced by `tools/parity/tilt-strip.mjs`, rendered on the
+          blank card base — never on a card scan, because AGENTS.md F2 means no third-party pixels are
+          committed anywhere.
+          EOF
+          git add -A
+          if git -c user.name='foilkit-evidence' \
+                 -c user.email='foilkit-evidence@users.noreply.github.com' \
+                 commit -q -m "Evidence for #${PR}"; then
+            git push -q origin pr-evidence
+            echo "pushed pr-${PR} to pr-evidence"
+          else
+            echo "byte-identical to the last render — nothing to push"
+          fi
+
+      - name: Post (or update) the evidence comment
+        if: >-
+          steps.check.outputs.post == 'true' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -eu
+          base="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/pr-evidence/pr-${PR}"
+          # `?v=<head sha>` busts GitHub's image proxy. The camo URL is a hash of
+          # the source URL, so without it a re-submission shows the previous
+          # render — a stale picture presented as evidence of the current one,
+          # which is the worst failure this job has available.
+          body="$(sed "s#{{BASE}}#${base}#g; s#\.png)#.png?v=${HEAD_SHA})#g" "$RUNNER_TEMP/evidence/comment.md")"
+
+          # ONE COMMENT PER PULL REQUEST, updated in place. A contributor who
+          # submits four times should not have to scroll past three superseded
+          # strips to find the current one. The marker is in the file.
+          existing="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" --paginate \
+            --jq '[.[] | select(.body | contains("<!-- foilkit-pr-evidence -->")) | .id] | first // empty')"
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${existing}" -f body="$body" > /dev/null
+            echo "updated comment ${existing}"
+          else
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" -f body="$body" > /dev/null
+            echo "posted a new evidence comment"
+          fi
+
+      - name: A fork pull request gets its evidence as an artifact
+        if: >-
+          steps.check.outputs.post == 'true' &&
+          github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "This pull request comes from a fork, so the workflow token is read-only and the strip"
+          echo "cannot be pushed or commented. It is attached to this run as the 'pr-evidence' artifact."
