@@ -28,10 +28,30 @@
 //
 // Every trick in `run.mjs` applies here and for the same reasons — rAF stubbed
 // and stepped, performance.now frozen, ~300 frames to the easing's fixpoint,
-// clip screenshots only, SwiftShader. Each tilt step is a fresh page load with
-// its own parked target, so the eight frames are eight independent fixpoints
-// rather than eight samples of one animation, and two runs of this tool on the
-// same inputs produce byte-identical strips.
+// SwiftShader. Each tilt step is a fresh page load with its own parked target,
+// so the eight frames are eight independent fixpoints rather than eight samples
+// of one animation, and two runs of this tool on the same inputs produce
+// byte-identical strips.
+//
+// ── ONE DEPARTURE: THE PIXELS COME OFF THE CANVAS, NOT OFF THE COMPOSITOR ──
+//
+// `run.mjs` uses `page.screenshot({ clip })`. This tool does not, and three CI
+// runs bought that sentence: `page.screenshot` asks the BROWSER COMPOSITOR for
+// a frame, and on a GitHub Linux runner that call logs "fonts loaded" and then
+// sits there until it times out — while returning perfectly well on a Windows
+// Chromium build, so every local run was green. Neither disabling the animation
+// wait nor restoring the page's real `requestAnimationFrame` changed it.
+//
+// So the compositor comes out of the path. The host page exposes `__grabNext()`,
+// which arms a flag that the render loop services by calling `toDataURL()` on
+// the renderer's own canvas in the SAME TASK as the draw, while the drawing
+// buffer is still valid. No compositor, no font pass, no device-scale
+// negotiation, no viewport. The card rect is then cropped in Node, from
+// `__cardRect`, which is arithmetic rather than a bounding box.
+//
+// That is a strictly better capture for something that must run unattended, and
+// it is why this file's output is not comparable byte-for-byte with `run.mjs`'s
+// — different capture, same render.
 //
 // Usage:
 //   node tools/parity/serve.mjs --port 5199 &
@@ -41,7 +61,7 @@
 
 import { createRequire } from 'node:module'
 import { createHash } from 'node:crypto'
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { decodePng, encodePng, resampleRgba } from '@foilkit/forge'
@@ -91,7 +111,6 @@ const TILTS = [-1, -0.7, -0.35, -0.1, 0.1, 0.35, 0.7, 1]
 
 function initScript() {
   const FROZEN = 1000
-  const nativeRaf = window.requestAnimationFrame.bind(window)
   const queue = []
   const cbs = new Map()
   let nextId = 1
@@ -119,34 +138,6 @@ function initScript() {
     return window.__framesRun
   }
 
-  /**
-   * HAND THE PAGE BACK ITS REAL ANIMATION FRAME, once the easing is done.
-   *
-   * `page.screenshot` waits for the renderer to produce a compositor frame, and
-   * a page whose rAF loop has stopped calling itself never asks for one. On the
-   * Linux runner that is a hang: the call logs "fonts loaded" and then sits
-   * until it times out. It happens to return on some Chromium builds, which is
-   * what made a green local run worthless.
-   *
-   * SAFE, and this is the part that matters. The tilt easing is already at its
-   * float64 underflow fixpoint and `performance.now` stays frozen, so every
-   * further frame renders the SAME pixels — that is the whole reason the
-   * harness steps to a fixpoint rather than to a frame count. Determinism is
-   * preserved, and `tilt-strip` asserts it: two runs of the same inputs still
-   * produce byte-identical strips.
-   */
-  window.__resumeRaf = () => {
-    window.requestAnimationFrame = nativeRaf
-    // Re-queue whatever the loop asked for on its last stepped frame, so it
-    // starts driving itself again instead of stopping one callback short.
-    const pending = queue.splice(0, queue.length)
-    for (const id of pending) {
-      const cb = cbs.get(id)
-      cbs.delete(id)
-      if (cb) nativeRaf(cb)
-    }
-    return pending.length
-  }
 }
 
 const browser = await chromium.launch({
@@ -213,45 +204,32 @@ try {
     const err2 = await page.evaluate(() => window.__parityError ?? null)
     if (err2) throw new Error(`${PATTERN} @ tilt ${tiltx}: ${err2}`)
 
-    // The easing is at its fixpoint; give the page its real animation frame
-    // back so the compositor has something to hand the screenshot, and let two
-    // land before asking. See `__resumeRaf` for why this cannot move a pixel.
-    await page.evaluate(() => window.__resumeRaf())
-    await page.evaluate(
-      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(null)))),
-    )
+    // Arm the capture, then step ONE more frame — which renders and grabs the
+    // drawing buffer in the same task. The easing is at its fixpoint, so that
+    // frame is identical to the 300 before it.
+    await page.evaluate(() => window.__grabNext())
+    await page.evaluate(() => window.__stepFrames(1))
+    const dataUrl = await page.evaluate(() => window.__capture)
+    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/png;base64,')) {
+      throw new Error(`${PATTERN} @ tilt ${tiltx}: the canvas capture came back empty`)
+    }
+    const full = decodePng(Buffer.from(dataUrl.slice('data:image/png;base64,'.length), 'base64'))
 
+    // The card rect out of the host canvas. Arithmetic, from the page's own
+    // inverse of its fit() projection — not a bounding box, so it cannot depend
+    // on layout, scrollbars or a window manager.
     const rect = await page.evaluate(() => window.__cardRect)
-    const host = await page.locator('#host').boundingBox()
-    const x = Math.ceil(host.x + rect.x)
-    const y = Math.ceil(host.y + rect.y)
-    const clip = {
-      x,
-      y,
-      width: Math.floor(host.x + rect.x + rect.width) - x,
-      height: Math.floor(host.y + rect.y + rect.height) - y,
+    const x = Math.ceil(rect.x)
+    const y = Math.ceil(rect.y)
+    const clip = { x, y, width: Math.floor(rect.x + rect.width) - x, height: Math.floor(rect.y + rect.height) - y }
+    const cropped = { width: clip.width, height: clip.height, rgba: new Uint8Array(clip.width * clip.height * 4) }
+    for (let row = 0; row < clip.height; row++) {
+      const src = ((y + row) * full.width + x) * 4
+      cropped.rgba.set(full.rgba.subarray(src, src + clip.width * 4), row * clip.width * 4)
     }
     const file = path.join(tmp, `${TILTS.indexOf(tiltx)}.png`)
-    // NO `animations: 'disabled'`, and this one cost a CI run to find.
-    //
-    // That option makes Playwright disable CSS animations and then WAIT for the
-    // page to settle, and part of settling is an animation frame. This harness
-    // has stubbed `requestAnimationFrame` and stopped flushing it, so the frame
-    // never arrives: on the Linux runner the call sat at "fonts loaded" until it
-    // timed out at 30 s. It happens to return on this machine's Chromium build,
-    // which is exactly the kind of difference that makes a green local run
-    // worthless — the same trap `tools/parity/README.md` records for ELEMENT
-    // screenshots, one option over.
-    //
-    // Nothing is lost by dropping it. The page has no CSS animation and no
-    // transition; the only thing that ever moved is the stepped rAF loop, and
-    // that has already been driven to its fixpoint.
-    //
-    // `tools/parity/run.mjs` still passes the option. It is the moving receipt,
-    // it is run by hand rather than in CI, and changing it is a separate
-    // decision — but if it ever hangs headlessly on Linux, this is why.
-    await page.screenshot({ path: file, clip, timeout: 20_000 })
-    frames.push({ tiltx, file, image: decodePng(readFileSync(file)) })
+    writeFileSync(file, encodePng(cropped))
+    frames.push({ tiltx, file, image: cropped })
     process.stdout.write(`  tilt ${String(tiltx).padStart(5)}  ${clip.width}×${clip.height}\n`)
   }
 
