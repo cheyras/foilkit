@@ -73,22 +73,83 @@ answers `503 not_configured` and names the variable — rather than degrading in
 | `FOILKIT_GITHUB_TOKEN` | The token that **commits** a direct write. Fine-grained PAT scoped to `cheyras/foilkit` with **Contents: read and write** and nothing else. | Production | **yes** | Write endpoints answer `503 not_configured` naming it, before they read a cookie or touch the repository. (`502 write_failed` is a different answer entirely: the token was present and GitHub refused the commit.) |
 | `FOILKIT_REPO` | `owner/repo` to commit into. Defaults to `cheyras/foilkit`. | optional | no | Uses the default. |
 | `FOILKIT_BRANCH` | Branch to commit onto. Defaults to `main`. | optional | no | Uses the default. |
+| `FOILKIT_APP_ID` | The contribution App's numeric App ID (its settings page, "App ID"). | Production, Preview | no | `/api/contribute` answers `503 not_configured` naming it; Submit says so and leaves the session staged. |
+| `FOILKIT_APP_PRIVATE_KEY` | The contribution App's private key, the **whole PEM** including the `-----BEGIN`/`-----END` lines. Newlines may arrive as literal `\n` escapes — the function normalises all three shapes (real newlines, `\n` escapes, surrounding quotes, CRLF). | Production, Preview | **yes** | Same `503 not_configured`. A key that is present but is not a PEM is also a `503`, naming the variable and never echoing the value. |
+| `FOILKIT_APP_INSTALLATION_ID` | The App's installation id on `cheyras/foilkit` — the number at the end of `https://github.com/settings/installations/<id>`. | Production, Preview | no | Same `503 not_configured`. |
+| `FOILKIT_APP_SLUG` | The App's URL slug, used in the commit author line `<slug>[bot]`. Defaults to `foilkit-contribute`. | optional | no | Uses the default; the commit still lands, the avatar may not resolve. |
+| `FOILKIT_APP_USER_ID` | The App's bot user id (`https://api.github.com/users/<slug>%5Bbot%5D` → `id`), used in the commit author address. Defaults to `FOILKIT_APP_ID`. | optional | no | Uses the App id. Cosmetic only — GitHub attributes the commit by the token that pushed it. |
 | `FOILKIT_FRAMES_FILE` | Overrides where `@foilkit/forge` reads `data/frames.json`. **Set by the function at run time; do not configure it.** Listed because it exists. | — | no | The write endpoint sets it per request. |
 
 **Never print a value into a transcript or a log.** `vercel env ls` lists names
 and targets only; do not run anything that dumps a value.
 
-### Why a PAT and not a GitHub App
+### Two credentials, two paths — and why both still exist
 
-The App is subtask 9, and it is the right long-term answer — it can commit *as*
-the contributor and open PRs on their behalf. Until it exists, a fine-grained
-PAT with one repository and one permission is the smallest thing that works.
+| | Direct write (`/api/mask`, `/api/canon`, `/api/window`) | Contribution (`/api/contribute`) |
+|---|---|---|
+| Credential | `FOILKIT_GITHUB_TOKEN`, a fine-grained PAT | The GitHub App, via a 1-hour installation token |
+| Who may use it | The writer list in `functions/_lib/writers.ts` | Any signed-in GitHub account |
+| Where it writes | `main`, fast-forward, `force: false` | `contrib/<login>/…`, force-updated |
+| Result | A commit | A branch, a commit and a pull request |
 
-**The attribution consequence, stated plainly:** the commit's **committer** is
-the token's account; the **author** is the signed-in writer, recorded as
-`<id>+<login>@users.noreply.github.com`. Author is the field every log view
-shows, so "whose work is this" is answered correctly; "who pushed it" says the
-project account. The App collapses the two.
+They are independent. A deployment can have either, both or neither, and each
+endpoint's `503` names its own variables — so "Submit is broken" resolves to
+"the App is not installed yet" rather than to a mystery.
+
+**The attribution split on the DIRECT path,** stated plainly because it is a real
+limitation: the commit's **committer** is the token's account; the **author** is
+the signed-in writer, recorded as `<id>+<login>@users.noreply.github.com`.
+Author is the field every log view shows, so "whose work is this" is answered
+correctly and "who pushed it" says the project account.
+
+**On the CONTRIBUTION path** the commit is authored by the App bot and carries
+`Co-authored-by: <name> <id+login@users.noreply.github.com>`, which is the
+mechanism GitHub itself uses for this: the contributor's avatar appears on the
+commit and their name on the pull request. That matters more than it sounds.
+People contribute where their name shows up.
+
+### The contribution App — what to create, exactly
+
+One GitHub App, owned by the maintainer, installed on `cheyras/foilkit` only.
+
+- **Name / slug:** anything; `foilkit-contribute` is what `FOILKIT_APP_SLUG`
+  defaults to, so using it means one fewer variable to set.
+- **Homepage URL:** `https://foilkit.deckpal.app`
+- **Webhook:** **disabled.** Nothing listens for one.
+- **Where can this App be installed:** "Only on this account".
+- **Repository permissions — exactly two:**
+  - **Contents: Read and write** (branches, blobs, trees, commits)
+  - **Pull requests: Read and write** (open and update the pull request)
+- **Everything else: No access.** In particular *not* Actions, *not* Workflows,
+  *not* Administration. The pipeline creates branches and pull requests and does
+  nothing else, and a permission granted "just in case" is a permission that is
+  on the table the day the key leaks.
+- **Account permissions:** none.
+
+Then **Generate a private key** (it downloads a `.pem`), **Install** the App on
+`cheyras/foilkit`, and note the installation id from the URL you land on —
+`https://github.com/settings/installations/<id>`.
+
+Three values go into Vercel:
+
+```bash
+vercel env add FOILKIT_APP_ID production
+vercel env add FOILKIT_APP_PRIVATE_KEY production   # the WHOLE pem, BEGIN/END lines included
+vercel env add FOILKIT_APP_INSTALLATION_ID production
+```
+
+> **The plan said "private key in a secrets manager, not env", and this is env.**
+> Vercel's encrypted (sensitive) environment variables **are** this deployment's
+> secrets manager: the value is write-only once set, `vercel env ls` prints names
+> and targets only, and it is injected into the function process at run time. A
+> separate secrets service would add an outbound dependency on the request path,
+> a second credential to bootstrap it with, and a new failure mode, in exchange
+> for the same property. Rotation is `vercel env rm` + `vercel env add` + a
+> redeploy. Recorded in `DECISIONS.md`, 2026-09-05.
+
+**Never paste the key into a chat, a log or a commit.** The functions are written
+so that a malformed key produces a `503` naming the *variable* and never the
+*value*, and `functions/_lib/app-auth.test.ts` asserts exactly that.
 
 ### The GitHub OAuth App
 
@@ -144,7 +205,10 @@ the dashboard's build panel.
 vercel env add FOILKIT_SESSION_SECRET production
 vercel env add FOILKIT_OAUTH_CLIENT_ID production
 vercel env add FOILKIT_OAUTH_CLIENT_SECRET production
-vercel env add FOILKIT_GITHUB_TOKEN production
+vercel env add FOILKIT_GITHUB_TOKEN production          # direct write, maintainer only
+vercel env add FOILKIT_APP_ID production                # the contribution pipeline
+vercel env add FOILKIT_APP_PRIVATE_KEY production
+vercel env add FOILKIT_APP_INSTALLATION_ID production
 ```
 
 Repeat for `preview` if preview deploys should be able to sign in. **Do not put
@@ -164,9 +228,12 @@ pnpm run build:vercel
 node --conditions source tools/verify-functions.mts
 ```
 
-Boots every built function with an **empty** environment and exercises it.
-Expect `34 passed, 0 failed`. This is the check that would have caught the first
-deploy's failure, and CI runs it (`--no-network`) on every push.
+Boots every built function with an **empty** environment and exercises it, then
+drives the whole contribution pipeline through the built `/api/contribute.func`
+against a **mocked GitHub** — branch, commit, pull request, with the exact
+payloads asserted and `main` proved untouched. Expect `74 passed, 0 failed`.
+This is the check that would have caught the first deploy's failure, and CI runs
+it (`--no-network`) on every push.
 
 ### 6. Deploy
 
@@ -228,9 +295,15 @@ up. The first deploy conflated all three.
 | Variables set | What works |
 |---|---|
 | *nothing* | Browsing, the queue, staging, **and `/api/image`** — card scans need no environment at all. `/api/auth/signout` still clears a stale cookie. Everything else answers `503 not_configured` naming what it needs. |
-| `FOILKIT_SESSION_SECRET` only | The above, plus `/api/me` answering `200` signed-out. Sign-in `503`s naming the OAuth app; writes `503` naming `FOILKIT_GITHUB_TOKEN`. **This is the state the site is in today.** |
-| + the OAuth pair | Sign-in works. Writes still `503` naming the token. |
-| + `FOILKIT_GITHUB_TOKEN` | Direct write commits. |
+| `FOILKIT_SESSION_SECRET` only | The above, plus `/api/me` answering `200` signed-out. Sign-in `503`s naming the OAuth app; direct writes `503` naming `FOILKIT_GITHUB_TOKEN`; Submit `503`s naming the three `FOILKIT_APP_*`. |
+| + the OAuth pair | Sign-in works. Writes and Submit still `503`, each naming its own. |
+| + `FOILKIT_GITHUB_TOKEN` | Direct write commits. Submit still `503`s naming the App. |
+| + the three `FOILKIT_APP_*` | **Submit opens pull requests**, for anybody signed in — and the writer's "Open as PR instead" works too. |
+
+The two credential sets are independent on purpose. Adding the App changes
+nothing about the direct-write path, and removing the PAT would leave
+contribution working and direct write refusing, which is a supportable state
+rather than a broken one.
 
 | Symptom | Cause |
 |---|---|
@@ -242,4 +315,10 @@ up. The first deploy conflated all three.
 | Sign in does nothing | `FOILKIT_OAUTH_CLIENT_ID` unset, or the App's callback URL does not match `https://<host>/api/auth/callback` exactly. |
 | Save says `403 not_a_writer` | The signed-in login is not in `functions/_lib/writers.ts`. Granting is a config line **and a deploy** — the list is compiled in, deliberately, so it cannot be changed without a reviewable commit. |
 | Save says `502` mentioning a fast-forward | Somebody pushed between the read and the write. The commit is refused rather than discarding theirs — retry the save. |
+| Submit says `503` naming `FOILKIT_APP_*` | The App is not installed, or its variables are not set. Nothing is lost — the session is still staged and still in an export. |
+| Submit says `503` about minting an installation token | The App exists but is no longer installed on the repository, or the installation id is wrong. Check `https://github.com/settings/installations`. |
+| Submit says `502 pr_failed` mentioning "not accessible by integration" | The App's permissions are narrower than **Contents: write** + **Pull requests: write**. Widen them on the App's settings page, then accept the permission request on the installation. |
+| Submit is refused with a checklist | Working as intended. Every item was checked server-side **before a branch existed**, so nothing was pushed and the list is the fix. |
+| A pull request has no evidence comment | `PR evidence` only runs when `data/foil-masks/**` or `data/foil-canon/**` changed, and it can only comment on a branch in this repository. A fork's pull request gets the strip as a workflow artifact instead. |
+| The evidence image does not render inline | `raw.githubusercontent.com` is only fetchable by GitHub's image proxy for a **public** repository. If foilkit ever goes private the strip is still on the `pr-evidence` branch and still a workflow artifact; only the inline render stops. |
 | A mask save is refused mentioning a frame | The raster matches no record in `data/frames.json`. A stencil cut for a picture nobody can name is worse than no stencil; this gate is doing its job. |

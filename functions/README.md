@@ -16,15 +16,43 @@ auth/signout.ts   GET  /api/auth/signout    drop the cookie
 mask.ts           PUT  /api/mask            the direct write — writeMaskRecord, then a commit
 window.ts         PUT  /api/window          adjusted window geometry
 canon.ts          PUT  /api/canon           a pattern's uniform snapshot
+contribute.ts     POST /api/contribute      the contribution — validate, branch, commit, pull request
 
-_lib/http.ts      request/response shapes, body reading, the shared JSON error body
-_lib/config.ts    what this deployment is configured to do, checked before it tries
-_lib/session.ts   the signed cookie, and the safe-return-path rule
-_lib/writers.ts   the writer capability list — the check that matters
-_lib/github.ts    blobs, trees, commits, and a fast-forward that refuses to clobber
-_lib/corpus.ts    materialising the corpus into /tmp so forge can run against it
-_lib/upstream.ts  the URL algebra, politeness gate, fetch and warm LRU
+_lib/http.ts        request/response shapes, body reading, the shared JSON error body
+_lib/config.ts      what this deployment is configured to do, checked before it tries
+_lib/session.ts     the signed cookie, and the safe-return-path rule
+_lib/writers.ts     the writer capability list — the check that matters
+_lib/github.ts      blobs, trees, commits, and a fast-forward that refuses to clobber
+_lib/corpus.ts      materialising the corpus into /tmp so forge can run against it
+_lib/upstream.ts    the URL algebra, politeness gate, fetch and warm LRU
+_lib/app-auth.ts    the App's PEM, its JWT, and the installation token it buys
+_lib/pr.ts          branch, commit, pull request — the force-update that github.ts must never do
+_lib/validate.ts    everything checked BEFORE a branch exists
+_lib/pr-body.ts     what the pull request says, dedication included
+_lib/canon-entry.ts one canon-file composer, shared by both write paths
 ```
+
+## Two write paths, and why both exist
+
+`/api/mask`, `/api/window` and `/api/canon` are the **direct write**: the writer
+capability, the project's PAT, one commit fast-forwarded onto `main` with
+`force: false`. Routing the maintainer's own work through submit-and-review
+would put a queue between him and his own repository for no gain.
+
+`/api/contribute` is the **contribution**: any signed-in GitHub account, a
+one-hour GitHub App installation token, a branch named after the session and its
+seed, and one pull request. Writers get it too — "Open as PR instead" sits
+beside Save in both labs — which is what makes the pipeline live-testable by the
+one person who can fix it.
+
+They share `writeMaskRecord`, and that is the important part: the contribution
+path runs the SAME function against a `/tmp` copy of `main`, so
+`derivation_method`, the agreement number and the `.diff.png` in a pull request
+are measured by the same code from the same pixels as every mask already in the
+corpus. Nothing re-derives them and nothing takes the client's word (F3).
+
+Each has its own `503` ladder in `_lib/config.ts`, naming its own variables. A
+deployment can legitimately have either, both or neither.
 
 ## Why this directory is not called `api/`
 
@@ -193,5 +221,15 @@ is one CI stops running, and one nobody runs is one that rots.
 ## Tests
 
 `node --test` over `functions/**/*.test.ts`, wired into the root `pnpm test`. No
-network: every upstream response is injected. Typechecking reaches `functions/`
-through `tsconfig.tools.json`'s `include`.
+network: every upstream response is injected, and the GitHub API is a routing
+table. Typechecking reaches `functions/` through `tsconfig.tools.json`'s
+`include`.
+
+`tools/verify-functions.mts` is the other half and the one that matters more: it
+boots every **built** `.func` with an empty environment and then drives the
+whole contribution pipeline through `/api/contribute.func` against a mocked
+GitHub, asserting the exact payloads, that a refused submission sends **nothing**
+to GitHub at all, and that `main` is never touched. A green unit suite over
+source that is never assembled the way it ships tells you nothing about
+shipping — that is the lesson the first production deploy taught, and it is why
+that file exists.

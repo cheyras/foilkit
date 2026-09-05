@@ -56,12 +56,17 @@ rights worldwide to the extent permitted by law.
 The pull request template puts it there for you as a checkbox. Tick it
 knowingly; do not tick it for someone else's measurements.
 
-**This will become automatic.** A GitHub App is planned that composes
-contributions directly and inserts the dedication line into the PR body itself,
-so that approving your own pull request *is* your assent — no checkbox, no
-opportunity to forget. Until that ships, the pull request template is the
-fallback and it is not optional. Once it ships the template stays anyway, for
-pull requests opened by hand.
+**This is automatic if you contribute through the editor.**
+[foilkit.deckpal.app](https://foilkit.deckpal.app) composes your session into a
+pull request and inserts the dedication line into the body itself, from the
+GitHub identity that authorised the submission — so approving your own pull
+request *is* your assent. No checkbox, no opportunity to forget.
+
+The template is still here, and still not optional, for pull requests opened by
+hand. `functions/_lib/pr-body.test.ts` reads this file and asserts that the App
+inserts **this exact string**: if the two ever drift apart, the test suite fails
+rather than the dedication quietly becoming a paraphrase somebody has to
+litigate.
 
 ## DCO sign-off
 
@@ -112,6 +117,42 @@ requires only the copyright notice. The ledger exists because a dataset whose
 provenance is legible is worth more than one whose provenance is merely
 asserted.
 
+## Contributing through the editor
+
+You do not have to open a pull request by hand, and for a mask or a canon tune
+you probably should not.
+
+[**foilkit.deckpal.app**](https://foilkit.deckpal.app) is the hosted editor.
+Browsing and drawing need no account at all: open a card, paint a mask, and
+press Save — the session is stored in your browser and survives a reload, a tab
+close and days of gap. One card is one session.
+
+When you are ready, **Submit** from the *Staged work* screen. That is the one
+moment sign-in is asked for, and here is exactly what happens:
+
+1. Your session is **validated server-side, before anything is pushed** — the
+   PNG parses and is the canonical 504 × 704, the mask actually distinguishes
+   foil from non-foil, the seed's parent is pinned, and the session is not stale
+   without you having seen that it is. A failure is a checklist, not a pull
+   request.
+2. A GitHub App commits your session to `contrib/<your login>/…` and opens one
+   pull request. The commit is authored by the App and carries
+   `Co-authored-by: <you>`, so **your avatar is on the commit and your name is
+   on the pull request**.
+3. The body carries your own note about your change, the provenance numbers, the
+   conflict status, the DCO sign-off and — for anything touching `data/` — the
+   CC0 dedication above.
+4. A workflow renders an **8-frame tilt sweep** of what you submitted and posts
+   it as a comment. That is also the compile gate: a shader that does not link
+   fails there.
+
+Submitting the same session again updates the same branch and the same pull
+request. Nothing is ever discarded from your browser by submitting.
+
+If the deployment has no App configured, Submit says so, names the missing
+configuration, and leaves your session exactly where it is. Export it from the
+same screen and nothing is trapped in one browser.
+
 ## Before you open a pull request
 
 - Read `AGENTS.md`. It is short, and it is the engineering contract — human or
@@ -122,7 +163,8 @@ asserted.
 
 ## Status
 
-foilkit is pre-extraction. The library code lands in a later pass; today this
-repository is the license, contract and documentation skeleton the code will be
-committed into. Issues and discussion are welcome now; code contributions will
-have somewhere to land shortly.
+The library code has landed — `packages/{core,patterns,stage,three,resolver,forge}`
+build and are tested, the hosted editor is live at
+[foilkit.deckpal.app](https://foilkit.deckpal.app), and the contribution
+pipeline described above opens real pull requests. Issues, discussion and
+contributions are all welcome.

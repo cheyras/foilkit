@@ -1577,3 +1577,260 @@ reads as a broken editor rather than as a gap in a volunteer CDN.
 **Implications:** one HEAD per card opened. HEAD is the method `/api/image`
 documents for exactly this question — every header and no body.
 
+---
+
+## 2026-09-05 — A staged session becomes a pull request, opened by a GitHub App
+
+**Decided by:** Chey Rasmussen (plan), Claude Fable 5 (implementation)
+
+**Decision:** `/api/contribute` is the contribution pipeline. Any signed-in
+GitHub account may POST a staged session to it; the function validates it
+server-side, mints a one-hour installation token from a GitHub App scoped to
+`cheyras/foilkit` with `contents:write` + `pull_requests:write`, commits the
+session to `contrib/<login>/…`, and opens or updates one pull request.
+
+The App is a **second, independent credential** beside the direct-write PAT
+rather than a replacement for it. Both paths ship. `functions/_lib/config.ts`
+gives each its own `503` ladder naming its own variables, because a deployment
+can legitimately have either, both or neither and each combination has a
+different honest answer.
+
+**Why:** a PAT is a long-lived bearer secret belonging to a person, valid until
+somebody notices it leaked; an installation token is minted per request family
+and expires in an hour. More importantly the App is its own ACTOR, so a
+contribution pull request is opened *by the App* rather than by the maintainer's
+account — which is what makes "cheyras reviews a contribution" a real review
+instead of the maintainer approving himself.
+
+The direct write stays because routing Chey's own work through submit-and-review
+would put a queue between him and his own repository for no gain, which is the
+same reason the writer capability exists at all.
+
+**Implications:** three new environment variables, declared in `DEPLOYMENT.md`
+in this commit (contract B11's shape). The maintainer creates the App by hand —
+`DEPLOYMENT.md` names the exact permission set, and it is exactly two. The
+commit is authored by the App bot with a `Co-authored-by:` trailer for the
+contributor, which is the mechanism that puts their avatar on the commit and
+their name on the pull request. People contribute where their name shows up.
+
+---
+
+## 2026-09-05 — The App's private key lives in Vercel's encrypted env, not a separate secrets manager
+
+**Decided by:** Claude Fable 5, on behalf of @cheyras
+
+**Decision:** a deliberate deviation from the plan, which said "private key in a
+secrets manager, not env". `FOILKIT_APP_PRIVATE_KEY` is a Vercel **sensitive**
+environment variable.
+
+**Why:** Vercel's encrypted environment variables *are* this deployment's
+secrets manager. The value is write-only once set, `vercel env ls` prints names
+and targets and never values, and it is injected into the function process at
+run time — which is the same property a secrets manager provides. A separate
+service would add an outbound dependency **on the request path**, a second
+credential to bootstrap it with, and a new failure mode, in exchange for nothing
+this deployment does not already have.
+
+The property the plan was actually protecting — "the key is never in a file, a
+log or a transcript" — is protected here and is TESTED:
+`functions/_lib/app-auth.test.ts` asserts that a malformed key produces a `503`
+naming the *variable* and that the message never contains the *value*, and that
+a failed token exchange never echoes the JWT back even when GitHub's error body
+contains it.
+
+**Implications:** rotation is `vercel env rm` + `vercel env add` + a redeploy,
+which is a maintainer action and needs a deploy. If foilkit ever grows a second
+runtime that needs the same key, revisit — one key in two env stores is the
+point at which a real secrets manager starts paying for itself.
+
+---
+
+## 2026-09-05 — The GLSL compile gate is a GitHub Action, not a WASM validator in the function
+
+**Decided by:** Claude Fable 5, on behalf of @cheyras
+
+**Decision:** the submit endpoint validates the assembled shader
+**structurally** — the pattern ABI (`vec3 foilPattern(vec2, vec2)`), brace and
+paren balance across `PREAMBLE + pattern.glsl + MAIN`, the absence of a
+`#version` directive, and that every uniform the canon file sets is actually
+`uniform`-declared by the assembled source. The real **compile** happens in the
+`pr-evidence` GitHub Actions workflow, which renders the submitted state through
+headless Chromium on SwiftShader and fails the job on any page or console error.
+
+**Why:** the plan asked for a WASM GLSL validator in the function "if a workable
+zero-native-dep option exists". It was evaluated and there is not one, and the
+reason is DIALECT rather than size:
+
+- foilkit's composite is **GLSL ES 1.00** — `varying`, `attribute`, `texture2D`,
+  `gl_FragColor`, no `#version`. That is WebGL 1, which is what `@foilkit/three`
+  targets.
+- `@webgpu/glslang` (5.1 MB unpacked, last published 2021) compiles **Vulkan**
+  GLSL and requires `#version 450` with layout qualifiers. It would reject every
+  shader in this repository. A validator that fails on valid input is worse than
+  no validator, because its failures are indistinguishable from real ones.
+- `naga-wasm` is unpublished on npm; naga's GLSL frontend supports ES 3.00 and
+  desktop profiles, not ES 1.00.
+- A pure-JS parser (`@shaderfrog/glsl-parser`) parses but does not type-check or
+  link, so it would not catch the failures that matter — and it would be the
+  first runtime npm dependency in a workspace whose packages have none.
+
+SwiftShader is not a fallback from any of those. It is a **real GL driver**
+compiling the real dialect, which is a strictly stronger gate than the best of
+the rejected options would have been.
+
+**Implications:** the compile is a pull request check rather than a submit-time
+refusal, so a shader that does not link opens a pull request and then fails on
+it. That is the cost and it is acceptable: the structural checks catch the
+failure modes a contributor can actually cause (a canon file naming a uniform
+its recipe does not declare is the realistic one), and a recipe whose GLSL does
+not compile is a code change, which goes through review anyway.
+`functions/_lib/validate.test.ts` runs the structural check across the WHOLE
+recipe corpus, so a recipe added with unbalanced braces fails the unit suite
+rather than a browser.
+
+---
+
+## 2026-09-05 — Render evidence lives on an orphan `pr-evidence` branch, never on the pull request's own
+
+**Decided by:** Claude Fable 5, on behalf of @cheyras
+
+**Decision:** the 8-frame tilt sweep is pushed to an orphan branch named
+`pr-evidence`, under `pr-<number>/<name>.png`, and referenced from a single
+updated-in-place pull request comment by its `raw.githubusercontent.com` URL
+with `?v=<head sha>` to bust GitHub's image proxy cache. It is uploaded as a
+workflow artifact as well, always.
+
+**Why:** the requirement is that the strip renders **inline** in the pull
+request. Two approaches do that, and the other one — committing the strip into
+the pull request's own branch under `evidence/` — was rejected for two reasons
+that compound:
+
+1. It merges into `main` unless somebody deletes it, and a merge-cleanup step
+   nobody is blocked on is a step that gets forgotten. The corpus would slowly
+   accumulate generated PNGs beside the measurements.
+2. It puts a generated binary the contributor did not author into the diff that
+   **is** the review. A reviewer reading "three files changed" should be reading
+   three files the human changed.
+
+The orphan branch shares no history with `main`, never merges anywhere, holds
+one directory per pull request, and can be deleted wholesale without touching a
+single contribution.
+
+**Implications:** it depends on `cheyras/foilkit` being **public** — GitHub's
+image proxy can only fetch a raw URL from a public repository. If foilkit ever
+goes private the images stop rendering inline; the strip is still on the branch
+and still an artifact, and the comment should then name the artifact instead.
+Written down in `DEPLOYMENT.md`'s failure table so the next person does not have
+to rediscover it.
+
+---
+
+## 2026-09-05 — The tilt sweep renders on the blank base, because F2 applies to generated pictures too
+
+**Decided by:** Claude Fable 5, on behalf of @cheyras
+
+**Decision:** `tools/parity/tilt-strip.mjs` renders the submitted mask over the
+blank card base — the parity host's four flat tones — never over a card scan.
+The host page's new `maskUrl` parameter binds the mask as `uMaskTex`; there is
+deliberately no parameter for a face image.
+
+**Why:** AGENTS.md F2, the standing ownership rule: ship nothing we do not own
+outright, not in `data/`, not in a demo, **not in a test fixture**. The evidence
+strip is COMMITTED — to the `pr-evidence` branch — so a strip containing a
+rendered card scan would put third-party pixels into this repository, which is
+exactly the thing that makes a CC0 dedication unreliable. That the pixels are
+composited rather than copied changes nothing about who owns them.
+
+The blank base is also the better picture on its own merits. It shows how the
+foil behaves inside the region the human drew, at eight angles, with no printed
+ink competing for attention — which is the thing under review.
+
+**Implications:** a reviewer cannot see the mask registered against the artwork
+from the strip alone. That is what the `.diff.png` committed beside the mask is
+for (green added, red removed against the era rule), and what opening the card
+in the editor is for. If a scan-registered view is ever wanted, it belongs in
+the editor where the scan is fetched live and never stored — not in a committed
+artifact.
+
+---
+
+## 2026-09-05 — A mask's "alpha-only content sanity" checks the alpha, and deliberately not the RGB
+
+**Decided by:** Claude Fable 5, on behalf of @cheyras
+
+**Decision:** `validateMask` requires that a submitted mask decodes, is exactly
+504 × 704, matches its declared dimensions, has *some* coverage, and has less
+than 98% coverage. It does **not** check the RGB channels.
+
+**Why:** the content of a mask lives entirely in its alpha channel — `MAIN`
+reads `texture2D(uMaskTex, …).a` and nothing else, so RGB is display tint for
+humans looking at the PNG. Measured against the committed corpus: most masks
+carry a single tint triple, and `base1-5/19.png` carries **1419 distinct
+triples** from a canvas composite. Those masks render identically. A check that
+rejected varied RGB would be enforcing a convention rather than a fact, and it
+would reject real data already in the corpus.
+
+The two bounds that ARE enforced are the ones with meaning. A mask covering
+nothing has no measurement in it. A mask covering everything is what the
+renderer already does with `uMaskTexOn = 0`, so committing one adds a file that
+changes nothing while claiming a human looked. The committed corpus runs 0.157
+to 0.537 coverage, so the 0.98 ceiling is far outside anything a hand mask
+produces.
+
+**Implications:** the ceiling is a named constant with a test asserting the
+MARGIN rather than the number, so a future full-face convention is a decision
+somebody makes rather than a limit somebody trips over.
+
+---
+
+## 2026-09-05 — One canon-file composer, shared by the direct write and the pull request
+
+**Decided by:** Claude Fable 5, on behalf of @cheyras
+
+**Decision:** `functions/_lib/canon-entry.ts` composes and serialises a canon
+file, and both `functions/canon.ts` (direct PUT) and `functions/contribute.ts`
+(pull request) call it. Identical uniforms produce identical bytes on both
+paths.
+
+**Why:** two write paths reaching one file format is two dialects of that
+format, eventually. Extracting the composer also fixed two fields the direct
+write had been dropping on every rewrite, both silently:
+
+- **`tunedUnderContract`.** `tools/parity/data-receipt.mjs` FAILS on a canon
+  file without it, and all 32 committed files carry it. A save that dropped it
+  succeeded, and CI broke on the next push with no obvious connection to the
+  save that caused it.
+- **`frozen`.** That is a human decision — "these numbers are settled, stop
+  re-tuning them". AGENTS.md F4: a machine write may never overwrite one.
+  Dropping it on a rewrite is exactly that rollback, performed by a save that
+  looked like it only touched uniforms.
+
+**Implications:** `tunedUnderContract` is now stamped with the CURRENT law for a
+live tuning session (a human just chose these numbers under this `main()`) and
+preserved for a mechanical rewrite. `contract` — the law the file is READ under
+— is still carried through untouched, which is what it was always for.
+
+---
+
+## 2026-09-05 — Correction: `encodeURIComponent` cannot encode a nested branch ref
+
+**Decided by:** Claude Fable 5, on behalf of @cheyras
+
+**Decision:** `functions/_lib/pr.ts` encodes a branch name for a URL path with
+`refPath()` — per segment, slashes intact — rather than with
+`encodeURIComponent`.
+
+**Why:** `encodeURIComponent('contrib/octocat/x')` is `contrib%2Foctocat%2Fx`,
+and GitHub's git-ref routes 404 on that: the ref is a **path**, not a parameter,
+and `heads/contrib/octocat/x` has to arrive with its separators. `github.ts` has
+the same construction and is not wrong, because the direct-write path only ever
+names `main` — which is precisely why nobody would have noticed by reading it.
+
+Recorded because of HOW it was found: the mocked-GitHub test in
+`functions/_lib/pr.test.ts` routed on the exact path and failed on the first
+run. A test that asserted "the promise resolved" would have passed against a
+mock that answered anything.
+
+**Implications:** any future call that puts a ref in a path uses `refPath`. The
+pull request lookup still uses `encodeURIComponent`, correctly — `head=owner:branch`
+is a query parameter and the slashes there *are* data.

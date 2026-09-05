@@ -13,8 +13,14 @@
 // oversight: the commit is made with the PROJECT'S token, so GitHub records
 // that account as the COMMITTER. The signed-in user is recorded as the AUTHOR,
 // which is the field that means "whose work is this" and the one every log view
-// shows by default. A GitHub App acting on the user's behalf would collapse the
-// two; that is subtask 9's App, and this is the honest interim.
+// shows by default.
+//
+// THE CONTRIBUTION PATH DOES NOT HAVE THIS PROBLEM, and it is worth knowing
+// which module you are reading. `functions/contribute.ts` commits as a GitHub
+// App with a `Co-authored-by:` trailer, which puts the contributor's avatar on
+// the commit and their name on the pull request. This split is what remains on
+// the DIRECT write, where the committer is the project's own account and the
+// author is the maintainer — which is an accurate description of what happened.
 
 export interface RepoRef {
   owner: string

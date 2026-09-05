@@ -13,20 +13,21 @@
 //
 // `CONTRIBUTING.md` explains at length why a DCO sign-off is not a public-domain
 // dedication: the DCO certifies provenance and permission, and nothing in it
-// performs the affirmative act CC0 requires. It then says:
+// performs the affirmative act CC0 requires. For most of this project's life it
+// then promised that a GitHub App would insert the dedication automatically,
+// "so that approving your own pull request *is* your assent — no checkbox, no
+// opportunity to forget".
 //
-//   > **This will become automatic.** A GitHub App is planned that composes
-//   > contributions directly and inserts the dedication line into the PR body
-//   > itself, so that approving your own pull request *is* your assent — no
-//   > checkbox, no opportunity to forget.
+// This module is that App's half of it, and `CONTRIBUTING.md` now says so in
+// the present tense. `CC0_DEDICATION` below is the text that file publishes,
+// VERBATIM — reused rather than paraphrased, because a dedication that differs
+// from the published one by a word is a dedication somebody has to litigate,
+// years later, on behalf of a contributor who trusted it.
 //
-// This module is that App's half of it. `CC0_DEDICATION` below is the text from
-// `CONTRIBUTING.md` and `.github/PULL_REQUEST_TEMPLATE.md`, VERBATIM — reused
-// rather than paraphrased, because a dedication that differs from the published
-// one by a word is a dedication somebody has to litigate.
+// `pr-body.test.ts` reads `CONTRIBUTING.md` off disk and asserts the constant
+// appears in it, so the two cannot drift.
 //
-// The template stays, for pull requests opened by hand. `CONTRIBUTING.md` said
-// it would.
+// The manual template stays, for pull requests opened by hand.
 
 /**
  * The CC0 dedication, exactly as `CONTRIBUTING.md` publishes it.

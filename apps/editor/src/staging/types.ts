@@ -12,7 +12,9 @@
 // THE RULES ENCODED HERE, each of which cost a decision:
 //
 //  * A session is ONE CARD (or, for canon, one PATTERN). Ten cards worked in a
-//    sitting is ten sessions and — once #9's pipeline exists — ten PRs.
+//    sitting is ten sessions and ten pull requests. `functions/_lib/pr.ts`
+//    derives the branch name from the session's identity and its SEED, so
+//    re-submitting one updates its own pull request and touches no other.
 //
 //  * ONE CORRECTION PER SESSION. Today every Save rewrote `session` so the mask
 //    just written became the parent of the next one: ten saves produced ten
