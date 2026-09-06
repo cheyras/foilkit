@@ -1,0 +1,44 @@
+{
+  "pr": "2",
+  "rendered": [
+    {
+      "kind": "mask",
+      "cardId": "base1-8",
+      "variantId": "31",
+      "patternId": "starlight",
+      "file": "data/foil-masks/base1-8/31.png",
+      "name": "base1-8-31",
+      "strip": "base1-8-31.png",
+      "meta": {
+        "generatedAt": "2026-09-06T23:50:16.712Z",
+        "pattern": "starlight",
+        "mask": "/data/foil-masks/base1-8/31.png",
+        "canonFile": null,
+        "tone": "dark",
+        "maxTiltDeg": 16,
+        "framesPerStep": 300,
+        "tilts": [
+          -1,
+          -0.7,
+          -0.35,
+          -0.1,
+          0.1,
+          0.35,
+          0.7,
+          1
+        ],
+        "cell": {
+          "width": 246,
+          "height": 344
+        },
+        "strip": {
+          "width": 2024,
+          "height": 344,
+          "bytes": 343310
+        },
+        "sha256": "9b86b259fe10604cededce35790c8c7e9a96745e894fbb167a78a1e520a36b37"
+      }
+    }
+  ],
+  "skipped": []
+}
