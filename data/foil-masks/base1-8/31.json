@@ -1,0 +1,127 @@
+{
+  "version": 4,
+  "cardId": "base1-8",
+  "variantId": 31,
+  "artworkKey": "base1-8",
+  "width": 504,
+  "height": 704,
+  "frame": "canonical",
+  "channel": "alpha",
+  "derivation_method": "hand-refined",
+  "authorship": "human",
+  "reviewStatus": "human-authored",
+  "savedAt": "2026-09-06T23:45:30.761Z",
+  "artworkUrl": "https://assets.tcgdex.net/en/base/base1/8/high.webp",
+  "card": {
+    "setId": "base1",
+    "seriesSlug": "base",
+    "name": "Machamp",
+    "number": "8"
+  },
+  "prior": {
+    "source": "mask",
+    "eraId": "wotc",
+    "scope": "window",
+    "rect": [
+      0.103,
+      0.48000000000000004,
+      0.802,
+      0.418
+    ],
+    "radius": 0.004,
+    "invert": false,
+    "feather": 0.008,
+    "resolverVersion": 5,
+    "parentMask": {
+      "cardId": "base1-8",
+      "variantId": 32,
+      "savedAt": "2026-08-08T05:48:27.004Z",
+      "method": "hand-refined"
+    }
+  },
+  "priorPng": "31.prior.png",
+  "diffPng": "31.diff.png",
+  "diff": {
+    "addedPx": 12,
+    "removedPx": 36743,
+    "unchangedPx": 82032,
+    "agreement": 0.6906
+  },
+  "correction": {
+    "parent": {
+      "cardId": "base1-8",
+      "variantId": 32,
+      "savedAt": "2026-08-08T05:48:27.004Z",
+      "method": "hand-refined",
+      "sha256": "b21c74ae3453cf04916aecc90b2b4e8ad115a25acec2020c77fd763c5a3e57ba",
+      "generator": null
+    },
+    "parentPng": "31.parent.png",
+    "parentDiffPng": "31.parent.diff.png",
+    "addedPx": 5777,
+    "removedPx": 0,
+    "unchangedPx": 76267,
+    "agreement": 0.9296,
+    "changedPx": 5777,
+    "changedFraction": 0.016282,
+    "bbox": [
+      0.2679,
+      0.5881,
+      0.3948,
+      0.1548
+    ],
+    "grid": {
+      "size": 4,
+      "cells": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.157,
+        0.103,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "lineage": [
+    {
+      "method": "hand",
+      "savedAt": "2026-08-01T22:35:48.527Z",
+      "source": "layout",
+      "generator": null
+    },
+    {
+      "method": "hand-refined",
+      "savedAt": "2026-08-08T05:48:27.004Z",
+      "source": "mask",
+      "generator": null
+    },
+    {
+      "method": "hand-refined",
+      "savedAt": "2026-08-08T05:48:27.004Z",
+      "source": "mask",
+      "generator": null,
+      "frameMigration": {
+        "from": "tcgdex-high",
+        "to": "canonical",
+        "runId": "frame-canonical-2026-09-01"
+      },
+      "migratedAt": "2026-09-01T05:16:24.291Z"
+    },
+    {
+      "method": "hand-refined",
+      "savedAt": "2026-09-06T23:45:30.761Z",
+      "source": "mask",
+      "generator": null
+    }
+  ]
+}
