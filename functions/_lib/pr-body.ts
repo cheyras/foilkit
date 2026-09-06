@@ -74,7 +74,13 @@ export function noreplyAddress(c: Contributor): string {
 }
 
 export function displayName(c: Contributor): string {
-  return c.name ?? c.login
+  // The GitHub display name is contributor-controlled free text and lands in
+  // commit trailers, which are line-oriented: a newline would let a crafted
+  // name inject an extra trailer, and angle brackets would confuse the
+  // `Name <email>` shape GitHub parses. Strip both; fall back to the login
+  // (GitHub-validated, [A-Za-z0-9-]) when nothing survives.
+  const raw = (c.name ?? c.login).replace(/[\r\n<>]/g, ' ').replace(/\s+/g, ' ').trim()
+  return raw.length > 0 ? raw : c.login
 }
 
 /**

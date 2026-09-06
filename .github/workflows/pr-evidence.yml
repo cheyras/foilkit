@@ -90,6 +90,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # The render step executes repo code from the merge ref with the
+          # job's write-scoped token; don't leave that token sitting in
+          # .git/config for it. The push steps mint their own auth.
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v4
 

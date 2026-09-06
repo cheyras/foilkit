@@ -411,8 +411,18 @@ async function contributionPipeline(routes: Record<string, string>): Promise<voi
       )
       ok(
         'MAIN IS NEVER TOUCHED — the only ref write is the contribution branch',
-        !gh.calls.some((c) => c.method !== 'GET' && c.path.includes('/refs/heads/main')),
-        gh.calls.filter((c) => c.method !== 'GET').map((c) => c.path).join(', '),
+        // A ref CREATION carries its target in the body (`POST /git/refs`,
+        // `{ref: 'refs/heads/…'}`), so path-matching alone would let a
+        // regression that creates refs/heads/main sail through. Assert the
+        // body's ref on every creation as well as the path on every write.
+        !gh.calls.some((c) => c.method !== 'GET' && c.path.includes('/refs/heads/main')) &&
+          gh.calls
+            .filter((c) => c.method === 'POST' && c.path.endsWith('/git/refs'))
+            .every((c) => String((c.body as { ref?: unknown })?.ref ?? '').startsWith('refs/heads/contrib/')),
+        gh.calls
+          .filter((c) => c.method !== 'GET')
+          .map((c) => `${c.path}${c.path.endsWith('/git/refs') ? `→${String((c.body as { ref?: unknown })?.ref ?? '')}` : ''}`)
+          .join(', '),
       )
 
       const commit = gh.calls.find((c) => c.path === '/repos/cheyras/foilkit/git/commits' && c.method === 'POST')

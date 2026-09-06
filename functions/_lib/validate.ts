@@ -324,9 +324,12 @@ export function checkAssembledGlsl(patternId: string, uniformNames: string[]): C
       : 'no #version directive — GLSL ES 1.00, as the composite contract requires.',
   })
 
-  // Every uniform the canon sets must actually be declared. This is the check
-  // that catches a canon file for the WRONG recipe: `uP4` is a real uniform
-  // name, and a pattern that declares only uP0..uP2 would drop it in silence.
+  // Every uniform the canon sets must actually be declared. Note the `uP*`
+  // family can never trip this one — PREAMBLE declares uP0..uP5
+  // unconditionally — so a wrong-recipe canon leaning on uP-slots is caught
+  // upstream by `canon-params-declared`. What THIS check catches is a canon
+  // naming a pattern-specific uniform (a `uGlyph*`, a bespoke knob) that the
+  // assembled shader never declares.
   const declared = new Set<string>()
   for (const m of source.matchAll(/\buniform\s+\w+\s+(u[A-Za-z0-9]+)\s*;/g)) declared.add(m[1]!)
   const undeclared = uniformNames.filter((u) => !declared.has(u))
