@@ -39,7 +39,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Every package plus the rectifier: 177 tests, no dependencies.
+      # Every package, the tools and the functions: 506 tests, no dependencies.
       - name: Test
         run: pnpm test
 
@@ -212,10 +212,11 @@ jobs:
       - name: Build the packages
         run: pnpm run build
 
-      - name: Fixture bake + corpus manifest
-        run: |
-          node --conditions source tools/bake-fixture.mts --out data/fixture-bake
-          node --conditions source tools/build-corpus-manifest.mts
+      # Only the fixture BAKE is a separate step. The corpus manifest and the
+      # contribution queue are the editor's own `prebuild`, so running them
+      # here as well would be a second place to keep in step with it.
+      - name: Fixture bake
+        run: node --conditions source tools/bake-fixture.mts --out data/fixture-bake
 
       - name: Build the editor
         run: pnpm --filter foilkit-editor run build
@@ -230,8 +231,9 @@ jobs:
           npm i --no-audit --no-fund playwright@1.62.1
           npx playwright install --with-deps chromium
 
-      # Browse the queue, open a card, draw a stroke, stage it, reload, export,
-      # re-import, and move upstream under it until the conflict UI appears.
+      # Read the laundry list, filter it by skill, follow a task card into the
+      # card it names, draw a stroke, stage it, reload, export, re-import, and
+      # move upstream under it until the conflict UI appears.
       - name: Editor acceptance
         run: node apps/editor/e2e/run.mjs
         env:

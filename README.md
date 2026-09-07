@@ -55,7 +55,7 @@ assignment corpus itself; and `core` compiles and runs with three.js absent from
 
 ```
 pnpm install
-pnpm test              # 224 tests, no build step, no browser, no database
+pnpm test              # 506 tests, no build step, no browser, no database
 pnpm run build
 pnpm run demo          # the stress demo: several hundred cards, one context
 ```
@@ -65,6 +65,7 @@ To run the contribution editor locally, against a synthetic catalog:
 ```
 node --conditions source tools/bake-fixture.mts --out data/fixture-bake
 node --conditions source tools/build-corpus-manifest.mts
+FOILKIT_BAKE=fixture node --conditions source tools/build-task-queue.mts
 cd apps/editor && FOILKIT_BAKE=fixture pnpm dev
 ```
 

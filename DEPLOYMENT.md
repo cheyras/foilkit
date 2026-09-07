@@ -262,6 +262,7 @@ this deploy, and it is not a curl.
 pnpm install
 node --conditions source tools/bake-fixture.mts --out data/fixture-bake
 node --conditions source tools/build-corpus-manifest.mts
+FOILKIT_BAKE=fixture node --conditions source tools/build-task-queue.mts
 cd apps/editor && FOILKIT_BAKE=fixture pnpm dev
 ```
 

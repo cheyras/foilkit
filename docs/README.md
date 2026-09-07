@@ -20,6 +20,15 @@ here.**
 
 `canon-aspect-recheck.json` is the machine-readable form of the last one.
 
+`VERIFICATION.md` has a partial one: `data/verification-verdicts.json` carries
+the **standing** yay/nay set — what is still open after every wave — extracted
+by hand with the doc line numbers that justify each row, because the judging
+artifacts live outside this repository and a build step cannot honestly parse
+six superseding markdown tables. The document is canonical; the datum is
+derived from it and must be updated in the same commit as any new wave. It is
+what the contribution queue's verdict cards are built from — see
+[`HOSTED-EDITOR.md`](HOSTED-EDITOR.md) §4a.
+
 Four of these were written inside DeckPal, where the foil work began, and were
 carried here with their paths updated and their measurements untouched. Each
 says so at the top, along with what to make of the DeckPal-only HTTP surfaces

@@ -7,18 +7,19 @@
 **no database at runtime**. Everything the read path needs is a file, and this
 document is the contract those files are written and read against.
 
-Three producers, one consumer:
+Four producers, one consumer:
 
 | Producer | Needs Postgres | Runs | Writes |
 |---|---|---|---|
 | `tools/bake-catalog.mts` | **yes**, one connection | manually, by the maintainer | `data/catalog/**`, `data/search/**`, `data/foil-pattern-cards.json`, `data/foil-verification-map.json` |
 | `tools/build-corpus-manifest.mts` | no | **every build** | `data/corpus-manifest.json` |
+| `tools/build-task-queue.mts` | no | **every build** | `<bake>/task-queue.json` — §4a |
 | `tools/bake-fixture.mts` | no | on demand / in CI | a synthetic bake under a target dir |
 
 The consumer is `apps/editor`. Its build copies `data/catalog`, `data/search`,
-`data/corpus-manifest.json`, `data/foil-verification-map.json` and
-`data/foil-pattern-cards.json` into `dist/` so the CDN serves them beside the
-bundle. The editor never reaches for a database and never reaches for DeckPal.
+`data/corpus-manifest.json`, `data/foil-verification-map.json`,
+`data/foil-pattern-cards.json` and `task-queue.json` into `dist/` so the CDN
+serves them beside the bundle. The editor never reaches for a database and never reaches for DeckPal.
 
 ## Staleness is visible, never silent
 
@@ -148,7 +149,9 @@ reports the measured total so the decision can be revisited against a number.
 A local walk of `data/foil-masks`, `data/foil-canon` and `data/foil-windows`.
 No database, no network, runs on every build. This is what the **contribution
 filters** are answered from — has a mask / has a canon / uncanon'd pattern —
-and it is the input #11's queue is generated from.
+and it is three of the six inputs the contribution queue is generated from
+(§4a): the canon-less list, the uncorrected machine masks, and the `agreement`
+that ranks them.
 
 ```jsonc
 {
@@ -211,11 +214,104 @@ that data.
 
 `data/foil-verification-map.json` and `data/foil-pattern-cards.json` are
 `tools/bake-catalog.mts`'s other two outputs, in the shapes 3a already fixed
-(`version: 1` and `version: 3` respectively). The editor's **queue** is the
-verification map sorted by leverage; the canon lab's card preview samples
+(`version: 1` and `version: 3` respectively). The queue's **leverage section**
+is the verification map sorted by leverage; the canon lab's card preview samples
 `foil-pattern-cards.json` client-side rather than through a server route.
 
 Both are committed. `.gitignore` carries a re-include for them.
+
+## 4a. The contribution queue
+
+`data/task-queue.json` — `tools/build-task-queue.mts`, every build, no
+database. It is the editor's **landing page**, and it exists because the
+leverage ranking answered exactly one question and could not be a list: five
+other kinds of contribution were recorded in this repository and invisible from
+the home screen.
+
+Six inputs, seven kinds of card:
+
+| Card type | Derived from |
+|---|---|
+| `approximation` | `PATTERNS[].implemented === false` + `approxVia` — the enforceable form of "approximated" |
+| `canon` | `corpus-manifest.json` `uncanoned[]` — a pattern with no saved uniform snapshot |
+| `verdict` | `data/verification-verdicts.json` `verdicts[]` where `standing && verdict === 'nay'` |
+| `mask` | `corpus-manifest.json` mask units with `reviewStatus !== 'human-authored'`, ranked by `1 − diff.agreement` |
+| `window-mask` | `foil-verification-map.json` groups where `scope === 'window' && exemplars === 0` |
+| `residual` | `foil-card-assignments.json` `known_residuals[]` with no `resolved` field |
+| `empty-pool` | `foil-pattern-cards.json` `diagnosis[]`, rendered verbatim, one contribution per cause |
+
+Two of those inputs are bake outputs, so the queue is written into the **bake
+directory** beside them and follows the `FOILKIT_BAKE` seam
+`apps/editor/copy-data.mjs` and `vite.config.ts` already use. A missing bake is
+tolerated and recorded in `bakedInputs`, never fatal; a missing committed input
+is fatal, because that is a broken checkout rather than an unrun job.
+
+`generatedAt` is the newest stamp the INPUTS carry, for the reason §3 gives.
+`--check` is CI's proof that the committed queue matches them.
+
+**Every card traces to its source**, and `task.source` names the file and the
+field. Sorting is by `impact` — printings the resolver assigns to the rule the
+card teaches — with unsizeable cards last rather than pretending to be zero,
+and a `tieBreak` on divergence so the five Base Set holos (one rule group, one
+impact number between them) lead with the one whose machine mask disagrees most
+with the era rule.
+
+### Two numbers this file deliberately does NOT use as impact
+
+- **An outranked empty pool.** The diagnosis says 1,818 catalog printings are
+  named by a cited row for `diagonal-sheen-left` and that a higher-ranked row
+  wins each one. Both claims are true — cited rows routinely describe different
+  physical layers of the same card — so closing it moves *nothing* unless a new
+  source appears. Ranking the card by 1,818 would put "usually nothing to fix"
+  above a mask that really does move 1,624 printings, and would read as an
+  invitation to go and win them back. `impact` is `null`; the number stays on
+  the card as detail, under the do-not-flip-a-winner guard.
+- **`maskCoveredCards`.** Coverage is not evidence, per §3.
+
+### The verdicts datum
+
+`data/verification-verdicts.json` is the one input that could not be derived.
+The judging verdicts live in `VERIFICATION.md` prose — a superseding header plus
+one markdown table per wave, each overriding rows in the last — and the
+machine-readable `verdict.json` files live outside the repository
+(`VERIFICATION.md:31-34`). A build step that parsed six tables and replayed
+their supersessions would be a prose parser pretending to be a data source, so
+the extraction happens **once, by hand**, with the doc line numbers that justify
+every row. Update it in the same commit as the wave; the builder fails the build
+if a row names something that is not an implemented pattern id.
+
+It carries the **still-frame blindness** flag, and that flag decides the card's
+skill. `VERIFICATION.md:759-764`: *"Still-frame motion blindness now has FIVE
+data points … Chey's live tilt remains the arbiter for motion claims."* Those
+cards ask for a **live-tilt human verdict, not another GLSL round**, and say so
+on the card — answering them with more shader work is the documented wrong move.
+
+### Three doc counts that are currently stale
+
+The builder checks itself against every count a document asserts and prints a
+`FINDING:` line for each disagreement. A finding is **not** a failure: the
+document is a claim, the corpus is the measurement, and failing the build on
+every stale sentence would mean nobody could commit a measurement until they had
+also rewritten the prose. As of 2026-09-06:
+
+| Claim | Where | Measured |
+|---|---|---|
+| 5 approximated types, the R3 list | `SHADER-CONTRACT.md:290-295` | **1** — `big-glitter`. The other four shipped dedicated recipes in R3-MISC (`VERIFICATION.md:840-843`) |
+| 13 canon-less patterns | §3 above, subtask 5 | **12** — the long-standing `none` correction |
+| 4 standing nays | `VERIFICATION.md:61-73` | **5**, and only two of the original four are in it |
+
+The nay list moved the most. R3-MOTION broke `starlight`
+(`VERIFICATION.md:677`), R3-GLYPH broke `radiant-collection-dots` (`:754`), and
+three new nays were recorded — `radiant` (`:680`), `ace-spec` (`:756`),
+`prismatic-pokeball` (`:757`). `pokeball-hologram` was never re-judged after R2,
+so its R2 verdict is the last one on record. `VERIFICATION.md` never restates a
+consolidated post-R3 list; `verification-verdicts.json` is that restatement, and
+its `$supersededClaim` block records the claim it replaces rather than deleting
+it.
+
+Note also that `VERIFICATION.md:840-843` asserts *"zero `approxVia` fallbacks
+remain in the library"*, which the code refutes: `big-glitter` still carries one
+(`packages/patterns/src/patterns.ts:2717-2728`).
 
 ## 5. Images — by reference, through the proxy
 

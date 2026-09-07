@@ -22,9 +22,13 @@
 // at that package.json.
 //
 //   node --conditions source tools/bake-fixture.mts --out data/fixture-bake
-//   node --conditions source tools/build-corpus-manifest.mts
-//   cd apps/editor && FOILKIT_BAKE=fixture pnpm build
-//   node apps/editor/e2e/run.mjs
+//   cd apps/editor && FOILKIT_BAKE=fixture pnpm build   # prebuild writes both
+//   node apps/editor/e2e/run.mjs                        # generated artifacts
+//
+// The editor's `prebuild` runs `build-corpus-manifest.mts` and
+// `build-task-queue.mts`, so the fixture bake's `task-queue.json` — which the
+// laundry-list assertions read as their expected values — is written by the
+// build itself rather than by a step this comment could go stale about.
 
 import { createRequire } from 'node:module'
 import { createReadStream, existsSync, readFileSync, statSync, writeFileSync, mkdtempSync } from 'node:fs'

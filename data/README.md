@@ -18,6 +18,13 @@ Empty for now. The dataset arrives with the extraction:
 | `foil-overrides/` | Per-card sparse diffs against a canon baseline |
 | `foil-windows/` | Hand-adjusted art-window geometry, where the era rule was measurably wrong |
 
+Two committed files here are not measurements of a printing, and say so:
+
+| File | What it holds |
+|---|---|
+| `verification-verdicts.json` | The **standing** yay/nay verdicts, extracted by hand from `docs/VERIFICATION.md` with the line numbers that justify each row. Update it in the same commit as any new judging wave |
+| `task-queue.json` | The hosted editor's contribution queue — **generated** on every build by `tools/build-task-queue.mts` from six other artifacts. Never hand-edited; CI's `--check` proves it matches its inputs |
+
 ## What is a measurement, and what is not
 
 These files are observations of physical printings: which foil a printing

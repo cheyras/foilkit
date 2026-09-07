@@ -2023,3 +2023,129 @@ pins each door as known-and-accepted so a behavior change surfaces as a test
 failure rather than a silent doc drift. Review guidance: in any sidecar diff,
 `version`, `author`, and `verification` are claims the diff itself cannot
 prove.
+
+
+## 2026-09-06 — The contribution queue is generated, and a doc's count is a claim
+
+**Decided by:** @cheyras
+
+**Decision:** `data/task-queue.json` is a build step
+(`tools/build-task-queue.mts`, every build, no database) that turns six
+committed artifacts into one impact-sorted list of task cards, and the hosted
+editor's landing page renders it. The leverage table stays as one section of
+that list rather than being replaced — it is the impact spine, in its own
+units.
+
+Six sources, seven card types: approximated recipes (`PATTERNS[].implemented`),
+canon-less patterns (`corpus-manifest.json`), standing verification nays (a new
+committed datum), uncorrected machine masks ranked by `1 − diff.agreement`,
+window-scope groups at zero exemplars, untargeted research residuals, and the
+bake's empty-pool diagnosis rendered verbatim.
+
+**Why:** Every one of those was already recorded in this repository and
+invisible from the home screen, so a contributor who could not draw a mask had
+nothing to read. Generating rather than writing the list is what makes it
+survive: there is no hardcoded task anywhere in the builder, and `task.source`
+names the file and field each card came from, so a generated list cannot be
+mistaken for one somebody made up.
+
+Where a document states a COUNT, the builder derives the real number and emits
+a `reconciliation` row either way — printing a `FINDING:` line when they
+disagree, and **not** failing the build. The document is a claim; the corpus is
+the measurement. Failing on every stale sentence would mean nobody could commit
+a measurement until they had also rewritten the prose. This is the same
+discipline `build-corpus-manifest.mts` already applied to the canon-less count,
+generalised.
+
+**Implications:**
+
+- **Three doc counts are stale today, and the queue says so on the page.**
+  "5 approximated types" (`SHADER-CONTRACT.md:290-295`) is **1** — four of the
+  R3 list shipped dedicated recipes in R3-MISC. "13 canon-less" is **12**, the
+  long-standing `none` correction. "4 standing nays"
+  (`VERIFICATION.md:61-73`) is **5**, and only two of the original four are in
+  it: R3-MOTION broke `starlight` (`:677`), R3-GLYPH broke
+  `radiant-collection-dots` (`:754`), and `radiant` (`:680`), `ace-spec`
+  (`:756`) and `prismatic-pokeball` (`:757`) were added.
+  `VERIFICATION.md:840-843`'s claim that "zero `approxVia` fallbacks remain" is
+  also refuted by the code — `big-glitter` still carries one.
+- **`data/verification-verdicts.json` is new, and is the one thing that could
+  not be derived.** The verdicts are `VERIFICATION.md` prose and their
+  machine-readable form is outside the repository (`:31-34`), so the extraction
+  is by hand, once, with doc line numbers per row. Update it in the same commit
+  as any future wave; the builder refuses a row that names a non-pattern. Its
+  `$supersededClaim` block records the four-nay claim it replaces rather than
+  deleting it, because other documents still make that claim.
+- **A still-frame-blind nay asks for a live tilt, not a shader round.** The flag
+  is in the datum, it selects the `live-tilt` skill, and the card renders the
+  caveat in words. `VERIFICATION.md:759-764` names Chey's live tilt as the
+  arbiter for motion claims; `ace-spec` and `radiant` are pixel-refuted in the
+  doc itself. Answering these with GLSL is the documented wrong move, so the
+  queue says so where a contributor will read it.
+- **An outranked empty pool is NOT ranked by the printings it loses.** Its
+  `impact` is `null`, not 1,818. A higher-ranked row legitimately wins every one
+  of those printings — cited rows routinely describe different physical layers
+  of the same card — so ranking by that number would sort "usually nothing to
+  fix" above real work and read as an invitation to go and win them back. The
+  number stays on the card as detail, under the do-not-flip-a-winner guard.
+- **The queue lives in the BAKE directory**, not next to the corpus manifest,
+  because two of its six inputs are bake outputs. It follows the same
+  `FOILKIT_BAKE` seam `copy-data.mjs` and `vite.config.ts` use, so the fixture
+  site gets a real queue built from fixture numbers and the whole surface is
+  exercisable with no database. A missing bake is recorded in `bakedInputs`,
+  never fatal; a missing committed input is fatal.
+- **CI gains `build-task-queue.mts --check`**, beside the corpus manifest's, for
+  the same reason: a committed queue that no longer matched its inputs would
+  send contributors at work that is already done.
+- No environment variables were added, so `DEPLOYMENT.md` is unchanged.
+
+## 2026-09-06 — The ex13/ex16 residual closure was already committed; ex11 is queued, not closed
+
+**Decided by:** @cheyras
+
+**Decision:** The step-11 plan asked whether the two catalog-closable residuals
+— the six Holo Rare basic Energies of `ex13` and `ex16` resolving to
+`vertical-sheen-rainbow` — could be closed from committed catalog data. They
+**already were**, on 2026-08-08 in the R7 pass: both `known_residuals` entries
+carry a `resolved` field naming the exact card ids (`ex13-105..110`,
+`ex16-103..108`), and two `cardIds` rows in `data/foil-card-assignments.json`
+assign the pattern. 55 residuals recorded, 12 closed, 43 open. **No resolver
+digest changed in this work, because no assignment row was edited.**
+
+A THIRD residual is closable the same way and was **queued rather than closed**:
+`ex11` (EX Delta Species) holo. Its recorded blocker is verbatim "the task-data
+card list is missing so I cannot emit cardId selectors", and the committed
+catalog shard now supplies it — `data/catalog/sets/ex11.json` names exactly
+three Pokémon-ex (`ex11-108..110`, Flareon/Jolteon/Vaporeon ex) and three Gold
+Stars (`ex11-111..113`, Groudon/Kyogre/Metagross Star) among its holo-tier
+cards, matching the source claim's own enumeration ("Gold Stars, Pokemon-ex").
+
+**Why not close it here:** the closure is an assignments edit, and
+`data/foil-verification-map.json` and `data/foil-pattern-cards.json` — the two
+artifacts the queue's leverage table, empty-pool diagnosis and every impact
+number are built from — are `bake-catalog.mts` outputs that need Postgres. This
+machine has no database. Committing the edit would have shipped an assignments
+file inconsistent with the committed bake, in the same change that introduced a
+surface whose contract is that every card traces to its data source. The
+resolver digest is measurable without a database
+(`tools/parity/resolver-receipt.mjs`), but a digest that moved with a stale
+verification map beside it is a worse artifact than an open residual.
+
+**Implications:**
+
+- The `ex11` card is in the queue as `residual:ex-holos:ex11:holo`, research
+  skill, carrying the `needs-a-bake` guard — which is why that guard exists.
+  Every residual card carries it.
+- Whoever closes it should expect the guesses for those six cards to move from
+  `mirror` to `cosmos`, and the digest to change by exactly the printings those
+  six cardIds carry across their holo-tier variants — 13 in the current catalog
+  (`ex11-108` ×2, `ex11-109` ×4, `ex11-110` ×4, `ex11-111..113` ×1 each) — and
+  nothing else. `ex11-114` Azumarill is a secret rare the cited claim's
+  enumeration does not cover, so it stays under the `mirror` row and the
+  residual closes PARTIALLY, the same shape `ex13`'s `resolved` note already
+  uses.
+- The other 42 open residuals were checked and are blocked by something the
+  catalog cannot supply: a source that names cards (`ex14`'s three Holo Rare
+  Masters sit in unparsed image captions), a rarity split the catalog does not
+  carry, or the absence of a vocabulary slug entirely (`dc1`, `sm3.5`) — which
+  no amount of catalog data closes.
