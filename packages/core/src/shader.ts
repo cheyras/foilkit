@@ -478,9 +478,17 @@ void main() {
   // which today is every pattern — renders bit-for-bit what it rendered before.
   // That is why this is not a composite-contract bump; the parity harness
   // proves it at 45/45 rather than the claim resting on this comment.
+  //
+  // SCOPED BY THE SHEET. The ink is printed ON the foil sheet, so it can only
+  // exist where the sheet does: inkDesign is multiplied by the mask BEFORE the
+  // mask is reduced by it. Without that the design paints straight across the
+  // art window on a reverse — sheet scope is the era rect INVERTED, so m is 0
+  // over the illustration — which is physically impossible, and is exactly what
+  // the first render of this layer did. Caught by looking at it (AGENTS.md F7),
+  // not by a test; the tests now pin the mask term so it cannot come back.
   float inkDesign = 0.0;
   if (uInkOn > 0.5 && uInkDraw > 0.5) {
-    inkDesign = clamp(inkCoverage(uv) * uInkStrength, 0.0, 1.0);
+    inkDesign = clamp(inkCoverage(uv) * uInkStrength, 0.0, 1.0) * m;
     m *= 1.0 - inkDesign;
   }
   // Luminance gate: holo sheet shows where the scan is dark (foil background),

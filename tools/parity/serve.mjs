@@ -55,6 +55,13 @@ const TYPES = {
   '.mjs': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
+  // R8-INK 2026-09-07. An SVG served as application/octet-stream returns 200
+  // and then an <img> silently refuses to decode it — so a tile that is present
+  // reads exactly like a tile that is absent: coverage 0, procedural fallback,
+  // nothing in the console. The editor's vite middleware already carried this
+  // entry; this server did not, and it cost a render before anyone noticed.
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
   '.css': 'text/css; charset=utf-8',
   '.map': 'application/json; charset=utf-8',
 }

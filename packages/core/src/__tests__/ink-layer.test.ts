@@ -80,6 +80,19 @@ test('every added instruction sits inside the uInkOn branch — the no-op is str
   assert.ok(guarded.includes('inkCoverage(uv)'), 'the sample moved out of its gate')
   assert.ok(guarded.includes('m *= 1.0 - inkDesign;'), 'the coverage multiply moved out of its gate')
 
+  // SCOPED BY THE SHEET, and this is a real bug that shipped for one render.
+  // The ink is printed ON the foil sheet, so it exists only where the sheet
+  // does. Without the `* m` the design paints straight across the art window on
+  // a reverse — sheet scope is the era rect INVERTED, so m is 0 over the
+  // illustration — and the first render of this layer did exactly that.
+  // Measured after the fix on a real SV reverse: art-window meanAE 0.091
+  // against 8.82 over the sheet.
+  assert.match(
+    guarded,
+    /inkDesign = clamp\(inkCoverage\(uv\) \* uInkStrength, 0\.0, 1\.0\) \* m;/,
+    'the ink coverage lost its mask term — it will paint over the art window',
+  )
+
   // The tone term has its own gate, and it is doubly guarded: `inkDesign` is
   // still exactly 0.0 when the first gate did not run, so even a future edit
   // that widened this one could not paint anything.

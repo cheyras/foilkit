@@ -15,6 +15,7 @@ here.**
 | [`PROVENANCE.md`](PROVENANCE.md) | The mask sidecar, `derivation_method`, review status, the provenance tiers that gate exemplar weighting, the ratchet, and the `supersedes` / `correction` distinction |
 | [`MASK-PIPELINE.md`](MASK-PIPELINE.md) | How a mask is authored, generated, corrected and archived — and the invariants that stop a machine overwriting a person |
 | [`TAXONOMY.md`](TAXONOMY.md) | The 45 patterns: what each one physically is, which printings carry it, and how the recipe models it |
+| [`INK-DESIGN.md`](INK-DESIGN.md) | The reverse holo's SECOND layer — the printed ink design the pattern taxonomy conflates with the foil. Its keying, its tile format, the `shows` consultation, the line between a measured period and a traced mark, and the measurement that refuted the double-draw hypothesis |
 | [`VERIFICATION.md`](VERIFICATION.md) | The renders judged against the reference corpus — the run, the rubric, every verdict with its score and discrepancies |
 | [`CANON-ASPECT-RECHECK.md`](CANON-ASPECT-RECHECK.md) | The composite-contract 1 → 2 recheck: per-canon delta, which ones a human should look at, and in what order |
 

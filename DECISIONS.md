@@ -2357,3 +2357,158 @@ show the four seconds the notes actually cite.
   a permanent no-op — the loop then reported five successful seeks while
   playback ran away to 62s. Nothing in the shipped code does this; the harness
   did. If you go to instrument this player, observe it, do not replace it.
+
+## 2026-09-07 — The reverse-holo ink design becomes a first-class tier
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras (Project Holo, subtask 13)
+
+**Decision:** A reverse holo is modelled as TWO orthogonal layers rather than
+one. The **FOIL** — embossed micro-texture in aluminium — stays a procedural
+GLSL recipe in `packages/patterns`, which is correct because it is physics. The
+**DESIGN** — opaque ink printed over that sheet, blocking it — becomes DATA:
+`data/ink-designs.json` + `data/ink-tiles/`, resolved per printing by a parallel
+`resolveInk` on `(scope, type, variantKind)` + rarity, resolving
+card > subset > set > era, and entering the composite as coverage
+(`m *= 1 − uInkStrength·inkCoverage(uv)`). Full write-up: `docs/INK-DESIGN.md`.
+
+**Why:** Procedural will never converge on the design because there is nothing
+to converge to. Sceptile and Magneton, and a dozen other reverses that look
+nothing alike, sit on the **same vertical-sheen sheet**. Tuning a recipe toward
+that set approaches the average of a set with no average, which is why
+"patterned reverse holos look really bad" is a category error and not a tuning
+gap. The resolver already half-knew this and discarded the knowledge: both tiers
+carry a `penaltyOf` demoting `mirror` rows on reverses because the corpus
+records them as *ink-design evidence, not foil evidence*. This tier is where
+that evidence goes instead of the floor.
+
+**The commissioned bug was checked first, and REFUTED — with numbers.** The
+hypothesis was that `reverse-sheet` draws its ring+dot grid over a scan that
+already contains the printed design. Method: autocorrelation of high-passed luma
+over the sheet band, lags 4–80 px, n = 7 TCGdex `high.png` scans at 600×825.
+**Instrument validated first** on a positive control — the same scan with
+`reverse-sheet`'s own lattice stamped in at uP0 = 11 — which returned lag **54 px
+at SNR 7.85**, the predicted 600/11 = 54.5. Every real scan returned **SNR
+1.41–1.88** with peaks at 7–14 px, the adjacency length of the high-pass
+residual. Two of the seven (`basep-33`, `pl1-SH4`) are cards with **no
+non-reverse printing at all**, so their scan can only be of a reverse, and they
+read the same as the rest. Catalog scans do not carry a printed reverse design;
+they are the normal printing, per the TCGdex convention that one image serves
+every variant (`sv08.5-040` serves six).
+
+Three things survived the refutation and are why the tier shipped anyway:
+
+- **The real defect is worse than double-drawing.** The design is drawn from
+  *nothing at all* — a lattice at a density nobody measured, at uniform spacing
+  over the whole sheet — and then `inkGlyph`/`inkDetail`, which read local
+  contrast, punch holes in it wherever the printed text happens to fall. That is
+  misregistration, just not the predicted kind.
+- **The double-draw hazard was real and completely unguarded.** Nothing
+  consulted `shows`. The first image that *does* carry a reverse printing —
+  subtask 14's community captures, a re-shoot, one of the 29 reverse-only cards
+  getting a better scan — would have been drawn on twice with nothing to stop
+  it. `uInkDraw` is that guard, and it is why the guard shipped even though the
+  bug did not reproduce.
+- **The measurement is itself the answer** to what `shows: unknown` should do.
+
+**`shows: unknown` DRAWS, and the assumption is written down.** `frames.json`
+reads `unknown` on all 24 records and its own `$doc` says that is the finding,
+not a gap — derived, never claimed — and sets the rule: only a MEASURED
+`reverse` may suppress an overlay. So the default is `normal`, justified by the
+n = 7 measurement above and by the TCGdex one-image-per-card convention, and
+stated as an assumption in `data/ink-designs.json`'s `frameShows` block. The
+per-frame override lives there rather than in `frames.json`, which is generated
+and must not be hand-edited; it is a human ratchet (F4), and it is **empty
+today**, honestly — nothing has been measured to `reverse`, and inventing an
+entry would be exactly the claim `frames.json` refuses to make.
+
+**NO composite-contract bump, and it is proven rather than argued.** The
+contract versions the law that turns a *stored uniform snapshot* into pixels, and
+no stored snapshot changed meaning: every ink uniform is STRUCTURAL
+(surface-owned, never in a canon file), `uInkOn` defaults to 0, and every added
+instruction sits inside its branch. `tools/parity` rendered all 45 recipes on the
+blank base before and after: **45/45 byte-identical**, against a control pair
+that was itself 45/45. No canon AE recheck was owed, and none was run.
+
+**The 3b handoff is the keying evidence, and it is cited on the rows.**
+`holo-archive/3b-pairs/delta-classes.md` measured `variantKind` — not scope — as
+the discriminating term (the Xerneas pair is holo-against-reverse, both foiled,
+and the tag treatment tracked the *reverse printing*), and `era-research.md`
+supplied the three delta classes and the rarity gate.
+`tools/rectifier/THRESHOLDS.md` records why the numeric classifier cannot be
+trusted on photographs (`CHANGED_PIXEL_DELTA = 24` calls 40.8% of a
+visually-black diff "changed"), so the classes ride along on each row as a cited
+`delta` rather than as something this tier recomputes.
+
+**Implications:**
+
+- **Four tiles shipped, six marks queued.** Shipped: `dot-grid`, `ring-dot`,
+  `pinstripe-diagonal`, `crosshatch` — generic lattice geometry, uncopyrightable,
+  every coordinate a round percentage of the cell. Queued with the slot EMPTY:
+  `pokeball`, `masterball`, `specialty-balls`, `plasma-shield`,
+  `energy-symbols`, `ex-set-logos`. A traced Poké Ball is TPCi's design whoever
+  ran the tracer, and a CC0 dedication over it would be worth nothing (F2). A
+  queued slot leaves `uInkOn` 0, so those printings render exactly what they
+  render today — the count going to zero is not the goal; every queued mark
+  carrying its caution is.
+- **`data/` stays CC0 and our own tiles belong in it.** Measured placement
+  numbers are facts; the tile geometry is ours outright, so we have the standing
+  to dedicate it. Covered by the existing `data/**` glob with a notice file
+  (`data/ink-tiles/INK-TILES-NOTICE.md`, five sections, rejection trail
+  included). `ink-index.json` joined the CC0 override list beside the other two
+  derived resolver tables.
+- **The period is measured and WEAK, and says so.** `across = 11.7` comes from
+  one x-peak at 43 canonical px on one of 3b's four rectified pairs, at SNR 2.1,
+  on pairs 3b itself records as misregistered. Recorded with `n`, `snr`,
+  `confidence: low` and a `caveat`; the two unmeasured tiles carry `n: 0` and
+  `confidence: null` rather than a number with no provenance (F5). The slider
+  surface exists so a human can correct it, and that correction is a decision
+  this file may never overwrite.
+- **`ex-set-logos` is recorded but NOT expressible.** A set-name logo stamped
+  bottom-right inside the art box is a single positioned stamp, not a lattice.
+  It is queued so it is not lost; the second positioned layer is separate work.
+- **`plasma-shield` is queued WITHOUT a row**, because the catalog declares one
+  `reverse` kind for bw8/9/10 and carries no Team Plasma flag. A set-wide row
+  would be wrong for most of the set. The gap is visible; the wrong answer is
+  not.
+- **The task queue has a seventh source**, a new `art` skill and a new
+  `originals-only` guard. 108 tasks → 114. A queued tile is sized only when
+  EVERY row queuing it can be counted — one uncountable row makes the number a
+  lower bound, and a lower bound presented as an impact ranks the card below work
+  it outweighs.
+- **The resolver got its first tests**, covering the ink axis only. Pinning the
+  foil axis retroactively in the same commit would make a future regression
+  ambiguous about which axis moved; `resolver-receipt.mjs` already digests 10,312
+  foil probes.
+- **The first render of the layer was WRONG, and only looking at it found that**
+  (F7). Every test passed and parity was 45/45 — because the bug lived entirely
+  on the SCAN path, which the blank-base harness does not exercise. The design
+  painted straight across the ART WINDOW: `sheet` scope is the era rect
+  INVERTED, so the mask is 0 over the illustration, and ink printed on a foil
+  sheet cannot exist where there is no sheet. Fixed by scoping the coverage to
+  the mask before the mask is reduced by it
+  (`inkCoverage(uv) · uInkStrength · m`). Measured after the fix on a real SV
+  reverse scan, split by region: **art window meanAE 0.091 (1.2% changed — the
+  mask feather edge) against sheet meanAE 8.82 (43.5% changed)**. The mask term
+  is now pinned by a test so it cannot come back silently. The lesson is
+  reusable: a blank-base parity pass proves a no-op, and proves nothing at all
+  about a layer that only exists on a scan.
+- **A second thing only the render found:** `tools/parity/serve.mjs` had no
+  `.svg` MIME entry, so a tile 200'd as `application/octet-stream` and the
+  `<img>` silently refused it — coverage 0, procedural fallback, nothing in the
+  console. A present tile read exactly like an absent one. The editor's vite
+  middleware already carried the entry; this server did not.
+- **Render evidence**, one real SV reverse scan (`sv03.5-095`), meanAE over the
+  sheet region: plain scan → today's render **13.07**; today's render → the tier
+  on with nothing to draw **1.56** (that delta IS the procedural ring+dot guess
+  disappearing, in isolation); today's render → the registered design **8.82**.
+  The art window moves 0.015–0.091 in every comparison, which is the mask edge.
+- **Suites: 561 unit** (was 538 — 6 core, 3 patterns, 14 resolver), **81 editor
+  E2E**, **30 stage acceptance**, **82 function** — all unchanged and all green.
+  One CI step added next to the three existing `--check` steps.
+- **Deviation, declared:** the ink TILES were authored; a tile-*authoring*
+  surface was not built. The editor gets the placement sliders and the state
+  readout (design / queued / in-scan / none), which is what a human needs to
+  correct a measurement. Drawing a new lattice cell is a file in
+  `data/ink-tiles/` plus a notice section, done in an editor — and the queue
+  cards deliberately carry `link: null` rather than inventing a route so the card
+  had a button.

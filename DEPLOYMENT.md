@@ -231,7 +231,10 @@ node --conditions source tools/verify-functions.mts
 Boots every built function with an **empty** environment and exercises it, then
 drives the whole contribution pipeline through the built `/api/contribute.func`
 against a **mocked GitHub** — branch, commit, pull request, with the exact
-payloads asserted and `main` proved untouched. Expect `74 passed, 0 failed`.
+payloads asserted and `main` proved untouched. Expect `82 passed, 0 failed`
+(corrected 2026-09-07: this line said 74, which was the count when it was
+written and had drifted silently — nothing else in the repository records the
+number, and unlike the editor E2E this suite commits no last-run artifact).
 This is the check that would have caught the first deploy's failure, and CI runs
 it (`--no-network`) on every push.
 

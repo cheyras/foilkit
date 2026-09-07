@@ -17,13 +17,15 @@ Empty for now. The dataset arrives with the extraction:
 | `foil-masks/` | The mask corpus: `<cardId>/<variantId>.png` (alpha = foil coverage) plus its provenance sidecar, the rule it was drawn against, and the diff between them |
 | `foil-overrides/` | Per-card sparse diffs against a canon baseline |
 | `foil-windows/` | Hand-adjusted art-window geometry, where the era rule was measurably wrong |
+| `ink-tiles/` | The reverse-holo DESIGN layer's tiles: one lattice cell each, alpha = ink coverage. **A drop slot** — read its notice before adding one. Original geometry only; a recognisable mark is queued empty rather than traced |
 
-Two committed files here are not measurements of a printing, and say so:
+Three committed files here are not measurements of a printing, and say so:
 
 | File | What it holds |
 |---|---|
 | `verification-verdicts.json` | The **standing** yay/nay verdicts, extracted by hand from `docs/VERIFICATION.md` with the line numbers that justify each row. Update it in the same commit as any new judging wave |
-| `task-queue.json` | The hosted editor's contribution queue — **generated** on every build by `tools/build-task-queue.mts` from six other artifacts. Never hand-edited; CI's `--check` proves it matches its inputs |
+| `task-queue.json` | The hosted editor's contribution queue — **generated** on every build by `tools/build-task-queue.mts` from seven other artifacts. Never hand-edited; CI's `--check` proves it matches its inputs |
+| `ink-designs.json` | The ink-design registry: which printed design sits over which foil sheet, keyed `(scope, type, variantKind)` + rarity. The placement parameters ARE measurements and carry their `n`; the tile GEOMETRY is authored, and the marks we may not author sit in `queued[]` with the slot left empty. See [`docs/INK-DESIGN.md`](../docs/INK-DESIGN.md) |
 
 ## What is a measurement, and what is not
 

@@ -149,7 +149,7 @@ reports the measured total so the decision can be revisited against a number.
 A local walk of `data/foil-masks`, `data/foil-canon` and `data/foil-windows`.
 No database, no network, runs on every build. This is what the **contribution
 filters** are answered from — has a mask / has a canon / uncanon'd pattern —
-and it is three of the six inputs the contribution queue is generated from
+and it is three of the seven inputs the contribution queue is generated from
 (§4a): the canon-less list, the uncorrected machine masks, and the `agreement`
 that ranks them.
 
@@ -228,7 +228,7 @@ leverage ranking answered exactly one question and could not be a list: five
 other kinds of contribution were recorded in this repository and invisible from
 the home screen.
 
-Six inputs, seven kinds of card:
+Seven inputs, eight kinds of card:
 
 | Card type | Derived from |
 |---|---|
@@ -239,6 +239,7 @@ Six inputs, seven kinds of card:
 | `window-mask` | `foil-verification-map.json` groups where `scope === 'window' && exemplars === 0` |
 | `residual` | `foil-card-assignments.json` `known_residuals[]` with no `resolved` field |
 | `empty-pool` | `foil-pattern-cards.json` `diagnosis[]`, rendered verbatim, one contribution per cause |
+| `ink-tile` | `data/ink-designs.json` `queued[]` — a reverse-holo design slot left EMPTY because the mark is a trademark we may not trace ([`INK-DESIGN.md`](INK-DESIGN.md)). Every one carries the `originals-only` guard and wants the `art` skill. **A queued slot is a working state**: `uInkOn` stays 0 and the recipe renders its procedural fallback, so this count going to zero is not the goal — every queued mark carrying its caution is. |
 
 Two of those inputs are bake outputs, so the queue is written into the **bake
 directory** beside them and follows the `FOILKIT_BAKE` seam
