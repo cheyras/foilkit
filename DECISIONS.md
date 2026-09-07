@@ -2512,3 +2512,124 @@ visually-black diff "changed"), so the classes ride along on each row as a cited
   `data/ink-tiles/` plus a notice section, done in an editor — and the queue
   cards deliberately carry `link: null` rather than inventing a route so the card
   had a button.
+
+
+## 2026-09-07 — The queue page must survive a datum newer than itself, and the ink tier must draw nothing where it knows nothing
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras (Project Holo, subtask 13,
+adversarial verification round)
+
+**Decision:** Two rules, each one generalised from a defect the entry above
+shipped.
+
+**(1) A generated artifact fetched at runtime may contain ids this client has
+never heard of, and every lookup against one must degrade rather than throw.**
+`apps/editor/src/queue/taskQueue.ts` widens its type/skill/estimate ids to admit
+any string, routes every label through a degrading helper, and builds its filter
+chips from the task list rather than from the build-time order so a new kind
+gets a control instead of having its cards hidden behind one that does not
+exist.
+
+**(2) The ink tier draws nothing where no row keys the printing.** The era
+lookup's `?? 'modern-sv'` fallback is gone; an unmapped series resolves to
+`state: 'none'`.
+
+**Why:** The queue went WHITE in production. `data/task-queue.json` gained a
+seventh source with a new `ink-tile` type and an `art` skill; the SPA's union
+had neither; `TYPE_LABEL[task.type]` came back undefined; reading `.what` off it
+threw during render and React unmounted the tree. The editor's landing page —
+the surface this whole subtask exists to fill — showed nothing at all, while
+every test in this repository passed and the E2E reported 81 green assertions.
+
+It passed because the FIXTURE could not size an ink-tile card: the registry keys
+its queued rows on real set ids (`sv08.5` + `reverse-foil-pokeball`) that a
+synthetic catalog does not carry, so all six baked as `impact: null`, sorted to
+the bottom, and landed at positions 60–65 — past the 20-card first screen, never
+rendered. Production ranks two of them at 10 and 11. CI was watching the exact
+bug and could not see it.
+
+The second rule has the same shape one layer down. `ERA_BY_SERIES[slug] ??
+'modern-sv'` gave every series `era-layouts.json` does not cover — thirteen of
+the catalog's twenty-one, **6,963 of 13,165 reverse printings, 52.9%** — the
+Scarlet & Violet dot grid at strength 0.8, on no evidence at all. That is the
+drawn-from-nothing defect the entry above is *about*, reborn in the tier that
+was supposed to end it.
+
+**Implications:**
+
+- **The fixture now carries the ink registry's real coordinates**, four sets
+  across two overlap series, on the same F2 split `base1` already uses: real
+  ids, invented names. Its ink cards rank 2, 4 and 5 — inside the first screen,
+  as production's are. **CI must see the surface production sees**, and a
+  fixture that ranks differently from the real artifact is not a fixture of it.
+- **And the E2E presses "Show the other N"**, asserting one card per task in the
+  artifact, a non-empty badge and a skill line on each, a chip for the new
+  skill, and NO pageerror — a React unmount is not a console error, which is the
+  other reason the run stayed green. That half holds regardless of ranking.
+  81 → 93 assertions.
+- **Own-property lookups, not `?? fallback`.** `SKILL_LABEL['toString']`
+  inherits a function off `Object.prototype` and React throws on a function
+  child, so the obvious guard would have restored the white screen for one
+  adversarial slug. The tests name ids no builder will ever emit; a test written
+  against the next real id only pins the last mistake.
+- **A null tile now means three things and says which.** `queued` (a trademark
+  we may not trace), `no-ink` (a recorded decision that none is wanted), `none`
+  (nothing keys this printing). Legendary Collection returned `state: 'queued',
+  queued: null` — a shape `InkDesignRef`'s own doc forbids — and so spent a
+  release announcing itself as work nobody owed.
+- **The tier ladder is strict.** Scope weights ×100, so no accumulation of
+  per-axis bonuses can lift an era row into a tie with a bare set row and hand
+  the decision to `confidence`. Specificity and evidence quality are different
+  claims. Latent, unreachable from today's registry, and pinned by scoring the
+  pair directly rather than by waiting for a row that would produce it.
+- **The rarity gate matches a whole rarity.** `["rare"]` as a substring was true
+  of "Ultra Rare", "Secret Rare", "Rare Holo LV.X" and eleven more strings this
+  catalog carries. Spelling variants are listed explicitly — a list is
+  reviewable, a fuzzy match is not.
+- **Two shipped tiles are reachable from no row**, which is legitimate and is
+  now DECLARED (`unkeyedTiles`, with the reason each is unkeyed) and
+  cross-checked against the rows in both directions. An unreachable asset that
+  nothing explains gets deleted as dead weight or keyed to an era on a hunch.
+- **`pinstripe-diagonal.svg` did not tile.** Its corner-wrap triangles had legs
+  of 13 where the band's half-width is 26: mean |Δcoverage| **66/255** across the
+  cell's own wrap — a grid line down every card it was used on, in a file whose
+  own `desc` said "tiles seamlessly". Every tile is measured now
+  (`tools/ink-tile-seam.mjs`, an analytic sampler over the SVG subset the tiles
+  use, no rasteriser and no dependency), only 0 passes, the number is committed
+  into the index, and a tile the sampler cannot read is a hard failure rather
+  than a silent zero.
+- **`uInkOn` false for a null tile is asserted where it is decided.** The
+  invariant spans two packages and the stage CANNOT enforce it — `on: true` with
+  no texture is also legal there and means `in-scan`, the opposite thing — so
+  the assertion lives in the resolver, is driven off the index so tomorrow's row
+  is covered, and `stage.ts` carries a comment saying why it does not
+  second-guess the answer it is handed.
+- **CI's test-count comment is deleted rather than updated.** It said 506 and
+  the suite was 572. A number in a comment nobody can fail on reads as a
+  commitment while being a fossil.
+- **Suites: 572 unit** (was 561 — 5 editor queue, 6 resolver), **93 editor E2E**
+  (was 81), **30 stage acceptance**, **82 function**. Two new `--check` failure
+  modes on the existing ink-index gate: the tile seam, and tile ↔ row in both
+  directions.
+
+**Correction to the entry above, and a re-measurement that did not find one.**
+Its "**Suites: 561 unit** (was 538 …)" line was challenged as reading 533. It
+does not: the suite was re-run at `54a3b9c`, the commit immediately before this
+subtask's first, and measured **538**, with the delta 6 core + 3 patterns + 14
+resolver = 23 exactly accounting for 561. `tools/task-queue/build.test.ts` held
+20 tests before and after and contributed none of it. The line stands as
+written; this note records that it was checked rather than leaving the challenge
+standing against it.
+
+**Correction to the refutation's strength claim, which does not move the
+verdict.** The entry above reports "every real scan returned SNR 1.41–1.88" as a
+flat range, which reads as though the instrument had uniform sensitivity across
+the seven. It does not: an adversarial re-measurement of that harness (2026-09-07;
+reported, not re-run here) puts the per-scan detection floor as low as roughly
+**20% stamp amplitude on `basep-33`** and higher on others, and notes that the
+palette/Adam7 encoding of some TCGdex PNGs interacts with the high-pass residual.
+The conclusion is unaffected — the positive control returned SNR 7.85 at the
+predicted period and every real scan returned peaks at the high-pass adjacency
+length instead — but the per-scan SNR figures are a property of scan and encoding
+as much as of the printing, and should not be read as "how much design each scan
+carries".

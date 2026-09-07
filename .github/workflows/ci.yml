@@ -39,7 +39,12 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Every package, the tools and the functions: 506 tests, no dependencies.
+      # Every package, the tools and the functions — the full unit suite, and it
+      # needs nothing installed beyond the workspace. The literal count that
+      # used to sit on this line went stale within a step of every change that
+      # added a test, and it was stale by 66 when somebody finally read it: a
+      # number in a comment nobody can fail on reads as a commitment while being
+      # a fossil. `node --test` prints the real one on every run.
       - name: Test
         run: pnpm test
 
