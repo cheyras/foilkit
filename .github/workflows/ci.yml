@@ -83,6 +83,19 @@ jobs:
       - name: Contribution queue is current
         run: node --conditions source tools/build-task-queue.mts --check
 
+      # The reference citations, a third gate of the same kind — with one
+      # difference worth knowing: `packages/patterns/src/reference-clips.json`
+      # is a SOURCE FILE bundled into the editor, not a baked artifact, so no
+      # build step regenerates it and nothing else would ever notice it going
+      # stale. It is parsed out of `reference/<slug>/notes.md`, which is
+      # hand-written prose, and `reference/manifest.mjs` is a SECOND parser over
+      # that same prose. `--check` fails if the datum, the notes and
+      # MANIFEST.json stop agreeing — which is what stands between somebody
+      # nudging a timestamp and the canon lab looping the wrong four seconds of
+      # somebody else's video, forever, with nothing on screen saying so.
+      - name: Reference clip citations are current
+        run: node --conditions source tools/build-reference-clips.mts --check
+
       # The editor's own typecheck. It is a separate tsconfig (DOM lib, JSX,
       # the `source` customCondition) and `pnpm typecheck` above does not see
       # it, which is exactly how a front end rots while CI stays green.

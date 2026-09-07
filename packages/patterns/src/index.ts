@@ -3,3 +3,4 @@
 
 export * from './patterns.ts'
 export * from './canon-lookup.ts'
+export * from './reference-clips.ts'
