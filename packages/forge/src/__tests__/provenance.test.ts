@@ -407,7 +407,13 @@ void test('deriveTier: the three residual doors are KNOWN AND ACCEPTED, not unno
   // Door 1 is the verification-block variant, covered by the writer-list
   // membership tests above; restated here so all three live in one place.
   assert.equal(
-    deriveTier(SIDECAR_VERSION, STRANGER, { verifiedBy: 'cheyras', via: 'writer-direct', at: '2026-09-06T00:00:00Z' }),
+    deriveTier(SIDECAR_VERSION, STRANGER, {
+      verifiedBy: 'cheyras',
+      verifiedById: null,
+      verifiedAt: '2026-09-06T00:00:00Z',
+      via: 'writer-direct',
+      note: null,
+    }),
     'owner-verified',
   );
 });
