@@ -107,7 +107,11 @@ for a in "$@"; do
     --keep-video) KEEP_VIDEO=1 ;;
     --captions) CAPTIONS=1 ;;
     --captions-only) CAPTIONS=1; CAPTIONS_ONLY=1 ;;
-    -h|--help) sed -n '3,64p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    # Print the header comment — every line from 3 until the first line that is
+    # not a comment. A hard-coded end line (it was '3,64p') silently truncates
+    # `--help` the first time somebody adds a paragraph, which is exactly what
+    # happened when the two-consumers note went in above.
+    -h|--help) awk 'NR>=3 { if (!/^#/) exit; print }' "${BASH_SOURCE[0]}"; exit 0 ;;
     --*) echo "unknown option: $a" >&2; exit 2 ;;
     *) WANTED+=("$a") ;;
   esac
