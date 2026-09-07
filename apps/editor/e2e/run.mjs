@@ -712,6 +712,210 @@ try {
   ok('the glyph slot answers with an index, not a 404', glyphs !== null)
   ok('and the slot is empty, which is the shipping state', Object.keys(glyphs?.patterns ?? {}).length === 0)
 
+  // ── 9b. THE REFERENCE PANE: A CLICK BUYS THE EMBED, NOTHING ELSE DOES ────
+  //
+  // The other slot that shipped empty. Subtask 2 removed the committed clip
+  // per pattern (cited, never vendored — AGENTS.md F2) and this fills it with
+  // an embed of the same seconds of the same source video.
+  //
+  // NOTHING HERE TOUCHES youtube.com. The IFrame API script and the player
+  // origin are both intercepted: CI must not depend on a third party being up,
+  // and a test that silently started hitting the network would be measuring
+  // Google's uptime rather than this repository's behaviour. The stub is a real
+  // `YT.Player` shape whose clock runs forward, which is what lets the loop be
+  // observed rather than assumed.
+  {
+    const clips = JSON.parse(
+      readFileSync(path.join(ROOT, 'packages', 'patterns', 'src', 'reference-clips.json'), 'utf8'),
+    )
+    // `cosmos` is the canon lab's default pattern (CanonLab.tsx loadPatternId).
+    const cosmos = clips.clips['cosmos']
+    const creator = clips.sources[cosmos.videoId].creator
+
+    const ref = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    // Every request to a Google-owned host, in order. The privacy claim the
+    // pane makes is a claim about THIS list being empty before the click.
+    const thirdParty = []
+    ref.on('request', (r) => {
+      const host = new URL(r.url()).hostname
+      if (/youtube|ytimg|google|ggpht|doubleclick/.test(host)) thirdParty.push(host)
+    })
+
+    const STUB_API = `
+      window.__ytSeeks = [];
+      window.__ytAdopted = [];
+      window.YT = { Player: function (el, cfg) {
+        var self = this;
+        window.__ytAdopted.push(el && el.tagName === 'IFRAME' ? el.getAttribute('src') : String(el));
+        var t = 0;
+        this.getCurrentTime = function () { t += 2; return t; };
+        this.seekTo = function (s) { window.__ytSeeks.push(s); t = s; };
+        this.destroy = function () { window.__ytDestroyed = true; };
+        setTimeout(function () {
+          if (cfg && cfg.events && cfg.events.onReady) cfg.events.onReady({ target: self });
+        }, 0);
+      } };
+      if (window.onYouTubeIframeAPIReady) window.onYouTubeIframeAPIReady();
+    `
+    await ref.route('**/iframe_api*', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/javascript', body: STUB_API }),
+    )
+    await ref.route('**://*.youtube-nocookie.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>stub player</title>' }),
+    )
+
+    const refPage = await ref.newPage()
+    await refPage.goto(`${BASE}/canon`, { waitUntil: 'networkidle' })
+    await refPage.waitForSelector('[data-testid="reference-pane"]', { timeout: 20000 })
+
+    // 1. THE PLACEHOLDER. Local markup, the datum's own text, and — the whole
+    // point — not one byte fetched from Google. The tempting placeholder is the
+    // video's own thumbnail from i.ytimg.com, which would be the same
+    // third-party request on page load wearing a different hostname.
+    ok(
+      'the reference pane renders its placeholder before anything is activated',
+      (await refPage.getByText('Load the reference clip').count()) === 1,
+    )
+    ok(
+      'and the placeholder names the video and the seconds it will loop',
+      (await refPage.getByText(clips.sources[cosmos.videoId].title, { exact: false }).count()) > 0 &&
+        (await refPage.getByText('loops', { exact: false }).count()) > 0,
+    )
+    ok(
+      'NOTHING is fetched from a Google host until the click',
+      thirdParty.length === 0,
+      thirdParty.join(', '),
+    )
+    ok('no iframe exists yet either', (await refPage.locator('iframe').count()) === 0)
+
+    // 2. THE CLICK. It buys an iframe on the nocookie domain, with the params
+    // that make the JS API and mobile autoplay work at all.
+    await refPage.getByTestId('reference-activate').click()
+    await refPage.waitForSelector('iframe', { timeout: 15000 })
+    const src = await refPage.locator('iframe').first().getAttribute('src')
+    const embed = new URL(src)
+    ok(
+      'the player is embedded from youtube-nocookie.com, not youtube.com',
+      embed.hostname === 'www.youtube-nocookie.com',
+      embed.hostname,
+    )
+    ok('and it embeds the video the notes cite', embed.pathname.endsWith(`/${cosmos.videoId}`), embed.pathname)
+    ok(
+      'enablejsapi=1 is set, or the loop would poll a player that never answers',
+      embed.searchParams.get('enablejsapi') === '1',
+    )
+    ok(
+      'mute=1 and playsinline=1 — autoplay does not fire unmuted, and review happens on phones',
+      embed.searchParams.get('mute') === '1' && embed.searchParams.get('playsinline') === '1',
+    )
+    ok(
+      'the start param is an INTEGER, because that parameter takes nothing else',
+      embed.searchParams.get('start') === String(Math.floor(cosmos.clipStart)),
+      embed.searchParams.get('start'),
+    )
+
+    // 3. THE LOOP. The stub's clock runs forward past the clip end; the pane
+    // must send it back — to the FRACTIONAL start, which is the bound the notes
+    // record and the one the integer `start` param cannot express.
+    await refPage.waitForFunction(() => (window.__ytSeeks ?? []).length > 0, null, { timeout: 15000 })
+    const seeks = await refPage.evaluate(() => window.__ytSeeks)
+    ok(
+      'the loop seeks back to the clip start once playback passes the end',
+      seeks.length > 0 && seeks.every((s) => s === cosmos.clipStart),
+      `${JSON.stringify(seeks)} vs ${cosmos.clipStart}`,
+    )
+    const adopted = await refPage.evaluate(() => window.__ytAdopted)
+    ok(
+      'the API ADOPTED our own iframe — that is what keeps the nocookie domain ours',
+      adopted.length === 1 && String(adopted[0]).includes('youtube-nocookie.com'),
+      JSON.stringify(adopted),
+    )
+
+    // 4. THE CREDIT. In every state, and it claims no permission — nobody has
+    // been asked, and a line saying otherwise would be false about a real person.
+    ok('the creator is credited by name', (await refPage.getByText(creator, { exact: false }).count()) > 0)
+    const watch = await refPage.getByRole('link', { name: /watch on YouTube/i }).getAttribute('href')
+    ok(
+      'and the link out carries the timestamp, so the view lands on the demo',
+      watch.includes(`t=${Math.floor(cosmos.clipStart)}`),
+      watch,
+    )
+    ok(
+      'no permission is claimed anywhere in the pane',
+      (await refPage.getByText(/with permission/i).count()) === 0,
+    )
+
+    // 5. THE SAME PANE ON SURFACE B, COLLAPSED. Card adjust is about one card's
+    // differences from the canon, so the pattern's generic footage rides along
+    // behind a disclosure rather than taking a column. The claim worth pinning
+    // is that being on the page costs nothing: closed, and no Google host
+    // contacted by simply opening a card.
+    const cardCtx = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    const cardHosts = []
+    cardCtx.on('request', (r) => {
+      const host = new URL(r.url()).hostname
+      if (/youtube|ytimg|google|ggpht|doubleclick/.test(host)) cardHosts.push(host)
+    })
+    await cardCtx.route('**://fixture.invalid/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/png', body: FAKE_SCAN }),
+    )
+    const cardPage = await cardCtx.newPage()
+    await cardPage.goto(`${BASE}/card?id=base1-4&v=${variantId}`, { waitUntil: 'networkidle' })
+    await cardPage.waitForSelector('text=Card (full catalog, by era)', { timeout: 20000 })
+    const disclosure = cardPage.locator('details', { hasText: 'Reference clip' }).first()
+    ok('card adjust carries the reference pane behind a disclosure', (await disclosure.count()) === 1)
+    ok('and it is CLOSED — the clip is a thing you go and check, not the view', await disclosure.evaluate((d) => !d.open))
+    ok('opening a card contacts no Google host', cardHosts.length === 0, cardHosts.join(', '))
+    await cardCtx.close()
+
+    // 6. OFFLINE. A blocked or unreachable IFrame API must leave a pane that
+    // can still do the work by hand: the link, and the seconds to watch. This
+    // is not a rare case — a content blocker is enough to produce it.
+    const offline = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    await offline.route('**/iframe_api*', (route) => route.abort())
+    const offPage = await offline.newPage()
+    await offPage.goto(`${BASE}/canon`, { waitUntil: 'networkidle' })
+    await offPage.getByTestId('reference-activate').click()
+    await offPage.waitForSelector('text=The embedded player is unavailable', { timeout: 20000 })
+    ok('an IFrame API that will not load degrades to a stated failure, not a blank box', true)
+    const fallback = await offPage.getByRole('link', { name: /Open at /i }).getAttribute('href')
+    ok(
+      'and the fallback link still lands on the clip, so the work is still doable',
+      fallback.includes(`t=${Math.floor(cosmos.clipStart)}`),
+      fallback,
+    )
+    ok(
+      'the bounds are on screen in that state too',
+      (await offPage.getByText('0:45.6', { exact: false }).count()) > 0,
+    )
+    await offline.close()
+
+    // 7. NO CLIP, HONESTLY. `none` is the plain-card baseline: no foil, nothing
+    // to film. It is not offered in the picker, so the state is reached the way
+    // a stale preference would reach it — which is exactly the path that would
+    // otherwise rot unnoticed.
+    const bare = await browser.newContext({ viewport: { width: 390, height: 844 } })
+    await bare.addInitScript(() => localStorage.setItem('foil-lab:canon-pattern', 'none'))
+    const barePage = await bare.newPage()
+    await barePage.goto(`${BASE}/canon`, { waitUntil: 'networkidle' })
+    await barePage.waitForSelector('[data-testid="reference-pane"]', { timeout: 20000 })
+    ok(
+      'a pattern with no reference says so, rather than rendering an empty box',
+      (await barePage.getByText('No physical reference', { exact: false }).count()) === 1,
+    )
+    ok(
+      'and it offers no player to activate',
+      (await barePage.getByText('Load the reference clip').count()) === 0,
+    )
+    // 390px is the review width — the pane must not push the page sideways.
+    const overflow = await barePage.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    )
+    ok('the canon lab does not scroll horizontally at 390px', overflow)
+    await bare.close()
+    await ref.close()
+  }
+
   // ── 10. THE CARD YOU ASKED FOR IS THE CARD YOU GET ───────────────────────
   //
   // The regression this exists for: a deep link arrives with its series and set

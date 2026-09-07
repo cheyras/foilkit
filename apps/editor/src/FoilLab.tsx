@@ -63,6 +63,7 @@ import { provisionalReport, alphaOfRgba, type ProvisionalReport } from './stagin
 import { buildMaskContribution, type SubmissionResult } from './staging/submit.ts'
 import { provisionalOf } from './staging/provisionalPixels.ts'
 import { SubmitOutcome } from './SubmitOutcome.tsx'
+import { ReferencePane } from './reference/ReferencePane.tsx'
 import { useViewer } from './writer/useViewer.ts'
 import type { MaskSession } from './staging/types.ts'
 import type { Staging } from './staging/useStaging.ts'
@@ -1630,6 +1631,22 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
               ? `Canon: locked ${new Date(canon.savedAt).toLocaleDateString()} — data/foil-canon/${pattern.id}.json`
               : 'Canon: none saved — recipe code defaults. Lock this pattern on the Canon patterns tab.'}
           </p>
+          {/* The same reference pane the canon lab leads with, COLLAPSED.
+              Surface B is about how ONE CARD differs from the canon, so the
+              pattern's generic footage is something you occasionally check
+              rather than the thing you are looking at — and at full size this
+              pane is most of a column, which is right there and wrong here.
+              Collapsed costs nothing: the placeholder is inert markup, and
+              nothing reaches YouTube until somebody opens this AND presses
+              play. */}
+          <details className="mt-[8px] rounded-md border border-border-default">
+            <summary className="cursor-pointer px-[8px] py-[6px] text-[11px] text-text-muted hover:text-text-primary">
+              Reference clip — {pattern.label} on video
+            </summary>
+            <div className="border-t border-border-default p-[8px]">
+              <ReferencePane patternId={pattern.id} />
+            </div>
+          </details>
         </Section>
 
         <Section title="Mask">

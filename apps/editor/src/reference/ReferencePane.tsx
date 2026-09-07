@@ -17,7 +17,7 @@
 // `reference/fetch-reference.sh` instead — two consumers, two paths, and the
 // argument for why they cannot be unified is in `tools/reference-clips/notes.ts`.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { referenceClipFor, watchUrl, type ReferenceClip } from '@foilkit/patterns'
 import { Chip } from '../ui.tsx'
 import { createClipLoop, type ClipLoop } from './clipLoop.ts'
@@ -65,27 +65,48 @@ function Credit({ clip }: { clip: ReferenceClip }) {
 }
 
 export function ReferencePane({ patternId }: { patternId: string }) {
-  const clip = referenceClipFor(patternId)
+  // MEMOISED, and it matters. `referenceClipFor` builds a fresh object every
+  // call; an un-memoised one is a new dependency identity on every render, and
+  // the effect below would tear its own player down a frame after building it.
+  const clip = useMemo(() => referenceClipFor(patternId), [patternId])
+
+  /**
+   * ACTIVATION AND PHASE ARE TWO DIFFERENT THINGS, deliberately.
+   *
+   * `active` is the person's decision — it is what a click sets, and it is the
+   * only thing the effect below keys on. `phase` is a report of how that
+   * decision is going, and the effect WRITES it. Keying the effect on the phase
+   * it sets is a loop that eats itself: the effect builds a player, reports
+   * `playing`, and React tears the whole thing down again because a dependency
+   * changed. That bug shipped in the first draft of this file and the E2E run
+   * caught it — the pane rendered perfectly and never looped once.
+   */
+  const [active, setActive] = useState(false)
   const [phase, setPhase] = useState<Phase>('idle')
   const [error, setError] = useState<string | null>(null)
   const frameRef = useRef<HTMLIFrameElement | null>(null)
   const playerRef = useRef<YtPlayerHandle | null>(null)
   const loopRef = useRef<ClipLoop | null>(null)
 
-  // Switching pattern tears the embed down. Not just cosmetic: the player is
-  // bound to one video id and one range, and leaving it running would loop the
-  // PREVIOUS pattern's footage next to the new pattern's render, which is the
-  // single most misleading thing this pane could do.
+  const start = clip?.clipStart ?? null
+  const end = clip?.clipEnd ?? null
+  const hasRange = clip !== null && start !== null && end !== null
+
+  // Switching pattern puts the embed away. Not cosmetic: the player is bound to
+  // one video id and one range, and leaving it running would loop the PREVIOUS
+  // pattern's footage beside the new pattern's render — the single most
+  // misleading thing this pane could do.
   useEffect(() => {
+    setActive(false)
     setPhase('idle')
     setError(null)
   }, [patternId])
 
-  const hasRange = clip !== null && clip.clipStart !== null && clip.clipEnd !== null
-
   useEffect(() => {
-    if (phase !== 'loading' || !hasRange) return
+    if (!active || start === null || end === null || clip === null) return
     let cancelled = false
+    setPhase('loading')
+    setError(null)
 
     void loadYtApi()
       .then((YT) => {
@@ -99,7 +120,7 @@ export function ReferencePane({ patternId }: { patternId: string }) {
             onReady: () => {
               if (cancelled) return
               playerRef.current = player
-              loopRef.current = createClipLoop(player, { start: clip.clipStart!, end: clip.clipEnd! })
+              loopRef.current = createClipLoop(player, { start, end })
               setPhase('playing')
             },
             onError: (event) => {
@@ -127,7 +148,8 @@ export function ReferencePane({ patternId }: { patternId: string }) {
       playerRef.current?.destroy?.()
       playerRef.current = null
     }
-  }, [phase, hasRange, clip])
+    // Primitives only. See the note on `clip` being memoised.
+  }, [active, clip, start, end])
 
   // ── Nothing to show ──────────────────────────────────────────────────────
   // Two different absences, and they are not the same claim. `none` has no
@@ -166,14 +188,12 @@ export function ReferencePane({ patternId }: { patternId: string }) {
     )
   }
 
-  const start = clip.clipStart!
-  const end = clip.clipEnd!
   const bounds = `${stamp(start)}–${stamp(end)} (${(end - start).toFixed(1)}s)`
 
   return (
     <Shell>
       <div className="relative mx-auto aspect-video w-full max-w-[440px] overflow-hidden rounded-md bg-[#101218]">
-        {phase === 'idle' ? (
+        {!active ? (
           // THE PLACEHOLDER IS LOCAL. The obvious one is the video's own
           // thumbnail from i.ytimg.com, and it would defeat the whole exercise:
           // that is a third-party request on page load wearing a different
@@ -181,7 +201,7 @@ export function ReferencePane({ patternId }: { patternId: string }) {
           // costs nobody a request until they ask for one.
           <button
             type="button"
-            onClick={() => setPhase('loading')}
+            onClick={() => setActive(true)}
             data-testid="reference-activate"
             className="group flex h-full w-full flex-col items-center justify-center gap-[8px] px-[14px] text-center hover:bg-[#151824]"
           >
@@ -222,8 +242,11 @@ export function ReferencePane({ patternId }: { patternId: string }) {
               // degraded pane and a dead one.
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-[6px] bg-[#101218] px-[14px] text-center">
                 <span className="text-[12px] text-amber-500/90">The embedded player is unavailable.</span>
+                {error !== null && (
+                  <span className="text-[11px] leading-[15px] text-text-muted">{error}.</span>
+                )}
                 <span className="text-[11px] leading-[15px] text-text-muted">
-                  {error} Watch {bounds} of the source directly:
+                  Watch {bounds} of the source directly:
                 </span>
                 <a
                   href={watchUrl(clip)}
@@ -259,8 +282,18 @@ export function ReferencePane({ patternId }: { patternId: string }) {
             ↻ restart
           </Chip>
         )}
-        {phase !== 'idle' && (
-          <Chip active={false} onClick={() => setPhase('idle')}>
+        {active && (
+          <Chip
+            active={false}
+            onClick={() => {
+              // `active` false is what runs the effect cleanup — the loop stops
+              // and the player is destroyed, rather than being left polling an
+              // iframe nobody is looking at.
+              setActive(false)
+              setPhase('idle')
+              setError(null)
+            }}
+          >
             stop
           </Chip>
         )}
