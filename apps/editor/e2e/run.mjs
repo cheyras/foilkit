@@ -67,6 +67,11 @@ const MIME = {
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
   '.webp': 'image/webp',
+  // R8-INK: without this an ink tile 200s as application/octet-stream and the
+  // <img> silently refuses it — a tile that is present renders exactly like a
+  // tile that is absent. Vercel's static host gets it right; this mirror of it
+  // did not, and neither did tools/parity/serve.mjs.
+  '.svg': 'image/svg+xml',
   '.map': 'application/json',
 }
 
