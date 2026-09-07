@@ -1886,3 +1886,122 @@ path deletes the class rather than the instance.
 - Found by opening a throwaway pull request and watching the workflow. Nothing
   short of that would have found it: the offline structural check, actionlint,
   shellcheck and four green local renders all passed the whole time.
+
+## 2026-09-06 — Exemplar weight follows VERIFICATION, not authorship (sidecar v5)
+
+**Decided by:** Claude Fable 5, on behalf of @cheyras
+
+**Decision:** `EXEMPLAR_WEIGHT` becomes the `owner-verified` row of a table keyed
+on **(derivation_method × provenance tier)**, `EXEMPLAR_WEIGHT_BY_TIER`. Three
+tiers: `owner-verified` (a writer-capability holder authored or verified the
+pixels — the historical weights, unchanged), `contributor` (a merged
+contribution nobody with the capability has verified), and `unattributed`
+(machine output, or a v5+ record with no author). The last two are **zero across
+every method**.
+
+Sidecar v5 adds two recorded fields and one derived one:
+
+- `author` — RECORDED, server-side, from an identity the route already verified.
+  The direct write takes it from the cookie `requireWriter` just checked; the
+  contribution path takes it from the session, which the contributor cannot
+  contradict because the App composes the commit.
+- `verification` — written only by a writer-gated route (`PATCH /api/mask`, or
+  `corpus.ts verify --as` locally), and **re-checked on every read**:
+  `deriveTier` honours it only when `verifiedBy` holds the writer capability.
+- `provenanceTier` — DERIVED on every `normalizeSidecar`, exactly like
+  `authorship` / `reviewStatus` / `frame`. A hand-edited value is overwritten.
+
+The writer list moved to `@foilkit/core` so forge can run that check in a CLI
+with no HTTP request in sight. `functions/_lib/writers.ts` re-exports it and is
+still the boundary; the editor's copy is still a separate literal reconciled by
+`writers.test.ts`.
+
+**Why:** The weights were calibrated when the only hand in the corpus was the
+owner's, so `hand` meant both "a human painted this" and "this is how the card
+truly is". Step 9 shipped a pipeline where strangers open pull requests. Those
+became two claims, and only the first is visible in the pixels — which is the
+one thing this module has always insisted on. An unreviewed stranger's mask at
+weight 1 would not be a mislabelled file; it would be an era's rule derived from
+work nobody looked at.
+
+**Zero rather than "low"**, which the spec left open. Three reasons, in order of
+how much they cost:
+
+1. `learnPolicy` takes a *weighted mean* over a pool that is single-digit today
+   and crosses a hard threshold at `voteThreshold` 0.5. With Σweight ≈ 2–3, even
+   w = 0.1 moves a class share several points — enough to flip `carriesFoil` at
+   the margin. "Low" is not "harmless"; it is "changes the answer quietly".
+2. Any weight above zero *admits* the mask to the pool at all, because
+   `isExemplarEligible` is a `> 0` gate. Admitted means it is cited as an
+   exemplar on generated masks, counts toward `exemplarsInGroup`, and lowers
+   `leverage = printings ÷ (exemplars + 1)` — the number that decides where the
+   next hour goes. Unreviewed work must not make a rule group look *served*.
+3. Zero is reversible in one owner action and the full weight comes back. A
+   nonzero default is not: by the time anyone notices, it has moved every
+   derived number downstream.
+
+3a's finding that most current evidence is `ai-corrected` at 0.6 argues the same
+way. The pool is already thin and already discounted; thin is a reason to be
+more careful about what joins it.
+
+**Implications:**
+
+- **The committed corpus is unchanged in weight.** `corpus.ts migrate` ran over
+  all 20 sidecars: 15 `owner-verified` (the human work), 5 `unattributed` (the
+  `window-artgate` proposals, which are weight 0 by method anyway). The exemplar
+  pool is 15 before and 15 after. v1–v4 compatibility is permanent.
+- **The historical inference is MATERIALISED at the version bump, not left to
+  expire.** `deriveTier`'s pre-v5 branch reads absence-of-author as the owner
+  (RELICENSE.md records the sole-author fact), and that branch is keyed on the
+  version — so a schema upgrade that only renumbered the file would have
+  rewritten the whole corpus as `unattributed`, weight 0, and emptied the pool
+  every rule here is derived from. `upgradeSidecarRecord` stamps
+  `HISTORICAL_AUTHOR`; a test asserts that login still holds the capability, so
+  the constant and the list cannot drift apart in silence.
+- **A pre-v5 `ai` record is attributed to its GENERATOR, not to the owner.**
+  Weight 0 either way; what changes is that a mask never displays a green
+  "owner-verified" beside its own amber "AI · UNREVIEWED".
+- **A BUG WAS FOUND AND FIXED BY RUNNING THE MIGRATION FOR REAL.**
+  `corpus.ts migrate` synthesized a fresh single-entry `lineage`
+  unconditionally. That was correct for exactly as long as the command only met
+  pre-v3 records (they have none); the v4→v5 pass was the first to meet records
+  that DO have one, and the first run deleted the entire 4b frame-migration
+  history from all 20 sidecars. Caught by reading the diff, not by any test. The
+  upgrade is now a pure function (`upgradeSidecarRecord`) with a test that
+  asserts the lineage survives — a migration that lives only inside a CLI is a
+  migration nothing can test.
+- **The forged-field defence has three layers**, and the third is honest about
+  its limit. (1) `validate.ts` refuses any submission carrying `author`,
+  `verification`, `provenanceTier` or a derived label — a deep scan, because
+  nobody who wanted to lie would put it at the root — with a named 422 before a
+  branch exists. (2) `deriveTier` re-checks `verifiedBy` against the writer list
+  on every read, so a block hand-committed in a fork PR grants nothing. (3) A
+  hand-crafted PR could still name a *real* writer over pixels no writer saw.
+  Nothing in the file can disprove that; what closes it is that such a PR did
+  not come from the App, so a human reads it, and the lie is in the diff.
+- **`exemplarWeightOf` fails CLOSED** and deliberately does not reuse
+  `exemplarWeightFor`'s `owner-verified` default. That default is right for a
+  method named in the abstract ("what is a `hand` mask worth at best") and
+  actively dangerous for a record: a fixture or a stale value with no tier would
+  otherwise be silently treated as ground truth. Two functions, two questions.
+- **Promotion rides the existing write path.** `PATCH /api/mask` is
+  writer-gated, takes the verifier from the cookie, and asserts that only the
+  `.json` changed before committing. `corpus.ts verify --as <login>` is the
+  repo-side equivalent and refuses a login without the capability rather than
+  writing a block every read would ignore. A later save clears the verification:
+  what a writer approved is not what is in the file any more.
+- **A submission by the OWNER through the contribution path is `contributor`**,
+  not `owner-verified`. The one place the two paths differ in outcome for the
+  same person, and it is deliberate: a proposal that promoted itself on the
+  strength of who sent it would make the pipeline untestable by the person who
+  most needs to test it.
+- Canon files grow the same block (`startedFrom`, `changed`, `author`,
+  `verification`, `tier`) with the weight semantics documented as *narrower*: a
+  canon file is not training input, so the tier carries no numeric weight, and
+  `frozen` remains the stronger separate statement. A canon save never carries a
+  verification forward — the file is a full snapshot, so the numbers a writer
+  approved are not the numbers now in it.
+- No environment variables were added, so `DEPLOYMENT.md` is unchanged.
+- `data/foil-verification-map.json` gains `exemplarsByTier` and
+  `poolAwaitingVerification` in the code, but the committed artifact needs a
+  Postgres-backed re-bake to pick them up. Not gated by CI, same as today.

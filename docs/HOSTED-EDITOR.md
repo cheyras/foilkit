@@ -163,6 +163,7 @@ and it is the input #11's queue is generated from.
     "base1-4": {
       "1": { "variantId": 1, "scope": "window", "eraId": "wotc",
              "method": "hand", "reviewStatus": "human-authored",
+             "tier": "owner-verified", "author": "cheyras", "verifiedBy": null,
              "agreement": 0.8123, "savedAt": "…", "frame": "canonical",
              "width": 504, "height": 704, "sha256": "…" }
     }
@@ -179,6 +180,14 @@ and it is the input #11's queue is generated from.
 
 `agreement` is `sidecar.diff.agreement` when present and `null` otherwise. A
 mask with no sidecar is a finding, not a row: the builder fails loudly.
+
+`tier` is the **derived** provenance tier — `owner-verified` / `contributor` /
+`unattributed` — and it is in the manifest because the hosted editor has no
+server walking sidecars: the badge, the corpus panel and the promotion queue all
+read this file. Only `owner-verified` carries exemplar weight, so a manifest
+that carried the method but not the tier would show a contributor's `hand` mask
+with the same "ground truth" badge the owner's gets. See
+[`PROVENANCE.md`](PROVENANCE.md) § "Provenance tiers".
 
 The canon-less patterns are recorded **as absence**. Do not manufacture a canon
 entry from code defaults — that erases the signal #11 is built on.

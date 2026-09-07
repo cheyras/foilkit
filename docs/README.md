@@ -12,7 +12,7 @@ here.**
 | Document | What it specifies |
 |---|---|
 | [`SHADER-CONTRACT.md`](SHADER-CONTRACT.md) | The shader ABI — the assembly model, the pattern entry point, the full uniform contract, the composite law, and `contract:` versioning |
-| [`PROVENANCE.md`](PROVENANCE.md) | The mask sidecar, `derivation_method`, review status, exemplar weighting, the ratchet, and the `supersedes` / `correction` distinction |
+| [`PROVENANCE.md`](PROVENANCE.md) | The mask sidecar, `derivation_method`, review status, the provenance tiers that gate exemplar weighting, the ratchet, and the `supersedes` / `correction` distinction |
 | [`MASK-PIPELINE.md`](MASK-PIPELINE.md) | How a mask is authored, generated, corrected and archived — and the invariants that stop a machine overwriting a person |
 | [`TAXONOMY.md`](TAXONOMY.md) | The 45 patterns: what each one physically is, which printings carry it, and how the recipe models it |
 | [`VERIFICATION.md`](VERIFICATION.md) | The renders judged against the reference corpus — the run, the rubric, every verdict with its score and discrepancies |

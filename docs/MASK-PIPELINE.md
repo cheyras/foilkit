@@ -322,6 +322,26 @@ it into training signal") and listed in the corpus report's `awaitingReview` que
 a human touches them. Any future codify/learning step routes through `selectExemplars` —
 if you add a selection path, it goes through there too, or the safeguard is a lie.
 
+### Provenance tiers (sidecar v5) — weight follows VERIFICATION
+
+The weights above are the `owner-verified` **row** of a table keyed on
+**(method × tier)**, `EXEMPLAR_WEIGHT_BY_TIER`. Every other tier is **0**:
+
+- `owner-verified` — a writer-capability holder authored or verified the pixels; also
+  every pre-v5 record, because the whole committed corpus predates the contribution
+  pipeline (RELICENSE.md). The version bump **materialises** that inference rather than
+  letting it expire with the version stamp.
+- `contributor` — a merged contribution nobody with the capability has verified. Merge
+  is **acceptance**, not exemplar grade.
+- `unattributed` — machine output, or a v5+ record with no `author`.
+
+`author` is recorded server-side from a verified identity; `verification` is written only
+by a writer-gated route and re-checked against the writer list on every read; the tier
+itself is derived on every read and can no more be claimed than `frame` can. A submission
+naming any of them is refused before a branch exists. Promotion is `PATCH /api/mask`
+(editor) or `corpus.ts verify` (repo-side), and it rewrites only the `.json`. Full
+account in [`PROVENANCE.md`](PROVENANCE.md) § "Provenance tiers".
+
 ### Generator contract (`packages/forge/src/generator.ts`)
 
 A generator is `MaskGenerator`: `{ name, version, modelId, params, minExemplars,

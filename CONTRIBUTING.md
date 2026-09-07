@@ -149,6 +149,37 @@ moment sign-in is asked for, and here is exactly what happens:
 Submitting the same session again updates the same branch and the same pull
 request. Nothing is ever discarded from your browser by submitting.
 
+### What your merged mask counts as
+
+Two things happen to a merged contribution, and both are worth being plain
+about, because one of them looks like a demotion and is not.
+
+**It is real data, immediately.** It lives in `data/foil-masks`, it is served,
+it renders, the card stops showing up under "no mask yet", and the sidecar
+records you as its author — `author: { login: <you>, via: "contribution-pr" }`,
+written by the App from your signed-in identity, so that nobody, you included,
+can put a different name on it.
+
+**It does not immediately become ground truth for rule derivation.** This corpus
+derives per-era foil rules from a weighted pool of *exemplars*, and that pool is
+gated on a `provenanceTier` that follows **verification**, not authorship. A
+merged contribution sits at `contributor`, exemplar weight 0, until somebody
+holding the writer capability verifies it — at which point it carries the full
+weight of its method, with your name still on it as the author.
+
+That is not a comment on your work. It is that "a human painted this" and "an
+era's rule may be derived from this" became two different claims the moment the
+corpus had more than one author, and only the first one is visible in the
+pixels. Merge is acceptance; verification is exemplar grade. `corpus.ts report`
+lists everything awaiting verification, so nothing sits in that state invisibly.
+
+One consequence for you: **do not put `author`, `verification` or
+`provenanceTier` in a submission.** They are recorded server-side, and a
+submission naming any of them is refused with a named reason before a branch
+exists. The same goes for `derivation_method` and the other derived labels,
+which the server measures from your pixels. See
+[`docs/PROVENANCE.md`](docs/PROVENANCE.md) for the whole model.
+
 If the deployment has no App configured, Submit says so, names the missing
 configuration, and leaves your session exactly where it is. Export it from the
 same screen and nothing is trapped in one browser.

@@ -62,7 +62,7 @@ something the system **measured**, not something a caller **said**.
 
 ## The five methods
 
-| Method | Authorship | Review status | Exemplar weight |
+| Method | Authorship | Review status | Exemplar weight *(`owner-verified` tier)* |
 |---|---|---|---|
 | `layout-flatten` | machine | human-adjusted | **0** |
 | `hand` | human | human-authored | **1** |
@@ -88,6 +88,102 @@ something the system **measured**, not something a caller **said**.
 the directory is how unreviewed `ai` masks get into an evidence count; the
 codify ritual and every generator go through the selector, and the selector
 reports **why each rejection was rejected**.
+
+## Provenance tiers (sidecar v5)
+
+The table above answers *what kind of hand made these pixels*. While the only
+hand was the owner's, that was also the answer to *is this correct* — the two
+questions had one answer, so one column did for both.
+
+The contribution pipeline separates them. A stranger's `hand` mask is
+unmistakably human-painted, and that says **nothing** about whether it is right.
+An unreviewed contribution at weight 1 would not be a mislabelled file; it would
+be a rule for a whole era derived from work nobody looked at.
+
+So exemplar weight follows **verification**, not authorship, and the weight
+table is keyed on **(method × tier)**:
+
+| Tier | Meaning | Weights |
+|---|---|---|
+| `owner-verified` | A writer-capability holder authored these pixels, or has verified them. Also every record older than sidecar v5, because the whole corpus predates the pipeline (RELICENSE.md). | the method table above |
+| `contributor` | A merged contribution no writer has verified. | **all 0** |
+| `unattributed` | No human attribution — machine output, or a v5+ record with no `author`. | **all 0** |
+
+**Zero, not "low".** `learnPolicy` takes a *weighted mean* over a pool that is
+single-digit today and crosses a hard threshold at 0.5, so a weight of 0.1 can
+flip a class at the margin. And any weight above zero *admits* the mask to the
+pool at all — it becomes an exemplar citation, it counts toward
+`exemplarsInGroup`, and it lowers `leverage = printings ÷ (exemplars + 1)`, the
+number that decides where the next hour of attention goes. Work nobody has
+signed off must not make a rule group look *served*. Zero is also reversible in
+one action; a nonzero default is not, because by the time anyone notices it has
+already moved every derived number downstream.
+
+### Recorded vs. derived, again
+
+The same split as `derivation_method`, applied one level up:
+
+- **`author` is RECORDED.** The server writes it from an identity it already
+  verified — a signed session cookie on the direct-write path, and on the
+  contribution path the same, because **the App composes the commit**. The
+  contributor sends pixels; the App decides what the file says.
+- **`verification` is OWNER-ASSERTED and RE-CHECKED.** No arrangement of pixels
+  can prove a human looked at them, so this is the one genuinely assertive field
+  in the sidecar. The compensating discipline is that only a writer-gated route
+  writes one, and that `deriveTier` re-checks `verifiedBy` against the writer
+  list **on every read**. A `verification` block hand-committed by a stranger is
+  not half-believed; it is ignored, and the mask stays at weight 0.
+- **`provenanceTier` is DERIVED** on every read from those two plus the sidecar
+  version. A hand-edited tier field is overwritten exactly as a hand-edited
+  `frame` or `reviewStatus` is.
+
+`functions/_lib/validate.ts` closes the loop at the other end: a submission that
+carries `author`, `verification`, `provenanceTier` or any derived label is
+**refused with a named reason before a branch exists**. Silently dropping it
+would open a pull request that looks perfectly fine.
+
+The residual hole, stated rather than papered over: a hand-crafted fork PR could
+carry `verifiedBy: <a real writer>` over pixels no writer has seen. Nothing in
+the file can disprove that — the repository has no signature over sidecar bytes.
+What closes it is that such a PR did not come from the App, so a human reads it
+before merging, and the lie is sitting in the diff in plain text.
+
+### Promotion
+
+A merged contribution is **accepted**, not exemplar-grade. Promotion is an
+explicit act by someone holding the writer capability, and it rides the existing
+write path with server-side authority:
+
+- **In the editor** — the provenance panel shows the tier badge beside the
+  method badge, and offers *Verify as exemplar-grade* to a writer.
+  `PATCH /api/mask` re-derives the verifier from the session cookie and refuses
+  anybody else.
+- **In the repository** — `node packages/forge/src/corpus.ts verify --card
+  <id> --variant <n> --as <login>`, for working through a batch. It refuses a
+  `--as` login that does not hold the capability rather than writing a block
+  every read would ignore.
+
+Either way it rewrites **only the `.json`**. The mask PNG's sha256 is identical
+before and after, which is what makes a promotion reviewable as a one-line diff
+instead of as a re-save nobody can tell from a repaint. A later *save* over
+those pixels clears the verification: what a writer signed off on is not what is
+in the file any more.
+
+`corpus.ts report` lists the promotion queue (`awaitingVerification`) beside the
+review queue (`awaitingReview`). They are different questions — "a machine
+proposed this and no human has looked" versus "a human painted this and no
+writer has signed it off" — with different actors and different remedies.
+
+### Canon files carry the same block
+
+`data/foil-canon/*.json` grows a `provenance` block with the same four facts:
+what it started from, which uniforms moved, who tuned it, who verified it. The
+tier means something narrower there, and the file says so: a canon file is not
+training input, so there is **no numeric weight** to discount — the tier records
+attribution and review state. `frozen` remains the stronger, separate statement
+("stop re-tuning this"), and a canon save never carries a verification forward,
+because a canon file is a full snapshot and the numbers a writer approved are
+not the numbers now in the file.
 
 ## The ratchet
 

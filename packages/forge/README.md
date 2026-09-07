@@ -18,7 +18,7 @@ them and the loop that makes the next generative pass smarter breaks.
 
 | | |
 |---|---|
-| `provenance` | Sidecar v4: the derived label, the ratchet, the supersede/restore path, `EXEMPLAR_WEIGHT`. Read `docs/PROVENANCE.md`. |
+| `provenance` | Sidecar v5: the derived label, the provenance tier, the ratchet, the supersede/restore path, `EXEMPLAR_WEIGHT_BY_TIER`. Read `docs/PROVENANCE.md`. |
 | `mask-corpus` | Reads the corpus, reports it, and `selectExemplars()` — the only sanctioned way to pick training masks. |
 | `mask-artifacts` | Priors, diffs, and the artifact set a saved mask carries. |
 | `png` | Decode and encode, over `node:zlib`. |
