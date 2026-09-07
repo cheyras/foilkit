@@ -12,18 +12,18 @@
 // editor's source and compares. A duplicated list that silently diverges would
 // be the worst of both worlds: a UI that offers a save the server refuses, or
 // worse, one that hides a save the server would have allowed.
+//
+// ── WHY THIS IS NOW A RE-EXPORT (#10) ──────────────────────────────────────
+//
+// The array itself moved to `@foilkit/core`. A third consumer appeared and it
+// could not import this module: `@foilkit/forge` has to decide, when reading a
+// sidecar off disk, whether a committed `verification` block may be honoured,
+// and the rule is that it is honoured only when its `verifiedBy` holds this
+// capability. That check runs in a CLI with no HTTP request in sight, so the
+// list had to live somewhere both a function and a `node` script can reach.
+//
+// Nothing about the boundary changed. This module is still where every write
+// endpoint asks the question, and `isWriter` is still answered against a login
+// that came out of a signed cookie rather than out of a request body.
 
-/**
- * GitHub usernames holding the writer capability. Case-insensitive.
- *
- * A LIST, not an `isOwner` boolean, even with one entry: granting the second
- * person costs a config line instead of a refactor, and this is the seam #10's
- * owner-verified provenance tier hangs off.
- */
-export const WRITERS: readonly string[] = ['cheyras']
-
-export function isWriter(login: string | null | undefined): boolean {
-  if (typeof login !== 'string' || login.length === 0) return false
-  const l = login.toLowerCase()
-  return WRITERS.some((w) => w.toLowerCase() === l)
-}
+export { WRITERS, isWriter } from '@foilkit/core'
