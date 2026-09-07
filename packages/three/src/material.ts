@@ -16,7 +16,7 @@
 // exports rather than one flag.
 
 import * as THREE from 'three'
-import { buildFoilShader, GLOBAL_DEFAULTS, type FoilPattern } from '@foilkit/core'
+import { buildFoilShader, GLOBAL_DEFAULTS, STRUCTURAL_DEFAULTS, type FoilPattern } from '@foilkit/core'
 
 // 1×1 opaque white fallback so uMaskTex is always a valid sampler.
 let white: THREE.DataTexture | null = null
@@ -73,6 +73,16 @@ export function buildFoilMaterial(pattern: FoilPattern): THREE.ShaderMaterial {
     uGlyphOn: { value: 0 },
     uGlyphCount: { value: 0 },
     uGlyphCols: { value: 1 },
+    // Ink design (R8-INK). Seeded from STRUCTURAL_DEFAULTS so core stays the
+    // single place the starting state is written down.
+    uInkTex: { value: transparentTexture() },
+    uInkOn: { value: STRUCTURAL_DEFAULTS.uInkOn },
+    uInkDraw: { value: STRUCTURAL_DEFAULTS.uInkDraw },
+    uInkTile: { value: new THREE.Vector4(...STRUCTURAL_DEFAULTS.uInkTile) },
+    uInkJitter: { value: STRUCTURAL_DEFAULTS.uInkJitter },
+    uInkStagger: { value: STRUCTURAL_DEFAULTS.uInkStagger },
+    uInkStrength: { value: STRUCTURAL_DEFAULTS.uInkStrength },
+    uInkTone: { value: STRUCTURAL_DEFAULTS.uInkTone },
     uP0: { value: 0 },
     uP1: { value: 0 },
     uP2: { value: 0 },

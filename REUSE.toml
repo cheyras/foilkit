@@ -106,6 +106,7 @@ path = [
   "**/era-layouts.json",
   "**/assignments-index.json",
   "**/usage-index.json",
+  "**/ink-index.json",
   "**/card-space.json",
 ]
 precedence = "override"

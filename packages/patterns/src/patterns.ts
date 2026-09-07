@@ -608,7 +608,14 @@ vec3 foilPattern(vec2 uv, vec2 tilt) {
   vec2 id = floor(g);
   vec2 f = fract(g) - 0.5;
   float emb;
-  if (uGlyphOn > 0.5) {
+  if (uInkOn > 0.5) {
+    // R8-INK 2026-09-07: the DESIGN layer owns the stamps now. This grid was a
+    // procedural stand-in for a printed layout, and a stand-in must YIELD to
+    // the registered answer rather than add itself to it — drawing both is the
+    // double-draw this tier exists to stop. What is left here is the FOIL: the
+    // mirror sheet, which is the half that really is physics.
+    emb = 0.0;
+  } else if (uGlyphOn > 0.5) {
     float idx = floor(hash21(id + 9.1) * uGlyphCount);
     emb = glyphTex(idx, f / 0.92).a;   // p = f/k: rendered stamp size is 92% of the cell
   } else {

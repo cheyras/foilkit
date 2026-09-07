@@ -107,6 +107,40 @@
 //   Mask (hand-drawn tier; beats the layout tier when present)
 //     uMaskTex     sampler2D  hand-drawn mask, ALPHA channel = foil coverage
 //     uMaskTexOn   float      1 = sample uMaskTex instead of the layout rect
+//   Ink design (R8-INK 2026-09-07; driven by the surface, never by sliders)
+//     THE SECOND LAYER. A reverse holo is two orthogonal things the 43-type
+//     taxonomy conflates: the FOIL — embossed micro-texture in aluminium,
+//     physical, procedural, correctly a GLSL recipe — and the DESIGN, which is
+//     opaque ink printed OVER that sheet, blocking it. The design is an
+//     artist's layout from TPCi. Procedural will never converge on it because
+//     there is nothing to converge to: Sceptile and Magneton sit on the SAME
+//     vertical-sheen sheet and look nothing alike. So the design is DATA — one
+//     tile plus placement parameters, resolved per (scope, type, variantKind)
+//     by @foilkit/resolver's resolveInk, and it enters here as coverage.
+//     uInkTex    sampler2D  ONE TILE. ALPHA = ink coverage inside the cell;
+//                           RGB unused. Overprints are periodic, so a tile
+//                           plus placement is a few KB and scales by
+//                           construction where a card-sized raster does not.
+//     uInkOn     float      1 = the ink tier owns this card's design layer.
+//                           Recipes carrying a procedural stand-in for a
+//                           printed design (reverse-sheet's ring+dot grid)
+//                           stop guessing when this is 1 — the data answers.
+//     uInkDraw   float      1 = draw the tile. 0 = the SCAN ALREADY SHOWS the
+//                           reverse printing (data/frames.json `shows`), so
+//                           drawing it again would double it and misregister
+//                           it. Only a MEASURED `reverse` sets this to 0;
+//                           `unknown` is no claim and draws (see the ink
+//                           registry's frameShows note).
+//     uInkTile   vec4       placement: x = tiles across the card WIDTH,
+//                           y/z = lattice phase in cells, w = rotation in
+//                           turns about the card centre
+//     uInkJitter float      per-cell positional jitter, in cell fractions
+//     uInkStagger float     odd-row x offset in cells (0 = grid, 0.5 = brick)
+//     uInkStrength float    how completely the ink blocks the foil (0..1)
+//     uInkTone   float      how far the ink lifts the body toward paper white
+//                           (0 = coverage only — the ink shows as absence of
+//                           foil, which is what a flat scan of the NORMAL
+//                           printing can honestly support)
 //   Glyph slot (R3-GLYPH 2026-08-03; driven by CardViewer, never by sliders)
 //     uGlyphTex    sampler2D  rasterized atlas of Chey's real glyph artwork
 //                             (assets/glyphs/<slug>/ via foil/glyphs.ts);
@@ -307,6 +341,14 @@ uniform sampler2D uGlyphTex;
 uniform float uGlyphOn;
 uniform float uGlyphCount;
 uniform float uGlyphCols;
+uniform sampler2D uInkTex;
+uniform float uInkOn;
+uniform float uInkDraw;
+uniform vec4 uInkTile;
+uniform float uInkJitter;
+uniform float uInkStagger;
+uniform float uInkStrength;
+uniform float uInkTone;
 uniform float uP0;
 uniform float uP1;
 uniform float uP2;
@@ -379,6 +421,32 @@ vec4 glyphTex(float idx, vec2 p) {
   vec2 q = vec2(p.x + 0.5, 0.5 - p.y);
   return texture2D(uGlyphTex, (vec2(col, row) + q) / uGlyphCols) * inside;
 }
+// Ink-design coverage (R8-INK): ONE tile, lattice-placed. The lattice is built
+// about the CARD CENTRE in isotropic card space, so rotation and phase mean the
+// same thing at every card size, and \`uInkTile.x\` is a period a human can
+// measure off a scan ("eleven Poke Balls across the width") rather than a
+// number someone tuned until it looked right. Callers MUST guard on uInkOn —
+// with no tile bound this samples a 1x1 transparent texture. LinearFilter, no
+// mips: safe inside non-uniform flow, and a tile has no neighbours to bleed
+// from because each cell samples the whole texture.
+float inkCoverage(vec2 uv) {
+  vec2 asp = vec2(1.0, CARD_ASPECT);
+  float rot = uInkTile.w * TAU;
+  float cs = cos(rot);
+  float sn = sin(rot);
+  vec2 p = (uv - 0.5) * asp;
+  p = vec2(cs * p.x - sn * p.y, sn * p.x + cs * p.y);
+  vec2 g = p * max(uInkTile.x, 0.001) + uInkTile.yz;
+  g.x += mod(floor(g.y), 2.0) * uInkStagger;
+  vec2 id = floor(g);
+  vec2 f = fract(g) - 0.5;
+  f += (hash22(id + 7.31) - 0.5) * uInkJitter;
+  vec2 q = f + 0.5;
+  float inside = step(0.0, q.x) * step(q.x, 1.0) * step(0.0, q.y) * step(q.y, 1.0);
+  // y-up cell -> y-down texture (flipY = false: v0 = canvas top). Same one-flip
+  // convention as the hand mask and the glyph atlas.
+  return texture2D(uInkTex, vec2(q.x, 1.0 - q.y)).a * inside;
+}
 `
 
 export const MAIN = /* glsl */ `
@@ -395,6 +463,25 @@ void main() {
   } else {
     m = rectMask(uv, uMaskRect, uMaskRadius, uMaskFeather);
     m = mix(m, 1.0 - m, uMaskInvert);
+  }
+  // ── INK-DESIGN LAYER (R8-INK 2026-09-07) ─────────────────────────────────
+  // Opaque ink printed over the sheet blocks the foil under it, so the design
+  // enters the composite exactly where the mask tiers do: as COVERAGE. This is
+  // the registered answer that replaces the per-pixel inkGlyph/inkDetail guess
+  // for the region the design governs — those estimates read local contrast and
+  // therefore fire hardest on a busy printed reverse, which is precisely where
+  // they were least trustworthy.
+  //
+  // NO-OP BY CONSTRUCTION. uInkOn is a STRUCTURAL uniform, surface-owned,
+  // defaulting to 0 and never stored in a canon file. At 0 not one instruction
+  // below executes, m is untouched, and every pattern without an ink design —
+  // which today is every pattern — renders bit-for-bit what it rendered before.
+  // That is why this is not a composite-contract bump; the parity harness
+  // proves it at 45/45 rather than the claim resting on this comment.
+  float inkDesign = 0.0;
+  if (uInkOn > 0.5 && uInkDraw > 0.5) {
+    inkDesign = clamp(inkCoverage(uv) * uInkStrength, 0.0, 1.0);
+    m *= 1.0 - inkDesign;
   }
   // Luminance gate: holo sheet shows where the scan is dark (foil background),
   // printed ink stays readable. uArtGate = 0 disables (reverse sheets are light).
@@ -714,6 +801,15 @@ void main() {
     scanCol += (face.rgb - vec3(faceLum)) * (uInkPop * 0.5 * inkChroma * popDrive * faceLum * faceLum);
     col = mix(col, clamp(scanCol, 0.0, 1.0), smoothstep(0.0, 0.35, clamp(uInkGuard, 0.0, 1.0)));
   }
+  // The ink itself. uInkTone 0 (the default) leaves the design visible purely
+  // as ABSENCE of foil, which is all a flat scan of the NORMAL printing can
+  // honestly support: the white ink is not in those pixels, so painting it is a
+  // claim about a printing the scan does not show. Above 0 it lifts the blocked
+  // field toward paper, which is what the design reads as at rest on a real
+  // card. Inside the same uInkOn guard, so it cannot touch a render with no ink.
+  if (uInkOn > 0.5 && inkDesign > 0.0) {
+    col = mix(col, vec3(1.0), uInkTone * inkDesign * 0.85);
+  }
   if (uMaskView > 0.5) col = mix(col, vec3(1.0, 0.15, 0.2), 0.40 * m);
   gl_FragColor = vec4(col, a);
 }
@@ -722,7 +818,7 @@ void main() {
 // ── Assembly ───────────────────────────────────────────────────────────────
 
 /** Every non-pattern uniform the contract declares, in declaration order. */
-export const SAMPLER_UNIFORMS = ['uFace', 'uMaskTex', 'uGlyphTex'] as const
+export const SAMPLER_UNIFORMS = ['uFace', 'uMaskTex', 'uGlyphTex', 'uInkTex'] as const
 
 /**
  * Non-scalar uniforms and their initial values, kept here rather than in the
@@ -741,6 +837,18 @@ export const STRUCTURAL_DEFAULTS = {
   uGlyphOn: 0,
   uGlyphCount: 0,
   uGlyphCols: 1,
+  // Ink design (R8-INK). SURFACE-OWNED and structural for the same reason the
+  // glyph slot is: these are a resolved DATA answer about one printing, not a
+  // dial a human moves while tuning a recipe, and nothing here may ever land in
+  // a canon file. uInkOn 0 is load-bearing — it is what makes the whole layer a
+  // no-op for the 45 recipes and 32 canons that have no ink design.
+  uInkOn: 0,
+  uInkDraw: 0,
+  uInkTile: [11, 0, 0, 0] as [number, number, number, number],
+  uInkJitter: 0,
+  uInkStagger: 0,
+  uInkStrength: 1,
+  uInkTone: 0,
   uP0: 0,
   uP1: 0,
   uP2: 0,

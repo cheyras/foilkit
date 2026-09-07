@@ -1,0 +1,361 @@
+{
+  "$doc": [
+    "THE INK-DESIGN REGISTRY — the second layer of a reverse holo.",
+    "",
+    "A reverse holo is TWO orthogonal things, and the 43-type foil taxonomy conflates them:",
+    "",
+    "  FOIL    embossed micro-texture in aluminium. Physical, so a procedural GLSL recipe is",
+    "          the correct model and packages/patterns is the correct home. This registry does",
+    "          not touch it.",
+    "  DESIGN  opaque ink printed OVER that sheet, blocking it. An artist's layout from TPCi.",
+    "          Procedural will never converge on it BECAUSE THERE IS NOTHING TO CONVERGE TO:",
+    "          Sceptile and Magneton, and a dozen other visually different reverses, sit on the",
+    "          SAME vertical-sheen sheet. So the design is data, and this file is the data.",
+    "",
+    "KEYING is (scope, type, variantKind), resolving card > subset > set > era, with RARITY",
+    "joining the key because the EX era gates ink on it (gold name, gold HP, silver rarity",
+    "symbol, per set and in one set per card). It is deliberately NOT (era, type): Prismatic",
+    "Evolutions ships three different reverses of the SAME card on the same sheet, Black Bolt",
+    "and White Flare do the same, Ascended Heroes carries six, and the Plasma sets substitute",
+    "a Team Plasma shield for the type symbol on Team Plasma cards only. Every one of those is",
+    "invisible to a key without variantKind.",
+    "",
+    "ONE TILE PLUS PLACEMENT, never a card-sized raster. Overprints are periodic: a tile and",
+    "six numbers are a few KB and scale by construction, where a per-card raster is a corpus",
+    "that grows with the catalog and can never be finished.",
+    "",
+    "AN EMPTY `tile` IS A REAL STATE, not a gap. Recognisable marks — Poke Ball, Master Ball,",
+    "the Team Plasma insignia, the energy symbols — are TPCi's designs and may not be traced",
+    "into a CC0 corpus (AGENTS.md F2). Those rows keep their measured placement and leave the",
+    "slot empty: uInkOn stays 0 for that key, the recipe renders its procedural fallback",
+    "exactly as it does today, and the work appears on the task queue with the ownership",
+    "caution attached. See data/ink-tiles/INK-TILES-NOTICE.md and `queued` below.",
+    "",
+    "GENERATED INDEX: tools/build-ink-index.mjs trims this into packages/resolver/src/",
+    "ink-index.json, which is what @foilkit/resolver bundles. Edit THIS file; regenerate that",
+    "one. CI runs the builder with --check."
+  ],
+  "version": 1,
+  "measuredOn": "2026-09-07",
+  "source": "3b (holo-archive/3b-pairs: delta-classes.md, era-research.md) for the delta classes and the keying evidence; the period measurement in `tiles[].period` is this subtask's own and is weak — see its `n`.",
+  "frameShows": {
+    "$doc": [
+      "PER-FRAME-RECORD OVERRIDE on data/frames.json's `shows`.",
+      "",
+      "frames.json says `shows` is `unknown` on every one of its 24 records, and its own $doc is",
+      "explicit that this is the finding rather than a gap: derived, never claimed, and `unknown`",
+      "means NO CLAIM. It also sets the rule this compositor obeys — only a MEASURED `reverse`",
+      "may suppress an overlay.",
+      "",
+      "THE DEFAULT IS THEREFORE `normal`, AND IT IS AN ASSUMPTION, stated here so it can be",
+      "argued with: every catalog scan is the normal printing, per the TCGdex convention that one",
+      "image serves every variant of a card. This subtask measured it on n = 7 catalog scans",
+      "(autocorrelation of the sheet band, peak SNR 1.41-1.88 against a validated positive",
+      "control at 7.85) and found no printed design in any of them, INCLUDING two cards with no",
+      "non-reverse printing at all. The assumption held on everything measured. It is still an",
+      "assumption.",
+      "",
+      "This map is the escape hatch, and it is a HUMAN ratchet (AGENTS.md F4): a frame id here",
+      "with the value `reverse` sets uInkDraw 0 for every card resolved through that frame, and",
+      "no regeneration may remove it. Empty today, honestly — nothing has been measured to",
+      "`reverse`, and inventing an entry would be exactly the claim frames.json refuses to make."
+    ]
+  },
+  "tiles": {
+    "dot-grid": {
+      "file": "data/ink-tiles/dot-grid.svg",
+      "geometry": "one centred disc, r = 38% of the cell",
+      "period": {
+        "across": 11.7,
+        "measuredOn": "holo-archive/3b-pairs/work/canonical/chaos_rising_weedle_reverse_holo.png, rectified to canonical 504x704 by tools/rectifier",
+        "method": "autocorrelation of high-passed luma over the sheet band (canonical px 60-444 x 380-590), strongest design-scale x peak at lag 43 px -> 504/43 = 11.7 tiles across the card width",
+        "n": 4,
+        "snr": 2.1,
+        "confidence": "low",
+        "caveat": "One peak, on one of four photographed pairs, at SNR 2.1. 3b records those pairs as misregistered (band-pass NCC 0.10-0.34 on three of four) and the sheet band contains the text box, which has a line rhythm of its own. This is enough to pick a starting number and not enough to defend it. The slider surface exists so a human can correct it, and a human correction is a decision this file may never overwrite."
+      }
+    },
+    "ring-dot": {
+      "file": "data/ink-tiles/ring-dot.svg",
+      "geometry": "an annulus (r 34% / 29%) around a centred disc, r = 9%",
+      "period": {
+        "across": 11.7,
+        "measuredOn": "shares dot-grid's measurement — same lattice, different mark",
+        "method": "see dot-grid",
+        "n": 4,
+        "snr": 2.1,
+        "confidence": "low",
+        "caveat": "Inherits every caveat above."
+      }
+    },
+    "pinstripe-diagonal": {
+      "file": "data/ink-tiles/pinstripe-diagonal.svg",
+      "geometry": "a 45-degree band, 26% duty, corner to corner (tiles seamlessly)",
+      "period": {
+        "across": 26,
+        "measuredOn": null,
+        "method": "not measured — a fine stripe field is below the resolution the available imagery can settle, and 26 is a starting number for the slider, declared as such rather than dressed up",
+        "n": 0,
+        "snr": null,
+        "confidence": null,
+        "caveat": "UNMEASURED. AGENTS.md F5: a measurement without a corpus size is an opinion, so this one says n = 0 out loud."
+      }
+    },
+    "crosshatch": {
+      "file": "data/ink-tiles/crosshatch.svg",
+      "geometry": "two orthogonal bars, 16% wide, edge to edge",
+      "period": {
+        "across": 22,
+        "measuredOn": null,
+        "method": "not measured — see pinstripe-diagonal",
+        "n": 0,
+        "snr": null,
+        "confidence": null,
+        "caveat": "UNMEASURED."
+      }
+    }
+  },
+  "queued": [
+    {
+      "tileId": "pokeball",
+      "mark": "Poke Ball",
+      "usedBy": "sv08.5 / sv10.5b / sv10.5w / me02.5 / sve reverse-foil-pokeball; BW-SV Trainer-card reverses",
+      "why": "A traced Poke Ball is TPCi's design and cannot enter a CC0 corpus. Ships as an ORIGINAL geometric recreation with its own notice section, or not at all.",
+      "fallback": "slot empty -> uInkOn 0 -> the recipe's procedural stand-in, exactly today's render"
+    },
+    {
+      "tileId": "masterball",
+      "mark": "Master Ball",
+      "usedBy": "sv08.5 / sv10.5b / sv10.5w reverse-foil-masterball",
+      "why": "Same rule as pokeball.",
+      "fallback": "slot empty -> procedural stand-in"
+    },
+    {
+      "tileId": "specialty-balls",
+      "mark": "Love Ball, Quick Ball, Friend Ball, Dusk Ball",
+      "usedBy": "me02.5 (Ascended Heroes) reverse-foil-loveball / -quickball / -friendball / -duskball",
+      "why": "Four more marks, same rule. Ascended Heroes is the set that proves variantKind belongs in the key: six distinct reverses of the same Pokemon on one sheet.",
+      "fallback": "slot empty -> procedural stand-in"
+    },
+    {
+      "tileId": "plasma-shield",
+      "mark": "Team Plasma insignia",
+      "usedBy": "bw8 / bw9 / bw10 — Team Plasma cards only; the rest of each set takes the standard BW energy-symbol reverse",
+      "why": "Same rule. Additionally UNRESOLVED at the data level: the catalog declares one `reverse` kind for these sets, so which printings are Team Plasma cards is not expressible today and the row below cannot be written honestly yet.",
+      "fallback": "no row at all — bw8/9/10 resolve through the black-white era row"
+    },
+    {
+      "tileId": "energy-symbols",
+      "mark": "the eleven TCG energy-type symbols",
+      "usedBy": "every Energy Pattern era: BW Emerging Powers -> SV. 3b: '~13 tiles per group', keyed on the Pokemon's type.",
+      "why": "Same rule, eleven times over. This is the largest queued item by printings governed and the one where `type` in the key finally does work.",
+      "fallback": "slot empty -> procedural stand-in"
+    },
+    {
+      "tileId": "ex-set-logos",
+      "mark": "ten EX-era set-name logos",
+      "usedBy": "ex7, ex8, ex9, ex10, ex11, ex12, ex13, ex14, ex15, ex16 — stamped INSIDE the art box, bottom right, every card",
+      "why": "Authored rasters, one per set, and per-language on top of that. Not a lattice at all: a single positioned stamp, so it needs the second small positioned layer 3b names in its section 4.2 rather than a tile. Recorded here so it is not lost; it is not a tile this schema can express.",
+      "fallback": "no row — the ten sets resolve through their era row"
+    }
+  ],
+  "rows": [
+    {
+      "scope": "modern-sv",
+      "scopeKind": "era",
+      "types": null,
+      "kinds": ["reverse"],
+      "rarities": null,
+      "cards": null,
+      "tile": "dot-grid",
+      "placement": { "across": 11.7, "phaseX": 0, "phaseY": 0, "turns": 0, "jitter": 0, "stagger": 0.5, "strength": 0.8, "tone": 0.35 },
+      "delta": "frame",
+      "conf": "low",
+      "src": ["holo-archive/3b-pairs/delta-classes.md", "holo-archive/3b-pairs/era-research.md"],
+      "note": "The modern default: foil covers the body, not the art window, and the design is a staggered field over it. 3b classes every era from Diamond & Pearl onward as `frame` on the scan-diff axis."
+    },
+    {
+      "scope": "modern-swsh",
+      "scopeKind": "era",
+      "types": null,
+      "kinds": ["reverse"],
+      "rarities": null,
+      "cards": null,
+      "tile": "dot-grid",
+      "placement": { "across": 11.7, "phaseX": 0, "phaseY": 0, "turns": 0, "jitter": 0, "stagger": 0.5, "strength": 0.8, "tone": 0.35 },
+      "delta": "frame",
+      "conf": "low",
+      "src": ["holo-archive/3b-pairs/era-research.md"],
+      "note": "Same shape as modern-sv. era-layouts.json already flags the swsh rects as an approximation borrowed from sv; this row inherits that weakness rather than hiding it."
+    },
+    {
+      "scope": "wotc",
+      "scopeKind": "era",
+      "types": null,
+      "kinds": ["reverse"],
+      "rarities": null,
+      "cards": null,
+      "tile": "crosshatch",
+      "placement": { "across": 22, "phaseX": 0, "phaseY": 0, "turns": 0.125, "jitter": 0, "stagger": 0, "strength": 0.5, "tone": 0.2 },
+      "delta": "frame",
+      "conf": "low",
+      "src": ["holo-archive/3b-pairs/era-research.md"],
+      "note": "e-Card Mirror reverses. 3b: `frame` on the scan-diff axis, with a real bottom-band ink swap (a 13-vertical-line strip replacing the e-Reader dot-code strip) that this lattice model does not express and that a positioned layer will have to."
+    },
+    {
+      "scope": "sv08.5",
+      "scopeKind": "set",
+      "types": null,
+      "kinds": ["reverse-foil-pokeball"],
+      "rarities": null,
+      "cards": null,
+      "tile": null,
+      "queued": "pokeball",
+      "placement": { "across": 6.5, "phaseX": 0, "phaseY": 0, "turns": 0, "jitter": 0.08, "stagger": 0.5, "strength": 0.85, "tone": 0.45 },
+      "delta": "null",
+      "conf": "high",
+      "src": ["data/catalog/sets/sv08.5.json — variant kinds"],
+      "note": "Prismatic Evolutions, reverse #2 of 3. `null` delta class: the SCAN is identical for all three — TCGdex serves one image per card — and only the pattern assignment differs. That is exactly why this cannot be keyed on (era, type)."
+    },
+    {
+      "scope": "sv08.5",
+      "scopeKind": "set",
+      "types": null,
+      "kinds": ["reverse-foil-masterball"],
+      "rarities": null,
+      "cards": null,
+      "tile": null,
+      "queued": "masterball",
+      "placement": { "across": 6.5, "phaseX": 0.5, "phaseY": 0, "turns": 0, "jitter": 0.08, "stagger": 0.5, "strength": 0.85, "tone": 0.45 },
+      "delta": "null",
+      "conf": "high",
+      "src": ["data/catalog/sets/sv08.5.json — variant kinds"],
+      "note": "Prismatic Evolutions, reverse #3 of 3. Same sheet, same scan, different mark."
+    },
+    {
+      "scope": "sv10.5b",
+      "scopeKind": "set",
+      "types": null,
+      "kinds": ["reverse-foil-pokeball"],
+      "rarities": null,
+      "cards": null,
+      "tile": null,
+      "queued": "pokeball",
+      "placement": { "across": 6.5, "phaseX": 0, "phaseY": 0, "turns": 0, "jitter": 0.08, "stagger": 0.5, "strength": 0.85, "tone": 0.45 },
+      "delta": "null",
+      "conf": "high",
+      "src": ["data/catalog/sets/sv10.5b.json — variant kinds"],
+      "note": "Black Bolt."
+    },
+    {
+      "scope": "sv10.5b",
+      "scopeKind": "set",
+      "types": null,
+      "kinds": ["reverse-foil-masterball"],
+      "rarities": null,
+      "cards": null,
+      "tile": null,
+      "queued": "masterball",
+      "placement": { "across": 6.5, "phaseX": 0.5, "phaseY": 0, "turns": 0, "jitter": 0.08, "stagger": 0.5, "strength": 0.85, "tone": 0.45 },
+      "delta": "null",
+      "conf": "high",
+      "src": ["data/catalog/sets/sv10.5b.json — variant kinds"],
+      "note": "Black Bolt."
+    },
+    {
+      "scope": "sv10.5w",
+      "scopeKind": "set",
+      "types": null,
+      "kinds": ["reverse-foil-pokeball"],
+      "rarities": null,
+      "cards": null,
+      "tile": null,
+      "queued": "pokeball",
+      "placement": { "across": 6.5, "phaseX": 0, "phaseY": 0, "turns": 0, "jitter": 0.08, "stagger": 0.5, "strength": 0.85, "tone": 0.45 },
+      "delta": "null",
+      "conf": "high",
+      "src": ["data/catalog/sets/sv10.5w.json — variant kinds"],
+      "note": "White Flare."
+    },
+    {
+      "scope": "sv10.5w",
+      "scopeKind": "set",
+      "types": null,
+      "kinds": ["reverse-foil-masterball"],
+      "rarities": null,
+      "cards": null,
+      "tile": null,
+      "queued": "masterball",
+      "placement": { "across": 6.5, "phaseX": 0.5, "phaseY": 0, "turns": 0, "jitter": 0.08, "stagger": 0.5, "strength": 0.85, "tone": 0.45 },
+      "delta": "null",
+      "conf": "high",
+      "src": ["data/catalog/sets/sv10.5w.json — variant kinds"],
+      "note": "White Flare."
+    },
+    {
+      "scope": "me02.5",
+      "scopeKind": "set",
+      "types": null,
+      "kinds": [
+        "reverse-foil-pokeball",
+        "reverse-foil-loveball",
+        "reverse-foil-quickball",
+        "reverse-foil-friendball",
+        "reverse-foil-duskball"
+      ],
+      "rarities": null,
+      "cards": null,
+      "tile": null,
+      "queued": "specialty-balls",
+      "placement": { "across": 6.5, "phaseX": 0, "phaseY": 0, "turns": 0, "jitter": 0.08, "stagger": 0.5, "strength": 0.85, "tone": 0.45 },
+      "delta": "null",
+      "conf": "high",
+      "src": ["data/catalog/sets/me02.5.json — variant kinds"],
+      "note": "Ascended Heroes. SIX reverse kinds on one sheet (these five plus the plain `reverse`), which is the strongest single argument in the corpus for variantKind belonging in the key. One row, five kinds, one queued tile family — the schema absorbs it without five rows."
+    },
+    {
+      "scope": "lc",
+      "scopeKind": "set",
+      "types": null,
+      "kinds": ["reverse", "reverse-jumbo", "reverse-shifted-energy-cost"],
+      "rarities": null,
+      "cards": null,
+      "tile": null,
+      "placement": { "across": 11.7, "phaseX": 0, "phaseY": 0, "turns": 0, "jitter": 0, "stagger": 0.5, "strength": 0, "tone": 0 },
+      "delta": "full",
+      "conf": "high",
+      "src": ["holo-archive/3b-pairs/era-research.md — section 2, Legendary Collection"],
+      "note": "Legendary Collection, the TCG's first reverse set. `full` on the scan-diff axis (Fireworks over the entire face at every rarity) and `null` on the INK axis — the artwork ink is unchanged. So it needs no ink tile at all, and strength 0 records that as a decision rather than as an unfilled row. 3b's warning applies: this set's class flipped between 1x and 3x zoom, which is why a card-scale eyeball is not a measurement."
+    },
+    {
+      "scope": "ex8",
+      "scopeKind": "set",
+      "types": null,
+      "kinds": ["reverse", "reverse-stamp-set-logo"],
+      "rarities": null,
+      "cards": null,
+      "tile": null,
+      "queued": "ex-set-logos",
+      "placement": { "across": 9, "phaseX": 0, "phaseY": 0, "turns": 0, "jitter": 0, "stagger": 0.5, "strength": 0.6, "tone": 0.3 },
+      "delta": "full",
+      "conf": "high",
+      "src": ["holo-archive/3b-pairs/era-research.md — section 2, EX Deoxys"],
+      "note": "EX Deoxys: the wheel pattern crosses the art window at EVERY rarity including commons, plus an 'ex DEOXYS' logo stamped inside the art box. One of the six `full`-class sets. The logo is a positioned stamp, not a lattice, and is queued as such."
+    },
+    {
+      "scope": "ex11",
+      "scopeKind": "set",
+      "types": null,
+      "kinds": ["reverse", "reverse-stamp-set-logo"],
+      "rarities": ["rare", "holo rare"],
+      "cards": null,
+      "tile": null,
+      "queued": "ex-set-logos",
+      "placement": { "across": 9, "phaseX": 0, "phaseY": 0, "turns": 0, "jitter": 0, "stagger": 0.5, "strength": 0.4, "tone": 0.25 },
+      "delta": "frame",
+      "conf": "high",
+      "src": ["holo-archive/3b-pairs/era-research.md — section 2, EX Plain block"],
+      "note": "EX Delta Species, RARITY-GATED. Rare and Holo Rare reverses get gold name, gold HP, a silver rarity symbol and (Holo Rare) gold borders; the Uncommon reverse gets none of it. This row exists to prove rarity is in the key — it is the axis (scope, type, variantKind) alone cannot express, and 3b section 4.4 names it as a model-breaker. Crystal Guardians goes further and gates on three named CARDS, which the `cards` field is here for."
+    }
+  ]
+}

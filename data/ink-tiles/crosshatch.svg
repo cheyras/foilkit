@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <title>crosshatch</title>
+  <desc>One lattice cell. Two orthogonal bars 16% wide crossing at the cell centre and running edge to edge, so the cells weave into a continuous grid. Alpha is ink coverage. See INK-TILES-NOTICE.md.</desc>
+  <rect x="42" y="0" width="16" height="100" fill="#ffffff"/>
+  <rect x="0" y="42" width="100" height="16" fill="#ffffff"/>
+</svg>
