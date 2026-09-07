@@ -2236,3 +2236,108 @@ message, and until now, the code did not.
 - `data/task-queue.json` regenerated; `--check` passes with exactly one
   FINDING (`uncanoned`).
 - No environment variables were added, so `DEPLOYMENT.md` is unchanged.
+
+## 2026-09-07 — The reference clip returns as an embed, and the citations become a datum
+**Decided by:** Claude Fable 5 on behalf of @cheyras (Project Holo subtask 12)
+
+**Decision:** The canon lab's reference pane — an empty slot since subtask 2
+removed the committed `clip.webm` + 8 keyframes per pattern — is filled with a
+**click-to-load, manually looped YouTube embed** of the same seconds of the same
+source video. The citations that make it possible are promoted out of prose into
+`packages/patterns/src/reference-clips.json`, generated from
+`reference/<slug>/notes.md` by `tools/build-reference-clips.mts` and gated by a
+CI `--check`. Five decisions inside that, each taken deliberately:
+
+1. **The datum lives in `packages/patterns`, not `data/`.** It is imported by
+   the bundle, so it needs no route, no fetch and no bake step — the pane has no
+   API at all, and `/reference` is gone from `api.ts` along with its
+   empty-index stub. It is MIT under the `packages/**` glob rather than CC0:
+   these are *citations of third-party video*, not measurements of a printing,
+   which is the same treatment `reference/**` already gives `MANIFEST.json`.
+   Shape is `{ videoId, chapter, clipStart, clipEnd }` per dir plus a source
+   table carrying each video's title and creator for the attribution line.
+
+2. **The loop is driven, not declared.** `loop=1` needs `playlist=<id>`, has
+   limited support in IFrame embeds, and with a `start`/`end` pair restarts the
+   WHOLE video rather than the segment — 3.5 seconds of reference followed by a
+   26-minute intro, forever. `start`/`end` are also integer-only and the corpus
+   is not (`radiant-collection-dots` is 1257.5s–1261.0s). So
+   `apps/editor/src/reference/clipLoop.ts` polls `getCurrentTime()` and
+   `seekTo()`s the fractional start when playback passes the end.
+
+3. **`youtube-nocookie.com`, and it stays that way structurally.** The IFrame
+   API offers a `host` option for this, but that leaves the domain to a config
+   key somebody can drop. The pane renders its OWN iframe at the nocookie url
+   and hands the element to `new YT.Player(element)` to adopt — the API reads
+   the origin off the element's `src`, so the domain is a property of markup
+   this repository controls. Verified end to end in the E2E run. The API script
+   itself has no nocookie copy and does come from `www.youtube.com`; that is
+   stated in `ytApi.ts` rather than glossed.
+
+4. **Click-to-load, with a LOCAL placeholder.** No iframe exists until somebody
+   presses play. The obvious placeholder — the video's own thumbnail from
+   `i.ytimg.com` — was rejected: it is the same third-party request on page load
+   wearing a different hostname. The placeholder is our own markup carrying the
+   datum's title, chapter and bounds as text.
+
+5. **No CSP change was needed, and that is a finding rather than a non-event.**
+   There is no `Content-Security-Policy` anywhere in this deployment; the
+   security headers in `tools/build-functions.mts` are `x-content-type-options`,
+   `referrer-policy` and `x-frame-options: DENY` (which governs *this* site
+   being framed, not this site framing YouTube). Nothing blocks the iframe. A
+   future CSP must carry `frame-src https://www.youtube-nocookie.com` and
+   `script-src https://www.youtube.com`, and there is a note at that site
+   saying so. No headers and no environment variables changed, so
+   `DEPLOYMENT.md` is unchanged.
+
+**Why:** Removing the vendored clips was right — that footage is cut from other
+people's videos and foilkit cites rather than vendors (AGENTS.md F2) — but it
+left a contributor tuning a shader against a memory of the reference. Embedding
+from the source restores the comparison without a byte of third-party media in
+the repository, and it sends the creator real views, which is the right way
+round rather than a consolation. Driving the loop by hand is the only way to
+show the four seconds the notes actually cite.
+
+**Implications:**
+
+- **TWO CONSUMERS, TWO PATHS, AND THEY CANNOT BE UNIFIED.** The embed and the
+  local frames now start from the same three numbers in the same notes.md, and
+  the next reader will try to make one serve the other. It cannot be done in the
+  direction that matters: a YouTube iframe is cross-origin and **no browser API
+  returns a pixel from it**. The embed is for human eyes; the Gemini
+  articulation passes (`reference/pipeline/gemini_vision.py`) and the frame-diff
+  harness read local frames that `reference/fetch-reference.sh` writes into
+  gitignored `reference-media/`. Deleting either path does not make the other
+  cover its work. The full argument is in the header of
+  `tools/reference-clips/notes.ts`, pointed at from the datum's `$doc`, from
+  `reference-clips.ts` and from `fetch-reference.sh`.
+- **`reference/manifest.mjs` is now a SECOND parser over the same prose**, for
+  `fetch-reference.sh`'s plan. Two parsers over one hand-written format drift,
+  so the builder re-reads `MANIFEST.json` and refuses to write if any video id,
+  chapter or bound disagrees. CI runs it as `--check`. Note the difference from
+  the corpus manifest and the task queue: this output is a **source file**, not
+  a baked artifact, so no build step regenerates it and nothing else would ever
+  notice it going stale.
+- A heading that says `clip:` followed by something unreadable is **refused by
+  name** rather than degrading to "no clip recorded" — which would put the
+  pane's honest empty state in front of a contributor as a lie about a clip that
+  exists.
+- **The counts, measured rather than assumed.** 44 pattern dirs, 5 source
+  videos, 43 with a clip range. The one without is `_interlude-what-is-a-holo`,
+  the physics segment, from which nothing was ever cut — and no pattern maps to
+  it. Of the **45** entries in `PATTERNS`, **44 get an embed** and exactly one
+  does not: `none`, the plain-card baseline, which has no foil to film.
+  (`reverse-sheet` borrows `pokeball-masterball`'s footage, and the pane says
+  so.) The subtask brief anticipated "13+ patterns may lack one"; that number is
+  the count of canon-*less* patterns from `docs/HOSTED-EDITOR.md` §3, a
+  different quantity entirely.
+- The pane is on **both** surfaces: the canon lab leads with it, card adjust
+  carries it behind a closed `<details>`. Reuse was one import, so "CanonLab
+  only" would have been a decision made by laziness rather than taken.
+- Attribution is a **credit and a link, and claims no permission**. Contacting
+  the creator is the manager's item, not this one, and a line reading "linked
+  with permission" would be a false statement about a real person on a public
+  site.
+- Suites: **538 unit** (was 506 — 19 parser, 13 loop controller), **81 editor
+  E2E** (was 58), **30 stage acceptance** (unchanged). No CI job was added; one
+  step was, next to the two existing `--check` steps.

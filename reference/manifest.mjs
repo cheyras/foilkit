@@ -60,7 +60,22 @@ function toSeconds(t) {
   return Number.isFinite(n) ? n : null
 }
 
-/** The 8 frames and the clip are cut from ranges recorded in prose. Parse them. */
+/**
+ * The 8 frames and the clip are cut from ranges recorded in prose. Parse them.
+ *
+ * THERE IS A SECOND READER OF THIS SAME PROSE. `tools/reference-clips/notes.ts`
+ * parses the identical headings into `packages/patterns/src/reference-clips.json`,
+ * the datum the canon lab's embed reads. Two parsers over one hand-written
+ * format drift the moment somebody edits a heading — so that builder re-reads
+ * MANIFEST.json and refuses to write if any video id, chapter or clip bound
+ * disagrees with what this function produced. CI runs it with `--check`.
+ *
+ * If you change a regex here, change it there, and the check will tell you if
+ * you did not. Keeping them duplicated rather than shared is deliberate: this
+ * script is plain `.mjs` run by bare `node` out of `fetch-reference.sh`, and
+ * importing TypeScript into it would trade a checked duplication for an
+ * unchecked runtime dependency.
+ */
 function parseNotes(slug) {
   const p = join(HERE, slug, 'notes.md')
   if (!existsSync(p)) return null

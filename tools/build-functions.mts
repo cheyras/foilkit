@@ -207,6 +207,18 @@ async function main(): Promise<void> {
         headers: { 'cache-control': 'public, max-age=300, must-revalidate' },
         continue: true,
       },
+      // The security headers. NOTE what is deliberately absent: there is no
+      // Content-Security-Policy here or anywhere else in this deployment, and
+      // `x-frame-options: DENY` governs THIS site being framed by others — not
+      // this site framing anything.
+      //
+      // IF YOU ADD A CSP, the canon lab's reference pane needs
+      //   frame-src  https://www.youtube-nocookie.com
+      //   script-src https://www.youtube.com
+      // or it will silently degrade to its "player unavailable" state on every
+      // pattern. The pane embeds the corpus's reference footage from its source
+      // rather than shipping it (AGENTS.md F2); see
+      // apps/editor/src/reference/ytApi.ts.
       {
         src: '^/(.*)$',
         headers: {

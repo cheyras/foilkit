@@ -21,6 +21,24 @@
 #
 # Requires: yt-dlp, ffmpeg, node (for the manifest reader). Nothing else.
 #
+# ── THIS SCRIPT IS NOT MADE REDUNDANT BY THE EMBED ─────────────────────────
+#
+# The canon lab now shows each pattern's clip as a YouTube embed, seeked to the
+# same bounds this script cuts at, from the same notes.md heading. It looks like
+# the same thing arriving twice. It is not, and the difference is not a
+# preference:
+#
+#   THE EMBED serves HUMAN EYES. A YouTube iframe is cross-origin and there is
+#   no browser API that returns a pixel from one. Nothing automated can read it.
+#
+#   THESE FILES serve MACHINES. `pipeline/gemini_vision.py` and the frame-diff
+#   harness need decoded pixels on disk, and this script is the only thing that
+#   produces them.
+#
+# Deleting either one does not make the other cover its work. The full argument,
+# and the note for whoever arrives intending to unify them, is in the header of
+# `tools/reference-clips/notes.ts`.
+#
 # ── THE CAPTIONS ───────────────────────────────────────────────────────────
 #
 # The creator's narration is third-party material exactly as the pixels are,

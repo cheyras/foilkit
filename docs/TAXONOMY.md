@@ -17,8 +17,11 @@ touching anything.
 
 One section per
 pattern the reference video distinguishes — **39 patterns**, each with a stable slug, a corpus
-dir under `reference/<slug>/` (8 keyframes + clip + notes + Gemini vision
-spec), and shader notes written against the uniform contract in `packages/core/src/shader.ts`.
+dir under `reference/<slug>/` (notes + Gemini vision spec; the 8 keyframes and
+the clip are **cited, not committed** — `fetch-reference.sh` reproduces them
+locally into gitignored `reference-media/`, and the canon lab embeds the same
+seconds from the source video), and shader notes written against the uniform
+contract in `packages/core/src/shader.ts`.
 **Plus 4 vocabulary extensions** (2026-08-02, `foil/vocab` lane — patterns 40–43 below):
 treatments the 39-pattern video does not cover but the assignment-swarm residuals demanded —
 `gold-secret`, `vstar-pearl`, `shiny-vault`, `detective-pikachu`. Same corpus layout; sources
