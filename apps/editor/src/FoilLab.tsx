@@ -1826,6 +1826,14 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
                     ? 'AI proposal — nobody has reviewed it. Edit it to turn it into training signal.'
                     : null
               }
+              // Offers the affordance; does not authorise it. `functions/mask.ts`
+              // re-derives the capability from the session cookie on the PATCH
+              // and refuses anybody else, so this only decides what is on screen.
+              canVerify={canWrite}
+              onVerified={(s) => {
+                setMaskSidecar(s)
+                setCorpusKey((k) => k + 1)
+              }}
             />
           )}
         </Section>

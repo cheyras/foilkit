@@ -86,6 +86,19 @@ export type FoilDerivationMethod = 'layout-flatten' | 'hand' | 'hand-refined' | 
 
 export type FoilReviewStatus = 'human-authored' | 'human-adjusted' | 'unreviewed'
 
+/**
+ * Sidecar v5 — the VERIFICATION tier, which is a different question from the
+ * method and answers a different one from `reviewStatus`.
+ *
+ * `reviewStatus` asks "did a human make these pixels". `provenanceTier` asks
+ * "has somebody with the writer capability signed them off as ground truth".
+ * Before contributors those were the same question. They are not any more: a
+ * stranger's `hand` mask is unmistakably human-authored and says nothing about
+ * whether it is right, so the exemplar weight table is keyed on the tier and a
+ * merged contribution carries 0 until a writer verifies it.
+ */
+export type FoilProvenanceTier = 'owner-verified' | 'contributor' | 'unattributed'
+
 /** Who/what made a machine mask, and which human masks it learned from. */
 export interface FoilGeneratorIdentity {
   name: string
@@ -154,6 +167,17 @@ export interface FoilMaskSidecar {
   derivation_method: FoilDerivationMethod
   authorship: 'human' | 'machine' | 'mixed'
   reviewStatus: FoilReviewStatus
+  /** Sidecar v5 — who painted the pixels. Recorded server-side; absent pre-v5. */
+  author?: { login: string; id: number | null; via: string } | null
+  /** Sidecar v5 — a writer's sign-off. Absent until one exists. */
+  verification?: { verifiedBy: string; verifiedAt: string; note: string | null } | null
+  /**
+   * Sidecar v5 — DERIVED, never claimed, and what exemplar weight is keyed on
+   * together with the method. Optional on the TYPE so a pre-v5 record still
+   * deserialises; the surfaces read an absent tier as "not stated" rather than
+   * inventing one.
+   */
+  provenanceTier?: FoilProvenanceTier
   savedAt: string
   artworkUrl: string | null
   /** Sidecar v4 — the framing the pixels were authored in, inferred, never claimed. */
@@ -203,6 +227,24 @@ export interface FoilCorpusReport {
   byMethod: Record<string, number>
   byAuthorship: Record<string, number>
   byReviewStatus: Record<string, number>
+  /** #10: counts by provenance tier. How much of the corpus carries weight. */
+  byTier: Record<string, number>
+  /**
+   * Human masks no writer has verified — the promotion queue.
+   *
+   * Measurable from the manifest, unlike `corrections`: the tier and the method
+   * are both per-record fields the manifest carries, so this one is a real
+   * count rather than a "not measured here".
+   */
+  awaitingVerification: {
+    cardId: string
+    variantId: number
+    savedAt: string
+    method: FoilDerivationMethod
+    tier: string
+    author: string | null
+    agreement: number | null
+  }[]
   meanAgreement: number | null
   byEra: Record<string, { n: number; byMethod: Record<string, number>; meanAgreement: number | null }>
   bySet: Record<string, { n: number; byMethod: Record<string, number>; meanAgreement: number | null }> | null
@@ -669,6 +711,27 @@ export const foilApi = {
     return (await res.json()) as FoilMaskSidecar
   },
 
+  /**
+   * PROMOTE a mask to `owner-verified` — the writer's half of #10.
+   *
+   * Note what is NOT in the request: a verifier. The server takes that from the
+   * session cookie and refuses if the login does not hold the capability, so
+   * this method cannot verify on anybody's behalf however it is called. A
+   * viewer without the capability gets a 403 and the affordance hides itself,
+   * exactly as `putMask` does.
+   */
+  verifyMask: async (cardId: string, variantId: number, note?: string): Promise<FoilMaskSidecar> => {
+    const res = await fetch('/api/mask', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ cardId, variantId, ...(note ? { note } : {}) }),
+    })
+    if (!res.ok) throw new Error(await writeError(res, 'verification'))
+    invalidateCorpus()
+    return (await res.json()) as FoilMaskSidecar
+  },
+
   putWindow: async (
     cardId: string,
     variantId: number,
@@ -889,9 +952,23 @@ function buildStaticReport(m: CorpusManifest, map: VerificationMap | null): Foil
   const byMethod: Record<string, number> = {}
   const byAuthorship: Record<string, number> = {}
   const byReviewStatus: Record<string, number> = {}
+  const byTier: Record<string, number> = {}
   const byEra: FoilCorpusReport['byEra'] = {}
   const byScope: FoilCorpusReport['byScope'] = {}
   const awaitingReview: FoilCorpusReport['awaitingReview'] = []
+  const awaitingVerification: FoilCorpusReport['awaitingVerification'] = []
+  // The owner-verified row of forge's EXEMPLAR_WEIGHT_BY_TIER, duplicated here
+  // for the same reason AUTHORSHIP below is: this module derives the report
+  // from a static manifest with no forge import in the browser bundle. It is
+  // only ever used to decide whether VERIFYING a record would buy anything —
+  // never to award weight, which is a server-side and CLI-side decision.
+  const WEIGHT_IF_VERIFIED: Record<string, number> = {
+    hand: 1,
+    'hand-refined': 1,
+    'ai-corrected': 0.6,
+    ai: 0,
+    'layout-flatten': 0,
+  }
   let agreementSum = 0
   let agreementN = 0
   let total = 0
@@ -911,6 +988,24 @@ function buildStaticReport(m: CorpusManifest, map: VerificationMap | null): Foil
       const auth = AUTHORSHIP[rec.method] ?? 'human'
       byAuthorship[auth] = (byAuthorship[auth] ?? 0) + 1
       byReviewStatus[rec.reviewStatus] = (byReviewStatus[rec.reviewStatus] ?? 0) + 1
+      // An older manifest has no tier at all. Counted as 'unstated' rather
+      // than folded into a real tier: a deploy whose manifest predates #10 must
+      // not report its whole corpus as owner-verified OR as contributor, and a
+      // bucket nobody can misread is the honest shape for "this file does not
+      // say".
+      const tier = typeof rec.tier === 'string' && rec.tier.length > 0 ? rec.tier : 'unstated'
+      byTier[tier] = (byTier[tier] ?? 0) + 1
+      if (tier !== 'owner-verified' && tier !== 'unstated' && (WEIGHT_IF_VERIFIED[rec.method] ?? 0) > 0) {
+        awaitingVerification.push({
+          cardId,
+          variantId: rec.variantId,
+          savedAt: rec.savedAt ?? '',
+          method: rec.method as FoilDerivationMethod,
+          tier,
+          author: rec.author ?? null,
+          agreement: rec.agreement,
+        })
+      }
       for (const [table, key] of [
         [byEra, rec.eraId],
         [byScope, rec.scope],
@@ -952,6 +1047,8 @@ function buildStaticReport(m: CorpusManifest, map: VerificationMap | null): Foil
     byMethod,
     byAuthorship,
     byReviewStatus,
+    byTier,
+    awaitingVerification: awaitingVerification.sort((a, b) => (a.savedAt < b.savedAt ? 1 : -1)),
     meanAgreement: agreementN === 0 ? null : Number((agreementSum / agreementN).toFixed(4)),
     byEra,
     // Not measurable from the manifest — see the type's doc comment. Null, not zero.

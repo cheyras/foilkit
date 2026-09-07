@@ -65,6 +65,11 @@ export const COUNTING_UNITS = {
   generatedAt:
     'the NEWEST savedAt the corpus itself carries, NOT a clock reading — a wall-clock stamp would make this file ' +
     'differ on every build and turn --check into noise',
+  provenanceTier:
+    'DERIVED per record by normalizeSidecar, never read off the file: "owner-verified" (a writer-capability holder ' +
+    'authored or verified it, or the record predates sidecar v5 and therefore predates contributors), "contributor" ' +
+    '(a merged contribution no writer has verified), "unattributed" (machine output, or a v5 record with no author). ' +
+    'Only owner-verified carries exemplar weight — merge is acceptance, not exemplar grade',
 } as const
 
 /** One mask record, in the docs/HOSTED-EDITOR.md §3 shape. */
@@ -74,6 +79,20 @@ export interface ManifestMask {
   eraId: string
   method: string
   reviewStatus: string
+  /**
+   * #10: the provenance tier, DERIVED by `normalizeSidecar` from the record's
+   * author and verification. It is in the manifest because the hosted editor
+   * has no server walking sidecars — the badge, the corpus panel and every
+   * count the editor shows come from this file, and a manifest that carried the
+   * method but not the tier would show a contributor's `hand` mask with the
+   * same green "ground truth — a generator may learn from it" badge the owner's
+   * gets, which is precisely the confusion #10 exists to end.
+   */
+  tier: string
+  /** The author's GitHub login, when the record names one. Null on v1–v4. */
+  author: string | null
+  /** The verifier's login, when a writer has verified it. Null otherwise. */
+  verifiedBy: string | null
   /** sidecar.diff.agreement when present, null otherwise (per §3). */
   agreement: number | null
   savedAt: string
@@ -262,6 +281,9 @@ export async function buildCorpusManifest(root: string): Promise<BuildReport> {
         eraId: String(s.prior?.eraId ?? 'unknown'),
         method: s.derivation_method,
         reviewStatus: s.reviewStatus,
+        tier: s.provenanceTier,
+        author: s.author?.login ?? null,
+        verifiedBy: s.verification?.verifiedBy ?? null,
         agreement: typeof s.diff?.agreement === 'number' ? s.diff.agreement : null,
         savedAt,
         frame: s.frame,

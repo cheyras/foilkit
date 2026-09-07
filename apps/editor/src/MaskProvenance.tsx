@@ -23,6 +23,7 @@ import {
   type FoilCorpusReport,
   type FoilDerivationMethod,
   type FoilMaskSidecar,
+  type FoilProvenanceTier,
 } from './api.ts'
 import { Section } from './ui.tsx'
 
@@ -72,6 +73,56 @@ export function MethodBadge({ method, compact = false }: { method: FoilDerivatio
   )
 }
 
+/**
+ * The TIER badge (#10) — a SECOND badge beside the method one, not a colour
+ * change to it.
+ *
+ * They answer different questions and a reader needs both at once. The method
+ * badge says what kind of hand made the pixels; this one says whether anybody
+ * with the writer capability has signed them off as ground truth. Folding the
+ * tier into the method's colour would have made a contributor's hand mask
+ * indistinguishable from the owner's at a glance, which is the exact confusion
+ * this subtask exists to end — and merging them into one label would suggest
+ * the tier demotes the method, when in fact a merged contribution is real,
+ * correct-looking, servable data that simply has not been verified for RULE
+ * DERIVATION.
+ */
+const TIER_STYLE: Record<FoilProvenanceTier, { label: string; short: string; cls: string; blurb: string }> = {
+  'owner-verified': {
+    label: 'Owner-verified',
+    short: 'verified',
+    cls: 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300',
+    blurb:
+      'A writer authored or verified these pixels. This is the only tier that carries exemplar weight — a generator may derive a rule from it.',
+  },
+  contributor: {
+    label: 'Contributor · unverified',
+    short: 'contributor',
+    cls: 'border-violet-400/50 bg-violet-400/15 text-violet-200',
+    blurb:
+      'A contribution that was merged. It is real data — it is served and it renders — but no writer has verified it as ground truth, so it carries exemplar weight 0 until one does. Merge is acceptance, not exemplar grade.',
+  },
+  unattributed: {
+    label: 'Unattributed',
+    short: 'unattributed',
+    cls: 'border-slate-400/40 bg-slate-400/15 text-slate-300',
+    blurb:
+      'No human is recorded as the author — machine output, or a record written by something that is not one of the write paths. Exemplar weight 0.',
+  },
+}
+
+export function TierBadge({ tier, compact = false }: { tier: FoilProvenanceTier; compact?: boolean }) {
+  const s = TIER_STYLE[tier]
+  return (
+    <span
+      className={`inline-block shrink-0 rounded-full border px-[7px] py-[2px] text-[10px] font-semibold uppercase tracking-[0.04em] ${s.cls}`}
+      title={s.blurb}
+    >
+      {compact ? s.short : s.label}
+    </span>
+  )
+}
+
 const pctOf = (n: number | null | undefined): string => (n === null || n === undefined ? '—' : n.toFixed(3))
 
 /** Where corrections landed, as the sidecar's coarse grid. Tiny by design. */
@@ -106,6 +157,8 @@ export function MaskProvenanceLine({
   variantId,
   scope,
   pendingNote,
+  canVerify = false,
+  onVerified,
 }: {
   sidecar: FoilMaskSidecar | null
   aliasOf: number | null
@@ -114,14 +167,49 @@ export function MaskProvenanceLine({
   scope: string
   /** e.g. "unsaved strokes — will save as hand-refined". */
   pendingNote?: string | null
+  /**
+   * Does this viewer hold the writer capability? Offered by the caller, which
+   * knows the viewer; NOT a security decision. The server re-derives the answer
+   * from the session cookie and refuses a PATCH from anybody else, so this only
+   * decides whether the button is on screen.
+   */
+  canVerify?: boolean
+  /** Called after a successful promotion, so the caller can refetch. */
+  onVerified?: (s: FoilMaskSidecar) => void
 }) {
   const [open, setOpen] = useState(false)
+  const [verifying, setVerifying] = useState(false)
+  const [verifyError, setVerifyError] = useState<string | null>(null)
   if (!sidecar) {
     return pendingNote ? <p className="mt-[6px] text-[11px] text-text-muted">{pendingNote}</p> : null
   }
   const g = sidecar.prior.generator ?? sidecar.correction?.parent.generator ?? null
   const c = sidecar.correction ?? null
   const sup = sidecar.supersedes ?? null
+  const tier = sidecar.provenanceTier ?? null
+  const author = sidecar.author ?? null
+  const verification = sidecar.verification ?? null
+  // Verifying an `ai` or `layout-flatten` record buys nothing — those are
+  // weight 0 in the verified tier too — so the affordance is not offered for
+  // them. A button that does nothing is worse than no button.
+  const promotable =
+    canVerify &&
+    tier !== null &&
+    tier !== 'owner-verified' &&
+    (sidecar.derivation_method === 'hand' ||
+      sidecar.derivation_method === 'hand-refined' ||
+      sidecar.derivation_method === 'ai-corrected')
+
+  const verify = (): void => {
+    setVerifying(true)
+    setVerifyError(null)
+    void foilApi
+      .verifyMask(cardId, variantId)
+      .then((s) => onVerified?.(s))
+      .catch((e: Error) => setVerifyError(e.message))
+      .finally(() => setVerifying(false))
+  }
+
   return (
     <div className="mt-[8px] rounded-md border border-border-default bg-surface-tertiary/50 p-[8px]">
       <button
@@ -130,6 +218,7 @@ export function MaskProvenanceLine({
         aria-expanded={open}
       >
         <MethodBadge method={sidecar.derivation_method} />
+        {tier && <TierBadge tier={tier} compact />}
         <span className="min-w-0 flex-1 truncate text-[11px] text-text-muted">
           {new Date(sidecar.savedAt).toLocaleString()}
           {aliasOf != null ? ` · alias of variant ${aliasOf}` : ''}
@@ -140,6 +229,36 @@ export function MaskProvenanceLine({
       {open && (
         <div className="mt-[8px] space-y-[8px] border-t border-border-default pt-[8px] text-[11px] leading-[16px] text-text-muted">
           <p>{METHOD_STYLE[sidecar.derivation_method].blurb}</p>
+
+          {tier && (
+            <div className="rounded-[4px] border border-border-default p-[6px]">
+              <p className="font-semibold text-text-primary">{TIER_STYLE[tier].label}</p>
+              <p className="mt-[2px]">{TIER_STYLE[tier].blurb}</p>
+              <p className="mt-[4px]">
+                {author
+                  ? `Authored by @${author.login} (${author.via}).`
+                  : `No author recorded — sidecar v${sidecar.version} predates the field.`}
+              </p>
+              {verification && (
+                <p>
+                  Verified by @{verification.verifiedBy} on{' '}
+                  {new Date(verification.verifiedAt).toLocaleDateString()}
+                  {verification.note ? ` — “${verification.note}”` : ''}
+                </p>
+              )}
+              {promotable && (
+                <button
+                  onClick={verify}
+                  disabled={verifying}
+                  className="mt-[6px] rounded-[4px] border border-emerald-500/50 bg-emerald-500/15 px-[8px] py-[3px] text-[11px] font-semibold text-emerald-300 disabled:opacity-50"
+                  title="Records your verification in the sidecar and commits it. Only the .json changes — the pixels are untouched."
+                >
+                  {verifying ? 'Verifying…' : 'Verify as exemplar-grade'}
+                </button>
+              )}
+              {verifyError && <p className="mt-[4px] text-amber-300">{verifyError}</p>}
+            </div>
+          )}
 
           <p className="tabular-nums">
             vs era rule: agreement {pctOf(sidecar.diff?.agreement)} · +{sidecar.diff?.addedPx ?? 0}px / −
@@ -309,6 +428,20 @@ export function MaskCorpusPanel({
             {report.total === 0 && <span>No masks yet.</span>}
           </div>
 
+          <div className="flex flex-wrap gap-[6px]">
+            {(['owner-verified', 'contributor', 'unattributed'] as const)
+              .filter((t) => (report.byTier?.[t] ?? 0) > 0)
+              .map((t) => (
+                <span key={t} className="flex items-center gap-[4px]">
+                  <TierBadge tier={t} compact />
+                  <span className="tabular-nums text-text-primary">{report.byTier[t]}</span>
+                </span>
+              ))}
+            {(report.byTier?.unstated ?? 0) > 0 && (
+              <span className="tabular-nums">tier not stated {report.byTier.unstated}</span>
+            )}
+          </div>
+
           <p className="tabular-nums">
             mean agreement vs the era rule: <span className="text-text-primary">{pctOf(report.meanAgreement)}</span> ·
             exemplars a generator may learn from:{' '}
@@ -316,8 +449,31 @@ export function MaskCorpusPanel({
           </p>
           <p className="text-[10px]">
             Unreviewed <code>ai</code> masks are never exemplars — that is the anti-feedback-collapse rule, enforced in
-            selection code, not by convention.
+            selection code, not by convention. Neither is a contribution nobody with the writer capability has verified:
+            exemplar weight is keyed on (method × tier), and merge is acceptance rather than exemplar grade.
           </p>
+
+          {(report.awaitingVerification?.length ?? 0) > 0 && (
+            <div>
+              <p className="font-semibold text-text-primary">
+                awaiting verification ({report.awaitingVerification.length})
+              </p>
+              <p className="text-[10px]">
+                Human work already merged, held at exemplar weight 0 until a writer signs it off. Open one and use
+                “Verify as exemplar-grade”.
+              </p>
+              {report.awaitingVerification.map((a) => (
+                <button
+                  key={`${a.cardId}-${a.variantId}`}
+                  onClick={() => onPick?.(a.cardId, a.variantId)}
+                  className="block w-full text-left tabular-nums underline decoration-dotted hover:text-text-primary"
+                >
+                  {a.cardId}/{a.variantId} · {a.method} · {a.author ? `@${a.author}` : 'author unrecorded'} · vs-rule{' '}
+                  {pctOf(a.agreement)}
+                </button>
+              ))}
+            </div>
+          )}
 
           {Object.keys(report.byEra).length > 0 && (
             <div>

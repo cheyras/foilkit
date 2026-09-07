@@ -69,12 +69,20 @@ export const COUNTING_UNITS = {
   patternAssignment: '(cardId, variantId) — one printing, since holo and reverse resolve differently',
   crossCardReuse: 'never aliased — reprints of one illustration under different cardIds stay separate rows',
   exemplars:
-    'admissible masks via selectExemplars({eraId, scope}) (EXEMPLAR_WEIGHT > 0), then aliased to distinct ' +
-    '(cardId, scope) units — never a directory glob, so unreviewed `ai` masks can never count as evidence',
-  leverage: 'printings ÷ (exemplars + 1) — where an hour of human attention moves the most pixels',
+    'admissible masks via selectExemplars({eraId, scope}) — weight > 0 in the (method × TIER) table — then aliased ' +
+    'to distinct (cardId, scope) units. Never a directory glob, so unreviewed `ai` masks can never count as ' +
+    'evidence, and since #10 neither can a merged contribution no writer has verified: these are VERIFIED ' +
+    'exemplar counts',
+  leverage:
+    'printings ÷ (exemplars + 1) — where an hour of human attention moves the most pixels. Because `exemplars` ' +
+    'counts VERIFIED units only, an unverified contribution does NOT lower a group\'s leverage: work nobody has ' +
+    'signed off must not make a rule group look served',
   maskCoveredCards:
-    'coverage is NOT evidence: a group can carry masks that selectExemplars rejects (unreviewed `ai`), so ' +
-    'maskCoveredCards ≥ exemplarsInGroup by design',
+    'coverage is NOT evidence: a group can carry masks that selectExemplars rejects (unreviewed `ai`, or a ' +
+    'contributor mask awaiting verification), so maskCoveredCards ≥ exemplarsInGroup by design',
+  awaitingVerification:
+    'rejections of kind `tier`: human masks in this (era, scope) whose method WOULD carry weight and that are held ' +
+    'at 0 only because no writer has verified them. The pool\'s pending capacity — one review each, no repainting',
   confidenceHistogram: "guess.confidence per printing; a null confidence (heuristic) is bucketed as 'none'",
 } as const
 
@@ -85,11 +93,26 @@ export interface ExemplarPool {
   exemplars: number
   /** Raw admissible records before aliasing (a card with two is still one unit). */
   records: number
-  /** Σ EXEMPLAR_WEIGHT over the aliased winners — hand 1, ai-corrected 0.6. */
+  /** Σ exemplar weight over the aliased winners — hand 1, ai-corrected 0.6. */
   weight: number
   byMethod: Record<string, number>
+  /**
+   * #10: tiers among the ADMITTED exemplars. Always `{ 'owner-verified': n }`
+   * today, because selection admits nothing else — emitted anyway so the
+   * verification map states the property rather than leaving a reader to infer
+   * it from the absence of a field.
+   */
+  byTier: Record<string, number>
   /** Considered and thrown out, with why — auditable, per selectExemplars. */
   rejected: number
+  /**
+   * #10: of the rejections, the ones a WRITER COULD FIX by verifying —
+   * contributor-authored human masks in this (era, scope). These are the pool's
+   * pending capacity: they are already in the corpus and already correct-looking,
+   * and one review each turns them into evidence. Distinct from `rejected`,
+   * which is dominated by `ai` records nothing can promote.
+   */
+  awaitingVerification: number
 }
 
 export interface Evidence {
@@ -165,11 +188,13 @@ export async function readEvidence(rootDir: string): Promise<Evidence> {
     // savedAt desc, so the first sighting of a card is the winner.
     const seen = new Set<string>()
     const byMethod: Record<string, number> = {}
+    const byTier: Record<string, number> = {}
     let weight = 0
     for (const e of sel.chosen) {
       if (seen.has(e.cardId)) continue
       seen.add(e.cardId)
       weight += e.weight
+      byTier[e.sidecar.provenanceTier] = (byTier[e.sidecar.provenanceTier] ?? 0) + 1
       const m = e.sidecar.derivation_method
       byMethod[m] = (byMethod[m] ?? 0) + 1
     }
@@ -180,7 +205,13 @@ export async function readEvidence(rootDir: string): Promise<Evidence> {
       records: sel.chosen.length,
       weight: Number(weight.toFixed(3)),
       byMethod,
+      byTier,
       rejected: sel.rejected.length,
+      // `kind: 'tier'` and nothing else. A `method` rejection is 0 in every
+      // tier, so verifying one buys nothing and counting it here would
+      // advertise capacity that does not exist; a `filter` rejection belongs to
+      // a different (era, scope) and is not this pool's business at all.
+      awaitingVerification: sel.rejected.filter((r) => r.kind === 'tier').length,
     }
     pools.set(key, pool)
     return pool
@@ -424,6 +455,9 @@ export function buildPatternCards(
         exemplarRecords: pool.records,
         exemplarWeight: pool.weight,
         exemplarsByMethod: pool.byMethod,
+        exemplarsByTier: pool.byTier,
+        /** Human masks in this pool one writer review away from counting (#10). */
+        poolAwaitingVerification: pool.awaitingVerification,
         /** Of those, the ones that are cards of THIS group. */
         exemplarsInGroup,
         /** (cardId, scope) units in this group carrying ANY mask — coverage, not evidence. */

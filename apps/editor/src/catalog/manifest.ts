@@ -28,6 +28,16 @@ export interface ManifestMaskRecord {
   eraId: string
   method: string
   reviewStatus: string
+  /**
+   * #10: `owner-verified` | `contributor` | `unattributed`. Optional on the
+   * TYPE rather than the artifact, because a deployed editor can outlive the
+   * manifest it was built against by one deploy — an older manifest simply has
+   * no tier, and the surfaces show nothing rather than guessing `contributor`
+   * for a corpus that predates the field.
+   */
+  tier?: string
+  author?: string | null
+  verifiedBy?: string | null
   agreement: number | null
   savedAt: string | null
   frame: string
