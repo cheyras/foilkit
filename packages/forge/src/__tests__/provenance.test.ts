@@ -14,9 +14,15 @@
 //   5. v4: `frame` is INFERRED from the raster, even when the field is there,
 //      so a hand-edited sidecar cannot claim a framing its pixels deny; and an
 //      unregistered raster BLOCKS a write rather than guessing a transform.
+//   6. v5: EXEMPLAR WEIGHT FOLLOWS VERIFICATION, not authorship. A contributor's
+//      `hand` mask is honestly labelled `hand` and honestly worth 0 until a
+//      writer verifies it; a forged verification block is ignored; and the
+//      whole pre-v5 corpus keeps its weight, because the historical inference
+//      is materialised at the version bump rather than left to expire.
 
 import { strict as assert } from 'node:assert';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -27,13 +33,23 @@ import { rasterizePriorAlpha, type MaskPrior } from '../mask-artifacts.ts';
 import {
   AUTHORSHIP_BY_METHOD,
   EXEMPLAR_WEIGHT,
+  EXEMPLAR_WEIGHT_BY_TIER,
+  HISTORICAL_AUTHOR,
+  NotAWriter,
   REVIEW_BY_METHOD,
+  SIDECAR_VERSION,
+  deriveTier,
+  exemplarWeightOf,
   isUnknownFrame,
   normalizeSidecar,
   readSidecarFile,
+  upgradeSidecarRecord,
+  verifyMaskRecord,
   writeMaskRecord,
+  type AuthorIdentity,
   type GeneratorIdentity,
 } from '../provenance.ts';
+import { WRITERS, isWriter } from '@foilkit/core';
 import { buildReport, readCorpus, selectExemplars, trainingTuples } from '../mask-corpus.ts';
 import { CANONICAL_H, CANONICAL_W } from '@foilkit/core';
 import { __setFrameRegistryForTests, loadFrames } from '../frames.ts';
@@ -91,6 +107,16 @@ function maskPng(alpha: Uint8Array): Buffer {
 }
 
 const scratch = (): string => mkdtempSync(join(tmpdir(), 'foil-prov-'));
+
+/**
+ * The two identities every #10 test needs.
+ *
+ * OWNER goes through a writer-gated channel and holds the capability, so it is
+ * `owner-verified` by construction. STRANGER goes through the contribution
+ * pipeline, which is what a merged pull request looks like on disk.
+ */
+const OWNER: AuthorIdentity = { login: WRITERS[0]!, id: 1, via: 'writer-direct' };
+const STRANGER: AuthorIdentity = { login: 'a-stranger', id: 424242, via: 'contribution-pr' };
 
 // ── 1. Legacy sidecars ─────────────────────────────────────────────────────
 
@@ -310,9 +336,9 @@ void test('selectExemplars refuses unreviewed ai masks and bare bakes', async ()
       generatedAt: new Date().toISOString(),
     };
     // A human mask, an unreviewed AI mask, and a bare window bake.
-    await writeMaskRecord({ masksDir: dir, cardId: 'zz-1', variantId: '1', png: maskPng(full), width: W, height: H, prior: PRIOR, startedFrom: 'layout' });
+    await writeMaskRecord({ masksDir: dir, cardId: 'zz-1', variantId: '1', png: maskPng(full), width: W, height: H, prior: PRIOR, startedFrom: 'layout', author: OWNER });
     await writeMaskRecord({ masksDir: dir, cardId: 'zz-2', variantId: '1', png: maskPng(full), width: W, height: H, prior: PRIOR, startedFrom: 'layout', machine: gen });
-    await writeMaskRecord({ masksDir: dir, cardId: 'zz-3', variantId: '1', png: maskPng(rect), width: W, height: H, prior: PRIOR, startedFrom: 'layout' });
+    await writeMaskRecord({ masksDir: dir, cardId: 'zz-3', variantId: '1', png: maskPng(rect), width: W, height: H, prior: PRIOR, startedFrom: 'layout', author: OWNER });
 
     const corpus = await readCorpus(dir);
     assert.equal(corpus.length, 3);
@@ -325,6 +351,282 @@ void test('selectExemplars refuses unreviewed ai masks and bare bakes', async ()
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+// ── #10. Provenance tiers: weight follows VERIFICATION, not authorship ─────
+
+void test('the weight table is keyed on (method × tier), and only one row is nonzero', () => {
+  // The owner-verified row IS the historical table, unchanged. That is the
+  // compatibility claim the whole subtask rests on: nothing about the owner's
+  // own corpus was recalibrated, a second axis was added beside it.
+  assert.deepEqual(EXEMPLAR_WEIGHT_BY_TIER['owner-verified'], { ...EXEMPLAR_WEIGHT });
+  for (const tier of ['contributor', 'unattributed'] as const) {
+    for (const [method, w] of Object.entries(EXEMPLAR_WEIGHT_BY_TIER[tier])) {
+      assert.equal(w, 0, `${tier}/${method} must be 0 — low is not harmless, see EXEMPLAR_WEIGHT_BY_TIER`);
+    }
+  }
+});
+
+void test('the historical author still holds the writer capability', () => {
+  // HISTORICAL_AUTHOR is what a pre-v5 record is stamped with when its version
+  // is bumped, and it only produces `owner-verified` because `deriveTier`
+  // re-checks the login against WRITERS. If the two ever diverged, the next
+  // `corpus.ts migrate` would silently demote the entire committed corpus to
+  // weight 0 — and every other test here would still pass.
+  assert.equal(isWriter(HISTORICAL_AUTHOR.login), true);
+  assert.equal(deriveTier(SIDECAR_VERSION, HISTORICAL_AUTHOR, null), 'owner-verified');
+});
+
+void test('deriveTier: historical records are the owner, future ones without an author are not', () => {
+  // v1–v4 with no author: HISTORICAL TRUTH. Every mask in this corpus predates
+  // the contribution pipeline, and RELICENSE.md records the sole-author fact.
+  for (const v of [1, 2, 3, 4]) assert.equal(deriveTier(v, null, null), 'owner-verified');
+  // v5+ with no author: CONSERVATIVE. From v5 on every write path stamps one,
+  // so an absent author means the record came from something that is not a
+  // write path, and the safe reading of "I do not know" is not "the owner".
+  assert.equal(deriveTier(5, null, null), 'unattributed');
+  assert.equal(deriveTier(6, null, null), 'unattributed');
+  // And the two authored cases.
+  assert.equal(deriveTier(5, OWNER, null), 'owner-verified');
+  assert.equal(deriveTier(5, STRANGER, null), 'contributor');
+  // A generator is not a person: its name in `login` must not read as one.
+  assert.equal(deriveTier(5, { login: 'window-artgate', id: null, via: 'generator' }, null), 'unattributed');
+});
+
+void test('a forged verification block is IGNORED unless the verifier holds the capability', () => {
+  // The fork-PR case: a stranger hand-commits a sidecar that verifies itself.
+  const forged = normalizeSidecar({
+    version: 5, cardId: 'zz-forge', variantId: 1, width: 504, height: 704, channel: 'alpha',
+    derivation_method: 'hand', savedAt: '2026-09-06T00:00:00.000Z',
+    author: STRANGER,
+    verification: {
+      verifiedBy: STRANGER.login, verifiedById: STRANGER.id,
+      verifiedAt: '2026-09-06T00:00:00.000Z', via: 'writer-direct', note: 'looks right to me',
+    },
+  });
+  assert.ok(forged);
+  assert.equal(forged.provenanceTier, 'contributor', 'a stranger cannot verify their own work');
+  assert.equal(exemplarWeightOf(forged), 0);
+
+  // A block with a made-up channel is not half-believed either — a route this
+  // module does not write is a route that cannot have produced the claim.
+  const wrongChannel = normalizeSidecar({
+    version: 5, cardId: 'zz-forge', variantId: 2, width: 504, height: 704, channel: 'alpha',
+    derivation_method: 'hand', savedAt: '2026-09-06T00:00:00.000Z',
+    author: STRANGER,
+    verification: {
+      verifiedBy: WRITERS[0], verifiedById: 1, verifiedAt: '2026-09-06T00:00:00.000Z',
+      via: 'trust-me', note: null,
+    },
+  });
+  assert.equal(wrongChannel?.provenanceTier, 'contributor');
+
+  // Nor can a hand-edited `provenanceTier` field name its own answer, exactly
+  // as a hand-edited `frame` or `reviewStatus` cannot.
+  const claimsTier = normalizeSidecar({
+    version: 5, cardId: 'zz-forge', variantId: 3, width: 504, height: 704, channel: 'alpha',
+    derivation_method: 'hand', savedAt: '2026-09-06T00:00:00.000Z',
+    author: STRANGER, provenanceTier: 'owner-verified',
+  });
+  assert.equal(claimsTier?.provenanceTier, 'contributor');
+
+  // And an author block claiming the writer-gated CHANNEL while naming a
+  // non-writer: the channel alone buys nothing, the login has to check out.
+  const claimsChannel = normalizeSidecar({
+    version: 5, cardId: 'zz-forge', variantId: 4, width: 504, height: 704, channel: 'alpha',
+    derivation_method: 'hand', savedAt: '2026-09-06T00:00:00.000Z',
+    author: { login: 'a-stranger', id: 1, via: 'writer-direct' },
+  });
+  assert.equal(claimsChannel?.provenanceTier, 'contributor');
+});
+
+void test('a contributor hand mask is weight 0 until promoted, then carries full weight', async () => {
+  const dir = scratch();
+  try {
+    const full = new Uint8Array(W * H).fill(255);
+    // A merged contribution: `hand` pixels, recorded honestly, tier contributor.
+    const submitted = await writeMaskRecord({
+      masksDir: dir, cardId: 'zz-c1', variantId: '1', png: maskPng(full), width: W, height: H,
+      prior: PRIOR, startedFrom: 'layout', author: STRANGER,
+    });
+    assert.equal(submitted.derivation_method, 'hand', 'the pixels are human-painted and the label says so');
+    assert.equal(submitted.reviewStatus, 'human-authored', 'a human authored it — that much is unchanged');
+    assert.equal(submitted.provenanceTier, 'contributor');
+    assert.equal(submitted.author?.login, STRANGER.login);
+    assert.equal(submitted.verification, null, 'merge is acceptance, not verification');
+    assert.equal(exemplarWeightOf(submitted), 0);
+
+    let corpus = await readCorpus(dir);
+    let sel = selectExemplars(corpus);
+    assert.equal(sel.chosen.length, 0, 'an unverified contribution is not in the pool');
+    assert.equal(sel.rejected[0]!.kind, 'tier');
+    assert.equal(buildReport(corpus).awaitingVerification.length, 1, 'it is queued for promotion, not lost');
+    assert.equal(buildReport(corpus).awaitingVerification[0]!.weightIfVerified, 1);
+
+    // THE PROMOTION, through the writer-gated path.
+    const beforeSha = createHash('sha256').update(readFileSync(join(dir, 'zz-c1', '1.png'))).digest('hex');
+    const promoted = await verifyMaskRecord({
+      masksDir: dir, cardId: 'zz-c1', variantId: '1',
+      verifier: { login: WRITERS[0]!, id: 1 }, via: 'writer-direct', note: 'checked against the scan',
+    });
+    assert.equal(promoted.from, 'contributor');
+    assert.equal(promoted.to, 'owner-verified');
+    assert.equal(promoted.sidecar.verification?.verifiedBy, WRITERS[0]);
+    assert.equal(promoted.sidecar.verification?.note, 'checked against the scan');
+    // AUTHORSHIP IS NOT REWRITTEN. The stranger painted it and still did.
+    assert.equal(promoted.sidecar.author?.login, STRANGER.login);
+    // THE PIXELS ARE UNTOUCHED — a promotion is a statement about a save, not
+    // a save. This is what makes it reviewable as a one-line diff.
+    const afterSha = createHash('sha256').update(readFileSync(join(dir, 'zz-c1', '1.png'))).digest('hex');
+    assert.equal(afterSha, beforeSha);
+
+    corpus = await readCorpus(dir);
+    sel = selectExemplars(corpus);
+    assert.deepEqual(sel.chosen.map((e) => e.cardId), ['zz-c1']);
+    assert.equal(sel.chosen[0]!.weight, 1, 'promotion restores the full method weight');
+    assert.equal(buildReport(corpus).awaitingVerification.length, 0);
+    assert.equal(buildReport(corpus).byTier['owner-verified'], 1);
+
+    // Verifying again is a no-op rather than a second commit.
+    const again = await verifyMaskRecord({
+      masksDir: dir, cardId: 'zz-c1', variantId: '1',
+      verifier: { login: WRITERS[0]!, id: 1 }, via: 'writer-direct',
+    });
+    assert.equal(again.unchanged, true);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+void test('verifyMaskRecord REFUSES a verifier without the capability', async () => {
+  const dir = scratch();
+  try {
+    await writeMaskRecord({
+      masksDir: dir, cardId: 'zz-c2', variantId: '1', png: maskPng(new Uint8Array(W * H).fill(255)),
+      width: W, height: H, prior: PRIOR, startedFrom: 'layout', author: STRANGER,
+    });
+    await assert.rejects(
+      verifyMaskRecord({
+        masksDir: dir, cardId: 'zz-c2', variantId: '1',
+        verifier: { login: STRANGER.login, id: STRANGER.id }, via: 'writer-direct',
+      }),
+      NotAWriter,
+      'a record that would be disbelieved on read must not be written at all',
+    );
+    // And nothing was written — the refusal is total, not partial.
+    const after = await readSidecarFile(dir, 'zz-c2', 1);
+    assert.equal(after?.verification, null);
+    assert.equal(after?.provenanceTier, 'contributor');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+void test('re-saving a verified mask clears the verification — new pixels are unverified', async () => {
+  const dir = scratch();
+  try {
+    const alpha = rasterizePriorAlpha(W, H, PRIOR);
+    for (let i = 0; i < 400; i++) alpha[i] = 255;
+    await writeMaskRecord({
+      masksDir: dir, cardId: 'zz-c3', variantId: '1', png: maskPng(alpha), width: W, height: H,
+      prior: PRIOR, startedFrom: 'layout', author: STRANGER,
+    });
+    await verifyMaskRecord({
+      masksDir: dir, cardId: 'zz-c3', variantId: '1',
+      verifier: { login: WRITERS[0]!, id: 1 }, via: 'writer-direct',
+    });
+    assert.equal((await readSidecarFile(dir, 'zz-c3', 1))?.provenanceTier, 'owner-verified');
+
+    // A second contribution over the same slot. The verification a writer gave
+    // the OLD pixels must not ride forward onto pixels he has never seen.
+    const repainted = Uint8Array.from(alpha);
+    for (let y = 40; y < 60; y++) for (let x = 5; x < 40; x++) repainted[y * W + x] = 255 - repainted[y * W + x]!;
+    const resaved = await writeMaskRecord({
+      masksDir: dir, cardId: 'zz-c3', variantId: '1', png: maskPng(repainted), width: W, height: H,
+      prior: PRIOR, startedFrom: 'mask', parentRef: { cardId: 'zz-c3', variantId: 1 }, author: STRANGER,
+    });
+    assert.equal(resaved.verification, null, 'a re-save is unverified whatever was verified before it');
+    assert.equal(resaved.provenanceTier, 'contributor');
+    assert.equal(exemplarWeightOf(resaved), 0);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+void test("a writer's own direct write is owner-verified by construction, with no verification block", async () => {
+  const dir = scratch();
+  try {
+    const s = await writeMaskRecord({
+      masksDir: dir, cardId: 'zz-c4', variantId: '1', png: maskPng(new Uint8Array(W * H).fill(255)),
+      width: W, height: H, prior: PRIOR, startedFrom: 'layout', author: OWNER,
+    });
+    assert.equal(s.provenanceTier, 'owner-verified');
+    assert.equal(s.verification, null, 'countersigning your own save would be a ritual, not a check');
+    assert.equal(exemplarWeightOf(s), 1);
+
+    // But the SAME PERSON going through the contribution pipeline is a
+    // proposal, and a proposal does not promote itself on the strength of who
+    // sent it — that is what keeps the pipeline testable by its owner.
+    const asSubmission = await writeMaskRecord({
+      masksDir: dir, cardId: 'zz-c5', variantId: '1', png: maskPng(new Uint8Array(W * H).fill(255)),
+      width: W, height: H, prior: PRIOR, startedFrom: 'layout',
+      author: { login: WRITERS[0]!, id: 1, via: 'contribution-pr' },
+    });
+    assert.equal(asSubmission.provenanceTier, 'contributor');
+    assert.equal(exemplarWeightOf(asSubmission), 0);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+void test('the v4 → v5 upgrade materialises the author and KEEPS THE LINEAGE', () => {
+  // Both halves of this were live bugs found by running the migration for real.
+  //
+  // 1. The historical inference is keyed on the VERSION, and an upgrade changes
+  //    the version. Renumbering without stamping an author would have rewritten
+  //    every mask in the repository as v5-with-no-author — `unattributed`,
+  //    weight 0 — and emptied the exemplar pool the whole project derives from.
+  // 2. The upgrade used to synthesize a fresh single-entry `lineage`, which was
+  //    harmless while it only ever met pre-v3 records (they have none) and
+  //    silently deleted the entire 4b frame-migration history the first time it
+  //    met a v4 one.
+  const raw = {
+    version: 4, cardId: 'base1-7', variantId: 27, width: 504, height: 704, channel: 'alpha',
+    derivation_method: 'hand', savedAt: '2026-08-08T06:24:36.484Z', frame: 'canonical',
+    prior: { source: 'layout', eraId: 'wotc', scope: 'window', rect: [0.1, 0.45, 0.8, 0.42], radius: 0.004, invert: false, feather: 0.008, resolverVersion: 5 },
+    lineage: [
+      { method: 'hand', savedAt: '2026-08-08T06:24:36.484Z', source: 'layout', generator: null },
+      {
+        method: 'hand', savedAt: '2026-08-08T06:24:36.484Z', source: 'layout', generator: null,
+        frameMigration: { from: 'tcgdex-high', to: 'canonical', runId: 'frame-canonical-2026-09-01' },
+        migratedAt: '2026-09-01T05:16:24.224Z',
+      },
+    ],
+  };
+  const up = upgradeSidecarRecord(raw, normalizeSidecar(raw)!);
+  assert.equal(up.version, SIDECAR_VERSION);
+  assert.deepEqual(up.author, HISTORICAL_AUTHOR);
+  assert.equal(up.provenanceTier, 'owner-verified', 'the whole committed corpus keeps its weight');
+  assert.deepEqual(up.lineage, raw.lineage, 'a schema upgrade may not delete history');
+
+  // A machine record is attributed to the GENERATOR, not to the owner. It is
+  // weight 0 either way; what matters is that a mask never displays a green
+  // "owner-verified" beside its own amber "AI · UNREVIEWED".
+  const ai = {
+    ...raw, derivation_method: 'ai', lineage: undefined,
+    prior: { ...raw.prior, source: 'ai', generator: { name: 'window-artgate', version: 1, modelId: null, runId: 'r', params: {}, exemplars: [], confidence: 0.4, generatedAt: '2026-08-07T00:00:00.000Z' } },
+  };
+  const upAi = upgradeSidecarRecord(ai, normalizeSidecar(ai)!);
+  assert.deepEqual(upAi.author, { login: 'window-artgate', id: null, via: 'generator' });
+  assert.equal(upAi.provenanceTier, 'unattributed');
+  // …and with no lineage of its own it still gets the synthesized fallback.
+  assert.equal((upAi.lineage as unknown[]).length, 1);
+
+  // An upgraded record is IDEMPOTENT: re-reading it gives the same tier, which
+  // is the property that makes the materialisation load-bearing rather than
+  // decorative.
+  assert.equal(normalizeSidecar(up)?.provenanceTier, 'owner-verified');
+  assert.equal(normalizeSidecar(upAi)?.provenanceTier, 'unattributed');
 });
 
 // ── 4. The write path stamps what the pixels support ───────────────────────
@@ -475,7 +777,7 @@ void test('report and training manifest describe the corpus honestly', async () 
       generatedAt: new Date().toISOString(),
     };
     const full = new Uint8Array(W * H).fill(255);
-    await writeMaskRecord({ masksDir: dir, cardId: 'base1-8', variantId: '32', png: maskPng(full), width: W, height: H, prior: PRIOR, startedFrom: 'layout', card: { setId: 'base1', seriesSlug: 'base', name: 'Machamp', number: '8' } });
+    await writeMaskRecord({ masksDir: dir, cardId: 'base1-8', variantId: '32', png: maskPng(full), width: W, height: H, prior: PRIOR, startedFrom: 'layout', author: OWNER, card: { setId: 'base1', seriesSlug: 'base', name: 'Machamp', number: '8' } });
     await writeMaskRecord({ masksDir: dir, cardId: 'base1-4', variantId: '15', png: maskPng(rasterizePriorAlpha(W, H, PRIOR)), width: W, height: H, prior: PRIOR, startedFrom: 'layout', machine: gen });
 
     const corpus = await readCorpus(dir);

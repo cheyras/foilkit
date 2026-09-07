@@ -59,7 +59,7 @@ import {
   maskPathsIn,
   findArchives,
   restoreArchive,
-  EXEMPLAR_WEIGHT,
+  exemplarWeightOf,
   type GeneratorIdentity,
 } from './provenance.ts';
 import { readCorpus, selectExemplars, toExemplarRefs, setIdOf } from './mask-corpus.ts';
@@ -489,10 +489,13 @@ async function run(): Promise<void> {
       // ANTI-COMPOUNDING: a refiner may not eat unreviewed machine output. Same
       // rule as selectExemplars, applied to the SOURCE rather than the corpus —
       // otherwise a straightener would nudge a boundary every pass forever.
-      if (EXEMPLAR_WEIGHT[existing.derivation_method] === 0) {
+      // #10: the same call now also excludes an UNVERIFIED CONTRIBUTION, for
+      // the same reason it is excluded from the exemplar pool — reworking one
+      // would launder it into a mask whose ancestry nobody signed off on.
+      if (exemplarWeightOf(existing) === 0) {
         console.log(
-          `skip ${t.cardId}/${t.variantId}: source mask is ${existing.derivation_method} (exemplar weight 0). ` +
-            'A refiner only reworks masks a human painted.',
+          `skip ${t.cardId}/${t.variantId}: source mask is ${existing.derivation_method} at tier ` +
+            `${existing.provenanceTier} (exemplar weight 0). A refiner only reworks verified human masks.`,
         );
         continue;
       }
@@ -508,7 +511,7 @@ async function run(): Promise<void> {
           variantId: t.variantId,
           savedAt: existing.savedAt ?? null,
           method: existing.derivation_method,
-          weight: EXEMPLAR_WEIGHT[existing.derivation_method],
+          weight: exemplarWeightOf(existing),
           sha256: sha256(srcPng),
         },
         alpha: resampleAlpha(alphaOf(srcImg), srcImg.width, srcImg.height, MASK_W, MASK_H),

@@ -23,6 +23,16 @@
 // actually produces. A caller can only *claim* a machine label by supplying a
 // full generator identity (name/version/runId/exemplars) — see writeMaskRecord.
 //
+// v5 (#10, 2026-09-06) adds two RECORDED fields — `author` and `verification` —
+// and one DERIVED one, `provenanceTier`. They exist because EXEMPLAR_WEIGHT was
+// calibrated when the only hand in the corpus was the owner's, so `hand` meant
+// both "a human painted this" and "this is correct". With outside contributors
+// those are two different claims, and only the first one is visible in the
+// pixels. So exemplar weight now follows VERIFICATION rather than authorship:
+// a contributor's mask is recorded honestly, merged if it is good, and carries
+// weight 0 for rule derivation until a writer says otherwise. See
+// docs/PROVENANCE.md § "Provenance tiers".
+//
 // v4 (4b, 2026-09-01) adds one field, `frame`, and it obeys the same rule as
 // the label: DERIVED, NEVER CLAIMED. Masks now live in CANONICAL SPACE — the
 // physical card, 63 x 88 mm at 8 px/mm = 504 x 704 — instead of the 490 x 674
@@ -54,8 +64,16 @@ import {
 import type { RgbaImage } from './png.ts';
 import { headerDims, HEADER_BYTES } from './image-dims.ts';
 import { assertAuthorable, resolveFrame, UNKNOWN_FRAME_ID } from './frames.ts';
+import { isWriter } from '@foilkit/core';
 
-export const SIDECAR_VERSION = 4;
+export const SIDECAR_VERSION = 5;
+
+/**
+ * The first sidecar generation that is expected to CARRY provenance identity.
+ *
+ * Below it, absence is historical fact rather than a gap — see `deriveTier`.
+ */
+export const FIRST_ATTRIBUTED_VERSION = 5;
 
 /** alpha >= 128 counts as foil (same threshold as diffMask). */
 const FOIL_THRESHOLD = 128;
@@ -140,8 +158,339 @@ export const EXEMPLAR_WEIGHT: Record<DerivationMethod, number> = {
   'ai-corrected': 0.6,
 };
 
-export function isExemplarEligible(method: DerivationMethod): boolean {
-  return EXEMPLAR_WEIGHT[method] > 0;
+// ── Provenance tiers (#10): weight follows VERIFICATION, not authorship ────
+//
+// EXEMPLAR_WEIGHT above answers "what kind of hand made these pixels". That was
+// the whole question while the only hand was the owner's, because `hand` then
+// meant both "a human painted this" and "this is how the card truly is". The
+// contribution pipeline separates those: a stranger's mask is unmistakably
+// human-painted and says nothing at all about whether it is right.
+//
+// So there is a second axis, and it is NOT "who": it is "has somebody with the
+// writer capability looked". A merged contribution is ACCEPTED — it is good
+// enough to live in the corpus, be served, be rendered, be built on — and that
+// is a lower bar than EXEMPLAR-GRADE, which means "a generator may derive the
+// rule for a whole era from this". Merge is the first; verification is the
+// second; conflating them is how one unreviewed mask silently rewrites a
+// region policy.
+
+export type ProvenanceTier =
+  /** A writer-capability holder authored these pixels, or has verified them. */
+  | 'owner-verified'
+  /** A named human who is not a writer authored them. Nobody has verified. */
+  | 'contributor'
+  /** No human attribution: machine output, or a v5+ record with no `author`. */
+  | 'unattributed';
+
+export const PROVENANCE_TIERS: readonly ProvenanceTier[] = ['owner-verified', 'contributor', 'unattributed'];
+
+/** Which tiers count as verified for weight purposes. Exactly one does. */
+export const TIER_IS_VERIFIED: Record<ProvenanceTier, boolean> = {
+  'owner-verified': true,
+  contributor: false,
+  unattributed: false,
+};
+
+/**
+ * THE WEIGHT TABLE, keyed by (derivation_method × verification tier).
+ *
+ * The `owner-verified` row IS the historical `EXEMPLAR_WEIGHT` table, unchanged
+ * — every number calibrated before contributors existed still describes exactly
+ * the situation it was calibrated for, which is the owner's own work.
+ *
+ * The other two rows are ZERO ACROSS THE BOARD, and that is a choice rather
+ * than an oversight. The spec allowed "low or zero"; here is why low is worse:
+ *
+ *   * `region-learn.learnPolicy` takes a WEIGHTED MEAN of per-class foil share
+ *     over a pool that is single-digit today, then crosses a hard threshold at
+ *     `voteThreshold` 0.5. With Σweight ≈ 2–3, even w = 0.1 moves a class share
+ *     by several points — enough to flip `carriesFoil` at the margin. "Low" is
+ *     not "harmless"; it is "changes the answer, quietly, with nobody having
+ *     looked".
+ *   * Any weight above zero ADMITS the mask to the pool at all, because
+ *     `isExemplarEligible` is a `> 0` gate. Admitted means: it becomes a
+ *     `PolicyExemplar`, it is cited by `ExemplarRef` on every mask generated
+ *     from that pool, it counts toward `exemplarsInGroup`, and it lowers
+ *     `leverage = printings ÷ (exemplars + 1)` — the number that decides where
+ *     the maintainer spends the next hour. A contribution nobody has reviewed
+ *     must not be able to make a rule group look SERVED.
+ *   * Zero is reversible in one owner action, and the full weight comes back
+ *     (`writeVerification`). A nonzero default is not reversible in any useful
+ *     sense: by the time anyone notices, it has already moved every derived
+ *     number downstream.
+ *
+ * 3a measured that most current evidence is `ai-corrected` at 0.6 rather than
+ * `hand` at 1 — the pool is already thin and already discounted. Thin is a
+ * reason to be MORE careful about what joins it, not less.
+ */
+export const EXEMPLAR_WEIGHT_BY_TIER: Record<ProvenanceTier, Record<DerivationMethod, number>> = {
+  'owner-verified': { ...EXEMPLAR_WEIGHT },
+  contributor: { 'layout-flatten': 0, hand: 0, 'hand-refined': 0, ai: 0, 'ai-corrected': 0 },
+  unattributed: { 'layout-flatten': 0, hand: 0, 'hand-refined': 0, ai: 0, 'ai-corrected': 0 },
+};
+
+/**
+ * The weight this (method, tier) pair carries as training input.
+ *
+ * `tier` defaults to `owner-verified`, which makes the one-argument call read
+ * as THE CEILING for a method — "what is a `hand` mask worth at best" — which
+ * is the pre-#10 question and still has the pre-#10 answer. That default is
+ * safe here because the caller is naming a method in the abstract. It would NOT
+ * be safe when the caller holds a record; see `exemplarWeightOf`.
+ */
+export function exemplarWeightFor(method: DerivationMethod, tier: ProvenanceTier = 'owner-verified'): number {
+  return EXEMPLAR_WEIGHT_BY_TIER[tier][method];
+}
+
+export function isExemplarEligible(method: DerivationMethod, tier: ProvenanceTier = 'owner-verified'): boolean {
+  return exemplarWeightFor(method, tier) > 0;
+}
+
+/**
+ * The weight a SPECIFIC RECORD carries. THE function selection uses.
+ *
+ * FAILS CLOSED, and does not reuse the default above. A record whose
+ * `provenanceTier` is missing or unrecognised is worth 0 — not "worth whatever
+ * the method would be worth at best", which is what falling through to
+ * `exemplarWeightFor`'s default would silently do. That distinction is the
+ * whole subtask in one line: the dangerous failure is a record of unknown
+ * standing being treated as ground truth, and it is dangerous in exactly the
+ * place a helpful default is most tempting. Every real read path fills the
+ * field (`normalizeSidecar` derives it on every load), so an absent one means
+ * the value did not come from a read path.
+ */
+export function exemplarWeightOf(s: Pick<MaskSidecar, 'derivation_method' | 'provenanceTier'>): number {
+  const row = EXEMPLAR_WEIGHT_BY_TIER[s.provenanceTier] as Record<DerivationMethod, number> | undefined;
+  return row?.[s.derivation_method] ?? 0;
+}
+
+// ── Authorship and verification, as RECORDS ────────────────────────────────
+//
+// Two fields with opposite trust models, and the split is the whole design:
+//
+//   `author`        RECORDED. The server writes it from the identity it already
+//                   verified — a signed session cookie on the direct-write
+//                   path, the same on the contribution path, where the App
+//                   composes the commit and the contributor never touches the
+//                   bytes. A client cannot supply it; `functions/_lib/validate.ts`
+//                   REFUSES a submission that carries one at all.
+//
+//   `verification`  DERIVED-OR-OWNER-ASSERTED, and only honoured when the
+//                   system can check it. `deriveTier` believes a verification
+//                   block only when `verifiedBy` holds the writer capability
+//                   (`@foilkit/core`'s WRITERS — the same list the write route
+//                   enforces). A stranger who hand-commits
+//                   `verification: { verifiedBy: 'themselves' }` in a fork PR
+//                   gets `contributor` back and weight 0.
+//
+// THE RESIDUAL HOLE, stated rather than papered over: a hand-crafted pull
+// request could carry `verifiedBy: 'cheyras'` over pixels no writer ever saw.
+// Nothing in the file can disprove that, because the repository has no
+// signature over sidecar bytes. What closes it is that such a PR does not come
+// from the App — it is a fork PR a human reads before merging, and the lie is
+// sitting in the diff in plain text. The App path cannot produce one at all.
+
+/** How the server learned who authored these pixels. */
+export type AuthorChannel =
+  /** The writer-gated direct write (`functions/mask.ts` PUT). */
+  | 'writer-direct'
+  /** The contribution pipeline (`functions/contribute.ts`), App-composed. */
+  | 'contribution-pr'
+  /** A generator run. No human author; `login` is the generator's name. */
+  | 'generator'
+  /** A local CLI write by whoever holds the checkout. */
+  | 'local-cli';
+
+export interface AuthorIdentity {
+  /** GitHub login, as the verified session reported it. */
+  login: string;
+  /** GitHub's numeric user id — stable across a rename. Null for a generator. */
+  id: number | null;
+  /** WHICH ROUTE recorded this. Never taken from a request body. */
+  via: AuthorChannel;
+}
+
+/**
+ * A writer's "I have looked at this, and it is exemplar-grade".
+ *
+ * Written ONLY by `writeVerification`, which the writer-gated routes call after
+ * they have re-derived the login from a signed cookie. `note` is the owner's
+ * own words about why.
+ */
+export interface VerificationRecord {
+  /** The verifier's GitHub login. Honoured only if it holds the capability. */
+  verifiedBy: string;
+  verifiedById: number | null;
+  verifiedAt: string;
+  /** The route that produced it. Only writer-gated routes may write one. */
+  via: 'writer-direct' | 'local-cli';
+  note: string | null;
+}
+
+/**
+ * THE TIER, decided rather than read.
+ *
+ * Recomputed on every `normalizeSidecar`, exactly like `authorship`,
+ * `reviewStatus` and `frame`, so a hand-edited `provenanceTier` field is
+ * ignored. The ladder, in order:
+ *
+ *   1. A verification block whose `verifiedBy` holds the writer capability, on
+ *      a route that may write one ⇒ `owner-verified`. This is the PROMOTION.
+ *   2. No verification, but `author` is a writer who wrote through a
+ *      writer-gated route ⇒ `owner-verified` BY CONSTRUCTION. The direct-write
+ *      path runs as the capability holder; asking him to then verify his own
+ *      save would be a ritual, not a check.
+ *   3. `author` present, anyone else ⇒ `contributor`. A merged contribution is
+ *      accepted, not exemplar-grade.
+ *   4. No `author` at all, on a record older than v5 ⇒ `owner-verified`. That
+ *      is HISTORICAL TRUTH and not a guess: every mask in this corpus predates
+ *      the contribution pipeline, and the sole-author fact is recorded in
+ *      RELICENSE.md. v1–v4 compatibility is permanent, and it has to include
+ *      the tier or the whole existing corpus would silently drop to weight 0.
+ *   5. No `author`, on a v5-or-later record ⇒ `unattributed`, which is weight
+ *      0. Conservative on purpose and in exactly the direction the historical
+ *      rule is generous: from v5 on, every write path stamps an author, so an
+ *      absent one means the record was assembled by something that is not one
+ *      of them, and the safe reading of "I do not know who made this" is not
+ *      "the owner did".
+ */
+/**
+ * The author every pre-v5 record has, stated once.
+ *
+ * Not a default and not a guess: RELICENSE.md records that every byte of this
+ * corpus was authored by one person, and every one of those masks predates the
+ * contribution pipeline by construction — the pipeline is what created the
+ * possibility of a second author. `provenance.test.ts` asserts this login still
+ * holds the writer capability, so the constant and the list cannot drift into
+ * disagreement in silence.
+ */
+export const HISTORICAL_AUTHOR: AuthorIdentity = { login: 'cheyras', id: null, via: 'local-cli' };
+
+/**
+ * WHO a record is attributable to, recorded value first and history second.
+ *
+ * A pre-v5 record names no author, and the honest reading of that absence
+ * depends on what else the record says:
+ *
+ *   * IT DESCENDS FROM A GENERATOR and no human has painted over it
+ *     (`derivation_method: 'ai'`) — then the author is the generator, and the
+ *     tier is `unattributed`. Reading those as the owner's work would put a
+ *     green "owner-verified" beside the amber "AI · UNREVIEWED" badge on the
+ *     same mask, which is a contradiction the corpus should never display.
+ *     They are weight 0 either way, so nothing downstream moves; what moves is
+ *     whether the record TELLS THE TRUTH about itself.
+ *   * ANYTHING ELSE — a human painted it, and there was exactly one human.
+ *     RELICENSE.md records that; the contribution pipeline is what created the
+ *     possibility of a second author, and every one of these predates it.
+ *
+ * `ai-corrected` and `layout-flatten` fall in the second branch deliberately:
+ * a correction is the owner's own brushwork over a proposal, and a bake is a
+ * rect he chose. Both were his acts even though a machine made the pixels
+ * underneath.
+ */
+export function effectiveAuthor(
+  s: Pick<MaskSidecar, 'version' | 'author' | 'derivation_method'> & { prior?: { generator?: { name: string } | null } },
+): AuthorIdentity | null {
+  if (s.author) return s.author;
+  if (s.version >= FIRST_ATTRIBUTED_VERSION) return null;
+  const gen = s.prior?.generator;
+  if (gen && s.derivation_method === 'ai') return { login: gen.name, id: null, via: 'generator' };
+  return HISTORICAL_AUTHOR;
+}
+
+/**
+ * The author to stamp when a record's VERSION is about to be bumped to v5.
+ *
+ * This exists because the historical inference is keyed on the version, and a
+ * schema upgrade changes the version. Without it, the first `corpus.ts migrate`
+ * (or frame migration) after #10 would rewrite the entire committed corpus as
+ * v5-with-no-author — which reads back as `unattributed`, weight 0, and would
+ * empty the exemplar pool that every rule in this project is derived from. The
+ * upgrade has to MATERIALISE what the old version implied, not merely renumber
+ * the file and let the implication expire.
+ *
+ * Same function as `effectiveAuthor`, named separately because the two uses
+ * differ in kind and one of them writes to disk: reading an old record infers,
+ * upgrading it RECORDS the inference. The name is what tells a reader which
+ * just happened.
+ */
+export const authorForUpgrade = effectiveAuthor;
+
+/**
+ * The SCHEMA UPGRADE, as a pure function over the raw JSON.
+ *
+ * Extracted out of `corpus.ts migrate` when the v4→v5 pass found the bug this
+ * function's last clause exists to prevent: the CLI synthesized a fresh
+ * single-entry `lineage` unconditionally, which was harmless for as long as the
+ * command only ever met pre-v3 records (they have no lineage), and which
+ * silently deleted the entire 4b frame-migration history the first time it met
+ * a v4 one. A migration that loses history is worse than no migration, and a
+ * migration that lives only inside a CLI is a migration nothing can test.
+ *
+ * WHAT IT WRITES, and why each one:
+ *
+ *   * every DERIVED field from `norm` — the label, the rollups, the frame, the
+ *     tier — because the point of an upgrade is to record what the current
+ *     rules say, not to renumber a file and leave stale claims in it;
+ *   * the AUTHOR, materialised via `effectiveAuthor`, because the historical
+ *     inference is keyed on the version and this is the version bump;
+ *   * the existing `lineage`, untouched, whenever there is one.
+ *
+ * Everything else in `raw` is spread through unchanged. It never touches the
+ * mask PNG and never re-labels: from v3 on the label is computed from pixels at
+ * write time, and a pre-v3 `derivation_method: 'hand'` was a placeholder that
+ * happens to be true (see the module header).
+ */
+export function upgradeSidecarRecord(raw: Record<string, unknown>, norm: MaskSidecar): Record<string, unknown> {
+  const author = effectiveAuthor(norm);
+  return {
+    ...raw,
+    version: SIDECAR_VERSION,
+    artworkKey: norm.artworkKey,
+    // Written from the INFERRED value, never from whatever the file claimed.
+    frame: norm.frame,
+    derivation_method: norm.derivation_method,
+    authorship: norm.authorship,
+    reviewStatus: norm.reviewStatus,
+    ...(author ? { author } : {}),
+    ...(norm.verification ? { verification: norm.verification } : {}),
+    provenanceTier: norm.provenanceTier,
+    artworkUrl: norm.artworkUrl,
+    lineage: Array.isArray(raw.lineage)
+      ? raw.lineage
+      : [
+          {
+            method: norm.derivation_method,
+            savedAt: norm.savedAt ?? null,
+            source: norm.prior?.source ?? 'layout',
+            generator: null,
+          },
+        ],
+  };
+}
+
+export function deriveTier(
+  version: number,
+  author: AuthorIdentity | null | undefined,
+  verification: VerificationRecord | null | undefined,
+): ProvenanceTier {
+  if (
+    verification &&
+    (verification.via === 'writer-direct' || verification.via === 'local-cli') &&
+    isWriter(verification.verifiedBy)
+  ) {
+    return 'owner-verified';
+  }
+  if (author && typeof author.login === 'string') {
+    // A generator is not a person. `login` there is a generator NAME, and
+    // reading it as a contributor login would put machine output one owner
+    // click away from full weight. It is `unattributed` — which is also what
+    // the method already says (`ai` is weight 0 in every tier).
+    if (author.via === 'generator') return 'unattributed';
+    const gated = author.via === 'writer-direct' || author.via === 'local-cli';
+    return gated && isWriter(author.login) ? 'owner-verified' : 'contributor';
+  }
+  return version < FIRST_ATTRIBUTED_VERSION ? 'owner-verified' : 'unattributed';
 }
 
 // ── Generator identity (the "what made me" half of the chain) ───────────────
@@ -154,6 +503,12 @@ export interface ExemplarRef {
   savedAt: string | null;
   /** The exemplar's method at selection time (always human-authored — see EXEMPLAR_WEIGHT). */
   method: DerivationMethod;
+  /**
+   * The exemplar's provenance tier at selection time. Always `owner-verified`
+   * today — selection admits nothing else — but recorded rather than assumed,
+   * so a citation stays readable if the table ever admits a second tier.
+   */
+  tier?: ProvenanceTier;
   /** Weight this exemplar carried in the run. */
   weight: number;
 }
@@ -333,6 +688,25 @@ export interface MaskSidecar {
   /** Rollup of derivation_method (recomputed on read; a stale file cannot lie). */
   authorship: Authorship;
   reviewStatus: ReviewStatus;
+  /**
+   * v5: WHO put these pixels here, recorded by the server from an identity it
+   * had already verified. Absent on v1–v4, where absence is historical fact.
+   * A client may never supply it — see `functions/_lib/validate.ts`.
+   */
+  author?: AuthorIdentity | null;
+  /**
+   * v5: a writer's explicit "this is exemplar-grade". Absent until someone
+   * with the capability says so. Honoured only when `verifiedBy` still holds
+   * the capability at read time — see `deriveTier`.
+   */
+  verification?: VerificationRecord | null;
+  /**
+   * v5: DERIVED from (`version`, `author`, `verification`) on every read, the
+   * same discipline as `authorship`/`reviewStatus`/`frame`. It is what the
+   * exemplar weight table is keyed on, so a file that could name its own tier
+   * would be a file that could name its own training weight.
+   */
+  provenanceTier: ProvenanceTier;
   savedAt: string;
   /** URL of the scan the mask was drawn on — what a generator must consume. */
   artworkUrl: string | null;
@@ -405,9 +779,16 @@ export interface PixelDims {
  * one anyway, because the field is INFERRED from width/height rather than read
  * — see inferFrame. v1/v2/v3 compatibility is permanent.
  *
- * Derived fields (authorship / reviewStatus / frame) are ALWAYS recomputed
- * here, so a hand-edited or stale sidecar can never claim a status, or a
- * framing, that its own contents deny.
+ * Derived fields (authorship / reviewStatus / frame / provenanceTier) are
+ * ALWAYS recomputed here, so a hand-edited or stale sidecar can never claim a
+ * status, a framing, or a TRAINING WEIGHT that its own contents deny.
+ *
+ * v4 → v5 (#10) adds `author` and `verification`. A v1–v4 record has neither
+ * and normalizes to `owner-verified` anyway, because that is the historical
+ * truth rather than a default: the whole committed corpus predates the
+ * contribution pipeline and RELICENSE.md records the sole-author fact. From v5
+ * on the inference flips to conservative — a record with no `author` is
+ * `unattributed`, i.e. weight 0. See `deriveTier`.
  *
  * `pixels` CLOSES THE LAST HOLE IN THAT RULE. Without it, `frame` is inferred
  * from `width`/`height` — which are JSON, i.e. numbers a caller wrote. The
@@ -445,19 +826,79 @@ export function normalizeSidecar(raw: unknown, pixels?: PixelDims | null): MaskS
   const width = pixels?.width ?? s.width;
   const height = pixels?.height ?? s.height;
   const method = asMethod(s.derivation_method) ?? 'hand';
+  const version = typeof s.version === 'number' ? s.version : 1;
+  const author = asAuthor(s.author);
+  const verification = asVerification(s.verification);
   const out: MaskSidecar = {
     ...(s as unknown as MaskSidecar),
-    version: typeof s.version === 'number' ? s.version : 1,
+    version,
     width,
     height,
     derivation_method: method,
     authorship: AUTHORSHIP_BY_METHOD[method],
     reviewStatus: REVIEW_BY_METHOD[method],
+    // PARSED, not spread: `...s` would carry a hand-edited `author` of any
+    // shape straight through, and `deriveTier` would then be reasoning about a
+    // value nothing had checked. A block that is not the right shape is not a
+    // half-believed block — it is absent, and an absent author on a v5 record
+    // is `unattributed`, which is weight 0.
+    ...(author ? { author } : { author: null }),
+    ...(verification ? { verification } : { verification: null }),
+    // The RECORDED author stays null above when the file names none — an
+    // inference must not read back as a record — but the TIER is derived from
+    // the effective one, because the tier is a judgement and history is
+    // evidence for it. `effectiveAuthor` is also what a version bump writes
+    // down, so reading and upgrading cannot disagree.
+    provenanceTier: deriveTier(
+      version,
+      effectiveAuthor({
+        version,
+        author,
+        derivation_method: method,
+        prior: s.prior as { generator?: { name: string } | null } | undefined,
+      }),
+      verification,
+    ),
     frame: inferFrame(width, height),
     artworkKey: typeof s.artworkKey === 'string' ? s.artworkKey : s.cardId,
     artworkUrl: typeof s.artworkUrl === 'string' ? s.artworkUrl : null,
   };
   return out;
+}
+
+const AUTHOR_CHANNELS: readonly AuthorChannel[] = ['writer-direct', 'contribution-pr', 'generator', 'local-cli'];
+
+/**
+ * An `author` block, or null.
+ *
+ * CONSERVATIVE BY CONSTRUCTION, in the direction that costs weight rather than
+ * grants it: an unknown `via`, a missing login, anything that is not the shape
+ * this module writes, comes back null. On a v5 record that is `unattributed`
+ * and weight 0; there is no shape a hand-edit can reach that is worth more than
+ * the shape the server writes.
+ */
+function asAuthor(raw: unknown): AuthorIdentity | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const a = raw as Record<string, unknown>;
+  if (typeof a.login !== 'string' || a.login.length === 0) return null;
+  if (typeof a.via !== 'string' || !(AUTHOR_CHANNELS as readonly string[]).includes(a.via)) return null;
+  return { login: a.login, id: typeof a.id === 'number' ? a.id : null, via: a.via as AuthorChannel };
+}
+
+/** A `verification` block, or null. Same conservatism — see `asAuthor`. */
+function asVerification(raw: unknown): VerificationRecord | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const v = raw as Record<string, unknown>;
+  if (typeof v.verifiedBy !== 'string' || v.verifiedBy.length === 0) return null;
+  if (v.via !== 'writer-direct' && v.via !== 'local-cli') return null;
+  if (typeof v.verifiedAt !== 'string') return null;
+  return {
+    verifiedBy: v.verifiedBy,
+    verifiedById: typeof v.verifiedById === 'number' ? v.verifiedById : null,
+    verifiedAt: v.verifiedAt,
+    via: v.via,
+    note: typeof v.note === 'string' ? v.note : null,
+  };
 }
 
 /**
@@ -1041,6 +1482,13 @@ export async function migrateMaskFrame(input: FrameMigrationInput): Promise<Fram
     derivation_method: existing.derivation_method,
     authorship: AUTHORSHIP_BY_METHOD[existing.derivation_method],
     reviewStatus: REVIEW_BY_METHOD[existing.derivation_method],
+    // Carried forward for the same reason `derivation_method` is: nobody
+    // repainted anything and nobody re-reviewed anything, so neither the author
+    // nor the verification changed. `authorForUpgrade` is what stops the
+    // VERSION STAMP from quietly demoting the record — see its doc comment.
+    author: authorForUpgrade(existing),
+    verification: existing.verification ?? null,
+    provenanceTier: deriveTier(SIDECAR_VERSION, authorForUpgrade(existing), existing.verification),
     savedAt: existing.savedAt,
     diff: stats,
     ...(correction ? { correction } : {}),
@@ -1093,6 +1541,20 @@ export interface WriteMaskInput {
    * a full identity. No identity ⇒ the method is derived from pixels.
    */
   machine?: GeneratorIdentity | null;
+  /**
+   * WHO IS SAVING, from an identity the caller has ALREADY VERIFIED.
+   *
+   * Same trust model as `machine` above and for the same reason: the route
+   * knows the answer (a signed session cookie), the client does not get to
+   * assert one, and the field is the only way to say it. Omitting it is not a
+   * shortcut — from v5 on it produces an `unattributed` record at weight 0, and
+   * `functions/_lib/validate.ts` refuses any submission that tries to supply
+   * one itself.
+   *
+   * The generator paths pass `{ login: <generator name>, id: null, via:
+   * 'generator' }`, which reads back as `unattributed` rather than as a person.
+   */
+  author?: AuthorIdentity | null;
   /**
    * Machine writes only: explicit consent to land on top of a mask that is
    * already there — including a HUMAN one. Without it, a generator write over
@@ -1175,6 +1637,11 @@ export async function writeMaskRecord(input: WriteMaskInput): Promise<MaskSideca
   const painted = countPaintedOver(saved, startingAlpha, width, height, seamTolerant) > 0;
 
   const machine = input.machine ?? null;
+  // A generator identity IS the author when there is no human one — otherwise a
+  // machine write would land as `unattributed`-because-nobody-said, which reads
+  // the same as a damaged record. Say it out loud instead.
+  const author: AuthorIdentity | null =
+    input.author ?? (machine ? { login: machine.name, id: null, via: 'generator' } : null);
   const method: DerivationMethod = machine
     ? 'ai'
     : deriveMethod(input.startedFrom, parentSidecar?.derivation_method ?? (parentPngBuf ? 'hand' : null), painted);
@@ -1339,6 +1806,15 @@ export async function writeMaskRecord(input: WriteMaskInput): Promise<MaskSideca
     derivation_method: method,
     authorship: AUTHORSHIP_BY_METHOD[method],
     reviewStatus: REVIEW_BY_METHOD[method],
+    author,
+    // A NEW SAVE IS NOT VERIFIED, whoever made it. When the author holds the
+    // writer capability `deriveTier` returns `owner-verified` from the author
+    // alone, so a writer's save needs no block; when they do not, a block
+    // carried forward from the mask that USED to be here would be a
+    // verification of pixels the verifier never saw. The only thing that
+    // writes one is `writeVerification`, after somebody looked.
+    verification: null,
+    provenanceTier: deriveTier(SIDECAR_VERSION, author, null),
     savedAt,
     artworkUrl: input.artworkUrl ?? existing?.artworkUrl ?? null,
     ...(input.card ? { card: input.card } : existing?.card ? { card: existing.card } : {}),
@@ -1363,4 +1839,103 @@ export async function writeMaskRecord(input: WriteMaskInput): Promise<MaskSideca
   }
   await writeFile(paths.json, JSON.stringify(sidecar, null, 2) + '\n', 'utf8');
   return sidecar;
+}
+
+// ── Promotion: the only thing that grants exemplar weight ──────────────────
+//
+// A fourth kind of write, and the smallest one in the file: it touches the
+// `.json` and nothing else, because verification is a statement ABOUT pixels
+// and not a change TO them. The mask, the prior, the diff and any correction
+// artifacts are byte-identical afterwards — `sha256` over `<variantId>.png` is
+// the same before and after, which is what makes "verify" reviewable as a
+// one-line diff rather than as a re-save.
+//
+// WHY IT IS A FUNCTION HERE RATHER THAN A FIELD SOMEBODY EDITS. The whole
+// argument of this module is that a label nobody measured is worse than no
+// label. `verification` is the one field in the sidecar that is genuinely an
+// ASSERTION rather than a measurement — no arrangement of pixels can prove a
+// human looked at them — so the compensating discipline is that it can only be
+// written by a route that has already re-derived the verifier's identity from a
+// signed session cookie, and that `deriveTier` then re-checks the login against
+// the writer capability on EVERY read. A hand-edited block naming somebody
+// without the capability is not half-believed; it is ignored.
+
+export interface VerifyMaskInput {
+  masksDir: string;
+  cardId: string;
+  variantId: string | number;
+  /** The verifier, from an identity the CALLER already verified. */
+  verifier: { login: string; id: number | null };
+  /** The route asserting it. Both are writer-gated; nothing else may pass. */
+  via: VerificationRecord['via'];
+  /** The verifier's own words about why. Optional, and kept verbatim. */
+  note?: string | null;
+  /** Clock injection for tests. */
+  now?: () => Date;
+}
+
+export class NotAWriter extends Error {}
+
+export interface VerifyMaskResult {
+  sidecar: MaskSidecar;
+  /** True when the record already sat at `owner-verified` and nothing changed. */
+  unchanged: boolean;
+  /** The tier before and after, so a caller can report the promotion honestly. */
+  from: ProvenanceTier;
+  to: ProvenanceTier;
+}
+
+/**
+ * Record a writer's verification of an existing mask, promoting its tier.
+ *
+ * REFUSES rather than writes an ignorable block when the verifier does not hold
+ * the writer capability. A record that would be disbelieved on the next read is
+ * not a record — it is a file that makes a reviewer think something happened.
+ */
+export async function verifyMaskRecord(input: VerifyMaskInput): Promise<VerifyMaskResult> {
+  const { masksDir, cardId, verifier, via } = input;
+  const variantId = String(input.variantId);
+  if (!isWriter(verifier.login)) {
+    throw new NotAWriter(
+      `${verifier.login} does not hold the writer capability, so a verification signed by them would be ignored ` +
+        'on every read (see deriveTier). Refusing to write one.',
+    );
+  }
+  const paths = maskPathsIn(masksDir, cardId, variantId);
+  const existing = await readSidecarFile(masksDir, cardId, variantId);
+  if (!existing) throw new Error(`${cardId}/${variantId} has no readable sidecar`);
+
+  const from = existing.provenanceTier;
+  if (from === 'owner-verified' && existing.verification) {
+    return { sidecar: existing, unchanged: true, from, to: from };
+  }
+
+  const verification: VerificationRecord = {
+    verifiedBy: verifier.login,
+    verifiedById: verifier.id,
+    verifiedAt: (input.now?.() ?? new Date()).toISOString(),
+    via,
+    note: input.note ?? null,
+  };
+  // The raw file is re-read and SPREAD OVER, rather than the normalized value
+  // being re-serialized: normalization fills derived fields and drops nothing,
+  // but writing the normalized shape back would rewrite every key in the file
+  // and turn a one-line promotion into a whole-file diff.
+  const rawText = await readFile(paths.json, 'utf8');
+  const raw = JSON.parse(rawText) as Record<string, unknown>;
+  const author = authorForUpgrade(existing);
+  const upgraded = {
+    ...raw,
+    version: SIDECAR_VERSION,
+    ...(author ? { author } : {}),
+    verification,
+    provenanceTier: deriveTier(SIDECAR_VERSION, author, verification),
+  };
+  await writeFile(paths.json, JSON.stringify(upgraded, null, 2) + '\n', 'utf8');
+
+  const back = await readSidecarFile(masksDir, cardId, variantId);
+  if (!back || back.provenanceTier !== 'owner-verified') {
+    throw new Error('invariant violated: a verification was written that does not read back as owner-verified');
+  }
+  return { sidecar: back, unchanged: false, from, to: back.provenanceTier };
 }

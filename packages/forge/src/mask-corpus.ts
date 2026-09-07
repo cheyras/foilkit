@@ -24,7 +24,9 @@ import {
   AUTHORSHIP_BY_METHOD,
   DERIVATION_METHODS,
   EXEMPLAR_WEIGHT,
-  isExemplarEligible,
+  PROVENANCE_TIERS,
+  TIER_IS_VERIFIED,
+  exemplarWeightOf,
   maskPathsIn,
   readSidecarFile,
   REVIEW_BY_METHOD,
@@ -32,6 +34,7 @@ import {
   type DerivationMethod,
   type ExemplarRef,
   type MaskSidecarV3,
+  type ProvenanceTier,
   type ReviewStatus,
 } from './provenance.ts';
 
@@ -128,48 +131,96 @@ export interface ExemplarQuery {
 export interface ExemplarSelection {
   chosen: (CorpusEntry & { weight: number })[];
   /** Every mask considered and thrown out, with the reason — auditable. */
-  rejected: { cardId: string; variantId: number; method: DerivationMethod; reason: string }[];
+  rejected: {
+    cardId: string;
+    variantId: number;
+    method: DerivationMethod;
+    tier: ProvenanceTier;
+    /**
+     * WHICH RULE threw it out, as a value rather than as prose. Callers need to
+     * tell them apart and were otherwise going to grep the reason string:
+     *
+     *   `method` — 0 in every tier (`ai`, `layout-flatten`). Unpromotable.
+     *   `tier`   — the method would carry weight; only verification is missing.
+     *              THIS is the pool's pending capacity, one review per record.
+     *   `filter` — a fine mask for a different era or scope. Not about merit.
+     */
+    kind: 'method' | 'tier' | 'filter';
+    reason: string;
+  }[];
 }
 
 /**
  * Pick the masks a generator may learn from.
  *
- * THE SAFEGUARD: `EXEMPLAR_WEIGHT[method] > 0` is the only gate that admits a
- * mask, and it is 0 for `ai` (unreviewed machine output) and `layout-flatten`
- * (a rect the machine already knows). So a generator can never train on its own
- * unreviewed output — not by configuration, not by accident, not at n=1000.
- * `ai-corrected` is admitted at 0.6 because a human painted those pixels, but
- * anchored by what the AI proposed; pure human masks outrank it.
+ * THE SAFEGUARD: `exemplarWeightOf(sidecar) > 0` is the only gate that admits a
+ * mask, and it is now read off a table keyed by (method × TIER):
+ *
+ *   * `ai` (unreviewed machine output) and `layout-flatten` (a rect the machine
+ *     already knows) are 0 in every tier. So a generator can never train on its
+ *     own unreviewed output — not by configuration, not by accident, not at
+ *     n=1000. That is the original anti-feedback-collapse rule, untouched.
+ *   * Everything outside the `owner-verified` tier is 0 as well. A merged
+ *     contribution is ACCEPTED — it is in the corpus, it is served, it renders
+ *     — and that is a strictly weaker claim than "the rule for a whole era may
+ *     be derived from this". Merge is acceptance; verification is exemplar
+ *     grade; only the second buys weight. It is one owner action away
+ *     (`verifyMaskRecord`), and until then the mask is cited in `rejected` with
+ *     its tier rather than silently dropped.
+ *
+ * `ai-corrected` at 0.6 survives inside the verified tier for the original
+ * reason: a human painted those pixels, but anchored by what the AI proposed,
+ * so pure human masks outrank it.
  */
 export function selectExemplars(corpus: CorpusEntry[], q: ExemplarQuery = {}): ExemplarSelection {
   const chosen: (CorpusEntry & { weight: number })[] = [];
   const rejected: ExemplarSelection['rejected'] = [];
   for (const e of corpus) {
     const method = e.sidecar.derivation_method;
-    if (!isExemplarEligible(method)) {
+    const tier = e.sidecar.provenanceTier;
+    const weight = exemplarWeightOf(e.sidecar);
+    if (weight <= 0) {
       rejected.push({
         cardId: e.cardId,
         variantId: e.variantId,
         method,
+        tier,
+        kind: EXEMPLAR_WEIGHT[method] === 0 ? 'method' : 'tier',
+        // THE METHOD REASON COMES FIRST when there is one, and that ordering is
+        // load-bearing rather than cosmetic. `ai` and `layout-flatten` are 0 in
+        // every tier — verifying one would buy nothing — so "unreviewed machine
+        // output" is both the sharper answer and the actionable one. Leading
+        // with the tier would report an `ai` mask as "not verified yet", which
+        // reads as an invitation to verify it.
         reason:
-          method === 'ai'
-            ? 'unreviewed machine output — never an exemplar (anti-feedback-collapse)'
-            : 'machine-rasterized geometry — teaches only the rect the generator already has',
+          EXEMPLAR_WEIGHT[method] === 0
+            ? method === 'ai'
+              ? 'unreviewed machine output — never an exemplar (anti-feedback-collapse)'
+              : 'machine-rasterized geometry — teaches only the rect the generator already has'
+            : tier === 'contributor'
+              ? `contributor-authored${authorOf(e)} and not yet owner-verified — merge is acceptance, not exemplar grade`
+              : 'no human attribution recorded (a v5 record with no author) — never an exemplar',
       });
       continue;
     }
     if (q.eraId && e.sidecar.prior?.eraId !== q.eraId) {
-      rejected.push({ cardId: e.cardId, variantId: e.variantId, method, reason: `era ${String(e.sidecar.prior?.eraId)} != ${q.eraId}` });
+      rejected.push({ cardId: e.cardId, variantId: e.variantId, method, tier, kind: 'filter', reason: `era ${String(e.sidecar.prior?.eraId)} != ${q.eraId}` });
       continue;
     }
     if (q.scope && e.sidecar.prior?.scope !== q.scope) {
-      rejected.push({ cardId: e.cardId, variantId: e.variantId, method, reason: `scope ${String(e.sidecar.prior?.scope)} != ${q.scope}` });
+      rejected.push({ cardId: e.cardId, variantId: e.variantId, method, tier, kind: 'filter', reason: `scope ${String(e.sidecar.prior?.scope)} != ${q.scope}` });
       continue;
     }
-    chosen.push({ ...e, weight: EXEMPLAR_WEIGHT[method] });
+    chosen.push({ ...e, weight });
   }
   chosen.sort((a, b) => (b.weight - a.weight) || (a.sidecar.savedAt < b.sidecar.savedAt ? 1 : -1));
   return { chosen: q.limit ? chosen.slice(0, q.limit) : chosen, rejected };
+}
+
+/** ` by @login`, when the record names one. Goes in the rejection reason. */
+function authorOf(e: CorpusEntry): string {
+  const login = e.sidecar.author?.login;
+  return typeof login === 'string' && login.length > 0 ? ` by @${login}` : '';
 }
 
 export function toExemplarRefs(sel: ExemplarSelection): ExemplarRef[] {
@@ -178,6 +229,7 @@ export function toExemplarRefs(sel: ExemplarSelection): ExemplarRef[] {
     variantId: e.variantId,
     savedAt: e.sidecar.savedAt ?? null,
     method: e.sidecar.derivation_method,
+    tier: e.sidecar.provenanceTier,
     weight: e.weight,
   }));
 }
@@ -233,12 +285,43 @@ export interface AwaitingReview {
   superseded: { method: DerivationMethod; agreement: number; changedFraction: number; runId: string; archiveDir: string } | null;
 }
 
+/**
+ * A contributor mask that would carry weight if a writer verified it.
+ *
+ * A SECOND QUEUE, deliberately distinct from `awaitingReview`. That one is "a
+ * machine proposed this and no human has looked"; this one is "a human painted
+ * this, it was good enough to merge, and no writer has said it is good enough
+ * to derive a rule from". Different question, different actor, different act —
+ * and folding them together would make the review queue look like a backlog of
+ * suspect work rather than what it is.
+ */
+export interface AwaitingVerification {
+  cardId: string;
+  variantId: number;
+  savedAt: string;
+  method: DerivationMethod;
+  tier: ProvenanceTier;
+  /** The contributor, when the record names one. */
+  author: { login: string; id: number | null } | null;
+  eraId: string | null;
+  scope: string | null;
+  /** Rule-vs-mask agreement — triage signal, exactly as in the review queue. */
+  agreement: number | null;
+  /** What verifying it would be worth: the weight it would then carry. */
+  weightIfVerified: number;
+  maskUrl: string;
+}
+
 export interface CorpusReport {
   generatedAt: string;
   total: number;
   byMethod: Record<DerivationMethod, number>;
   byAuthorship: Record<string, number>;
   byReviewStatus: Record<string, number>;
+  /** #10: counts by provenance tier — how much of the corpus carries weight. */
+  byTier: Record<ProvenanceTier, number>;
+  /** Contributor logins the corpus names, with how many records each authored. */
+  byAuthor: Record<string, number>;
   /** Mean of diff.agreement (rule vs saved mask) across the whole corpus. */
   meanAgreement: number | null;
   byEra: Record<string, Bucket>;
@@ -249,6 +332,8 @@ export interface CorpusReport {
   exemplarsAvailable: { total: number; byEra: Record<string, number>; byScope: Record<string, number> };
   /** `ai` masks no human has touched — the review queue. */
   awaitingReview: AwaitingReview[];
+  /** Human masks no WRITER has verified — the promotion queue (#10). */
+  awaitingVerification: AwaitingVerification[];
   /** Every human correction of a machine mask — the training signal so far. */
   corrections: {
     n: number;
@@ -274,15 +359,40 @@ export function buildReport(corpus: CorpusEntry[]): CorpusReport {
   const byMethod = Object.fromEntries(DERIVATION_METHODS.map((m) => [m, 0])) as Record<DerivationMethod, number>;
   const byAuthorship: Record<string, number> = {};
   const byReviewStatus: Record<string, number> = {};
+  const byTier = Object.fromEntries(PROVENANCE_TIERS.map((t) => [t, 0])) as Record<ProvenanceTier, number>;
+  const byAuthor: Record<string, number> = {};
   const bySidecarVersion: Record<string, number> = {};
   let agSum = 0;
   let agCount = 0;
   const awaitingReview: AwaitingReview[] = [];
+  const awaitingVerification: AwaitingVerification[] = [];
   const corrections: CorpusReport['corrections']['entries'] = [];
 
   for (const e of corpus) {
     const s = e.sidecar;
     byMethod[s.derivation_method]++;
+    byTier[s.provenanceTier]++;
+    if (s.author?.login) byAuthor[s.author.login] = (byAuthor[s.author.login] ?? 0) + 1;
+    // The promotion queue: a mask whose METHOD would carry weight, held at 0
+    // only because nobody with the capability has verified it. A machine mask
+    // is excluded — verifying an `ai` record buys nothing, because its method
+    // is 0 in the verified tier too, and offering it would be an affordance
+    // that does nothing.
+    if (!TIER_IS_VERIFIED[s.provenanceTier] && EXEMPLAR_WEIGHT[s.derivation_method] > 0) {
+      awaitingVerification.push({
+        cardId: e.cardId,
+        variantId: e.variantId,
+        savedAt: s.savedAt,
+        method: s.derivation_method,
+        tier: s.provenanceTier,
+        author: s.author ? { login: s.author.login, id: s.author.id } : null,
+        eraId: s.prior?.eraId ?? null,
+        scope: s.prior?.scope ?? null,
+        agreement: s.diff?.agreement ?? null,
+        weightIfVerified: EXEMPLAR_WEIGHT[s.derivation_method],
+        maskUrl: `${MASK_ROUTE}/${e.cardId}/${e.variantId}`,
+      });
+    }
     byAuthorship[AUTHORSHIP_BY_METHOD[s.derivation_method]] =
       (byAuthorship[AUTHORSHIP_BY_METHOD[s.derivation_method]] ?? 0) + 1;
     byReviewStatus[REVIEW_BY_METHOD[s.derivation_method]] =
@@ -331,6 +441,10 @@ export function buildReport(corpus: CorpusEntry[]): CorpusReport {
     }
   }
   awaitingReview.sort((a, b) => (a.savedAt < b.savedAt ? 1 : -1));
+  // Highest potential weight first, then newest: what an hour of review buys.
+  awaitingVerification.sort(
+    (a, b) => b.weightIfVerified - a.weightIfVerified || (a.savedAt < b.savedAt ? 1 : -1),
+  );
 
   const eligible = selectExemplars(corpus).chosen;
   const countBy = (list: typeof eligible, key: (e: (typeof eligible)[number]) => string): Record<string, number> => {
@@ -348,6 +462,8 @@ export function buildReport(corpus: CorpusEntry[]): CorpusReport {
     byMethod,
     byAuthorship,
     byReviewStatus,
+    byTier,
+    byAuthor,
     meanAgreement: agCount ? Number((agSum / agCount).toFixed(4)) : null,
     byEra: groupBy(corpus, (e) => e.sidecar.prior?.eraId ?? null),
     bySet: groupBy(corpus, (e) => e.sidecar.card?.setId ?? setIdOf(e.cardId)),
@@ -359,6 +475,7 @@ export function buildReport(corpus: CorpusEntry[]): CorpusReport {
       byScope: countBy(eligible, (e) => e.sidecar.prior?.scope ?? 'unknown'),
     },
     awaitingReview,
+    awaitingVerification,
     corrections: {
       n: corrections.length,
       meanAgreementVsParent: mean(corrections.map((c) => c.agreement)),
@@ -385,7 +502,13 @@ export interface TrainingTuple {
   method: DerivationMethod;
   authorship: Authorship;
   reviewStatus: ReviewStatus;
-  /** Exemplar weight — 0 means "do not learn from this" (see EXEMPLAR_WEIGHT). */
+  /** #10: the verification tier the weight below is keyed on, with the method. */
+  tier: ProvenanceTier;
+  /** Who authored the pixels, when the record names them. Null on v1–v4. */
+  author: { login: string; id: number | null; via: string } | null;
+  /** Who verified them, and when. Null until a writer has. */
+  verifiedBy: { login: string; at: string } | null;
+  /** Exemplar weight for (method × tier) — 0 means "do not learn from this". */
   exemplarWeight: number;
   /** The deterministic era rect this mask was scored against. */
   ruleRect: [number, number, number, number] | null;
@@ -410,7 +533,13 @@ export interface TrainingManifest {
   root: string;
   /** How to read a tuple — spelled out so no lane has to reverse-engineer it. */
   contract: string[];
-  counts: { total: number; exemplars: number; corrections: number; unreviewedAi: number };
+  counts: {
+    total: number;
+    exemplars: number;
+    corrections: number;
+    unreviewedAi: number;
+    awaitingVerification: number;
+  };
   tuples: TrainingTuple[];
 }
 
@@ -418,7 +547,9 @@ const CONTRACT_NOTES = [
   'files.* are repo-relative paths. Alpha channel of a mask PNG IS the mask (>=128 = foil); RGB is display tint only.',
   'artworkUrl is the card scan the human saw, served by the image service (add your host: http://127.0.0.1:3701<url> or via the api origin).',
   'ruleRect is UV y-up [x,y,w,h] of the deterministic era rect — the geometry prior a generator starts from.',
-  'exemplarWeight > 0 means a generator MAY learn from this mask. 0 means it MUST NOT (unreviewed `ai`, or machine-rasterized geometry).',
+  'exemplarWeight > 0 means a generator MAY learn from this mask. 0 means it MUST NOT (unreviewed `ai`, machine-rasterized geometry, or ANY tier other than owner-verified).',
+  'tier is the verification tier and it gates the weight: "owner-verified" (a writer authored or verified it) carries the method weight; "contributor" (a merged contribution nobody with the capability has verified) and "unattributed" are 0. Merge is acceptance, not exemplar grade — a contributor mask is real, correct-looking, servable data that has simply not been signed off as ground truth for rule derivation.',
+  'author is WHO painted it, recorded server-side from a verified identity; verifiedBy is WHO signed off, and only a writer-capability login is honoured. Neither is ever accepted from a client.',
   'correction != null is a supervised pair: files.parent = the mask BEFORE the human, files.mask = AFTER, files.parentDiff = the change map (green added / red removed), correction.grid = where the changes concentrate.',
   'Never treat a tuple with method "ai" as ground truth — it is a proposal awaiting review.',
 ];
@@ -439,7 +570,10 @@ export function trainingTuples(corpus: CorpusEntry[]): TrainingManifest {
       method: s.derivation_method,
       authorship: AUTHORSHIP_BY_METHOD[s.derivation_method],
       reviewStatus: REVIEW_BY_METHOD[s.derivation_method],
-      exemplarWeight: EXEMPLAR_WEIGHT[s.derivation_method],
+      tier: s.provenanceTier,
+      author: s.author ? { login: s.author.login, id: s.author.id, via: s.author.via } : null,
+      verifiedBy: s.verification ? { login: s.verification.verifiedBy, at: s.verification.verifiedAt } : null,
+      exemplarWeight: exemplarWeightOf(s),
       ruleRect: s.prior?.rect ?? null,
       files: e.files,
       ruleDiff: s.diff ?? null,
@@ -458,6 +592,10 @@ export function trainingTuples(corpus: CorpusEntry[]): TrainingManifest {
       exemplars: tuples.filter((t) => t.exemplarWeight > 0).length,
       corrections: tuples.filter((t) => t.correction).length,
       unreviewedAi: tuples.filter((t) => t.method === 'ai').length,
+      /** Human work held at weight 0 pending a writer's sign-off (#10). */
+      awaitingVerification: tuples.filter(
+        (t) => t.exemplarWeight === 0 && EXEMPLAR_WEIGHT[t.method] > 0,
+      ).length,
     },
     tuples,
   };

@@ -7,6 +7,15 @@
 //   node packages/forge/src/corpus.ts tuples --out /tmp/tuples.json
 //   node packages/forge/src/corpus.ts exemplars --era wotc --scope window
 //   node packages/forge/src/corpus.ts migrate [--dry-run]
+//   node packages/forge/src/corpus.ts verify --card base1-8 --variant 32 --as cheyras [--note "…"]
+//
+// `verify` is the REPO-SIDE half of #10's promotion path — the same act the
+// writer-gated `PATCH /api/mask` performs, for whoever has the checkout in
+// front of them and a batch of merged contributions to work through. It routes
+// through `verifyMaskRecord`, which REFUSES a `--as` login that does not hold
+// the writer capability rather than writing a block that every read would
+// ignore. It rewrites the `.json` and nothing else: verification is a statement
+// about pixels, not a change to them.
 //
 // `migrate` rewrites older sidecars in place at the current version. It NEVER
 // touches the mask PNG and never re-labels: a pre-v3 sidecar's
@@ -29,11 +38,16 @@ import { buildReport, readCorpus, selectExemplars, trainingTuples } from './mask
 import {
   AUTHORSHIP_BY_METHOD,
   EXEMPLAR_WEIGHT,
+  EXEMPLAR_WEIGHT_BY_TIER,
+  NotAWriter,
+  PROVENANCE_TIERS,
   REVIEW_BY_METHOD,
   SIDECAR_VERSION,
   maskPathsIn,
   normalizeSidecar,
   readMaskPixelDims,
+  upgradeSidecarRecord,
+  verifyMaskRecord,
 } from './provenance.ts';
 
 function repoRoot(): string {
@@ -87,6 +101,19 @@ async function report(): Promise<void> {
       }`,
     );
   }
+  console.log('\nby provenance tier   (the weight table is keyed on method × TIER — see EXEMPLAR_WEIGHT_BY_TIER)');
+  for (const t of PROVENANCE_TIERS) {
+    const row = EXEMPLAR_WEIGHT_BY_TIER[t];
+    const weights = Object.entries(row)
+      .filter(([, w]) => w > 0)
+      .map(([m, w]) => `${m} ${w}`)
+      .join(', ');
+    console.log(`  ${t.padEnd(22)} ${String(r.byTier[t]).padStart(3)}   weights: ${weights || 'all zero'}`);
+  }
+  if (Object.keys(r.byAuthor).length > 0) {
+    console.log(`\nauthors on record: ${Object.entries(r.byAuthor).map(([k, v]) => `@${k} ${v}`).join(', ')}`);
+  }
+
   console.log(`\nmean rule-vs-mask agreement: ${pct(r.meanAgreement)}   (1.0 = the layout rule was already right)`);
   console.log(
     `exemplars a generator may learn from: ${r.exemplarsAvailable.total}` +
@@ -113,6 +140,15 @@ async function report(): Promise<void> {
           `      undo byte-for-byte: generate-masks.ts revert --run-id ${a.superseded.runId}`,
       );
     }
+  }
+  console.log(`\nhuman masks awaiting a writer's verification: ${r.awaitingVerification.length}`);
+  for (const a of r.awaitingVerification) {
+    console.log(
+      `  ${a.cardId}/${a.variantId}  ${a.method}  tier=${a.tier}` +
+        `  author=${a.author ? `@${a.author.login}` : 'unrecorded'}  era=${a.eraId ?? '—'}/${a.scope ?? '—'}` +
+        `  vs-rule ${pct(a.agreement)}  → weight ${a.weightIfVerified} once verified`,
+    );
+    console.log(`      verify: corpus.ts verify --card ${a.cardId} --variant ${a.variantId} --as <writer-login>`);
   }
   console.log(`\ncorrections recorded: ${r.corrections.n}` +
     (r.corrections.n
@@ -148,11 +184,56 @@ async function exemplars(): Promise<void> {
   const sel = selectExemplars(corpus, { eraId: arg('era'), scope: arg('scope') });
   console.log(`\neligible exemplars: ${sel.chosen.length}`);
   for (const e of sel.chosen) {
-    console.log(`  ${e.cardId}/${e.variantId}  ${e.sidecar.derivation_method}  weight ${e.weight}  ${e.files.mask}`);
+    console.log(
+      `  ${e.cardId}/${e.variantId}  ${e.sidecar.derivation_method}  ${e.sidecar.provenanceTier}` +
+        `  weight ${e.weight}  ${e.files.mask}`,
+    );
   }
   console.log(`\nrejected: ${sel.rejected.length}`);
-  for (const r of sel.rejected) console.log(`  ${r.cardId}/${r.variantId}  ${r.method}  — ${r.reason}`);
+  for (const r of sel.rejected) console.log(`  ${r.cardId}/${r.variantId}  ${r.method}  ${r.tier}  — ${r.reason}`);
   console.log('');
+}
+
+/**
+ * Promote one mask to `owner-verified`.
+ *
+ * `--as` names the verifier, and it is checked against the writer capability
+ * rather than believed: this is a local CLI, so there is no session cookie to
+ * re-derive an identity from, and the honest thing is to say so and check the
+ * one thing that can be checked. `verifyMaskRecord` refuses a login without the
+ * capability rather than writing a block every read would ignore.
+ */
+async function verify(): Promise<void> {
+  const cardId = arg('card');
+  const variantId = arg('variant');
+  const as = arg('as');
+  if (!cardId || variantId === null || !as) {
+    throw new Error('verify needs --card <cardId> --variant <n> --as <github-login> [--note "…"]');
+  }
+  try {
+    const r = await verifyMaskRecord({
+      masksDir: MASKS_DIR,
+      cardId,
+      variantId,
+      verifier: { login: as, id: null },
+      via: 'local-cli',
+      note: arg('note'),
+    });
+    if (r.unchanged) {
+      console.log(`${cardId}/${variantId} was already owner-verified — nothing written.`);
+      return;
+    }
+    console.log(
+      `${cardId}/${variantId}  ${r.from} → ${r.to}  (${r.sidecar.derivation_method}, exemplar weight ` +
+        `${EXEMPLAR_WEIGHT[r.sidecar.derivation_method]})\nverified by @${as}. Only ${maskPathsIn(MASKS_DIR, cardId, variantId).json} changed.`,
+    );
+  } catch (e) {
+    if (e instanceof NotAWriter) {
+      console.error(e.message);
+      process.exit(2);
+    }
+    throw e;
+  }
 }
 
 async function migrate(): Promise<void> {
@@ -162,7 +243,7 @@ async function migrate(): Promise<void> {
   for (const e of corpus) {
     const path = maskPathsIn(MASKS_DIR, e.cardId, e.variantId).json;
     const raw = JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>;
-    if (raw.version === SIDECAR_VERSION && raw.authorship && raw.reviewStatus) continue;
+    if (raw.version === SIDECAR_VERSION && raw.authorship && raw.reviewStatus && raw.provenanceTier) continue;
     // Resolved against the mask's OWN pixels, not its JSON dimensions — the
     // upgrade writes `frame` from this, so it has to be the derived value.
     const norm = normalizeSidecar(raw, await readMaskPixelDims(MASKS_DIR, e.cardId, e.variantId));
@@ -170,25 +251,11 @@ async function migrate(): Promise<void> {
       console.log(`skip ${e.cardId}/${e.variantId}: unreadable sidecar`);
       continue;
     }
-    const upgraded = {
-      ...raw,
-      version: SIDECAR_VERSION,
-      artworkKey: norm.artworkKey,
-      // Written from the INFERRED value, never from whatever the file claimed.
-      frame: norm.frame,
-      derivation_method: norm.derivation_method,
-      authorship: norm.authorship,
-      reviewStatus: norm.reviewStatus,
-      artworkUrl: norm.artworkUrl,
-      lineage: [
-        {
-          method: norm.derivation_method,
-          savedAt: norm.savedAt ?? null,
-          source: norm.prior?.source ?? 'layout',
-          generator: null,
-        },
-      ],
-    };
+    // The upgrade itself lives in `provenance.ts` as a pure function, so the
+    // rules it applies — materialise the author before the version bump makes
+    // the historical inference expire, keep the lineage that is already there
+    // — are testable rather than CLI-only. See `upgradeSidecarRecord`.
+    const upgraded = upgradeSidecarRecord(raw, norm);
     console.log(`${dry ? '[dry] ' : ''}v${String(raw.version)} → v${SIDECAR_VERSION}  ${e.cardId}/${e.variantId}  method=${norm.derivation_method}`);
     if (!dry) await writeFile(path, JSON.stringify(upgraded, null, 2) + '\n', 'utf8');
     n++;
@@ -198,9 +265,19 @@ async function migrate(): Promise<void> {
 
 const CMD = process.argv[2];
 const main =
-  CMD === 'report' ? report : CMD === 'tuples' ? tuples : CMD === 'exemplars' ? exemplars : CMD === 'migrate' ? migrate : null;
+  CMD === 'report'
+    ? report
+    : CMD === 'tuples'
+      ? tuples
+      : CMD === 'exemplars'
+        ? exemplars
+        : CMD === 'migrate'
+          ? migrate
+          : CMD === 'verify'
+            ? verify
+            : null;
 if (!main) {
-  console.error('usage: corpus.ts <report|tuples|exemplars|migrate> [flags] — see the header comment');
+  console.error('usage: corpus.ts <report|tuples|exemplars|migrate|verify> [flags] — see the header comment');
   process.exit(2);
 }
 void main().catch((e: Error) => {

@@ -35,7 +35,14 @@ import {
   type PolicyExemplar,
   type WindowRect,
 } from '../region-learn.ts';
-import { EXEMPLAR_WEIGHT, isExemplarEligible, type MaskSidecarV3 } from '../provenance.ts';
+import {
+  EXEMPLAR_WEIGHT,
+  EXEMPLAR_WEIGHT_BY_TIER,
+  exemplarWeightFor,
+  exemplarWeightOf,
+  isExemplarEligible,
+  type MaskSidecarV3,
+} from '../provenance.ts';
 import { selectExemplars, type CorpusEntry } from '../mask-corpus.ts';
 import type { RgbaImage } from '../png.ts';
 
@@ -204,7 +211,11 @@ test('exemplars that split on a class are REPORTED as disputed, with both number
 
 // ── 3. Anti-feedback-collapse: `ai` is never an exemplar ───────────────────
 
-function fakeEntry(cardId: string, method: MaskSidecarV3['derivation_method']): CorpusEntry {
+function fakeEntry(
+  cardId: string,
+  method: MaskSidecarV3['derivation_method'],
+  tier: MaskSidecarV3['provenanceTier'] = 'owner-verified',
+): CorpusEntry {
   const sidecar = {
     version: 3,
     cardId,
@@ -214,6 +225,10 @@ function fakeEntry(cardId: string, method: MaskSidecarV3['derivation_method']): 
     height: H,
     channel: 'alpha',
     derivation_method: method,
+    // #10: a fixture STATES its tier. `exemplarWeightOf` fails closed on a
+    // record that does not, so a fixture standing in for the owner's own corpus
+    // has to say so rather than inherit full weight from an omission.
+    provenanceTier: tier,
     savedAt: '2026-08-08T00:00:00.000Z',
     prior: { source: 'layout', eraId: 'synth', scope: 'sheet', rect: [0, 0, 1, 1], radius: 0, invert: false, feather: 0, resolverVersion: 5 },
   } as unknown as MaskSidecarV3;
@@ -251,6 +266,58 @@ test('unreviewed `ai` masks can never become exemplars — weight, selection, an
   assert.ok(sel.chosen[0]!.weight > sel.chosen[1]!.weight || sel.chosen[0]!.cardId === 'hand-1');
   assert.equal(sel.chosen.find((c) => c.cardId === 'hand-1')!.weight, 1);
   assert.equal(sel.chosen.find((c) => c.cardId === 'corrected-1')!.weight, 0.6);
+});
+
+// ── 3b. #10: the SAME rule, applied to an unverified human ─────────────────
+
+test('an unverified contributor mask carries no weight in a learned policy', () => {
+  // The rule this locks: `learnPolicy` takes a WEIGHTED MEAN and crosses a hard
+  // threshold at voteThreshold 0.5, so an admitted exemplar with any nonzero
+  // weight can flip a class at the margin. This is the whole argument for zero
+  // rather than "low", stated as an executable fact rather than as a comment:
+  // one owner mask and three contributor masks that disagree with it must
+  // produce the OWNER's policy, unchanged, because the three are not in the
+  // pool at all.
+  const corpus = [
+    fakeEntry('owner-1', 'hand'),
+    fakeEntry('stranger-1', 'hand', 'contributor'),
+    fakeEntry('stranger-2', 'hand', 'contributor'),
+    fakeEntry('stranger-3', 'hand-refined', 'contributor'),
+  ];
+  const sel = selectExemplars(corpus, { eraId: 'synth', scope: 'sheet' });
+  assert.deepEqual(sel.chosen.map((c) => c.cardId), ['owner-1']);
+  assert.equal(sel.chosen[0]!.weight, 1);
+
+  for (const id of ['stranger-1', 'stranger-2', 'stranger-3']) {
+    const r = sel.rejected.find((x) => x.cardId === id);
+    assert.ok(r, `${id} must appear in rejected — dropped silently is not auditable`);
+    assert.equal(r.kind, 'tier', 'the method was fine; only the verification was missing');
+    assert.match(r.reason, /not yet owner-verified/);
+    // And it must NOT be reported as the anti-collapse rule. Different rule,
+    // different remedy: one is "never", the other is "not yet".
+    assert.doesNotMatch(r.reason, /anti-feedback-collapse/);
+  }
+
+  // Weight-table shape, as data: verification is the axis, not authorship.
+  assert.equal(EXEMPLAR_WEIGHT_BY_TIER['owner-verified'].hand, 1);
+  assert.equal(EXEMPLAR_WEIGHT_BY_TIER.contributor.hand, 0);
+  assert.equal(EXEMPLAR_WEIGHT_BY_TIER.contributor['hand-refined'], 0);
+  assert.equal(EXEMPLAR_WEIGHT_BY_TIER.contributor['ai-corrected'], 0);
+  assert.equal(EXEMPLAR_WEIGHT_BY_TIER.unattributed.hand, 0);
+});
+
+test('a record with no tier at all is worth nothing — the gate fails closed', () => {
+  // The tempting bug: reuse `exemplarWeightFor`'s owner-verified default when a
+  // record does not state a tier, and every unattributable record silently
+  // becomes ground truth. The default is correct for a METHOD named in the
+  // abstract and wrong for a RECORD, and these two lines are the difference.
+  assert.equal(exemplarWeightFor('hand'), 1, 'the ceiling for the method is still 1');
+  assert.equal(
+    exemplarWeightOf({ derivation_method: 'hand', provenanceTier: undefined as never }),
+    0,
+    'a record that does not state its tier is worth 0, not 1',
+  );
+  assert.equal(exemplarWeightOf({ derivation_method: 'hand', provenanceTier: 'nonsense' as never }), 0);
 });
 
 test('a policy learned from a selection weights an `ai-corrected` mask below a `hand` one', () => {
