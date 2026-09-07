@@ -70,7 +70,7 @@ judge's "completely static" note is pixel-refuted — see the section).**
 `detective-pikachu`) got dedicated recipes judged against their own corpus dirs —
 **all four match** (shiny-vault on round 2). Running total: **34 of 38 implemented
 taxonomy types hold a match verdict (38 of 43 types have real recipes)**; the four
-standing nays are unchanged from R2.**
+standing nays are unchanged from R2.** **Corrected 2026-09-06: measured against the code, the standing nays are now FIVE — `ace-spec`, `energy-symbols`, `pokeball-hologram`, `prismatic-pokeball`, `radiant` — not the four named above. R3-MOTION broke `starlight` (:677) and recorded a new nay on `radiant` (:680); R3-GLYPH broke `radiant-collection-dots` (:754) and recorded new nays on `ace-spec` (:756) and `prismatic-pokeball` (:757); `pokeball-hologram` was never re-judged after R2. See `data/verification-verdicts.json`, which is the machine-readable restatement this file never gave itself.**
 
 ## Verdict table
 

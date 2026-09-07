@@ -122,8 +122,11 @@ async function makeCorpus(over: Overrides = {}): Promise<{ root: string; bake: s
         docLines: 'docs/VERIFICATION.md:755',
         judgeNote: 'placeholder icons',
         residual: 'needs the 9-icon atlas',
-        stillFrameBlind: false,
-        stillFrameNote: null,
+        // A structural PAIR, deliberately: this row is still-frame-blind AND
+        // its ask is GLSL, which is exactly the shape the guard must not
+        // confuse with a live-tilt row (see the test below).
+        stillFrameBlind: true,
+        stillFrameNote: 'the motion half is refuted at pixel level; the remaining half is an asset gap',
         ask: 'glsl',
         askDetail: 'Ship the atlas.',
       },
@@ -402,10 +405,17 @@ test('a still-frame-blind nay asks for a live tilt, and says so on the card', as
     assert.match(GUARDS['live-tilt-not-glsl'], /not another GLSL round/)
     assert.equal(radiant.detail.stillFrameBlind, true)
 
-    // …and one whose residual is an ASSET is not turned into a tilt request.
+    // …and one whose residual is an ASSET, even though it is ALSO
+    // still-frame-blind, is not turned into a full tilt request — the guard
+    // is keyed on ASK, not on stillFrameBlind. This is the structural pair
+    // the guard must not conflate: energy-symbols wants a GLSL asset (the
+    // icon atlas) for one half, and a separate live tilt for its motion half.
     const energy = byId(queue.tasks, 'verdict:energy-symbols')
     assert.equal(energy.skill, 'glsl')
-    assert.deepEqual(energy.guards, [])
+    assert.equal(energy.detail.stillFrameBlind, true)
+    assert.deepEqual(energy.guards, ['motion-half-needs-tilt'])
+    assert.doesNotMatch(GUARDS['motion-half-needs-tilt'], /not another GLSL round/)
+    assert.match(GUARDS['motion-half-needs-tilt'], /asset\/shader half/)
   } finally {
     await cleanup()
   }
@@ -460,7 +470,7 @@ test('a doc count that disagrees with the data is emitted as a finding, not reso
     const { queue, findings } = await buildTaskQueue(root, bake)
     const nays = queue.reconciliation.find((r) => r.key === 'standing-nays')!
     assert.equal(nays.agrees, false)
-    assert.match(nays.claim, /4 standing nays/)
+    assert.match(nays.claim, /5 standing nays/)
     assert.match(nays.measured, /energy-symbols, radiant/)
     assert.ok(findings.includes(nays), 'a disagreeing row was not reported as a finding')
 
@@ -625,13 +635,34 @@ test('the composition snapshot — change this deliberately, never to make a tes
   })
 })
 
-test('the three doc counts this queue checks itself against are all currently stale', async () => {
+test('two of the three doc counts were fixed 2026-09-06; one remains a permanent historical mismatch', async () => {
   const { queue, findings } = await buildTaskQueue(REPO, join(REPO, 'data'))
+  // FIXED 2026-09-06: docs/SHADER-CONTRACT.md:295 and docs/VERIFICATION.md:73
+  // now carry corrections at the same site as the stale claim, and the
+  // CLAIMED_* constants were updated to match — a fixed doc is good news, and
+  // this asserts it is said in the same commit rather than left silent.
+  // `uncanoned` stays a finding on purpose: it is not a claim that will ever
+  // become true again, it is subtask 5's arithmetic bug (45 − 32 counts
+  // `none`, which has no canon by definition) preserved as a permanent
+  // record, per docs/HOSTED-EDITOR.md:195-200.
   assert.deepEqual(
     findings.map((f) => f.key).sort(),
-    ['approximations', 'standing-nays', 'uncanoned'],
+    ['uncanoned'],
     'the set of stale doc claims moved — a fixed doc is good news, but say so in the same commit',
   )
+  const approximations = queue.reconciliation.find((r) => r.key === 'approximations')!
+  assert.equal(approximations.agrees, true, 'docs/SHADER-CONTRACT.md:295 was corrected but the datum was not updated to match')
+  const standingNays = queue.reconciliation.find((r) => r.key === 'standing-nays')!
+  assert.equal(standingNays.agrees, true, 'docs/VERIFICATION.md:73 was corrected but the datum was not updated to match')
+  const uncanoned = queue.reconciliation.find((r) => r.key === 'uncanoned')!
+  assert.match(uncanoned.claimedAt, /historical record/, 'the uncanoned row should cite where 13 is still claimed, not the correction')
+  assert.match(uncanoned.claimedAt, /DECISIONS\.md/, 'the only surviving claim site is a DECISIONS.md entry')
+  assert.notEqual(
+    uncanoned.claimedAt,
+    'docs/HOSTED-EDITOR.md:195-200',
+    'claimedAt should not point at the correction text — those lines say 12, not 13',
+  )
+
   // The one that is NOT stale: the ex13/ex16 residual closure already landed.
   const residuals = queue.reconciliation.find((r) => r.key === 'residuals')!
   assert.equal(residuals.agrees, true, 'the committed vertical-sheen-rainbow rows went missing')

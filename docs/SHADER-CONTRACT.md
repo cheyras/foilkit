@@ -292,7 +292,7 @@ recipes match; standing nays: starlight, energy-symbols, pokeball-hologram,
 radiant-collection-dots — see verification doc R2 + R2b sections). The 5 remaining
 approx types have no catalog exemplar (big-glitter, sequin, tcg-classic, acid-wash,
 disco — the R3 list). To ship a real recipe: write the GLSL, flip the entry to
-`implemented: true`, drop `approxVia`.
+`implemented: true`, drop `approxVia`. **Corrected 2026-09-06: the 5-type R3 list above is stale. Four of the five — `sequin`, `tcg-classic`, `acid-wash`, `disco` — shipped dedicated recipes in the R3-MISC wave (`docs/VERIFICATION.md:840-843`, "12/12 final yay"). Only `big-glitter` still approximates; it is the sole `approximation` card in `data/task-queue.json`.**
 
 ## Per-pattern field notes (distilled from resolved workbench comments)
 

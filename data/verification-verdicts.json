@@ -12,7 +12,7 @@
     "claim": "the four standing nays are starlight, energy-symbols, pokeball-hologram, radiant-collection-dots",
     "statedAt": "docs/VERIFICATION.md:61-73 (R2b vocabulary wave, 2026-08-02), repeated at docs/SHADER-CONTRACT.md:290-295",
     "stillTrue": false,
-    "why": "Two of the four were broken by later waves and three new nays were recorded. R3-MOTION broke starlight (VERIFICATION.md:677, '17/20 yay — the first starlight yay ever; the standing parallax nay is broken') and recorded a new nay on radiant (:680). R3-GLYPH broke radiant-collection-dots (:754, '16/20 YAY — the standing R2 nay is broken') and recorded new nays on ace-spec (:756) and prismatic-pokeball (:757). pokeball-hologram was never re-judged after R2, so its R2 verdict is the last one on record. The standing set is therefore FIVE, and only two of the original four are in it. VERIFICATION.md never restates a consolidated post-R3 list — this file is that restatement."
+    "why": "Two of the four were broken by later waves and three new nays were recorded. R3-MOTION broke starlight (VERIFICATION.md:677, '17/20 yay — the first starlight yay ever; the standing parallax nay is broken') and recorded a new nay on radiant (:680). R3-GLYPH broke radiant-collection-dots (:754, '16/20 YAY — the standing R2 nay is broken') and recorded new nays on ace-spec (:756) and prismatic-pokeball (:757). pokeball-hologram was never re-judged after R2, so its R2 verdict is the last one on record. The standing set is therefore FIVE, and only two of the original four are in it. VERIFICATION.md:73 now carries a correction restating the five at the same site as the original claim (2026-09-06); this file remains the machine-readable form of that restatement."
   },
   "verdicts": [
     {

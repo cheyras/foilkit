@@ -20,7 +20,8 @@
   "guards": {
     "do-not-flip-winners": "Do not flip a resolver winner just to fill a pool. Cited rows routinely describe different physical layers of the same card — one names the sheet, another names the art window — and both being true is a documented non-bug. Closing this means finding a source the resolver does not have, not re-ranking the ones it does.",
     "live-tilt-not-glsl": "The ask here is a LIVE-TILT HUMAN VERDICT, not another GLSL round. This nay is a motion claim, and the judge scores still frames; several of its claims are already refuted at pixel level. Shader work cannot move a dimension the instrument cannot measure.",
-    "needs-a-bake": "Closing this edits data/foil-card-assignments.json, which changes what the resolver guesses. The verification map and the pattern-card pools this queue is built from are bake outputs, so they must be regenerated in the same change or the queue will describe a corpus that no longer exists."
+    "needs-a-bake": "Closing this edits data/foil-card-assignments.json, which changes what the resolver guesses. The verification map and the pattern-card pools this queue is built from are bake outputs, so they must be regenerated in the same change or the queue will describe a corpus that no longer exists.",
+    "motion-half-needs-tilt": "One dimension of this nay is motion-only and needs a live-tilt verdict separately; the GLSL ask here is the asset/shader half. Do not read the still-frame motion refutation as license to skip the tilt — it closes a different half of this row than the shader work does."
   },
   "estimateTiers": {
     "minutes": "One sitting at one card. Open it, look, answer.",
@@ -56,27 +57,27 @@
   "reconciliation": [
     {
       "key": "approximations",
-      "claim": "5 taxonomy types are still approximated with no catalog exemplar: acid-wash, big-glitter, disco, sequin, tcg-classic",
-      "claimedAt": "docs/SHADER-CONTRACT.md:290-295 (the R3 list, docs/VERIFICATION.md:530-533)",
+      "claim": "1 taxonomy type still approximated with no catalog exemplar: big-glitter",
+      "claimedAt": "docs/SHADER-CONTRACT.md:295 (corrected 2026-09-06; the R3 list, docs/VERIFICATION.md:530-533)",
       "measured": "1: big-glitter",
-      "agrees": false,
-      "note": "The R3 list was five. Four of them (sequin, tcg-classic, acid-wash, disco) shipped dedicated recipes in the R3-MISC wave — docs/VERIFICATION.md:840-843, \"12/12 final yay\" — and the count in SHADER-CONTRACT.md was never updated. The code is the enforceable form, so the queue derives the list from PATTERNS and shows the doc claim beside it. Note that the R3-MISC passage also claims \"zero approxVia fallbacks remain in the library\", which the code refutes: big-glitter still carries one."
+      "agrees": true,
+      "note": "FIXED 2026-09-06: the R3 list was originally five. Four of them (sequin, tcg-classic, acid-wash, disco) shipped dedicated recipes in the R3-MISC wave — docs/VERIFICATION.md:840-843, \"12/12 final yay\" — and docs/SHADER-CONTRACT.md:290-295 now carries a correction at the same site rather than the stale count. The code is still the enforceable form; the doc and the code agree today. Note that the R3-MISC passage also claims \"zero approxVia fallbacks remain in the library\", which the code refutes: big-glitter still carries one."
     },
     {
       "key": "uncanoned",
       "claim": "13 patterns carry no canon file (subtask 5)",
-      "claimedAt": "docs/HOSTED-EDITOR.md:195-200",
+      "claimedAt": "DECISIONS.md:2062-2065 (2026-09-06, historical record — the doc claim itself was corrected at docs/HOSTED-EDITOR.md:195-200)",
       "measured": "12: ace-spec, acid-wash, crosshatch, disco, energy-symbols, energy-symbols-ii, ex-starfoil, pokeball-masterball, prism, prismatic-pokeball, rainbow-mirror, tcg-classic",
       "agrees": false,
       "note": "The manifest derives the list rather than trusting the count, and 13 counted `none`, the no-foil recipe, which has no canon by definition. This is NOT the same list as the approximations above: canon-less is about a saved uniform snapshot, approximated is about the GLSL. Three slugs (acid-wash, disco, tcg-classic) appear on both lists for unrelated reasons."
     },
     {
       "key": "standing-nays",
-      "claim": "4 standing nays: energy-symbols, pokeball-hologram, radiant-collection-dots, starlight",
-      "claimedAt": "docs/VERIFICATION.md:61-73 (R2b vocabulary wave, 2026-08-02)",
+      "claim": "5 standing nays: ace-spec, energy-symbols, pokeball-hologram, prismatic-pokeball, radiant",
+      "claimedAt": "docs/VERIFICATION.md:73 (corrected 2026-09-06; R2b vocabulary wave, 2026-08-02)",
       "measured": "5: ace-spec, energy-symbols, pokeball-hologram, prismatic-pokeball, radiant",
-      "agrees": false,
-      "note": "Two of the four were broken by later waves (radiant-collection-dots, starlight) and three new nays were recorded in R3-MOTION and R3-GLYPH. VERIFICATION.md never restates a consolidated post-R3 list, so data/verification-verdicts.json is that restatement — see its $supersededClaim block for the line numbers."
+      "agrees": true,
+      "note": "FIXED 2026-09-06: two of the original four were broken by later waves (radiant-collection-dots, starlight) and three new nays were recorded in R3-MOTION and R3-GLYPH. VERIFICATION.md now carries a correction at the same site (:73) restating the standing set as five, and data/verification-verdicts.json is the machine-readable form of that restatement — see its $supersededClaim block for the line numbers."
     },
     {
       "key": "residuals",
@@ -267,7 +268,7 @@
       "link": "/canon?pattern=energy-symbols",
       "source": "data/verification-verdicts.json — verdicts[] (extracted from docs/VERIFICATION.md:755 (R3-GLYPH); first recorded at :397 (R2))",
       "guards": [
-        "live-tilt-not-glsl"
+        "motion-half-needs-tilt"
       ],
       "tieBreak": 0,
       "detail": {
@@ -2690,7 +2691,9 @@
       "impactWhy": "No group in this bake resolves to this pattern, so there is nothing to count.",
       "link": "/canon?pattern=prismatic-pokeball",
       "source": "data/verification-verdicts.json — verdicts[] (extracted from docs/VERIFICATION.md:757)",
-      "guards": [],
+      "guards": [
+        "live-tilt-not-glsl"
+      ],
       "tieBreak": 0,
       "detail": {
         "wave": "R3-GLYPH",

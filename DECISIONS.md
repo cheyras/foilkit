@@ -2149,3 +2149,90 @@ verification map beside it is a worse artifact than an open residual.
   Masters sit in unparsed image captions), a rarity split the catalog does not
   carry, or the absence of a vocabulary slug entirely (`dc1`, `sm3.5`) — which
   no amount of catalog data closes.
+
+## 2026-09-06 — Correction: Azumarill's `#114/113` is a secret rare by numbering, not by the catalog's `rarity` field
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Correction:** The entry directly above ("The ex13/ex16 residual closure…")
+called `ex11-114` Azumarill "a secret rare" in the same sentence that cites the
+catalog rarity field — but `data/catalog/sets/ex11.json` records that field as
+`"Rare"`, not `"Secret Rare"`. The card is the set's secret rare by its number
+(`#114/113`, one past the set's 113-card printed count — the standard
+convention this catalog does not encode as a distinct rarity string), and the
+sentence should have said so instead of stating the catalog agrees.
+
+**Why:** DECISIONS.md is append-only, including for same-week entries — a
+correction is appended rather than the original being edited, per AGENTS.md.
+
+**Implications:** None to the `ex11` residual's PARTIAL-closure boundary or to
+any code — this only corrects how the reason Azumarill sits outside it was
+described.
+
+## 2026-09-06 — The live-tilt guard is keyed on `ask`, not `stillFrameBlind`; two stale doc claims corrected at their own sites; the uncanoned citation now points at a claim, not its fix
+
+**Decided by:** Claude Fable 5 on behalf of @cheyras
+
+**Decision (three fixes, one commit):**
+
+1. **`tools/task-queue/build.ts`'s verdict guard was keyed on the wrong field.**
+   `stillFrameBlind ? ['live-tilt-not-glsl'] : []` put the full "this is a
+   LIVE-TILT verdict, not another GLSL round" guard on `energy-symbols`, whose
+   `ask` is `glsl` (it needs the 9-icon atlas) even though it is *also*
+   still-frame-blind (the motion half of its nay is pixel-refuted). The card
+   read "GLSL · hours" directly above a guard telling the reader not to do
+   GLSL work — a contradiction on the structural pair the datum already
+   distinguishes (`ask` vs. `stillFrameBlind`). The guard is now keyed on
+   `ask`: the full guard applies only when `ask === 'live-tilt'`; a row whose
+   `ask` is `glsl` but is still still-frame-blind gets a new, softer guard,
+   `motion-half-needs-tilt`, saying the motion half needs a *separate*
+   live-tilt verdict rather than telling the reader to skip the GLSL ask.
+2. **The `uncanoned` reconciliation row cited the wrong site.** `claimedAt`
+   pointed at `docs/HOSTED-EDITOR.md:195-200`, which is the CORRECTION ("The
+   number is 12, not 13"), not a place that still claims 13. Nothing in
+   `docs/` still asserts 13 as live; the only surviving mention is historical,
+   in this file (`DECISIONS.md:2062-2065`, the 2026-09-06 task-queue entry
+   restating "13 canon-less is 12"). `claimedAt` now cites that entry and says
+   `historical record` explicitly, so a reader is not sent to the fix when
+   looking for the claim.
+3. **Two doc counts the queue reconciles itself against were fixed at their
+   claim sites, and the reconciliation datum updated to match.**
+   `docs/VERIFICATION.md:73` and `docs/SHADER-CONTRACT.md:295` each gained a
+   same-line, dated correction (no new lines inserted, so every downstream
+   `docs/VERIFICATION.md:NNN` and `docs/SHADER-CONTRACT.md:NNN` citation in
+   `data/verification-verdicts.json` and elsewhere still points at the right
+   line): the approximated-type count is 1 (`big-glitter`), not 5, and the
+   standing-nay count is 5 (`ace-spec`, `energy-symbols`, `pokeball-hologram`,
+   `prismatic-pokeball`, `radiant`), not 4. `CLAIMED_APPROXIMATIONS` and
+   `CLAIMED_STANDING_NAYS` in `build.ts` now hold the corrected values, so
+   both reconciliation rows read `agrees: true` and no longer appear in
+   `--check`'s FINDING output. `uncanoned` is the one row that is NOT fixed —
+   it never will be, because it is not a claim that drifted, it is subtask 5's
+   arithmetic bug (`45 − 32` counts `none`, which has no canon by definition)
+   preserved on purpose as a permanent record.
+
+**Why:** A guard that contradicts the ask sitting right above it teaches a
+contributor the wrong lesson on the first card they read. A `claimedAt` that
+cites the fix instead of the claim sends a reader hunting in the wrong
+direction. And a reconciliation mechanism whose whole point is "say so in the
+same commit" when a doc gets fixed cannot itself go on reporting a fixed doc
+as a finding — `build.test.ts` says exactly this in its own assertion
+message, and until now, the code did not.
+
+**Implications:**
+
+- `tools/task-queue/build.ts` gained one `GUARDS` entry
+  (`motion-half-needs-tilt`) and reworded the two `CLAIMED_*` constants and
+  their reconciliation `claim`/`note` text to state they were corrected at
+  their own sites, with the date.
+- `tools/task-queue/build.test.ts` updated: the `energy-symbols` fixture now
+  carries `stillFrameBlind: true` (matching the real corpus) so the guard
+  split is exercised in the synthetic corpus, not only the real one; the
+  synthetic reconciliation test's expected claim text moved from "4 standing
+  nays" to "5" (the constant is a doc claim, not corpus-derived, so it does
+  not vary between the synthetic and real corpus); and the real-corpus
+  "three stale doc counts" test is now "two fixed, one permanent" and asserts
+  the `uncanoned` row's `claimedAt` no longer points at the correction text.
+- `data/task-queue.json` regenerated; `--check` passes with exactly one
+  FINDING (`uncanoned`).
+- No environment variables were added, so `DEPLOYMENT.md` is unchanged.

@@ -100,6 +100,10 @@ export const GUARDS = {
     'Closing this edits data/foil-card-assignments.json, which changes what the resolver guesses. The verification ' +
     'map and the pattern-card pools this queue is built from are bake outputs, so they must be regenerated in the ' +
     'same change or the queue will describe a corpus that no longer exists.',
+  'motion-half-needs-tilt':
+    'One dimension of this nay is motion-only and needs a live-tilt verdict separately; the GLSL ask here is the ' +
+    'asset/shader half. Do not read the still-frame motion refutation as license to skip the tilt — it closes a ' +
+    'different half of this row than the shader work does.',
 } as const
 
 export type Guard = keyof typeof GUARDS
@@ -229,20 +233,24 @@ const ESTIMATE_TIERS: Record<Estimate, string> = {
 // would never print one.
 
 /**
- * docs/SHADER-CONTRACT.md:290-295 — "The 5 remaining approx types have no
- * catalog exemplar (big-glitter, sequin, tcg-classic, acid-wash, disco — the
- * R3 list)". The R3 list itself is defined at docs/VERIFICATION.md:530-533.
+ * docs/SHADER-CONTRACT.md:290-295 originally claimed 5 (big-glitter, sequin,
+ * tcg-classic, acid-wash, disco — the R3 list, itself defined at
+ * docs/VERIFICATION.md:530-533). CORRECTED 2026-09-06 at the same site
+ * (line 295): four of the five shipped dedicated recipes in R3-MISC, leaving
+ * one. This constant tracks the doc's CURRENT claim, post-correction.
  */
-const CLAIMED_APPROXIMATIONS = ['acid-wash', 'big-glitter', 'disco', 'sequin', 'tcg-classic']
-const CLAIMED_APPROXIMATIONS_AT = 'docs/SHADER-CONTRACT.md:290-295 (the R3 list, docs/VERIFICATION.md:530-533)'
+const CLAIMED_APPROXIMATIONS = ['big-glitter']
+const CLAIMED_APPROXIMATIONS_AT = 'docs/SHADER-CONTRACT.md:295 (corrected 2026-09-06; the R3 list, docs/VERIFICATION.md:530-533)'
 
 /**
- * docs/VERIFICATION.md:61-73 (R2b) — "the four standing nays are unchanged
- * from R2": starlight, energy-symbols, pokeball-hologram,
- * radiant-collection-dots.
+ * docs/VERIFICATION.md:61-73 (R2b) originally claimed 4 ("the four standing
+ * nays are unchanged from R2"): starlight, energy-symbols, pokeball-hologram,
+ * radiant-collection-dots. CORRECTED 2026-09-06 at the same site (line 73):
+ * two of the four were broken by later waves and three new nays were
+ * recorded. This constant tracks the doc's CURRENT claim, post-correction.
  */
-const CLAIMED_STANDING_NAYS = ['energy-symbols', 'pokeball-hologram', 'radiant-collection-dots', 'starlight']
-const CLAIMED_STANDING_NAYS_AT = 'docs/VERIFICATION.md:61-73 (R2b vocabulary wave, 2026-08-02)'
+const CLAIMED_STANDING_NAYS = ['ace-spec', 'energy-symbols', 'pokeball-hologram', 'prismatic-pokeball', 'radiant']
+const CLAIMED_STANDING_NAYS_AT = 'docs/VERIFICATION.md:73 (corrected 2026-09-06; R2b vocabulary wave, 2026-08-02)'
 
 /** What each empty-pool cause implies. The bake names the cause; this says what to DO. */
 const CAUSE_IMPLIES: Record<string, string> = {
@@ -565,7 +573,9 @@ export async function buildTaskQueue(root: string, bakeDir: string): Promise<Bui
   }
   reconciliation.push({
     key: 'approximations',
-    claim: `5 taxonomy types are still approximated with no catalog exemplar: ${CLAIMED_APPROXIMATIONS.join(', ')}`,
+    claim:
+      `${CLAIMED_APPROXIMATIONS.length} taxonomy type${CLAIMED_APPROXIMATIONS.length === 1 ? '' : 's'} still ` +
+      `approximated with no catalog exemplar: ${CLAIMED_APPROXIMATIONS.join(', ')}`,
     claimedAt: CLAIMED_APPROXIMATIONS_AT,
     measured:
       approximations.length === 0
@@ -575,11 +585,11 @@ export async function buildTaskQueue(root: string, bakeDir: string): Promise<Bui
       approximations.length === CLAIMED_APPROXIMATIONS.length &&
       approximations.every((id, i) => id === CLAIMED_APPROXIMATIONS[i]),
     note:
-      'The R3 list was five. Four of them (sequin, tcg-classic, acid-wash, disco) shipped dedicated recipes in the ' +
-      'R3-MISC wave — docs/VERIFICATION.md:840-843, "12/12 final yay" — and the count in SHADER-CONTRACT.md was ' +
-      'never updated. The code is the enforceable form, so the queue derives the list from PATTERNS and shows the ' +
-      'doc claim beside it. Note that the R3-MISC passage also claims "zero approxVia fallbacks remain in the ' +
-      'library", which the code refutes: big-glitter still carries one.',
+      'FIXED 2026-09-06: the R3 list was originally five. Four of them (sequin, tcg-classic, acid-wash, disco) ' +
+      'shipped dedicated recipes in the R3-MISC wave — docs/VERIFICATION.md:840-843, "12/12 final yay" — and ' +
+      'docs/SHADER-CONTRACT.md:290-295 now carries a correction at the same site rather than the stale count. The ' +
+      'code is still the enforceable form; the doc and the code agree today. Note that the R3-MISC passage also ' +
+      'claims "zero approxVia fallbacks remain in the library", which the code refutes: big-glitter still carries one.',
   })
 
   // ── 2. Canon-less patterns ────────────────────────────────────────────────
@@ -618,7 +628,12 @@ export async function buildTaskQueue(root: string, bakeDir: string): Promise<Bui
   reconciliation.push({
     key: 'uncanoned',
     claim: '13 patterns carry no canon file (subtask 5)',
-    claimedAt: 'docs/HOSTED-EDITOR.md:195-200',
+    // docs/HOSTED-EDITOR.md:195-200 is the CORRECTION ("The number is 12, not
+    // 13"), not a site that still claims 13 — citing it as claimedAt pointed a
+    // reader at the fix instead of the claim. Nothing in docs/ still asserts
+    // 13 as live; the only place it survives is as history, in DECISIONS.md.
+    // Cite the most recent entry that restates it, and say so.
+    claimedAt: 'DECISIONS.md:2062-2065 (2026-09-06, historical record — the doc claim itself was corrected at docs/HOSTED-EDITOR.md:195-200)',
     measured: `${manifest.uncanoned.length}: ${manifest.uncanoned.join(', ')}`,
     agrees: manifest.uncanoned.length === 13,
     note:
@@ -655,7 +670,12 @@ export async function buildTaskQueue(root: string, bakeDir: string): Promise<Bui
           : 'Printings rendering this recipe — the verdict decides whether they are right.',
       link: `/canon?pattern=${encodeURIComponent(v.patternId)}`,
       source: `data/verification-verdicts.json — verdicts[] (extracted from ${v.docLines})`,
-      guards: v.stillFrameBlind ? ['live-tilt-not-glsl'] : [],
+      // Keyed on ASK, not on stillFrameBlind: a still-frame-blind pattern whose
+      // ask is GLSL (energy-symbols — the residual is an icon atlas, not a
+      // motion claim) is a structural PAIR, not a single live-tilt row. The
+      // full guard belongs only to the live-tilt ask; the GLSL ask gets a
+      // softer note that the motion half is a separate, still-open dimension.
+      guards: v.ask === 'live-tilt' ? ['live-tilt-not-glsl'] : v.ask === 'glsl' && v.stillFrameBlind ? ['motion-half-needs-tilt'] : [],
       tieBreak: 0,
       detail: {
         wave: v.wave,
@@ -673,16 +693,17 @@ export async function buildTaskQueue(root: string, bakeDir: string): Promise<Bui
   const broken = verdictsFile.verdicts.filter((v) => !v.standing).map((v) => v.patternId).sort()
   reconciliation.push({
     key: 'standing-nays',
-    claim: `4 standing nays: ${CLAIMED_STANDING_NAYS.join(', ')}`,
+    claim: `${CLAIMED_STANDING_NAYS.length} standing nays: ${CLAIMED_STANDING_NAYS.join(', ')}`,
     claimedAt: CLAIMED_STANDING_NAYS_AT,
     measured: `${standingIds.length}: ${standingIds.join(', ')}`,
     agrees:
       standingIds.length === CLAIMED_STANDING_NAYS.length &&
       standingIds.every((id, i) => id === CLAIMED_STANDING_NAYS[i]),
     note:
-      `Two of the four were broken by later waves (${broken.join(', ')}) and three new nays were recorded in ` +
-      'R3-MOTION and R3-GLYPH. VERIFICATION.md never restates a consolidated post-R3 list, so ' +
-      'data/verification-verdicts.json is that restatement — see its $supersededClaim block for the line numbers.',
+      `FIXED 2026-09-06: two of the original four were broken by later waves (${broken.join(', ')}) and three new ` +
+      'nays were recorded in R3-MOTION and R3-GLYPH. VERIFICATION.md now carries a correction at the same site ' +
+      '(:73) restating the standing set as five, and data/verification-verdicts.json is the machine-readable form ' +
+      'of that restatement — see its $supersededClaim block for the line numbers.',
   })
 
   // ── 4. Machine masks nobody has corrected ─────────────────────────────────
