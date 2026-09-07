@@ -35,6 +35,11 @@ const CORPUS_DIRS = [
 const FILES = [
   ['foil-verification-map.json', 'foil-verification-map.json'],
   ['foil-pattern-cards.json', 'foil-pattern-cards.json'],
+  // The contribution queue: written into the BAKE directory by this app's
+  // prebuild, because two of its six inputs are bake outputs. It is therefore
+  // in FILES rather than CORPUS_FILES, and a bake that was never run makes it
+  // missing rather than stale — the same warning as the other two.
+  ['task-queue.json', 'task-queue.json'],
 ]
 /** Built on every build from the corpus itself, so always from `data/`. */
 const CORPUS_FILES = [['corpus-manifest.json', 'corpus-manifest.json']]

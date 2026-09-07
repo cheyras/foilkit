@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "$comment": "data/verification-verdicts.json — the standing yay/nay verdicts of docs/VERIFICATION.md, extracted by hand into a machine-readable datum.  WHY THIS FILE EXISTS.  docs/VERIFICATION.md is the record of every judging wave, and it is prose: a superseding header, then one markdown table per wave, each wave overriding rows in the last.  The frames and the judge's own verdict.json files live OUTSIDE this repository (VERIFICATION.md:31-34, 'local dev-artifacts/foil-verify/'), so there is nothing machine-readable to read.  The contribution queue needs the STANDING set — what is still a nay today, after every wave — and a build step that parsed six markdown tables and replayed their supersessions would be a prose parser pretending to be a data source.  So the extraction happens ONCE, by hand, here, with the doc line numbers that justify every row; the builder reads this file and never opens the doc.  HOW TO UPDATE.  When a wave lands in VERIFICATION.md, edit this file in the SAME commit: flip the verdict, bump `wave`/`judgedOn`, move the old state into `supersedes`, and update `docLines`.  tools/task-queue/build.ts fails the build if a patternId here is not an implemented pattern id, so a rename cannot silently orphan a verdict.  WHAT A NAY IS.  VERIFICATION.md:36-43: each render is a deterministic 8-frame tilt sweep judged on four 0-5 dimensions (static appearance / tilt motion / layer character / color travel); match=true requires every dimension >= 3.  A nay is match=false.  THE CAVEAT THIS FILE CARRIES.  Several nays are motion claims that a still-frame judge structurally cannot score.  VERIFICATION.md:759-764: 'Still-frame motion blindness now has FIVE data points ... Chey's live tilt remains the arbiter for motion claims.'  Those rows carry stillFrameBlind: true and ask: 'live-tilt' — the contribution they need is a HUMAN VERDICT ON A TILTING CARD, not another GLSL round.  Answering them with more shader work is the documented wrong move.",
+  "source": {
+    "doc": "docs/VERIFICATION.md",
+    "extractedOn": "2026-09-06",
+    "judgeModel": "google/gemini-3.1-pro-preview",
+    "rubric": "docs/VERIFICATION.md:36-43 — four 0-5 dimensions (static appearance / tilt motion / layer character / color travel); match requires every dimension >= 3",
+    "artifactsAreOutsideTheRepo": "docs/VERIFICATION.md:31-34 — frames + verdicts live at local dev-artifacts/foil-verify/, which is why this hand extraction exists"
+  },
+  "$supersededClaim": {
+    "claim": "the four standing nays are starlight, energy-symbols, pokeball-hologram, radiant-collection-dots",
+    "statedAt": "docs/VERIFICATION.md:61-73 (R2b vocabulary wave, 2026-08-02), repeated at docs/SHADER-CONTRACT.md:290-295",
+    "stillTrue": false,
+    "why": "Two of the four were broken by later waves and three new nays were recorded. R3-MOTION broke starlight (VERIFICATION.md:677, '17/20 yay — the first starlight yay ever; the standing parallax nay is broken') and recorded a new nay on radiant (:680). R3-GLYPH broke radiant-collection-dots (:754, '16/20 YAY — the standing R2 nay is broken') and recorded new nays on ace-spec (:756) and prismatic-pokeball (:757). pokeball-hologram was never re-judged after R2, so its R2 verdict is the last one on record. The standing set is therefore FIVE, and only two of the original four are in it. VERIFICATION.md never restates a consolidated post-R3 list — this file is that restatement."
+  },
+  "verdicts": [
+    {
+      "patternId": "energy-symbols",
+      "verdict": "nay",
+      "standing": true,
+      "wave": "R3-GLYPH",
+      "judgedOn": "2026-08-03",
+      "rounds": 3,
+      "docLines": "docs/VERIFICATION.md:755 (R3-GLYPH); first recorded at :397 (R2)",
+      "judgeNote": "nay — but \"banks do not exchange\" is PIXEL-REFUTED (blank frames 2 vs 4 invert)",
+      "residual": "placeholder icons until the icon atlas exists — the judge demands the actual 9-icon energy set, which is an icon-atlas contract change, not a tuning pass",
+      "stillFrameBlind": true,
+      "stillFrameNote": "The MOTION half of this nay is refuted at pixel level: the banks do exchange, and the judge could not see it in stills. The remaining half is an asset gap.",
+      "ask": "glsl",
+      "askDetail": "Ship the 9-icon energy atlas into the R3-GLYPH slot. The motion complaint needs no further shader work — it needs a live-tilt verdict to close."
+    },
+    {
+      "patternId": "pokeball-hologram",
+      "verdict": "nay",
+      "standing": true,
+      "wave": "R2",
+      "judgedOn": "2026-08-02",
+      "rounds": 3,
+      "docLines": "docs/VERIFICATION.md:398; taxonomy claim at docs/TAXONOMY.md:292-294, :300",
+      "judgeNote": "structural pair: (a) parallax is a motion cue — same stills-blindness as starlight (its sibling machinery); (b) the Cyclone Energy art bleeds past the era-layout window rect, so window-scoped uDarken read as \"a dark rectangular mask\"",
+      "residual": "Never re-judged after R2. Half of it is a mask-pipeline item: a per-card art-extent mask, because the era rect is not the foil's true extent on this exemplar (docs/SHADER-CONTRACT.md:458-463).",
+      "stillFrameBlind": true,
+      "stillFrameNote": "TAXONOMY.md:292-294 concedes the methodology under-determines this pattern: \"Parallax hard to fully confirm from stills; narration + slight relative shifts support it.\" TAXONOMY.md:300 flags it \"Medium confidence from stills\".",
+      "ask": "live-tilt",
+      "askDetail": "Tilt it in the canon lab and say whether the deep balls move against the floating ones. A still-frame judge has already returned 1/1/1/1 three times; a fourth round of GLSL cannot move a dimension the instrument cannot measure."
+    },
+    {
+      "patternId": "ace-spec",
+      "verdict": "nay",
+      "standing": true,
+      "wave": "R3-GLYPH",
+      "judgedOn": "2026-08-03",
+      "rounds": 3,
+      "docLines": "docs/VERIFICATION.md:756",
+      "judgeNote": "nay — its own named square (above 'e' in \"Tree\", frames 9→10) visibly changes: PIXEL-REFUTED",
+      "residual": "None known. The recorded eye check is \"pulse + blur ✓ on live tilt\".",
+      "stillFrameBlind": true,
+      "stillFrameNote": "The judge named a specific element as static and that element demonstrably changes between the two frames it cited. This is the strongest single refutation in the record.",
+      "ask": "live-tilt",
+      "askDetail": "A human verdict on a tilting card closes this. The shader is not the open question."
+    },
+    {
+      "patternId": "prismatic-pokeball",
+      "verdict": "nay",
+      "standing": true,
+      "wave": "R3-GLYPH",
+      "judgedOn": "2026-08-03",
+      "rounds": 3,
+      "docLines": "docs/VERIFICATION.md:757",
+      "judgeNote": "nay — round-3 \"darkens\" was REAL: hue-offset magenta can never match yellow through the screen-blend clamp",
+      "residual": "Root-caused, and the post-cap white-mix fix is recorded as eyeball-verified (\"never darker, ball legible\"). What is missing is a verdict on the FIXED recipe — the nay on record predates the fix.",
+      "stillFrameBlind": false,
+      "stillFrameNote": null,
+      "ask": "live-tilt",
+      "askDetail": "This one is a re-judge, not a repair. The GLSL already moved; nothing has recorded whether it worked."
+    },
+    {
+      "patternId": "radiant",
+      "verdict": "nay",
+      "standing": true,
+      "wave": "R3-MOTION",
+      "judgedOn": "2026-08-03",
+      "rounds": 3,
+      "score": "13/20",
+      "docLines": "docs/VERIFICATION.md:680, honesty note at :683-691",
+      "judgeNote": "nay 13/20 — judge-blind (see below)",
+      "residual": "All three rounds returned the same tilt_motion-2 claim, \"the grid slides continuously ... rather than crossfading between discrete positions\", and cropped adjacent fine-sweep frames pixel-refute it: line positions CONSTANT while opacities crossfade.",
+      "stillFrameBlind": true,
+      "stillFrameNote": "VERIFICATION.md:686-691: \"A crossfade between two interleaved gratings is indistinguishable from a slide in stills — the same still-frame motion blindness class as starlight's parallax ... Chey's live tilt on the canon lab is the tiebreak; the recipe implements his sentence literally.\"",
+      "ask": "live-tilt",
+      "askDetail": "The doc already names the arbiter and the reason. This is a tilt and a sentence, not a shader round."
+    },
+    {
+      "patternId": "starlight",
+      "verdict": "yay",
+      "standing": false,
+      "wave": "R3-MOTION",
+      "judgedOn": "2026-08-03",
+      "rounds": 2,
+      "score": "17/20",
+      "docLines": "docs/VERIFICATION.md:677",
+      "judgeNote": "17/20 yay — the first starlight yay ever; the standing parallax nay is broken",
+      "residual": null,
+      "stillFrameBlind": false,
+      "stillFrameNote": null,
+      "ask": null,
+      "askDetail": null,
+      "supersedes": {
+        "verdict": "nay",
+        "wave": "R2",
+        "docLines": "docs/VERIFICATION.md:85, :259-269",
+        "why": "Recorded here rather than deleted: 'the four standing nays' is a claim other documents still make, and a queue that silently dropped starlight would look like a bug rather than a finding. The fine-sweep protocol plus a window-scope framing fix is what broke it."
+      }
+    },
+    {
+      "patternId": "radiant-collection-dots",
+      "verdict": "yay",
+      "standing": false,
+      "wave": "R3-GLYPH",
+      "judgedOn": "2026-08-03",
+      "rounds": 3,
+      "score": "16/20",
+      "docLines": "docs/VERIFICATION.md:754",
+      "judgeNote": "16/20 YAY — the standing R2 nay is broken",
+      "residual": null,
+      "stillFrameBlind": false,
+      "stillFrameNote": null,
+      "ask": null,
+      "askDetail": null,
+      "supersedes": {
+        "verdict": "nay",
+        "wave": "R2",
+        "docLines": "docs/VERIFICATION.md:399",
+        "why": "Same reason as starlight: the superseded claim is still quoted elsewhere, so the queue records the correction instead of pretending the nay never existed."
+      }
+    }
+  ]
+}

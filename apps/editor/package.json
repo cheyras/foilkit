@@ -6,7 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "prebuild": "node ../../tools/build-corpus-manifest.mts",
+    "prebuild": "node ../../tools/build-corpus-manifest.mts && node --conditions source ../../tools/build-task-queue.mts",
     "build": "vite build && node ./copy-data.mjs",
     "dev": "vite",
     "preview": "vite preview --port 5173",

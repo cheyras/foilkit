@@ -56,6 +56,14 @@ export const CORPUS_DIRS = new Set(['foil-masks', 'foil-canon', 'foil-windows'])
 export const DATA_FILES: Record<string, string> = {
   '/foil-verification-map.json': 'foil-verification-map.json',
   '/foil-pattern-cards.json': 'foil-pattern-cards.json',
+  // The contribution queue. It is BUILT on every build (tools/build-task-queue.mts,
+  // this app's prebuild) rather than baked from a database — but two of its six
+  // inputs ARE bake outputs, so it is written into the bake directory beside
+  // them and read from here rather than from CORPUS_FILES. Under
+  // FOILKIT_BAKE=fixture that is the fixture bake's own queue, built from
+  // fixture numbers, which is what makes the queue exercisable end to end with
+  // no database anywhere.
+  '/task-queue.json': 'task-queue.json',
 }
 /**
  * Built on every build from the corpus itself rather than baked from a

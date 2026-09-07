@@ -74,6 +74,15 @@ jobs:
       - name: Corpus manifest is current
         run: node --conditions source tools/build-corpus-manifest.mts --check
 
+      # The contribution queue, same argument: it is the editor's LANDING PAGE,
+      # generated from six committed artifacts, and a committed one that no
+      # longer matches them would send contributors at work that is already
+      # done. It also prints a FINDING line for every doc count that disagrees
+      # with the data — those do not fail the build, on purpose, but they are
+      # in the log where the next person will see them.
+      - name: Contribution queue is current
+        run: node --conditions source tools/build-task-queue.mts --check
+
       # The editor's own typecheck. It is a separate tsconfig (DOM lib, JSX,
       # the `source` customCondition) and `pnpm typecheck` above does not see
       # it, which is exactly how a front end rots while CI stays green.
