@@ -66,6 +66,7 @@ export function TaskCard({ task, guardText }: { task: Task; guardText: Record<st
       <div className="mb-[4px] flex items-start justify-between gap-[8px]">
         <span className="flex flex-wrap items-center gap-[6px]">
           <span
+            data-testid="task-badge"
             className="rounded border border-border-default px-[5px] py-[1px] text-[10px] uppercase tracking-[0.06em] text-text-muted"
             title={type.what}
           >
@@ -78,7 +79,7 @@ export function TaskCard({ task, guardText }: { task: Task; guardText: Record<st
 
       <p className="mb-[6px] text-[12px] leading-[1.5] text-text-muted">{task.need}</p>
 
-      <p className="mb-[6px] text-[11px] text-text-muted">
+      <p data-testid="task-skill" className="mb-[6px] text-[11px] text-text-muted">
         <span className="text-text-primary">{skillLabel(task.skill)}</span>
         {' · '}
         <span className="text-text-primary">{estimateLabel(task.estimate)}</span>

@@ -176,6 +176,50 @@ function corpusOverlapSet(): BakeSet {
   return { setId: 'base1', name: 'Fixture Overlap Base', releasedOn: '1999-01-09', cardCountTotal: cards.length, cards }
 }
 
+/**
+ * THE INK-REGISTRY OVERLAP SETS.
+ *
+ * Same argument as `corpusOverlapSet`, one tier further along. `data/
+ * ink-designs.json` keys its queued-trademark rows on real SET IDS and real
+ * VARIANT KINDS — `sv08.5` + `reverse-foil-pokeball` — so a fixture catalog
+ * that carries neither cannot size an `ink-tile` task at all. Every one of them
+ * came out of the fixture bake with `impact: null`, which sorts to the BOTTOM,
+ * which put them past the first screen, which is exactly why CI watched the
+ * production queue white-screen on those cards and reported nothing.
+ *
+ * A queued tile is sized only when EVERY row queuing it can be counted, so all
+ * four ball sets have to be here or none of them counts. The ids and the kinds
+ * are coordinates into the registry — facts, like `base1-4` — and every NAME is
+ * invented, which is the same split F2 allows above.
+ *
+ * The plain `reverse` on each card is not filler: it is the printing that falls
+ * through to the ERA row and resolves to a shipped tile, so the fixture carries
+ * both halves of the tier rather than only the queued half.
+ */
+function inkOverlapSet(setId: string, name: string, releasedOn: string, ballKinds: string[]): BakeSet {
+  const cards: BakeCard[] = []
+  for (let i = 0; i < 6; i++) {
+    const number = String(i + 1)
+    cards.push({
+      cardId: `${setId}-${number}`,
+      number,
+      name: `${GREEK[i % GREEK.length]!} Ink`,
+      rarity: RARITIES[i % RARITIES.length]!,
+      images: {
+        low: `https://fixture.invalid/${setId}/${number}/low.webp`,
+        high: `https://fixture.invalid/${setId}/${number}/high.webp`,
+      },
+      variants: ['normal', 'reverse', ...ballKinds].map((kind) => ({
+        variantId: nextVariantId++,
+        kind,
+        displayName: variantDisplayName(kind),
+        tier: variantTier(kind),
+      })),
+    })
+  }
+  return { setId, name, releasedOn, cardCountTotal: cards.length, cards }
+}
+
 const series: BakeSeries[] = [
   {
     // The real series slug, because the resolver keys its era table on it —
@@ -185,6 +229,42 @@ const series: BakeSeries[] = [
     name: 'Fixture Overlap',
     tcgdexId: 'base',
     sets: [corpusOverlapSet()],
+  },
+  {
+    slug: 'scarlet-violet',
+    name: 'Fixture Ink Modern',
+    tcgdexId: 'sv',
+    sets: [
+      inkOverlapSet('sv08.5', 'Fixture Ink Balls One', '2025-01-17', [
+        'reverse-foil-pokeball',
+        'reverse-foil-masterball',
+      ]),
+      inkOverlapSet('sv10.5b', 'Fixture Ink Balls Two', '2025-07-18', [
+        'reverse-foil-pokeball',
+        'reverse-foil-masterball',
+      ]),
+      inkOverlapSet('sv10.5w', 'Fixture Ink Balls Three', '2025-07-18', [
+        'reverse-foil-pokeball',
+        'reverse-foil-masterball',
+      ]),
+    ],
+  },
+  {
+    slug: 'mega-evolution',
+    name: 'Fixture Ink Specialty',
+    tcgdexId: 'me',
+    // Six distinct reverses of one card on one sheet — the set that proves
+    // variantKind belongs in the ink key, and the only row `specialty-balls`
+    // is reachable from.
+    sets: [
+      inkOverlapSet('me02.5', 'Fixture Ink Specialty Balls', '2026-01-30', [
+        'reverse-foil-pokeball',
+        'reverse-foil-loveball',
+        'reverse-foil-quickball',
+        'reverse-foil-friendball',
+        'reverse-foil-duskball',
+      ]),
+    ],
   },
   {
     slug: 'fixture-prime',

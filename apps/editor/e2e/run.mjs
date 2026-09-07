@@ -385,6 +385,91 @@ try {
     (await page.locator('[data-testid="reconciliation"]').count()) === queueFile.reconciliation.length,
   )
 
+  // ── 1d-ii. EVERY CARD IN THE ARTIFACT RENDERS ────────────────────────────
+  //
+  // THE ONE THAT WOULD HAVE CAUGHT THE WHITE SCREEN.
+  //
+  // The queue's landing screen shows the first 20 cards. When the builder
+  // gained a seventh source, the client had no label for the new type, reading
+  // the badge off the table threw, and React unmounted the whole app — in
+  // PRODUCTION, where those cards rank 10th and 11th. CI missed it because the
+  // fixture could not size them, `null` sorts last, and they landed at 60-65:
+  // past the first screen, never rendered, never a failure.
+  //
+  // Both halves of that are now closed. The fixture carries the ink registry's
+  // real set ids so its ink cards rank inside the first screen the way
+  // production's do (tools/bake-fixture.mts), and this presses "Show the other
+  // N" so the run renders EVERY card in the artifact regardless of how any
+  // future source happens to rank. A card that cannot be labelled must render
+  // degraded, not take the page with it.
+  const listItems = page.locator('[data-testid="task-list"] > li')
+  const firstScreen = await listItems.count()
+  ok(
+    'the first screen is capped, and says how many are behind the cap',
+    firstScreen === Math.min(20, queueFile.tasks.length),
+    `${firstScreen} shown of ${queueFile.tasks.length}`,
+  )
+  const kindsOnFirstScreen = new Set(queueFile.tasks.slice(0, firstScreen).map((t) => t.type))
+  ok(
+    'the fixture ranks an ink-tile card inside the first screen, exactly as production does',
+    kindsOnFirstScreen.has('ink-tile'),
+    `first screen carries: ${[...kindsOnFirstScreen].join(', ')}`,
+  )
+  const showRest = page.getByRole('button', { name: /^Show the other \d+$/ })
+  ok('the tail is one press away, and the button says how many', (await showRest.count()) === 1)
+  await showRest.click()
+  await page.waitForTimeout(300)
+  const allCards = await listItems.count()
+  ok(
+    'pressing it renders every card in the artifact',
+    allCards === queueFile.tasks.length,
+    `${allCards} rendered of ${queueFile.tasks.length}`,
+  )
+  // A label lookup that came back undefined renders an EMPTY badge rather than
+  // throwing, once the page is hardened — so an empty badge is still a bug, and
+  // it is checked separately from the page surviving.
+  const badges = await page.locator('[data-testid="task-badge"]').allInnerTexts()
+  ok(
+    'every card wears a kind badge with words in it',
+    badges.length === queueFile.tasks.length && badges.every((b) => b.trim().length > 0),
+    `${badges.filter((b) => b.trim().length === 0).length} blank of ${badges.length}`,
+  )
+  const skillLines = await page.locator('[data-testid="task-skill"]').allInnerTexts()
+  ok(
+    'and names a skill and an estimate a contributor can plan around',
+    skillLines.length === queueFile.tasks.length && skillLines.every((s) => /\S+.*·.*\S+/.test(s)),
+    skillLines.find((s) => !/\S+.*·.*\S+/.test(s)) ?? '',
+  )
+  // Every DISTINCT kind the artifact carries is on screen. A kind the client
+  // silently dropped would leave its cards unrendered while the count above
+  // still matched, if two bugs ever cancelled.
+  const artifactKinds = [...new Set(queueFile.tasks.map((t) => t.type))]
+  const missingKinds = artifactKinds.filter((k) => !badges.some((b) => b.trim().length > 0))
+  ok(
+    `all ${artifactKinds.length} kinds in the artifact reached the screen`,
+    missingKinds.length === 0 && new Set(badges.map((b) => b.trim())).size >= artifactKinds.length,
+    `${new Set(badges.map((b) => b.trim())).size} distinct badges for ${artifactKinds.length} kinds`,
+  )
+  // The `art` skill's chip, which only exists because of the seventh source.
+  ok(
+    'the new skill has a chip of its own, with its cards behind it',
+    (await page.getByRole('button', { name: `Original geometry (${queueFile.counts.bySkill.art})` }).count()) === 1,
+    `expected an "Original geometry (${queueFile.counts.bySkill.art})" chip`,
+  )
+  // The guard is the whole point of an ink-tile card: a queued slot with no
+  // caution attached is a slot somebody eventually fills with a tracing.
+  ok(
+    'and an ink-tile card carries the originals-only caution, rendered',
+    (await page.getByText('may be filled ONLY by an original recreation', { exact: false }).count()) > 0,
+  )
+  // A React unmount is not a console error; it is a pageerror. Checked HERE
+  // rather than only at the end, so the failure names the list that caused it.
+  ok(
+    'rendering the whole list threw nothing — the page is still mounted',
+    consoleErrors.filter((t) => t.startsWith('pageerror:')).length === 0,
+    consoleErrors.filter((t) => t.startsWith('pageerror:')).slice(0, 2).join(' | '),
+  )
+
   // ── 1e. A TASK CARD DEEP-LINKS TO THE CARD IT NAMES ──────────────────────
   //
   // The one journey that makes the list a queue rather than a report. It uses
