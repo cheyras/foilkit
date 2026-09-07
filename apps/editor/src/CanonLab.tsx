@@ -5,8 +5,11 @@
 //
 // A plain/empty card — no ink, no artwork scan, just the holofoil pattern
 // itself over a blank card base — rendered NEXT TO the real reference clip of
-// the pattern being tilted (research/foil-video-reference/<slug>/clip.webm +
-// 8 keyframes, streamed by the branch api). Purpose-built for locking down the
+// the pattern being tilted. That clip is no longer a file: the corpus cites its
+// footage rather than vendoring it (AGENTS.md F2), so the pane embeds the same
+// seconds of the same source video from YouTube, on click, from the citations
+// in `reference/<slug>/notes.md`. See `reference/ReferencePane.tsx`.
+// Purpose-built for locking down the
 // CANONICAL recipe of each of the 43 pattern types: full pattern vocabulary,
 // tuning sliders, tilt (pointer / gyro / deterministic manual), and Save canon
 // → data/foil-canon/<patternId>.json (a full uniform snapshot that replaces
@@ -18,7 +21,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { foilApi } from './api.ts'
-import { PATTERNS, patternById, canonFor, referenceSlug } from '@foilkit/patterns'
+import { PATTERNS, patternById, canonFor } from '@foilkit/patterns'
 import { canonBaseline, sparseDiff, type FoilPattern } from '@foilkit/core'
 import { maskForScope, resolveFoil, type FoilScope } from '@foilkit/resolver'
 import { CardViewer, MASK_H, MASK_W, createMaskCanvas, useTilt, type ViewerSettings } from '@foilkit/three/react'
@@ -29,6 +32,7 @@ import { seedCanonSession, updateCanonSession } from './staging/session.ts'
 import { buildCanonContribution, type SubmissionResult } from './staging/submit.ts'
 import { detectCanonConflict } from './staging/conflict.ts'
 import { SubmitOutcome } from './SubmitOutcome.tsx'
+import { ReferencePane } from './reference/ReferencePane.tsx'
 import { sha256Uniforms } from './staging/sha.ts'
 import { useViewer } from './writer/useViewer.ts'
 import type { CanonSession } from './staging/types.ts'
@@ -252,11 +256,6 @@ export function CanonLab({ staging, viewer }: { staging: Staging; viewer: Viewer
   const [prBusy, setPrBusy] = useState(false)
   const [prResult, setPrResult] = useState<SubmissionResult | null>(null)
   const canonQ = useQuery({ queryKey: ['foil', 'canon'], queryFn: ({ signal }) => foilApi.getCanon(signal) })
-  const refIndexQ = useQuery({
-    queryKey: ['foil', 'reference-index'],
-    queryFn: ({ signal }) => foilApi.referenceIndex(signal),
-    staleTime: 5 * 60_000,
-  })
 
   const pattern = patternById(patternId) // alias-safe
   const canon = canonFor(canonQ.data ?? undefined, pattern.id)
@@ -516,12 +515,6 @@ export function CanonLab({ staging, viewer }: { staging: Staging; viewer: Viewer
     }
   }
 
-  // ── Reference clip availability ──
-  const slug = referenceSlug(pattern.id)
-  const refInfo = slug ? refIndexQ.data?.patterns[slug] : undefined
-  const hasClip = Boolean(slug && refInfo?.clip)
-  const borrowed = slug !== pattern.id // reverse-sheet borrows pokeball-masterball
-
   return (
     <div className="flex min-h-screen flex-col bg-surface-primary text-text-primary min-[700px]:h-screen min-[700px]:flex-row min-[700px]:overflow-hidden">
       {/* ── Pattern + reference column ── */}
@@ -608,45 +601,7 @@ export function CanonLab({ staging, viewer }: { staging: Staging; viewer: Viewer
 
         {/* The real card on video, side by side with the render above */}
         <div className="shrink-0 border-t border-border-default bg-[#07080c] p-[10px] min-[700px]:max-h-[46%] min-[700px]:overflow-y-auto">
-          {hasClip ? (
-            <div>
-              <video
-                key={slug}
-                src={foilApi.referenceUrl(slug!, 'clip.webm')}
-                poster={foilApi.referenceUrl(slug!, 'frame-01.jpg')}
-                autoPlay
-                muted
-                loop
-                playsInline
-                controls
-                className="mx-auto max-h-[26vh] w-auto max-w-full rounded-md min-[700px]:max-h-[22vh]"
-              />
-              <div className="mt-[8px] flex gap-[6px] overflow-x-auto pb-[2px]">
-                {Array.from({ length: refInfo?.frames ?? 0 }, (_, i) => (
-                  <img
-                    key={i}
-                    src={foilApi.referenceUrl(slug!, `frame-0${i + 1}.jpg`)}
-                    alt={`${slug} keyframe ${i + 1}`}
-                    loading="lazy"
-                    className="h-[56px] w-auto shrink-0 rounded-[3px]"
-                  />
-                ))}
-              </div>
-              <p className="mt-[6px] text-[10px] leading-[14px] text-text-muted">
-                Reference: one real tilt sweep{borrowed ? ` (borrowed from ${slug} — nearest physical sheet)` : ''} ·
-                collector tilt footage credited in research/foil-video-reference/{slug}/notes.md (main corpus:
-                “All 39 Pokemon Card Holo Patterns Explained”, Sleeve No Card Behind).
-              </p>
-            </div>
-          ) : (
-            <p className="py-[14px] text-center text-[12px] text-text-muted">
-              {slug === null
-                ? 'No physical reference — “none” is the plain-card baseline.'
-                : refIndexQ.data
-                  ? `No reference clip in the corpus for ${slug}.`
-                  : 'Reference clips stream from the foil branch api — unavailable here.'}
-            </p>
-          )}
+          <ReferencePane patternId={pattern.id} />
         </div>
       </div>
 

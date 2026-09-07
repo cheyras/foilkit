@@ -320,11 +320,6 @@ export interface FoilOverrideEntry {
   baseline: { canonSavedAt: string | null }
 }
 
-/** Which video-reference assets exist per pattern. Always empty here — see below. */
-export interface FoilReferenceIndex {
-  patterns: Record<string, { clip: boolean; frames: number }>
-}
-
 /** What the workbench knows about the saved hand mask it is displaying. */
 export interface FoilMaskMeta {
   file: string
@@ -666,22 +661,15 @@ export const foilApi = {
     }
   },
 
-  /**
-   * `/reference` is DEFERRED, not ported.
-   *
-   * The old route streamed committed clips out of `research/foil-video-reference/`.
-   * Subtask 2 removed that media from the repository — it is cited, never
-   * vendored — and subtask 12 replaces it with embeds from the source. So the
-   * canon lab's reference pane is an EMPTY SLOT, treated exactly like the glyph
-   * slots: shipping the slot empty is how it stays possible. This returns an
-   * empty index rather than null so the pane renders its own explanation
-   * instead of silently disappearing.
-   */
-  referenceIndex: async (_signal?: AbortSignal): Promise<FoilReferenceIndex | null> => {
-    return { patterns: {} }
-  },
-
-  referenceUrl: (_slug: string, _file: string): string => '',
+  // `/reference` IS GONE, and nothing replaced it on this side.
+  //
+  // The old route streamed committed clips out of `research/foil-video-reference/`.
+  // Subtask 2 removed that media from the repository — it is cited, never
+  // vendored — and the empty-index stub that stood here through subtask 12's
+  // development is now dead: the canon lab's reference pane needs no API at all.
+  // It reads `reference-clips.json`, a build-time datum bundled into
+  // `@foilkit/patterns`, and embeds the source video. No route, no fetch, no
+  // artifact to bake. See `apps/editor/src/reference/ReferencePane.tsx`.
 
   // ── Writes: the direct-write path ────────────────────────────
   //
