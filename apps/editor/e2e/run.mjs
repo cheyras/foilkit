@@ -280,6 +280,128 @@ try {
   const noProgressBar = await page.locator('progress').count()
   ok('there is no completion bar — nothing here is ever finished', noProgressBar === 0)
 
+  // ── 1b. THE LAUNDRY LIST ─────────────────────────────────────────────────
+  //
+  // The leverage table answers one question. #11 made it one section of a full
+  // contribution list generated from six committed artifacts, and everything
+  // below is about that list being REAL: the cards come from the artifact, the
+  // filters actually filter, and the guards are rendered where they apply.
+  const queueFile = JSON.parse(readFileSync(path.join(ROOT, 'data', 'fixture-bake', 'task-queue.json'), 'utf8'))
+  await page.waitForSelector('[data-testid="task-list"]', { timeout: 15000 })
+  const cardCount = await page.locator('[data-testid="task-list"] > li').count()
+  ok(
+    'the queue renders task cards, not just a leverage table',
+    cardCount > 0 && cardCount <= queueFile.tasks.length,
+    `${cardCount} card(s) of ${queueFile.tasks.length}`,
+  )
+  ok(
+    'and it says how many there are in total, rather than implying the first screen is all of it',
+    (await page.getByText(`${queueFile.counts.tasks} things`, { exact: false }).count()) > 0,
+    `expected "${queueFile.counts.tasks} things"`,
+  )
+
+  // The first card is the artifact's first card. If the page re-sorted, the
+  // impact ranking the generator computed would be decorative.
+  const firstCardText = await page.locator('[data-testid="task-list"] > li').first().innerText()
+  ok(
+    'the first card is the highest-impact task in the artifact — the page does not re-rank',
+    firstCardText.includes(queueFile.tasks[0].title),
+    `expected "${queueFile.tasks[0].title}", got "${firstCardText.split('\n').slice(0, 2).join(' / ')}"`,
+  )
+
+  for (const heading of [
+    'Everything that needs doing',
+    'Recipes the resolver never picks',
+    'What the documents say, and what the data says',
+  ]) {
+    ok(`the queue renders the "${heading}" section`, (await page.getByText(heading, { exact: false }).count()) > 0)
+  }
+
+  // ── 1c. THE SKILL FILTER ─────────────────────────────────────────────────
+  //
+  // Pressed for real, and checked against the ARTIFACT's own counts rather
+  // than against whatever the page says it filtered to — a filter test that
+  // trusts the page for its expected value proves nothing.
+  const maskChip = `Mask drawing (${queueFile.counts.bySkill.mask})`
+  await page.getByRole('button', { name: maskChip }).click()
+  await page.waitForTimeout(200)
+  const afterFilter = await page.locator('[data-testid="task-list"] > li').count()
+  ok(
+    'the skill filter narrows the list to that skill',
+    afterFilter === Math.min(queueFile.counts.bySkill.mask, 20),
+    `${afterFilter} shown, expected ${Math.min(queueFile.counts.bySkill.mask, 20)}`,
+  )
+  const shownCards = await page.locator('[data-testid="task-list"] > li').allInnerTexts()
+  ok(
+    'and every card it left is a mask-drawing card',
+    shownCards.length > 0 && shownCards.every((t) => t.includes('Mask drawing')),
+    shownCards.find((t) => !t.includes('Mask drawing'))?.slice(0, 90) ?? '',
+  )
+  await page.getByRole('button', { name: maskChip }).click()
+
+  // The live-tilt chip: a skill that exists only because a still-frame judge
+  // is structurally blind to motion. Its cards must SAY that, in words.
+  const tiltChip = `Live tilt (${queueFile.counts.bySkill['live-tilt']})`
+  await page.getByRole('button', { name: tiltChip }).click()
+  await page.waitForTimeout(200)
+  ok(
+    'the live-tilt filter finds the verdicts a still-frame judge cannot settle',
+    (await page.locator('[data-testid="task-list"] > li').count()) === queueFile.counts.bySkill['live-tilt'],
+  )
+  const tiltGuards = await page.locator('[data-testid="task-guard"]').allInnerTexts()
+  ok(
+    'and those cards say the ask is a live-tilt human verdict, NOT another GLSL round',
+    tiltGuards.length > 0 && tiltGuards.every((t) => /not another GLSL round/i.test(t)),
+    `${tiltGuards.length} guard(s) rendered`,
+  )
+  await page.getByRole('button', { name: tiltChip }).click()
+  await page.waitForTimeout(200)
+
+  // ── 1d. THE TWO GUARDS THAT ARE THE POINT ────────────────────────────────
+  const diagnoses = await page.locator('[data-testid="diagnosis-verbatim"]').allInnerTexts()
+  const bakeSentences = queueFile.emptyPools.map((p) => p.detail)
+  ok(
+    "the empty-pool diagnosis is the bake's own sentence, unedited",
+    diagnoses.length === bakeSentences.length && diagnoses.every((t, i) => t.trim() === bakeSentences[i].trim()),
+    `${diagnoses.length} rendered vs ${bakeSentences.length} in the artifact`,
+  )
+  if (queueFile.emptyPools.some((p) => p.reason === 'outranked')) {
+    ok(
+      'an outranked pool renders the do-not-flip-a-winner guard',
+      (await page.getByText('Do not flip a resolver winner', { exact: false }).count()) > 0,
+    )
+  }
+  ok(
+    'the queue shows where the documents and the data disagree',
+    (await page.locator('[data-testid="reconciliation"]').count()) === queueFile.reconciliation.length,
+  )
+
+  // ── 1e. A TASK CARD DEEP-LINKS TO THE CARD IT NAMES ──────────────────────
+  //
+  // The one journey that makes the list a queue rather than a report. It uses
+  // the highest-impact card that HAS a card link, and asserts on the set+number
+  // line rather than the name, for the reason fixtureCardLabel documents.
+  const linked = queueFile.tasks.find((t) => t.link !== null && t.link.startsWith('/card?id='))
+  if (linked) {
+    const linkedId = new URLSearchParams(linked.link.slice(linked.link.indexOf('?'))).get('id')
+    await page.getByRole('button', { name: `${linked.type === 'mask' ? 'Mask drawing' : 'Research / citation'} (${queueFile.counts.bySkill[linked.skill]})` }).click()
+    await page.waitForTimeout(200)
+    const openIt = page.getByRole('button', { name: 'Open it' }).first()
+    await openIt.click()
+    await page.waitForURL(/\/card\?id=/, { timeout: 15000 })
+    await page.waitForSelector('text=Card (full catalog, by era)', { timeout: 20000 })
+    await page.waitForTimeout(2000)
+    const landed = new URL(page.url()).searchParams.get('id')
+    ok('a task card deep-links to the card it names', landed === linkedId, `asked ${linkedId}, landed ${landed}`)
+    ok(
+      'and that card is the one on screen',
+      (await page.getByText(fixtureCardLabel(linkedId) ?? ' ', { exact: false }).count()) > 0,
+      `expected "${fixtureCardLabel(linkedId)}" for ${linkedId}`,
+    )
+  } else {
+    ok('a task card deep-links to the card it names', false, 'no task in the fixture queue carries a /card link')
+  }
+
   // ── 2. Open a card by deep link ──────────────────────────────────────────
   // base1-4 carries a real committed hand mask, which is what makes the seed
   // and the conflict check meaningful rather than synthetic.

@@ -22,6 +22,23 @@
 //
 //   So the queue never shows a completion bar. There is no completion state and
 //   no backlog with a bottom, and a progress bar would be a lie about both.
+//
+// ── WHAT #11 ADDED, AND WHY THE TABLE STAYED ───────────────────────────────
+//
+// The leverage ranking answers one question exactly — where does an hour move
+// the most pixels — and it is still the impact spine of this page. What it
+// could not do was be a LIST. Five other kinds of contribution were recorded
+// in this repository and invisible from here: an approximated recipe, a
+// canon-less pattern, a standing verification nay, a machine mask nobody
+// corrected, an untargeted research residual, an empty resolver pool. A
+// contributor who could not do a mask had nothing to read.
+//
+// So the table became one section of a laundry list. `data/task-queue.json`
+// (tools/build-task-queue.mts, every build, no database) carries every one of
+// those as a task card that says what is needed, roughly how long, which skill
+// it wants, how many printings it moves and which file it came from. This
+// surface renders it and filters it; it computes NOTHING, so the page and the
+// generator can never disagree about what the queue says.
 
 import { useEffect, useMemo, useState } from 'react'
 import { ActionBtn, Chip, Section, SurfaceTabs } from './ui.tsx'
@@ -32,6 +49,8 @@ import type { CatalogIndex } from './catalog/shards.ts'
 import { navigate } from './router.ts'
 import { RESOLVER_VERSION } from '@foilkit/resolver'
 import type { Staging } from './staging/useStaging.ts'
+import { EmptyPools, TaskCard, TaskFilters } from './queue/TaskCards.tsx'
+import { filterTasks, type Filters, type TaskQueueFile } from './queue/taskQueue.ts'
 
 export interface VerificationGroup {
   key: string
@@ -84,8 +103,21 @@ export interface VerificationMapFile {
  */
 const REGEN_LEVERAGE_FLOOR = 200
 
+/**
+ * How many cards the list shows before "show the rest".
+ *
+ * A hundred-odd cards is the honest length of this backlog and hiding it would
+ * be the same lie a progress bar tells. But a first screen that is one long
+ * scroll is a first screen nobody reads, so the tail is one press away and the
+ * button says how many are behind it.
+ */
+const FIRST_SCREEN = 20
+
 export function Queue({ staging }: { staging: Staging }): React.ReactElement {
   const [map, setMap] = useState<VerificationMapFile | null>(null)
+  const [queue, setQueue] = useState<TaskQueueFile | null>(null)
+  const [filters, setFilters] = useState<Filters>({ skill: null, type: null })
+  const [showAll, setShowAll] = useState(false)
   const [corpus, setCorpus] = useState<CorpusView | null>(null)
   /**
    * The catalog index is checked separately from the map, because they are
@@ -102,14 +134,16 @@ export function Queue({ staging }: { staging: Staging }): React.ReactElement {
   useEffect(() => {
     const ac = new AbortController()
     void (async () => {
-      const [m, c, idx] = await Promise.all([
+      const [m, c, idx, q] = await Promise.all([
         getJson<VerificationMapFile>('/foil-verification-map.json', ac.signal),
         CorpusView.load(ac.signal),
         getJson<CatalogIndex>('/catalog/index.json', ac.signal),
+        getJson<TaskQueueFile>('/task-queue.json', ac.signal),
       ])
       setMap(m)
       setCorpus(c)
       setCatalogIndex(idx)
+      setQueue(q)
       setLoading(false)
     })()
     return () => ac.abort()
@@ -128,6 +162,9 @@ export function Queue({ staging }: { staging: Staging }): React.ReactElement {
     const all = map?.groups ?? []
     return scope === 'all' ? all : all.filter((g) => g.scope === scope)
   }, [map, scope])
+
+  const visible = useMemo(() => filterTasks(queue?.tasks ?? [], filters), [queue, filters])
+  const shown = showAll ? visible : visible.slice(0, FIRST_SCREEN)
 
   /**
    * Open a card from a group.
@@ -167,12 +204,63 @@ export function Queue({ staging }: { staging: Staging }): React.ReactElement {
         </p>
       )}
 
+      {!loading && queue === null && (
+        <p className="rounded-md border border-amber-500/50 bg-amber-500/10 p-[10px] text-[13px] text-amber-200">
+          No task queue has been generated for this site. It is a build step —{' '}
+          <code>tools/build-task-queue.mts</code> — so its absence means the build did not finish, not that there
+          is no work.
+        </p>
+      )}
+
+      {queue !== null && (
+        <Section title="Everything that needs doing">
+          <p className="mb-[10px] text-[13px] leading-[1.5] text-text-muted">
+            {queue.counts.tasks} things, generated from six committed artifacts and sorted by{' '}
+            <span className="text-text-primary">impact</span> — printings the resolver assigns to the rule each one
+            teaches. Nothing here is a wish list: every card names the file it came from, and a card that would
+            need a resolver winner flipped is marked as research rather than as drawing. Filter by what you can
+            do.
+          </p>
+
+          <TaskFilters tasks={queue.tasks} filters={filters} onChange={setFilters} />
+
+          {visible.length === 0 ? (
+            <p className="text-[12px] text-text-muted">
+              Nothing matches those two filters together. Loosen one — the counts on each chip say what is behind
+              it.
+            </p>
+          ) : (
+            <>
+              <ul data-testid="task-list" className="flex flex-col gap-[8px]">
+                {shown.map((t) => (
+                  <TaskCard key={t.id} task={t} guardText={queue.guards} />
+                ))}
+              </ul>
+              {visible.length > shown.length && (
+                <div className="mt-[10px]">
+                  <ActionBtn onClick={() => setShowAll(true)}>
+                    Show the other {visible.length - shown.length}
+                  </ActionBtn>
+                </div>
+              )}
+            </>
+          )}
+
+          <p className="mt-[10px] text-[11px] leading-[1.5] text-text-muted">
+            {queue.counts.impactTotal.toLocaleString()} printings governed across every card that could be sized;{' '}
+            {queue.counts.unsized} could not be, and say so rather than showing a zero. Generated from data as of{' '}
+            {new Date(queue.generatedAt).toLocaleString()}
+            {queue.resolverVersion === null ? '' : ` against resolver v${queue.resolverVersion}`}.
+          </p>
+        </Section>
+      )}
+
       <Section title="Where an hour moves the most pixels">
         <p className="mb-[10px] text-[13px] leading-[1.5] text-text-muted">
-          Every printing already has an answer — the resolver assigns a pattern, the era layout gives it a
-          footprint, and the composite law renders it. A card nobody has looked at is <em>guessed</em>, not
-          missing. Looking at one upgrades a guess to a decision, and that decision becomes evidence the next
-          generative pass uses on everything else in its group. Ranked by{' '}
+          The impact spine of the list above, in its own units. Every printing already has an answer — the
+          resolver assigns a pattern, the era layout gives it a footprint, and the composite law renders it. A card
+          nobody has looked at is <em>guessed</em>, not missing. Looking at one upgrades a guess to a decision, and
+          that decision becomes evidence the next generative pass uses on everything else in its group. Ranked by{' '}
           <span className="text-text-primary">printings ÷ (exemplars + 1)</span>.
         </p>
 
@@ -264,10 +352,19 @@ export function Queue({ staging }: { staging: Staging }): React.ReactElement {
         )}
       </Section>
 
+      {/*
+        The canon-less patterns used to be a row of bare chips here. They are
+        now `canon` task cards in the list above, with an impact number, an
+        estimate and the same deep link — which is strictly more than a chip
+        said. The chips stay as a fast jump-off, because "I know which pattern
+        I came for" is a real way to arrive and the list is sorted for the
+        other one.
+      */}
       <Section title="Patterns nobody has canon'd">
         <p className="mb-[8px] text-[13px] text-text-muted">
           A pattern with no canon file inherits whatever the code defaults say at read time. That absence is
-          recorded rather than papered over, because it is exactly what makes these worth doing.
+          recorded rather than papered over, because it is exactly what makes these worth doing. Each is also a
+          card above, ranked by the printings it moves.
         </p>
         <div className="flex flex-wrap gap-[6px]">
           {(corpus?.uncanoned ?? []).map((id) => (
@@ -280,6 +377,52 @@ export function Queue({ staging }: { staging: Staging }): React.ReactElement {
           )}
         </div>
       </Section>
+
+      {queue !== null && queue.emptyPools.length > 0 && (
+        <Section title="Recipes the resolver never picks">
+          <p className="mb-[10px] text-[13px] leading-[1.5] text-text-muted">
+            {queue.emptyPools.length} implemented recipes have an empty pool — no printing in this catalog resolves
+            to them. The bake distinguishes <em>four causes</em>, and they are four different contributions rather
+            than one backlog. The diagnosis sentence under each is the bake's own, printed unchanged.
+          </p>
+          <EmptyPools pools={queue.emptyPools} guardText={queue.guards} />
+        </Section>
+      )}
+
+      {queue !== null && queue.reconciliation.length > 0 && (
+        <Section title="What the documents say, and what the data says">
+          <p className="mb-[10px] text-[13px] leading-[1.5] text-text-muted">
+            This queue is generated from the corpus, not from the prose about it. Where a document states a count,
+            the generator checks it and prints the disagreement rather than resolving it silently — a stale
+            sentence is a finding, and the measurement wins.
+          </p>
+          <ul className="flex flex-col gap-[8px]">
+            {queue.reconciliation.map((r) => (
+              <li
+                key={r.key}
+                data-testid="reconciliation"
+                className={`rounded-md border p-[10px] ${
+                  r.agrees ? 'border-border-default bg-surface-tertiary' : 'border-amber-500/40 bg-amber-500/10'
+                }`}
+              >
+                <div className="mb-[4px] flex items-baseline justify-between gap-[8px]">
+                  <span className="text-[13px] text-text-primary">{r.key}</span>
+                  <span className={`text-[10px] uppercase tracking-[0.06em] ${r.agrees ? 'text-text-muted' : 'text-amber-200'}`}>
+                    {r.agrees ? 'agrees' : 'stale'}
+                  </span>
+                </div>
+                <p className="mb-[4px] text-[12px] leading-[1.5] text-text-muted">
+                  <span className="text-text-primary">The doc says:</span> “{r.claim}” — {r.claimedAt}
+                </p>
+                <p className="mb-[4px] text-[12px] leading-[1.5] text-text-muted">
+                  <span className="text-text-primary">The data says:</span> {r.measured}
+                </p>
+                <p className="text-[11px] leading-[1.5] text-text-muted">{r.note}</p>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
 
       {staging.sessions.length > 0 && (
         <Section title="Your staged work">
