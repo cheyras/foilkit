@@ -283,12 +283,26 @@ export function exemplarWeightOf(s: Pick<MaskSidecar, 'derivation_method' | 'pro
 //                   `verification: { verifiedBy: 'themselves' }` in a fork PR
 //                   gets `contributor` back and weight 0.
 //
-// THE RESIDUAL HOLE, stated rather than papered over: a hand-crafted pull
-// request could carry `verifiedBy: 'cheyras'` over pixels no writer ever saw.
-// Nothing in the file can disprove that, because the repository has no
-// signature over sidecar bytes. What closes it is that such a PR does not come
-// from the App — it is a fork PR a human reads before merging, and the lie is
-// sitting in the diff in plain text. The App path cannot produce one at all.
+// THE RESIDUAL HOLE, stated rather than papered over — and it is THREE DOORS
+// to the same room, not one. A hand-crafted pull request (never the App; a
+// human reads such a diff before merging) can reach owner-verified weight by:
+//
+//   1. `verification: { verifiedBy: 'cheyras', via: 'writer-direct' }` over
+//      pixels no writer ever saw — the loud one; the name is in the diff.
+//   2. `author: { login: 'cheyras', id: null, via: 'local-cli' }` with no
+//      verification block at all — byte-identical to `HISTORICAL_AUTHOR`, so
+//      the reader cannot tell it from a legitimate pre-contributor record.
+//   3. `"version": 3` with `author` omitted — the quiet one: the historical
+//      inference then stamps owner-verified, and the lie is a single digit a
+//      reviewer has been trained to read as legacy compat.
+//
+// Nothing in the file can disprove any of the three, because the repository
+// has no signature over sidecar bytes. What closes them is the same fact each
+// time: none can come from the App (both write paths compose sidecars
+// server-side and hardcode `version`), so each requires a fork PR whose diff a
+// human reads — and a reviewer of ANY sidecar diff should treat `version`,
+// `author`, and `verification` as claims the diff itself cannot prove.
+// `deriveTier`'s tests pin all three doors as known and accepted.
 
 /** How the server learned who authored these pixels. */
 export type AuthorChannel =
@@ -871,11 +885,14 @@ const AUTHOR_CHANNELS: readonly AuthorChannel[] = ['writer-direct', 'contributio
 /**
  * An `author` block, or null.
  *
- * CONSERVATIVE BY CONSTRUCTION, in the direction that costs weight rather than
- * grants it: an unknown `via`, a missing login, anything that is not the shape
- * this module writes, comes back null. On a v5 record that is `unattributed`
- * and weight 0; there is no shape a hand-edit can reach that is worth more than
- * the shape the server writes.
+ * CONSERVATIVE against MALFORMED input, in the direction that costs weight
+ * rather than grants it: an unknown `via`, a missing login, anything that is
+ * not the shape this module writes, comes back null — on a v5 record that is
+ * `unattributed` and weight 0. It is NOT proof against a WELL-FORMED lie: a
+ * hand-edit that reproduces the exact shape the server writes (see door 2 in
+ * the residual-hole note above, `HISTORICAL_AUTHOR`'s byte-identical twin) is
+ * indistinguishable from the real thing by construction. Shape checks stop
+ * accidents; the fork-PR review stops forgeries.
  */
 function asAuthor(raw: unknown): AuthorIdentity | null {
   if (typeof raw !== 'object' || raw === null) return null;

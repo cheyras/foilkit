@@ -2005,3 +2005,21 @@ more careful about what joins it.
 - `data/foil-verification-map.json` gains `exemplarsByTier` and
   `poolAwaitingVerification` in the code, but the committed artifact needs a
   Postgres-backed re-bake to pick them up. Not gated by CI, same as today.
+
+
+## 2026-09-06 -- Correction: the residual provenance hole is three doors, not one
+
+Independent verification of the tier rework reproduced two UNDOCUMENTED shapes
+that reach owner-verified weight from a hand-crafted fork PR, alongside the one
+the entry above documented: (2) an `author` block byte-identical to
+`HISTORICAL_AUTHOR` (`login: cheyras, via: local-cli`), and (3) a current-era
+record whose `version` field is edited down to 3, which the historical
+inference cannot distinguish from a genuine legacy record. Neither is reachable
+from the App (both write paths compose sidecars server-side and hardcode
+`version`); all three require a fork PR whose diff a human reads. The
+residual-hole note in `provenance.ts` now names all three, the `asAuthor`
+docstring no longer overstates what a shape check proves, and a dedicated test
+pins each door as known-and-accepted so a behavior change surfaces as a test
+failure rather than a silent doc drift. Review guidance: in any sidecar diff,
+`version`, `author`, and `verification` are claims the diff itself cannot
+prove.

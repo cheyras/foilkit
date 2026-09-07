@@ -393,6 +393,25 @@ void test('deriveTier: historical records are the owner, future ones without an 
   assert.equal(deriveTier(5, { login: 'window-artgate', id: null, via: 'generator' }, null), 'unattributed');
 });
 
+void test('deriveTier: the three residual doors are KNOWN AND ACCEPTED, not unnoticed', () => {
+  // These pin the residual-hole note in provenance.ts. All three shapes grant
+  // owner-verified from bytes alone, are unreachable from the App (both write
+  // paths compose sidecars server-side and hardcode `version`), and therefore
+  // exist only in a hand-crafted fork PR whose diff a human reads. If one of
+  // these assertions ever FLIPS, the doc is stale — update both together.
+  // Door 2: a byte-identical twin of HISTORICAL_AUTHOR on a current record.
+  assert.equal(deriveTier(SIDECAR_VERSION, { login: 'cheyras', id: null, via: 'local-cli' }, null), 'owner-verified');
+  // Door 3: a current-era record whose version field is edited down to v3 —
+  // the historical inference cannot tell it from a genuine legacy record.
+  assert.equal(deriveTier(3, null, null), 'owner-verified');
+  // Door 1 is the verification-block variant, covered by the writer-list
+  // membership tests above; restated here so all three live in one place.
+  assert.equal(
+    deriveTier(SIDECAR_VERSION, STRANGER, { verifiedBy: 'cheyras', via: 'writer-direct', at: '2026-09-06T00:00:00Z' }),
+    'owner-verified',
+  );
+});
+
 void test('a forged verification block is IGNORED unless the verifier holds the capability', () => {
   // The fork-PR case: a stranger hand-commits a sidecar that verifies itself.
   const forged = normalizeSidecar({
