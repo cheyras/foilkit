@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "cardId": "base1-4",
   "variantId": 15,
   "artworkKey": "base1-4",
@@ -95,5 +95,11 @@
       "migratedAt": "2026-09-01T05:16:23.896Z"
     }
   ],
-  "frame": "canonical"
+  "frame": "canonical",
+  "author": {
+    "login": "window-artgate",
+    "id": null,
+    "via": "generator"
+  },
+  "provenanceTier": "unattributed"
 }

@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "cardId": "me05-005",
   "variantId": 37191,
   "artworkKey": "me05-005",
@@ -218,5 +218,11 @@
       "migratedAt": "2026-09-01T05:16:24.658Z"
     }
   ],
-  "frame": "canonical"
+  "frame": "canonical",
+  "author": {
+    "login": "cheyras",
+    "id": null,
+    "via": "local-cli"
+  },
+  "provenanceTier": "owner-verified"
 }

@@ -198,6 +198,7 @@
     "generatedAt": "the NEWEST savedAt the corpus itself carries, NOT a clock reading — a wall-clock stamp would make this file differ on every build and turn --check into noise",
     "maskCoverage": "(cardId, scope) — one mask serves every sibling variant of the card at that scope, newest savedAt wins",
     "maskRecords": "one row per mask file on disk, before any aliasing — maskRecords >= maskUnits by construction",
+    "provenanceTier": "DERIVED per record by normalizeSidecar, never read off the file: \"owner-verified\" (a writer-capability holder authored or verified it, or the record predates sidecar v5 and therefore predates contributors), \"contributor\" (a merged contribution no writer has verified), \"unattributed\" (machine output, or a v5 record with no author). Only owner-verified carries exemplar weight — merge is acceptance, not exemplar grade",
     "uncanonedPatterns": "implemented pattern ids (PATTERNS, excluding 'none') with no data/foil-canon/<id>.json — DERIVED, never hardcoded; absence is the datum #11 builds its queue on",
     "windowGeometry": "cardId — scope-agnostic; a sheet is the same art box inverted"
   },
@@ -238,6 +239,7 @@
     "base1-1": {
       "3": {
         "agreement": 0.6877,
+        "author": "window-artgate",
         "eraId": "wotc",
         "frame": "canonical",
         "height": 704,
@@ -246,13 +248,16 @@
         "savedAt": "2026-08-07T13:38:11.018Z",
         "scope": "window",
         "sha256": "395938d0e58bcf5daf1dee031b41af53ca17d7faf016d91e14934c7ca5ebdb42",
+        "tier": "unattributed",
         "variantId": 3,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "base1-10": {
       "39": {
         "agreement": 0.782,
+        "author": "window-artgate",
         "eraId": "wotc",
         "frame": "canonical",
         "height": 704,
@@ -261,13 +266,16 @@
         "savedAt": "2026-08-07T13:02:47.320Z",
         "scope": "window",
         "sha256": "96928f6f1217a22f8b848bf06df96efaa69a5a20c12e91549f2fe6d4f9e262d2",
+        "tier": "unattributed",
         "variantId": 39,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "base1-15": {
       "59": {
         "agreement": 0.4064,
+        "author": "window-artgate",
         "eraId": "wotc",
         "frame": "canonical",
         "height": 704,
@@ -276,13 +284,16 @@
         "savedAt": "2026-08-07T13:02:48.480Z",
         "scope": "window",
         "sha256": "a4448451e6a8f752ed1d253f3c201c95d5e782e99547b20990be0a484feb1aea",
+        "tier": "unattributed",
         "variantId": 59,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "base1-2": {
       "7": {
         "agreement": 0.6469,
+        "author": "window-artgate",
         "eraId": "wotc",
         "frame": "canonical",
         "height": 704,
@@ -291,13 +302,16 @@
         "savedAt": "2026-08-07T13:02:44.284Z",
         "scope": "window",
         "sha256": "21b5509e40cdb0c7342ba35616745c41c92f3559e032c1d14a0c9b7cb4a55190",
+        "tier": "unattributed",
         "variantId": 7,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "base1-4": {
       "15": {
         "agreement": 0.6643,
+        "author": "window-artgate",
         "eraId": "wotc",
         "frame": "canonical",
         "height": 704,
@@ -306,13 +320,16 @@
         "savedAt": "2026-08-07T13:02:45.308Z",
         "scope": "window",
         "sha256": "c78eece026a30b0c35702d680a7cae92b26d90f04b2fd23adc00b2963fca6af0",
+        "tier": "unattributed",
         "variantId": 15,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "base1-5": {
       "19": {
         "agreement": 0.5341,
+        "author": "cheyras",
         "eraId": "wotc",
         "frame": "canonical",
         "height": 704,
@@ -321,13 +338,16 @@
         "savedAt": "2026-08-08T05:52:55.654Z",
         "scope": "window",
         "sha256": "866342e8ab07f795e9fe87b377373cf11b98e2d4f8a92e0179f80a31f90c31d8",
+        "tier": "owner-verified",
         "variantId": 19,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "base1-6": {
       "23": {
         "agreement": 0.5475,
+        "author": "cheyras",
         "eraId": "wotc",
         "frame": "canonical",
         "height": 704,
@@ -336,13 +356,16 @@
         "savedAt": "2026-08-08T06:08:13.286Z",
         "scope": "window",
         "sha256": "d0c4a1ec43c529ef228c678dcb6bf1e08d560ee817077dad958f4b48a2776b68",
+        "tier": "owner-verified",
         "variantId": 23,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "base1-7": {
       "27": {
         "agreement": 0.7311,
+        "author": "cheyras",
         "eraId": "wotc",
         "frame": "canonical",
         "height": 704,
@@ -351,13 +374,16 @@
         "savedAt": "2026-08-08T06:24:36.484Z",
         "scope": "window",
         "sha256": "917f8300be692cf5c74aa088bb3e904085ff6a3ca6abb954524c2ff5376eb46a",
+        "tier": "owner-verified",
         "variantId": 27,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "base1-8": {
       "32": {
         "agreement": 0.6419,
+        "author": "cheyras",
         "eraId": "wotc",
         "frame": "canonical",
         "height": 704,
@@ -366,13 +392,16 @@
         "savedAt": "2026-08-08T05:48:27.004Z",
         "scope": "window",
         "sha256": "b21c74ae3453cf04916aecc90b2b4e8ad115a25acec2020c77fd763c5a3e57ba",
+        "tier": "owner-verified",
         "variantId": 32,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "me05-001": {
       "37184": {
         "agreement": 0.7081,
+        "author": "cheyras",
         "eraId": "modern-sv",
         "frame": "canonical",
         "height": 704,
@@ -381,13 +410,16 @@
         "savedAt": "2026-08-08T03:11:36.291Z",
         "scope": "sheet",
         "sha256": "0b0d48d812f632dc821ce274906471aba2fb31317ff0a4111d579bcea44de184",
+        "tier": "owner-verified",
         "variantId": 37184,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "me05-002": {
       "37186": {
         "agreement": 0.756,
+        "author": "cheyras",
         "eraId": "modern-sv",
         "frame": "canonical",
         "height": 704,
@@ -396,13 +428,16 @@
         "savedAt": "2026-08-08T12:17:30.216Z",
         "scope": "sheet",
         "sha256": "b3b2bab3a0fe4919b9621d4780c1c70ff61e215eac932baf15bafd99de8be54f",
+        "tier": "owner-verified",
         "variantId": 37186,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "me05-003": {
       "37188": {
         "agreement": 0.754,
+        "author": "cheyras",
         "eraId": "modern-sv",
         "frame": "canonical",
         "height": 704,
@@ -411,13 +446,16 @@
         "savedAt": "2026-08-08T11:59:20.756Z",
         "scope": "sheet",
         "sha256": "cd9812b9768a2f7613bfbd7e3be1dad176087092b0152a4e56390eb81f0aeb0b",
+        "tier": "owner-verified",
         "variantId": 37188,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "me05-005": {
       "37191": {
         "agreement": 0.756,
+        "author": "cheyras",
         "eraId": "modern-sv",
         "frame": "canonical",
         "height": 704,
@@ -426,13 +464,16 @@
         "savedAt": "2026-08-08T12:16:47.896Z",
         "scope": "sheet",
         "sha256": "f9d9008c446ee1a490f76fbae604df91103d0c0a52afba6e619946367a455316",
+        "tier": "owner-verified",
         "variantId": 37191,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "me05-006": {
       "37193": {
         "agreement": 0.7459,
+        "author": "cheyras",
         "eraId": "modern-sv",
         "frame": "canonical",
         "height": 704,
@@ -441,13 +482,16 @@
         "savedAt": "2026-08-08T12:24:00.549Z",
         "scope": "sheet",
         "sha256": "2c2681c1d878a5f6f7c0502724e35bb40c524cc7298dbea3c05d0d1e7560e4a4",
+        "tier": "owner-verified",
         "variantId": 37193,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "me05-007": {
       "37195": {
         "agreement": 0.7586,
+        "author": "cheyras",
         "eraId": "modern-sv",
         "frame": "canonical",
         "height": 704,
@@ -456,13 +500,16 @@
         "savedAt": "2026-08-08T06:37:28.517Z",
         "scope": "sheet",
         "sha256": "d6a2b04cbd8a2ac48597aa8ba6b8a882177af3ec330efd83e223b9ea99901aed",
+        "tier": "owner-verified",
         "variantId": 37195,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "me05-010": {
       "37200": {
         "agreement": 0.7448,
+        "author": "cheyras",
         "eraId": "modern-sv",
         "frame": "canonical",
         "height": 704,
@@ -471,13 +518,16 @@
         "savedAt": "2026-08-08T12:29:10.387Z",
         "scope": "sheet",
         "sha256": "b8b49a9163adbd1183db4177a328030ea31673ba16d6fe18cf0cd6d2b0c54d1c",
+        "tier": "owner-verified",
         "variantId": 37200,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "me05-012": {
       "77558": {
         "agreement": 0.7485,
+        "author": "cheyras",
         "eraId": "modern-sv",
         "frame": "canonical",
         "height": 704,
@@ -486,13 +536,16 @@
         "savedAt": "2026-08-08T06:54:27.057Z",
         "scope": "sheet",
         "sha256": "f5667f84911a62613364fb45d7140fc450aada7207f5ee67a30bfcd160d58600",
+        "tier": "owner-verified",
         "variantId": 77558,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "me05-014": {
       "37207": {
         "agreement": 0.7404,
+        "author": "cheyras",
         "eraId": "modern-sv",
         "frame": "canonical",
         "height": 704,
@@ -501,13 +554,16 @@
         "savedAt": "2026-08-08T15:05:36.677Z",
         "scope": "sheet",
         "sha256": "8321bc7e600d26cfd10ca81907f1de8a5115afd207047002e35c48975ce04cde",
+        "tier": "owner-verified",
         "variantId": 37207,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "me05-024": {
       "37225": {
         "agreement": 0.7421,
+        "author": "cheyras",
         "eraId": "modern-sv",
         "frame": "canonical",
         "height": 704,
@@ -516,13 +572,16 @@
         "savedAt": "2026-08-08T15:12:22.481Z",
         "scope": "sheet",
         "sha256": "aaa33675b40e5f0ff1064b72deebd90f214366f9bcc61c98db3c3c85a69abb61",
+        "tier": "owner-verified",
         "variantId": 37225,
+        "verifiedBy": null,
         "width": 504
       }
     },
     "me05-029": {
       "37234": {
         "agreement": 0.753,
+        "author": "cheyras",
         "eraId": "modern-sv",
         "frame": "canonical",
         "height": 704,
@@ -531,7 +590,9 @@
         "savedAt": "2026-08-08T15:19:46.932Z",
         "scope": "sheet",
         "sha256": "c4d6fe35b5db9aeaf1651528b351ced0e02c8251d563fe2295e53db1f4b714eb",
+        "tier": "owner-verified",
         "variantId": 37234,
+        "verifiedBy": null,
         "width": 504
       }
     }

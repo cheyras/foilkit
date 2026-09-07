@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "cardId": "base1-8",
   "variantId": 32,
   "artworkKey": "base1-8",
@@ -117,5 +117,11 @@
       "migratedAt": "2026-09-01T05:16:24.291Z"
     }
   ],
-  "frame": "canonical"
+  "frame": "canonical",
+  "author": {
+    "login": "cheyras",
+    "id": null,
+    "via": "local-cli"
+  },
+  "provenanceTier": "owner-verified"
 }
