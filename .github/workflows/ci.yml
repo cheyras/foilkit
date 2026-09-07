@@ -96,6 +96,16 @@ jobs:
       - name: Reference clip citations are current
         run: node --conditions source tools/build-reference-clips.mts --check
 
+      # The ink-design index, a fourth gate of the same kind, and the one with
+      # the sharpest failure mode: `packages/resolver/src/ink-index.json` is what
+      # the resolver actually bundles, so a stale copy resolves an ink design the
+      # registry no longer describes. The builder also validates the registry
+      # itself — a row naming a tile with no SVG on disk, or a queued trademark
+      # with no laundry-list entry, would render as "no design here" and be
+      # indistinguishable from a row nobody had written yet.
+      - name: Ink-design index is current
+        run: node tools/build-ink-index.mjs --check
+
       # The editor's own typecheck. It is a separate tsconfig (DOM lib, JSX,
       # the `source` customCondition) and `pnpm typecheck` above does not see
       # it, which is exactly how a front end rots while CI stays green.

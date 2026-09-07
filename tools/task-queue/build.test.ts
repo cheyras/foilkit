@@ -39,6 +39,7 @@ interface Overrides {
   manifest?: Record<string, unknown>
   verdicts?: Record<string, unknown>
   assignments?: Record<string, unknown>
+  inkDesigns?: Record<string, unknown>
   map?: Record<string, unknown> | null
   patternCards?: Record<string, unknown> | null
   catalog?: boolean
@@ -164,9 +165,23 @@ async function makeCorpus(over: Overrides = {}): Promise<{ root: string; bake: s
     ],
   }
 
+  // One shipped tile and one queued mark, so the seventh section has both
+  // states to render and the impact count has a set-scoped row to walk.
+  const inkDesigns = over.inkDesigns ?? {
+    tiles: { 'dot-grid': { file: 'data/ink-tiles/dot-grid.svg' } },
+    queued: [
+      { tileId: 'pokeball', mark: 'Poke Ball', usedBy: 'base1 reverses', why: 'A traced mark is not ours to ship.' },
+    ],
+    rows: [
+      { scope: 'modern-sv', scopeKind: 'era', kinds: ['reverse'], tile: 'dot-grid' },
+      { scope: 'base1', scopeKind: 'set', kinds: ['holo'], tile: null, queued: 'pokeball' },
+    ],
+  }
+
   await writeFile(join(bake, 'corpus-manifest.json'), JSON.stringify(manifest))
   await writeFile(join(bake, 'verification-verdicts.json'), JSON.stringify(verdicts))
   await writeFile(join(bake, 'foil-card-assignments.json'), JSON.stringify(assignments))
+  await writeFile(join(bake, 'ink-designs.json'), JSON.stringify(inkDesigns))
 
   const map =
     over.map === undefined
@@ -282,7 +297,7 @@ const byId = (tasks: Task[], id: string): Task => {
 
 // ── The composition ─────────────────────────────────────────────────────────
 
-test('the six sources become one list, and every card names where it came from', async () => {
+test('the seven sources become one list, and every card names where it came from', async () => {
   const { root, bake, cleanup } = await makeCorpus()
   try {
     const { queue } = await buildTaskQueue(root, bake)
@@ -296,8 +311,9 @@ test('the six sources become one list, and every card names where it came from',
       'window-mask': 1, // only the cosmos group has exemplars === 0 at window scope
       residual: 1, // the closed one is NOT a task
       'empty-pool': 2,
+      'ink-tile': 1, // the one queued mark; the SHIPPED tile is NOT a task
     })
-    assert.equal(queue.counts.tasks, 10)
+    assert.equal(queue.counts.tasks, 11)
 
     for (const t of queue.tasks) {
       assert.ok(t.source.length > 0, `${t.id} has no source`)
@@ -625,6 +641,11 @@ test('the composition snapshot — change this deliberately, never to make a tes
     'window-mask': 34,
     residual: 43,
     'empty-pool': 8,
+    // R8-INK 2026-09-07: six trademarked marks the ink-design registry queues
+    // rather than traces. A queued slot renders the recipe's procedural
+    // fallback, so this number going DOWN is progress and this number being
+    // non-zero is not a defect.
+    'ink-tile': 6,
   })
   assert.deepEqual(queue.counts.bySkill, {
     glsl: 2,
@@ -632,6 +653,7 @@ test('the composition snapshot — change this deliberately, never to make a tes
     'live-tilt': 4,
     mask: 39,
     research: 51,
+    art: 6,
   })
 })
 

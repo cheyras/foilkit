@@ -15,13 +15,15 @@
     "slider": "Slider tuning — move the canon dials until the recipe matches the reference.",
     "glsl": "GLSL — write or repair a pattern recipe.",
     "research": "Research / citation — find a source that names cards, and cite it.",
-    "live-tilt": "Live tilt — look at a tilting card and record a verdict. No code. This is a real skill here because the still-frame judge is structurally blind to motion, and a human eye is the only instrument that is not."
+    "live-tilt": "Live tilt — look at a tilting card and record a verdict. No code. This is a real skill here because the still-frame judge is structurally blind to motion, and a human eye is the only instrument that is not.",
+    "art": "Original geometry — author one vector tile from scratch. Not tracing, and the difference is the whole job: measuring a mark and redrawing it in your own construction is authorship, running a mark through a tracer is copying. Read data/ink-tiles/INK-TILES-NOTICE.md before starting one of these."
   },
   "guards": {
     "do-not-flip-winners": "Do not flip a resolver winner just to fill a pool. Cited rows routinely describe different physical layers of the same card — one names the sheet, another names the art window — and both being true is a documented non-bug. Closing this means finding a source the resolver does not have, not re-ranking the ones it does.",
     "live-tilt-not-glsl": "The ask here is a LIVE-TILT HUMAN VERDICT, not another GLSL round. This nay is a motion claim, and the judge scores still frames; several of its claims are already refuted at pixel level. Shader work cannot move a dimension the instrument cannot measure.",
     "needs-a-bake": "Closing this edits data/foil-card-assignments.json, which changes what the resolver guesses. The verification map and the pattern-card pools this queue is built from are bake outputs, so they must be regenerated in the same change or the queue will describe a corpus that no longer exists.",
-    "motion-half-needs-tilt": "One dimension of this nay is motion-only and needs a live-tilt verdict separately; the GLSL ask here is the asset/shader half. Do not read the still-frame motion refutation as license to skip the tilt — it closes a different half of this row than the shader work does."
+    "motion-half-needs-tilt": "One dimension of this nay is motion-only and needs a live-tilt verdict separately; the GLSL ask here is the asset/shader half. Do not read the still-frame motion refutation as license to skip the tilt — it closes a different half of this row than the shader work does.",
+    "originals-only": "This slot names a TRADEMARKED MARK and is empty on purpose. It may be filled ONLY by an original recreation authored from measured dimensions — never a trace, an auto-trace, or an extraction, whatever the tool and whatever the intent (AGENTS.md F2). A traced Poke Ball is TPCi’s design however it was produced, and a CC0 dedication over it would be worth nothing. The tile arrives with its notice section IN THE SAME COMMIT, never \"to be added later\". If that cannot be met, leave it empty: the slot already renders the procedural fallback and costs nothing."
   },
   "estimateTiers": {
     "minutes": "One sitting at one card. Open it, look, answer.",
@@ -34,11 +36,12 @@
     "catalog": true
   },
   "counts": {
-    "tasks": 108,
+    "tasks": 114,
     "byType": {
       "canon": 12,
       "verdict": 5,
       "window-mask": 34,
+      "ink-tile": 6,
       "mask": 5,
       "residual": 43,
       "empty-pool": 8,
@@ -48,11 +51,12 @@
       "slider": 12,
       "glsl": 2,
       "mask": 39,
+      "art": 6,
       "live-tilt": 4,
       "research": 51
     },
-    "impactTotal": 20225,
-    "unsized": 13
+    "impactTotal": 20921,
+    "unsized": 15
   },
   "reconciliation": [
     {
@@ -86,6 +90,14 @@
       "measured": "55 residuals recorded, 12 closed, 43 open. The ex13/ex16 closure is already committed: 2 cardIds row(s) assign vertical-sheen-rainbow, covering 12 cards.",
       "agrees": true,
       "note": "Closed on 2026-08-08 in the R7 pass, before this queue existed — both residuals carry a `resolved` field naming the exact card ids. The ex13 half is marked partial: the Cosmos Ultra/Secret Rare half of that set is still open and is queued above."
+    },
+    {
+      "key": "ink-tiles",
+      "claim": "the ink-design tier ships the generic-geometry tiles it can author originally and queues the trademarked marks",
+      "claimedAt": "DECISIONS.md 2026-09-07 — \"The reverse-holo design becomes a tier of its own\"",
+      "measured": "4 tile(s) shipped (crosshatch, dot-grid, pinstripe-diagonal, ring-dot), 6 queued (energy-symbols, ex-set-logos, masterball, plasma-shield, pokeball, specialty-balls), over 13 registry row(s).",
+      "agrees": true,
+      "note": "A queued slot is a working state, not a gap: uInkOn stays 0 for that key and the recipe renders its procedural fallback, so the count moving to zero is not the goal — the goal is that every queued mark carries its caution."
     }
   ],
   "emptyPools": [
@@ -433,6 +445,54 @@
       }
     },
     {
+      "id": "ink-tile:pokeball",
+      "type": "ink-tile",
+      "title": "Author an original Poke Ball ink tile",
+      "need": "A traced Poke Ball is TPCi's design and cannot enter a CC0 corpus. Ships as an ORIGINAL geometric recreation with its own notice section, or not at all. Measure the real mark's proportions off a scan — dimensions are facts and measuring them is free — then draw the tile from those numbers in your own construction, one lattice cell, alpha as coverage. Drop it in data/ink-tiles/ with its notice section, and clear the row’s `queued` field.",
+      "skill": "art",
+      "estimate": "hours",
+      "estimateWhy": "Authoring original geometry that reads as the right mark at card scale is a drawing job, and the notice section documenting what was investigated and rejected is part of it, not paperwork after it.",
+      "impact": 260,
+      "impactWhy": "Printings whose variant kind resolves to this tile across 3 registry row(s). Every one of them renders the recipe’s procedural stand-in until the tile exists.",
+      "link": null,
+      "source": "data/ink-designs.json — queued[] (rows whose `tile` is null and whose `queued` names the mark)",
+      "guards": [
+        "originals-only"
+      ],
+      "tieBreak": 0,
+      "detail": {
+        "mark": "Poke Ball",
+        "usedBy": "sv08.5 / sv10.5b / sv10.5w / me02.5 / sve reverse-foil-pokeball; BW-SV Trainer-card reverses",
+        "rows": 3,
+        "scopes": "sv08.5, sv10.5b, sv10.5w",
+        "notice": "data/ink-tiles/INK-TILES-NOTICE.md"
+      }
+    },
+    {
+      "id": "ink-tile:masterball",
+      "type": "ink-tile",
+      "title": "Author an original Master Ball ink tile",
+      "need": "Same rule as pokeball. Measure the real mark's proportions off a scan — dimensions are facts and measuring them is free — then draw the tile from those numbers in your own construction, one lattice cell, alpha as coverage. Drop it in data/ink-tiles/ with its notice section, and clear the row’s `queued` field.",
+      "skill": "art",
+      "estimate": "hours",
+      "estimateWhy": "Authoring original geometry that reads as the right mark at card scale is a drawing job, and the notice section documenting what was investigated and rejected is part of it, not paperwork after it.",
+      "impact": 211,
+      "impactWhy": "Printings whose variant kind resolves to this tile across 3 registry row(s). Every one of them renders the recipe’s procedural stand-in until the tile exists.",
+      "link": null,
+      "source": "data/ink-designs.json — queued[] (rows whose `tile` is null and whose `queued` names the mark)",
+      "guards": [
+        "originals-only"
+      ],
+      "tieBreak": 0,
+      "detail": {
+        "mark": "Master Ball",
+        "usedBy": "sv08.5 / sv10.5b / sv10.5w reverse-foil-masterball",
+        "rows": 3,
+        "scopes": "sv08.5, sv10.5b, sv10.5w",
+        "notice": "data/ink-tiles/INK-TILES-NOTICE.md"
+      }
+    },
+    {
       "id": "window-mask:modern-sv|window|cosmos|facet",
       "type": "window-mask",
       "title": "Trace the first art window for cosmos (modern-sv)",
@@ -691,6 +751,30 @@
       }
     },
     {
+      "id": "ink-tile:specialty-balls",
+      "type": "ink-tile",
+      "title": "Author an original Love Ball, Quick Ball, Friend Ball, Dusk Ball ink tile",
+      "need": "Four more marks, same rule. Ascended Heroes is the set that proves variantKind belongs in the key: six distinct reverses of the same Pokemon on one sheet. Measure the real mark's proportions off a scan — dimensions are facts and measuring them is free — then draw the tile from those numbers in your own construction, one lattice cell, alpha as coverage. Drop it in data/ink-tiles/ with its notice section, and clear the row’s `queued` field.",
+      "skill": "art",
+      "estimate": "hours",
+      "estimateWhy": "Authoring original geometry that reads as the right mark at card scale is a drawing job, and the notice section documenting what was investigated and rejected is part of it, not paperwork after it.",
+      "impact": 130,
+      "impactWhy": "Printings whose variant kind resolves to this tile across 1 registry row(s). Every one of them renders the recipe’s procedural stand-in until the tile exists.",
+      "link": null,
+      "source": "data/ink-designs.json — queued[] (rows whose `tile` is null and whose `queued` names the mark)",
+      "guards": [
+        "originals-only"
+      ],
+      "tieBreak": 0,
+      "detail": {
+        "mark": "Love Ball, Quick Ball, Friend Ball, Dusk Ball",
+        "usedBy": "me02.5 (Ascended Heroes) reverse-foil-loveball / -quickball / -friendball / -duskball",
+        "rows": 1,
+        "scopes": "me02.5",
+        "notice": "data/ink-tiles/INK-TILES-NOTICE.md"
+      }
+    },
+    {
       "id": "window-mask:modern-sv|window|shiny-vault|set",
       "type": "window-mask",
       "title": "Trace the first art window for shiny-vault (modern-sv)",
@@ -781,6 +865,30 @@
         "stillFrameBlind": true,
         "stillFrameNote": "TAXONOMY.md:292-294 concedes the methodology under-determines this pattern: \"Parallax hard to fully confirm from stills; narration + slight relative shifts support it.\" TAXONOMY.md:300 flags it \"Medium confidence from stills\".",
         "docLines": "docs/VERIFICATION.md:398; taxonomy claim at docs/TAXONOMY.md:292-294, :300"
+      }
+    },
+    {
+      "id": "ink-tile:ex-set-logos",
+      "type": "ink-tile",
+      "title": "Author an original ten EX-era set-name logos ink tile",
+      "need": "Authored rasters, one per set, and per-language on top of that. Not a lattice at all: a single positioned stamp, so it needs the second small positioned layer 3b names in its section 4.2 rather than a tile. Recorded here so it is not lost; it is not a tile this schema can express. Measure the real mark's proportions off a scan — dimensions are facts and measuring them is free — then draw the tile from those numbers in your own construction, one lattice cell, alpha as coverage. Drop it in data/ink-tiles/ with its notice section, and clear the row’s `queued` field.",
+      "skill": "art",
+      "estimate": "hours",
+      "estimateWhy": "Authoring original geometry that reads as the right mark at card scale is a drawing job, and the notice section documenting what was investigated and rejected is part of it, not paperwork after it.",
+      "impact": 95,
+      "impactWhy": "Printings whose variant kind resolves to this tile across 2 registry row(s). Every one of them renders the recipe’s procedural stand-in until the tile exists.",
+      "link": null,
+      "source": "data/ink-designs.json — queued[] (rows whose `tile` is null and whose `queued` names the mark)",
+      "guards": [
+        "originals-only"
+      ],
+      "tieBreak": 0,
+      "detail": {
+        "mark": "ten EX-era set-name logos",
+        "usedBy": "ex7, ex8, ex9, ex10, ex11, ex12, ex13, ex14, ex15, ex16 — stamped INSIDE the art box, bottom right, every card",
+        "rows": 2,
+        "scopes": "ex8, ex11",
+        "notice": "data/ink-tiles/INK-TILES-NOTICE.md"
       }
     },
     {
@@ -2627,6 +2735,54 @@
         "alternates": 240,
         "citedPrintings": 1035,
         "outranked": "rainbow-glitter-sheen (275), ex-starfoil (235), cosmos-ii-pixel (214), horizontal-sheen (188)"
+      }
+    },
+    {
+      "id": "ink-tile:energy-symbols",
+      "type": "ink-tile",
+      "title": "Author an original the eleven TCG energy-type symbols ink tile",
+      "need": "Same rule, eleven times over. This is the largest queued item by printings governed and the one where `type` in the key finally does work. Measure the real mark's proportions off a scan — dimensions are facts and measuring them is free — then draw the tile from those numbers in your own construction, one lattice cell, alpha as coverage. Drop it in data/ink-tiles/ with its notice section, and clear the row’s `queued` field.",
+      "skill": "art",
+      "estimate": "hours",
+      "estimateWhy": "Authoring original geometry that reads as the right mark at card scale is a drawing job, and the notice section documenting what was investigated and rejected is part of it, not paperwork after it.",
+      "impact": null,
+      "impactWhy": "Not sizeable from this bake: at least one row queuing this tile is era-scoped or names a set this bake does not carry, and a partial count presented as an impact would rank this card below work it outweighs.",
+      "link": null,
+      "source": "data/ink-designs.json — queued[] (rows whose `tile` is null and whose `queued` names the mark)",
+      "guards": [
+        "originals-only"
+      ],
+      "tieBreak": 0,
+      "detail": {
+        "mark": "the eleven TCG energy-type symbols",
+        "usedBy": "every Energy Pattern era: BW Emerging Powers -> SV. 3b: '~13 tiles per group', keyed on the Pokemon's type.",
+        "rows": 0,
+        "scopes": null,
+        "notice": "data/ink-tiles/INK-TILES-NOTICE.md"
+      }
+    },
+    {
+      "id": "ink-tile:plasma-shield",
+      "type": "ink-tile",
+      "title": "Author an original Team Plasma insignia ink tile",
+      "need": "Same rule. Additionally UNRESOLVED at the data level: the catalog declares one `reverse` kind for these sets, so which printings are Team Plasma cards is not expressible today and the row below cannot be written honestly yet. Measure the real mark's proportions off a scan — dimensions are facts and measuring them is free — then draw the tile from those numbers in your own construction, one lattice cell, alpha as coverage. Drop it in data/ink-tiles/ with its notice section, and clear the row’s `queued` field.",
+      "skill": "art",
+      "estimate": "hours",
+      "estimateWhy": "Authoring original geometry that reads as the right mark at card scale is a drawing job, and the notice section documenting what was investigated and rejected is part of it, not paperwork after it.",
+      "impact": null,
+      "impactWhy": "Not sizeable from this bake: at least one row queuing this tile is era-scoped or names a set this bake does not carry, and a partial count presented as an impact would rank this card below work it outweighs.",
+      "link": null,
+      "source": "data/ink-designs.json — queued[] (rows whose `tile` is null and whose `queued` names the mark)",
+      "guards": [
+        "originals-only"
+      ],
+      "tieBreak": 0,
+      "detail": {
+        "mark": "Team Plasma insignia",
+        "usedBy": "bw8 / bw9 / bw10 — Team Plasma cards only; the rest of each set takes the standard BW energy-symbol reverse",
+        "rows": 0,
+        "scopes": null,
+        "notice": "data/ink-tiles/INK-TILES-NOTICE.md"
       }
     },
     {

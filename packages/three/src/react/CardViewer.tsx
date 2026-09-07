@@ -25,7 +25,8 @@ import type { FoilPattern } from '@foilkit/patterns'
 import { CARD_ASPECT } from '@foilkit/core'
 import { cardFitRect, type Tilt, type TiltSource } from '@foilkit/stage'
 import { buildGlyphAtlas, fetchGlyphIndex, glyphSlotFor, resolveGlyphDir } from '../glyphs.ts'
-import { getDefaultStage, type CardHandle, type CardSettings, type FoilStage } from '../stage.ts'
+import { buildInkTile, inkTexture } from '../ink.ts'
+import { getDefaultStage, type CardHandle, type CardSettings, type FoilStage, type InkLayer } from '../stage.ts'
 import type { ViewController } from './ViewTransform.tsx'
 
 /** The live uniform state a viewer pushes every frame. Unchanged shape. */
@@ -37,6 +38,7 @@ export function CardViewer({
   settingsRef,
   tiltTarget,
   maskCanvas,
+  ink,
   view,
   stage,
   onPointerMove,
@@ -50,6 +52,20 @@ export function CardViewer({
   tiltTarget: React.RefObject<{ x: number; y: number }>
   /** Hand-mask drawing surface (alpha = coverage); null when layout tier active. */
   maskCanvas?: HTMLCanvasElement | null
+  /**
+   * The resolved reverse-holo DESIGN (R8-INK), as `@foilkit/resolver`'s
+   * `resolveInk` returned it. Omitted or null — every card until a caller asks —
+   * leaves uInkOn 0 and the render exactly as before. Pass `tileId` and this
+   * component fetches and rasterises it; `state` and `placement` come straight
+   * off the resolver so the surface never re-derives the two shader gates.
+   */
+  ink?: {
+    tileId: string | null
+    state: 'design' | 'queued' | 'none' | 'in-scan'
+    uInkOn: boolean
+    uInkDraw: boolean
+    placement: Omit<InkLayer, 'on' | 'draw' | 'texture'>
+  } | null
   /** Pan/zoom while editing — drives camera.setViewOffset and the overlay wrapper. */
   view?: ViewController
   /** Join a specific stage. Omitted: the page's shared default stage. */
@@ -63,6 +79,7 @@ export function CardViewer({
   const hostRef = useRef<HTMLDivElement>(null)
   const handleRef = useRef<CardHandle | null>(null)
   const glyphTexRef = useRef<THREE.CanvasTexture | null>(null)
+  const inkTexRef = useRef<THREE.CanvasTexture | null>(null)
 
   // The controller is stable, but keep it in a ref so the once-only
   // registration effect never closes over a stale value.
@@ -177,10 +194,51 @@ export function CardViewer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pattern])
 
+  // Ink-design slot (R8-INK). Unlike the glyph slot there is nothing to poll:
+  // the tiles are committed corpus and the registry already says which exist,
+  // so this fetches once per tile id and stops. A tile that fails to load is
+  // treated exactly as "no design" — uInkOn 0, procedural fallback — because an
+  // absent asset must never cost more than the render it replaces.
+  useEffect(() => {
+    const key = ink?.tileId ?? null
+    if (!ink || !ink.uInkOn) {
+      inkTexRef.current?.dispose()
+      inkTexRef.current = null
+      handleRef.current?.update({ ink: null })
+      return
+    }
+    let cancelled = false
+    const push = (texture: THREE.Texture | null): void => {
+      handleRef.current?.update({
+        ink: { on: true, draw: ink.uInkDraw, texture, ...ink.placement },
+      })
+    }
+    if (key === null) {
+      // Resolved, but with no tile to draw. Reachable today only via a caller
+      // that overrides `uInkOn` itself; the resolver returns on:false for the
+      // queued state so the fallback survives.
+      push(null)
+      return
+    }
+    void buildInkTile(key).then((tile) => {
+      if (cancelled) return
+      inkTexRef.current?.dispose()
+      const tex = tile ? inkTexture(tile) : null
+      inkTexRef.current = tex
+      push(tex)
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ink?.tileId, ink?.uInkOn, ink?.uInkDraw, ink?.placement])
+
   useEffect(
     () => () => {
       glyphTexRef.current?.dispose()
       glyphTexRef.current = null
+      inkTexRef.current?.dispose()
+      inkTexRef.current = null
     },
     [],
   )

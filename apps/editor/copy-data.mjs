@@ -31,6 +31,8 @@ const CORPUS_DIRS = [
   ['foil-masks', 'foil-masks'],
   ['foil-canon', 'foil-canon'],
   ['foil-windows', 'foil-windows'],
+  // The ink-design tiles (R8-INK), at the route @foilkit/three defaults to.
+  ['ink-tiles', 'ink-tiles'],
 ]
 const FILES = [
   ['foil-verification-map.json', 'foil-verification-map.json'],

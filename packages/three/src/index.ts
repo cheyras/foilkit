@@ -8,3 +8,4 @@
 export * from './material.ts'
 export * from './stage.ts'
 export * from './glyphs.ts'
+export * from './ink.ts'

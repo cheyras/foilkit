@@ -46,13 +46,17 @@ export const DATA_ROUTES: { prefix: string; dir: string }[] = [
   { prefix: '/foil-masks/', dir: 'foil-masks' },
   { prefix: '/foil-canon/', dir: 'foil-canon' },
   { prefix: '/foil-windows/', dir: 'foil-windows' },
+  // The ink-design tiles (R8-INK). Committed corpus like the three above, and
+  // for the same reason: they are original geometry we own outright, not a bake
+  // output. This route is what `@foilkit/three`'s `inkTileUrl()` defaults to.
+  { prefix: '/ink-tiles/', dir: 'ink-tiles' },
 ]
 
 /** The glyph drop directory, served at the route `@foilkit/three` polls. */
 export const GLYPHS_DIR = join(ROOT, 'assets', 'glyphs')
 
 /** Directories that live in `data/` regardless of which bake is selected. */
-export const CORPUS_DIRS = new Set(['foil-masks', 'foil-canon', 'foil-windows'])
+export const CORPUS_DIRS = new Set(['foil-masks', 'foil-canon', 'foil-windows', 'ink-tiles'])
 export const DATA_FILES: Record<string, string> = {
   '/foil-verification-map.json': 'foil-verification-map.json',
   '/foil-pattern-cards.json': 'foil-pattern-cards.json',

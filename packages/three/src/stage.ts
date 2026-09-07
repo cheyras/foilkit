@@ -77,6 +77,28 @@ export interface CardSettings {
   scanBase?: boolean
 }
 
+/**
+ * One card's resolved ink design, flattened to what the shader needs. Mirrors
+ * `InkDesignRef` + `InkPlacement` from @foilkit/resolver without importing it —
+ * the resolver is optional by construction and the stage must not make it a
+ * dependency (the same rule that keeps `maskForScope` reimplemented in forge).
+ */
+export interface InkLayer {
+  /** The design tier owns this card's design layer; recipes stop guessing. */
+  on: boolean
+  /** Draw the tile. False = the image already carries the printed design. */
+  draw: boolean
+  texture: THREE.Texture | null
+  across: number
+  phaseX: number
+  phaseY: number
+  turns: number
+  jitter: number
+  stagger: number
+  strength: number
+  tone: number
+}
+
 /** What a vector-mask rasteriser hands back. Alpha is coverage; y grows down. */
 export type MaskRaster = HTMLCanvasElement | ImageData | Uint8Array
 
@@ -117,6 +139,17 @@ export interface CardConfig {
   /** Glyph atlas for the recipes that take one (R3-GLYPH). */
   glyphTexture?: THREE.Texture | null
   glyphInfo?: { count: number; cols: number } | null
+  /**
+   * The reverse-holo DESIGN layer (R8-INK). Resolved per PRINTING by
+   * `@foilkit/resolver`'s `resolveInk` — never by a slider, and never per
+   * pattern, because a dozen visually different reverses share one sheet.
+   *
+   * `on` false, or the field absent (every card today), leaves uInkOn 0 and the
+   * render bit-identical. `on` true with `draw` false is the case this tier
+   * exists for: the image ALREADY SHOWS the reverse printing, so the recipe must
+   * stop guessing AND we must not draw ours on top of it.
+   */
+  ink?: InkLayer | null
   /** Per-card presentation override; defaults to the stage's mode. */
   mode?: PresentationMode
   /** Per-card tilt source override, by id or as an object. */
@@ -867,6 +900,28 @@ export class FoilStage {
       u.uGlyphOn!.value = info ? 1 : 0
       u.uGlyphCount!.value = info?.count ?? 0
       u.uGlyphCols!.value = info?.cols ?? 1
+    }
+
+    // The ink-design layer. Absent (every card today) pushes exactly the
+    // structural defaults, so a stage that never hears about ink renders what it
+    // rendered before, bit for bit. `on` without a texture is the QUEUED state —
+    // a trademarked mark left unauthored — and it deliberately still suppresses
+    // the recipe's procedural stand-in only when a tile is actually there:
+    // resolveInk returns on:false for a queued row precisely so the fallback
+    // survives, and this reads that faithfully rather than second-guessing it.
+    if (u.uInkTex) {
+      const ink = card.config.ink ?? null
+      const live = ink !== null && ink.on
+      u.uInkTex.value = ink?.texture ?? transparentTexture()
+      u.uInkOn!.value = live ? 1 : 0
+      u.uInkDraw!.value = live && ink.draw && ink.texture !== null ? 1 : 0
+      if (live) {
+        ;(u.uInkTile!.value as THREE.Vector4).set(ink.across, ink.phaseX, ink.phaseY, ink.turns)
+        u.uInkJitter!.value = ink.jitter
+        u.uInkStagger!.value = ink.stagger
+        u.uInkStrength!.value = ink.strength
+        u.uInkTone!.value = ink.tone
+      }
     }
 
     // Geometry. In blit the card may be rendered smaller than its box and

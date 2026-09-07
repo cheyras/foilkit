@@ -82,6 +82,10 @@ export const SKILLS = {
   'live-tilt':
     'Live tilt — look at a tilting card and record a verdict. No code. This is a real skill here because the ' +
     'still-frame judge is structurally blind to motion, and a human eye is the only instrument that is not.',
+  art:
+    'Original geometry — author one vector tile from scratch. Not tracing, and the difference is the whole job: ' +
+    'measuring a mark and redrawing it in your own construction is authorship, running a mark through a tracer is ' +
+    'copying. Read data/ink-tiles/INK-TILES-NOTICE.md before starting one of these.',
 } as const
 
 export type Skill = keyof typeof SKILLS
@@ -104,6 +108,13 @@ export const GUARDS = {
     'One dimension of this nay is motion-only and needs a live-tilt verdict separately; the GLSL ask here is the ' +
     'asset/shader half. Do not read the still-frame motion refutation as license to skip the tilt — it closes a ' +
     'different half of this row than the shader work does.',
+  'originals-only':
+    'This slot names a TRADEMARKED MARK and is empty on purpose. It may be filled ONLY by an original recreation ' +
+    'authored from measured dimensions — never a trace, an auto-trace, or an extraction, whatever the tool and ' +
+    'whatever the intent (AGENTS.md F2). A traced Poke Ball is TPCi’s design however it was produced, and a CC0 ' +
+    'dedication over it would be worth nothing. The tile arrives with its notice section IN THE SAME COMMIT, never ' +
+    '"to be added later". If that cannot be met, leave it empty: the slot already renders the procedural fallback ' +
+    'and costs nothing.',
 } as const
 
 export type Guard = keyof typeof GUARDS
@@ -118,6 +129,7 @@ export type TaskType =
   | 'window-mask'
   | 'residual'
   | 'empty-pool'
+  | 'ink-tile'
 
 export interface Task {
   /** Stable across builds — the page uses it as a React key and a filter anchor. */
@@ -343,6 +355,22 @@ interface AssignmentsShape {
   rows: { pattern: string; sel: { setIds: string[]; cls: string; cardIds?: string[] | null } }[]
 }
 
+/**
+ * The ink-design registry. Only the fields this builder ranks on — the tiles
+ * that shipped, the marks that did not, and the rows that name them.
+ */
+interface InkDesignsShape {
+  tiles: Record<string, { file: string }>
+  queued: { tileId: string; mark: string; usedBy: string; why: string }[]
+  rows: {
+    scope: string
+    scopeKind: string
+    kinds: string[] | null
+    tile: string | null
+    queued?: string
+  }[]
+}
+
 interface VerdictRow {
   patternId: string
   verdict: string
@@ -490,6 +518,11 @@ export async function buildTaskQueue(root: string, bakeDir: string): Promise<Bui
   const assignments = (await readJson<AssignmentsShape>(
     join(dataDir, 'foil-card-assignments.json'),
     'data/foil-card-assignments.json',
+    true,
+  ))!
+  const inkDesigns = (await readJson<InkDesignsShape>(
+    join(dataDir, 'ink-designs.json'),
+    'data/ink-designs.json',
     true,
   ))!
 
@@ -923,6 +956,96 @@ export async function buildTaskQueue(root: string, bakeDir: string): Promise<Bui
       'Closed on 2026-08-08 in the R7 pass, before this queue existed — both residuals carry a `resolved` field ' +
       'naming the exact card ids. The ex13 half is marked partial: the Cosmos Ultra/Secret Rare half of that set is ' +
       'still open and is queued above.',
+  })
+
+  // ── 7. Queued ink tiles: a trademarked mark we chose not to trace ─────────
+  //
+  // The seventh source, and the only one whose cards describe work that is
+  // BLOCKED ON A DECISION ABOUT OWNERSHIP rather than on effort. Each row is a
+  // slot the ink-design registry deliberately left empty: a Poke Ball, a Master
+  // Ball, the Team Plasma insignia, the energy symbols. The affected printings
+  // render the recipe's procedural fallback today, exactly as they always have,
+  // and that is a working state rather than a broken one — which is why these
+  // sort by impact alongside everything else instead of being an alarm.
+  //
+  // Every card carries the `originals-only` guard, and it is the point of the
+  // card. A queued slot with no caution attached is a slot someone eventually
+  // fills with a tracing.
+  // A queued tile is sized only when EVERY row that queues it could be counted.
+  // One uncountable row makes the whole number a lower bound, and a lower bound
+  // presented as an impact would rank the card below work it actually outweighs.
+  // Unsized is null, never 0 — the rule the rest of this builder already obeys.
+  const inkImpact = new Map<string, number>()
+  const inkUnsized = new Set<string>()
+  for (const row of inkDesigns.rows) {
+    if (row.tile !== null || !row.queued) continue
+    // An era-scoped row governs whatever its era governs, which cannot be
+    // counted without walking the entire catalog; a set the bake does not carry
+    // cannot be counted either.
+    const cards = row.scopeKind === 'set' && catalog !== null ? await catalog.cards(row.scope) : null
+    if (cards === null) {
+      inkUnsized.add(row.queued)
+      continue
+    }
+    let n = 0
+    for (const c of cards)
+      for (const v of c.variants) if (row.kinds === null || row.kinds.includes(v.kind.toLowerCase())) n++
+    inkImpact.set(row.queued, (inkImpact.get(row.queued) ?? 0) + n)
+  }
+  for (const q of [...inkDesigns.queued].sort((a, b) => a.tileId.localeCompare(b.tileId))) {
+    const rows = inkDesigns.rows.filter((r) => r.queued === q.tileId && r.tile === null)
+    const impact = inkUnsized.has(q.tileId) ? null : (inkImpact.get(q.tileId) ?? null)
+    tasks.push({
+      id: `ink-tile:${q.tileId}`,
+      type: 'ink-tile',
+      title: `Author an original ${q.mark} ink tile`,
+      need:
+        `${q.why} Measure the real mark's proportions off a scan — dimensions are facts and measuring them is ` +
+        'free — then draw the tile from those numbers in your own construction, one lattice cell, alpha as ' +
+        'coverage. Drop it in data/ink-tiles/ with its notice section, and clear the row’s `queued` field.',
+      skill: 'art',
+      estimate: 'hours',
+      estimateWhy:
+        'Authoring original geometry that reads as the right mark at card scale is a drawing job, and the notice ' +
+        'section documenting what was investigated and rejected is part of it, not paperwork after it.',
+      impact,
+      impactWhy:
+        impact === null
+          ? 'Not sizeable from this bake: at least one row queuing this tile is era-scoped or names a set this bake ' +
+            'does not carry, and a partial count presented as an impact would rank this card below work it outweighs.'
+          : `Printings whose variant kind resolves to this tile across ${rows.length} registry row(s). Every one of ` +
+            'them renders the recipe’s procedural stand-in until the tile exists.',
+      // NULL ON PURPOSE. The editor has three surfaces and none of them is a
+      // drawing board for a lattice tile — the work is a file in
+      // data/ink-tiles/ plus a notice section, done in an editor, not here.
+      // Inventing a route so the card had a button would be the dishonest move.
+      link: null,
+      source: 'data/ink-designs.json — queued[] (rows whose `tile` is null and whose `queued` names the mark)',
+      guards: ['originals-only'],
+      tieBreak: 0,
+      detail: {
+        mark: q.mark,
+        usedBy: q.usedBy,
+        rows: rows.length,
+        scopes: rows.map((r) => r.scope).join(', ') || null,
+        notice: 'data/ink-tiles/INK-TILES-NOTICE.md',
+      },
+    })
+  }
+  reconciliation.push({
+    key: 'ink-tiles',
+    claim:
+      'the ink-design tier ships the generic-geometry tiles it can author originally and queues the trademarked marks',
+    claimedAt: 'DECISIONS.md 2026-09-07 — "The reverse-holo design becomes a tier of its own"',
+    measured:
+      `${Object.keys(inkDesigns.tiles).length} tile(s) shipped (${Object.keys(inkDesigns.tiles).sort().join(', ')}), ` +
+      `${inkDesigns.queued.length} queued (${[...inkDesigns.queued].map((q) => q.tileId).sort().join(', ')}), ` +
+      `over ${inkDesigns.rows.length} registry row(s).`,
+    agrees: inkDesigns.queued.length > 0 && Object.keys(inkDesigns.tiles).length > 0,
+    note:
+      'A queued slot is a working state, not a gap: uInkOn stays 0 for that key and the recipe renders its ' +
+      'procedural fallback, so the count moving to zero is not the goal — the goal is that every queued mark ' +
+      'carries its caution.',
   })
 
   // ── The empty-pool diagnosis, rendered verbatim ───────────────────────────

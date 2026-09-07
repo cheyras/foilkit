@@ -34,7 +34,15 @@ import {
 import { MaskCorpusPanel, MaskProvenanceLine } from './MaskProvenance.tsx'
 import { PATTERNS, patternById, canonicalPatternId, canonFor } from '@foilkit/patterns'
 import { canonBaseline, sparseDiff } from '@foilkit/core'
-import { resolveFoil, maskForScope, ERAS, RESOLVER_VERSION, type FoilScope } from '@foilkit/resolver'
+import {
+  resolveFoil,
+  resolveInk,
+  maskForScope,
+  ERAS,
+  RESOLVER_VERSION,
+  type FoilScope,
+  type InkPlacement,
+} from '@foilkit/resolver'
 import {
   CardViewer,
   MaskEditor,
@@ -443,6 +451,41 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
       }),
     [detail, variant, sel.seriesSlug, sel.setId],
   )
+  // ── Resolve the INK DESIGN — the second, orthogonal layer (R8-INK) ──
+  // `shows` is deliberately not passed: no frame record in data/frames.json has
+  // been MEASURED as showing a reverse printing, every value there is `unknown`,
+  // and unknown draws. That is the documented assumption (one catalog image per
+  // card serves every variant, so it is the normal printing) and the place to
+  // override it is the registry's `frameShows` map, not a call site.
+  const ink = useMemo(
+    () =>
+      resolveInk({
+        seriesSlug: detail?.card.series.slug ?? sel.seriesSlug ?? '',
+        variantKind: variant?.kind ?? null,
+        rarity: detail?.card.rarity ?? null,
+        setId: detail?.card.set.setId ?? sel.setId ?? null,
+        cardId: detail?.card.cardId ?? sel.cardId ?? null,
+      }),
+    [detail, variant, sel.seriesSlug, sel.setId, sel.cardId],
+  )
+  // The placement is a MEASUREMENT with a slider on it. The registry's numbers
+  // are the starting point; a human moving these is making a decision the
+  // registry may not overwrite (AGENTS.md F4), which is why the override is
+  // separate state rather than an edit to `ink`.
+  const [inkTune, setInkTune] = useState<Partial<InkPlacement> | null>(null)
+  useEffect(() => setInkTune(null), [ink.tileId, ink.scope])
+  const inkPlacement = useMemo(
+    () => ({ ...ink.placement, ...(inkTune ?? {}) }),
+    [ink.placement, inkTune],
+  )
+  const inkForViewer = useMemo(
+    () =>
+      ink.uInkOn
+        ? { tileId: ink.tileId, state: ink.state, uInkOn: true, uInkDraw: ink.uInkDraw, placement: inkPlacement }
+        : null,
+    [ink, inkPlacement],
+  )
+
   const effectivePatternId = patternOverride === 'auto' ? resolved.patternId : patternOverride
   const effectiveScope = scopeOverride === 'auto' ? resolved.scope : scopeOverride
   const pattern = patternById(effectivePatternId)
@@ -1338,6 +1381,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
           settingsRef={settingsRef}
           tiltTarget={editMode || adjustMode ? zeroTilt : tilt.target}
           maskCanvas={handActive ? maskCanvas : null}
+          ink={inkForViewer}
           view={viewCtl}
           onPointerMove={editMode || adjustMode ? undefined : tilt.onPointerMove}
           onPointerLeave={editMode || adjustMode ? undefined : tilt.onPointerLeave}
@@ -1648,6 +1692,121 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
             </div>
           </details>
         </Section>
+
+        {/* ── The second layer. Shown only for a reverse printing, because that
+            is the only place a repeated overprint exists to resolve. ── */}
+        {effectiveScope === 'sheet' && (
+          <Section title="Ink design (reverse overprint)">
+            <div className="mb-[8px] text-[12px] leading-[1.5] text-text-secondary">
+              {ink.state === 'design' && (
+                <>
+                  <span className="font-semibold text-text-primary">{ink.tileId}</span> — matched at the{' '}
+                  <span className="font-semibold">{ink.match}</span> tier
+                  {ink.scope ? ` (${ink.scope})` : ''}, confidence {ink.confidence}, 3b delta class{' '}
+                  <span className="font-semibold">{ink.delta}</span>. The foil recipe has stopped drawing its
+                  procedural stand-in; this layer answers instead.
+                </>
+              )}
+              {ink.state === 'in-scan' && (
+                <>
+                  <span className="font-semibold text-text-primary">Suppressed.</span> The image source is measured
+                  as already showing the reverse printing (data/frames.json <code>shows</code>), so drawing{' '}
+                  {ink.tileId} again would double it and misregister it. The recipe&rsquo;s procedural stand-in is
+                  off too.
+                </>
+              )}
+              {ink.state === 'queued' && (
+                <>
+                  <span className="font-semibold text-text-primary">Queued: {ink.queued}.</span> A recognisable mark
+                  we may not trace into a CC0 corpus, so the slot ships empty and this card renders the recipe&rsquo;s
+                  procedural fallback. The placement below is measured and waiting; see the task queue and
+                  data/ink-tiles/INK-TILES-NOTICE.md.
+                </>
+              )}
+              {ink.state === 'none' && (
+                <>No ink row keys this printing yet. The recipe draws its own guess, which is what this tier
+                exists to replace — see data/ink-designs.json.</>
+              )}
+            </div>
+            {ink.state !== 'none' && (
+              <>
+                <Slider
+                  label="Tiles across width"
+                  value={inkPlacement.across}
+                  min={2}
+                  max={40}
+                  step={0.1}
+                  onChange={(v) => setInkTune((t) => ({ ...t, across: v }))}
+                />
+                <Slider
+                  label="Phase X (cells)"
+                  value={inkPlacement.phaseX}
+                  min={-1}
+                  max={1}
+                  step={0.01}
+                  onChange={(v) => setInkTune((t) => ({ ...t, phaseX: v }))}
+                />
+                <Slider
+                  label="Phase Y (cells)"
+                  value={inkPlacement.phaseY}
+                  min={-1}
+                  max={1}
+                  step={0.01}
+                  onChange={(v) => setInkTune((t) => ({ ...t, phaseY: v }))}
+                />
+                <Slider
+                  label="Rotation (turns)"
+                  value={inkPlacement.turns}
+                  min={-0.5}
+                  max={0.5}
+                  step={0.005}
+                  onChange={(v) => setInkTune((t) => ({ ...t, turns: v }))}
+                />
+                <Slider
+                  label="Cell jitter"
+                  value={inkPlacement.jitter}
+                  min={0}
+                  max={0.5}
+                  step={0.01}
+                  onChange={(v) => setInkTune((t) => ({ ...t, jitter: v }))}
+                />
+                <Slider
+                  label="Row stagger (cells)"
+                  value={inkPlacement.stagger}
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  onChange={(v) => setInkTune((t) => ({ ...t, stagger: v }))}
+                />
+                <Slider
+                  label="Ink strength (blocks foil)"
+                  value={inkPlacement.strength}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  onChange={(v) => setInkTune((t) => ({ ...t, strength: v }))}
+                />
+                <Slider
+                  label="Ink tone (toward paper)"
+                  value={inkPlacement.tone}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  onChange={(v) => setInkTune((t) => ({ ...t, tone: v }))}
+                />
+                {inkTune !== null && (
+                  <div className="mt-[6px] flex items-center gap-[8px] text-[11px] text-text-secondary">
+                    <span>
+                      Moved from the registry. These are measurements — record a correction in
+                      data/ink-designs.json rather than leaving it in a session.
+                    </span>
+                    <ActionBtn onClick={() => setInkTune(null)}>Reset</ActionBtn>
+                  </div>
+                )}
+              </>
+            )}
+          </Section>
+        )}
 
         <Section title="Mask">
           <div className="mb-[8px] flex flex-wrap items-center gap-[6px]">
