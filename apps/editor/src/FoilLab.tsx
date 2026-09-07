@@ -1723,9 +1723,20 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
                   data/ink-tiles/INK-TILES-NOTICE.md.
                 </>
               )}
+              {ink.state === 'no-ink' && (
+                <>
+                  <span className="font-semibold text-text-primary">No ink, and that is the decision.</span> A row
+                  keys this printing at the <span className="font-semibold">{ink.match}</span> tier
+                  {ink.scope ? ` (${ink.scope})` : ''} and records that it needs no tile at all: the reverse
+                  treatment is real (3b delta class <span className="font-semibold">{ink.delta}</span>) but it is
+                  not a repeated overprint, so there is nothing to draw. Nobody is waiting on a drawing — this is a
+                  decision, not queued work.
+                </>
+              )}
               {ink.state === 'none' && (
-                <>No ink row keys this printing yet. The recipe draws its own guess, which is what this tier
-                exists to replace — see data/ink-designs.json.</>
+                <>No ink row keys this printing yet, so this tier draws nothing and the recipe keeps its own
+                guess. That is deliberate: an unkeyed printing must never inherit another era&rsquo;s design, which
+                is the drawn-from-nothing defect this tier exists to end. See data/ink-designs.json.</>
               )}
             </div>
             {ink.state !== 'none' && (

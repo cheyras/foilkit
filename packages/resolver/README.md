@@ -81,9 +81,20 @@ will report a queued trademark as "nothing here":
 - **`queued`** — a row matched but its tile is a trademarked mark we may not
   trace. The slot is empty ON PURPOSE, `uInkOn` stays false, and the recipe
   renders its procedural fallback — today's render, exactly.
+- **`no-ink`** — a row matched and its recorded DECISION is that this printing
+  needs no tile: the reverse treatment is real but is not a repeated overprint
+  (Legendary Collection's Fireworks covers the whole face, artwork ink
+  unchanged). `uInkOn` false, and deliberately NOT `queued` — nobody is waiting
+  on a drawing here.
 - **`in-scan`** — the image already shows the reverse printing, so drawing ours
   would double it. `uInkOn` stays TRUE here: the recipe must stop guessing too.
-- **`none`** — no row keys this printing.
+- **`none`** — no row keys this printing, and **nothing is drawn**. A series no
+  era covers resolves here rather than inheriting a neighbouring era's design:
+  `era-layouts.json` measures three eras over eight of the catalog's twenty-one
+  series, so a fallback era put the Scarlet & Violet dot grid on 52.9% of the
+  catalog's reverse printings on no evidence at all. Set- and card-scoped rows
+  still answer for unmapped series — `ex8`/`ex11` are keyed by SET, and the `ex`
+  series needs no era mapping to reach them.
 
 Contract document: `docs/INK-DESIGN.md`. It carries the measurement that refuted
 the double-draw hypothesis, and the assumption behind `shows: unknown`.

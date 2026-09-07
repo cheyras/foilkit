@@ -61,7 +61,12 @@ export function CardViewer({
    */
   ink?: {
     tileId: string | null
-    state: 'design' | 'queued' | 'none' | 'in-scan'
+    // The resolver's own five, copied rather than imported: @foilkit/three does
+    // not depend on @foilkit/resolver and must not start to. `no-ink` is the
+    // recorded decision that a printing needs no tile — it renders like
+    // `queued` here (nothing drawn, tier off) for an entirely different reason,
+    // which is why a surface has to be able to tell them apart.
+    state: 'design' | 'queued' | 'no-ink' | 'none' | 'in-scan'
     uInkOn: boolean
     uInkDraw: boolean
     placement: Omit<InkLayer, 'on' | 'draw' | 'texture'>

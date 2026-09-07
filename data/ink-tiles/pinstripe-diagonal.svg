@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
   <title>pinstripe-diagonal</title>
-  <desc>One lattice cell. A 45-degree band, 26% duty, running corner to corner so the cell tiles seamlessly with its neighbours in both axes. Rotate the whole lattice with uInkTile.w rather than authoring a second angle. Alpha is ink coverage. See INK-TILES-NOTICE.md.</desc>
+  <desc>One lattice cell. A 45-degree band of the line y = x, half-width 26 measured along an axis, running corner to corner. The pattern is the periodic set |(y - x) mod 100| &lt;= 26, so the two corner triangles that carry the neighbouring stripes have legs of exactly 26 — not 13, which is what they were, and which put a mean |dAlpha| of 68/255 across the cell's own wrap: a visible grid line down every card the tile is used on. tools/build-ink-index.mjs now measures the seam of every tile and refuses anything but 0. Rotate the whole lattice with uInkTile.w rather than authoring a second angle. Alpha is ink coverage. See INK-TILES-NOTICE.md.</desc>
   <path d="M 0 0 L 26 0 L 100 74 L 100 100 L 74 100 L 0 26 Z" fill="#ffffff"/>
-  <path d="M 87 0 L 100 0 L 100 13 Z" fill="#ffffff"/>
-  <path d="M 0 87 L 13 100 L 0 100 Z" fill="#ffffff"/>
+  <path d="M 74 0 L 100 0 L 100 26 Z" fill="#ffffff"/>
+  <path d="M 0 74 L 26 100 L 0 100 Z" fill="#ffffff"/>
 </svg>

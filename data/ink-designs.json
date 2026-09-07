@@ -115,6 +115,19 @@
       }
     }
   },
+  "unkeyedTiles": {
+    "$doc": [
+      "Tiles that EXIST and that no row keys yet, each with the reason it is still unkeyed.",
+      "A shipped tile nothing can reach is neither a bug nor an achievement: it is a drawn asset waiting for the",
+      "evidence that says where it belongs. Left unrecorded it goes one of two ways, and both are bad — somebody",
+      "deletes it as dead weight, or somebody keys it to an era on a hunch, which is the drawn-from-nothing defect",
+      "this tier exists to end. So it is declared here, and tools/build-ink-index.mjs cross-checks the declaration",
+      "against the rows in BOTH directions: a tile that is neither reachable nor listed fails the build, and a tile",
+      "listed here that a row has since started using fails it too, so the list cannot go stale in either direction."
+    ],
+    "ring-dot": "The mark the reverse-sheet recipe drew procedurally (an annulus around a centred dot), authored as a real tile so the design tier can replace the guess. No era or set in holo-archive/3b-pairs is measured as carrying THIS mark rather than a plain dot — 3b's pairs settle the delta CLASS, not the glyph — and keying it on the resemblance between our own fallback and our own tile would be circular. Waiting on a measurement of a specific reverse.",
+    "pinstripe-diagonal": "A fine 45-degree stripe field. 3b records fine-stripe reverses in the EX Plain block but explicitly cannot settle a stripe period from the available imagery (period.n is 0 for exactly that reason), and the EX rows that would carry it are the ones queued on `ex-set-logos`, a positioned stamp this lattice model cannot express. Keyed the day either half is resolved."
+  },
   "queued": [
     {
       "tileId": "pokeball",
@@ -321,11 +334,12 @@
       "rarities": null,
       "cards": null,
       "tile": null,
+      "noInk": true,
       "placement": { "across": 11.7, "phaseX": 0, "phaseY": 0, "turns": 0, "jitter": 0, "stagger": 0.5, "strength": 0, "tone": 0 },
       "delta": "full",
       "conf": "high",
       "src": ["holo-archive/3b-pairs/era-research.md — section 2, Legendary Collection"],
-      "note": "Legendary Collection, the TCG's first reverse set. `full` on the scan-diff axis (Fireworks over the entire face at every rarity) and `null` on the INK axis — the artwork ink is unchanged. So it needs no ink tile at all, and strength 0 records that as a decision rather than as an unfilled row. 3b's warning applies: this set's class flipped between 1x and 3x zoom, which is why a card-scale eyeball is not a measurement."
+      "note": "Legendary Collection, the TCG's first reverse set. `full` on the scan-diff axis (Fireworks over the entire face at every rarity) and `null` on the INK axis — the artwork ink is unchanged. So it needs no ink tile at all, and `noInk` records that as a DECISION rather than as an unfilled row: the resolver answers state 'no-ink', never 'queued', because nobody is waiting on a drawing here. strength 0 makes the same statement to the shader. 3b's warning applies: this set's class flipped between 1x and 3x zoom, which is why a card-scale eyeball is not a measurement."
     },
     {
       "scope": "ex8",
@@ -347,7 +361,7 @@
       "scopeKind": "set",
       "types": null,
       "kinds": ["reverse", "reverse-stamp-set-logo"],
-      "rarities": ["rare", "holo rare"],
+      "rarities": ["rare", "holo rare", "rare holo"],
       "cards": null,
       "tile": null,
       "queued": "ex-set-logos",
@@ -355,7 +369,7 @@
       "delta": "frame",
       "conf": "high",
       "src": ["holo-archive/3b-pairs/era-research.md — section 2, EX Plain block"],
-      "note": "EX Delta Species, RARITY-GATED. Rare and Holo Rare reverses get gold name, gold HP, a silver rarity symbol and (Holo Rare) gold borders; the Uncommon reverse gets none of it. This row exists to prove rarity is in the key — it is the axis (scope, type, variantKind) alone cannot express, and 3b section 4.4 names it as a model-breaker. Crystal Guardians goes further and gates on three named CARDS, which the `cards` field is here for."
+      "note": "EX Delta Species, RARITY-GATED. Rare and Holo Rare reverses get gold name, gold HP, a silver rarity symbol and (Holo Rare) gold borders; the Uncommon reverse gets none of it. This row exists to prove rarity is in the key — it is the axis (scope, type, variantKind) alone cannot express, and 3b section 4.4 names it as a model-breaker. Crystal Guardians goes further and gates on three named CARDS, which the `cards` field is here for. The gate matches a WHOLE rarity, never a substring: `rare` as a substring is true of 'Ultra Rare', 'Secret Rare', 'Radiant Rare', 'ACE SPEC Rare' and eleven more strings this catalog carries, and a gate that claims nearly everything proves nothing. Spelling variants are therefore listed EXPLICITLY — this catalog writes both 'Holo Rare' (lc) and 'Rare Holo' (base1) — because a list is reviewable and a fuzzy match is not."
     }
   ]
 }

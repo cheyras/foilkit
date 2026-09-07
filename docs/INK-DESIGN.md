@@ -180,14 +180,33 @@ entry would be exactly the claim `frames.json` refuses to make.
 
 The two gates it drives are separate on purpose:
 
-| | `uInkOn` | `uInkDraw` | Result |
+| `state` | `uInkOn` | `uInkDraw` | Result |
 |---|---|---|---|
-| no ink row, or a queued tile | 0 | 0 | the recipe's procedural fallback — today's render, exactly |
-| tile resolved, `shows` normal/unknown | 1 | 1 | the recipe stops guessing; the tile is drawn |
-| tile resolved, `shows` **measured** `reverse` | 1 | **0** | the recipe stops guessing; nothing is drawn — the scan already has it |
+| `none` — no row keys this printing | 0 | 0 | the recipe's procedural fallback — today's render, exactly |
+| `queued` — a trademarked mark we may not trace | 0 | 0 | the same. An empty slot costs nothing |
+| `no-ink` — a row, and a recorded decision that none is needed | 0 | 0 | the same, and it is **not** queued work |
+| `design` — tile resolved, `shows` normal/unknown | 1 | 1 | the recipe stops guessing; the tile is drawn |
+| `in-scan` — tile resolved, `shows` **measured** `reverse` | 1 | **0** | the recipe stops guessing; nothing is drawn — the scan already has it |
 
-That third row is the whole point. Leaving `uInkOn` at 0 there would put the
+That last row is the whole point. Leaving `uInkOn` at 0 there would put the
 ring-and-dot grid back on top of a printing that already has one.
+
+**Three of the five report a null tile, and they are three different reports.**
+`queued` says a drawing is outstanding; `no-ink` says one was considered and is
+not wanted; `none` says nothing keys this printing at all. Flattening them is how
+Legendary Collection — whose row *records* that it needs no tile — spent a
+release announcing itself as work nobody owed.
+
+**An unkeyed series resolves to `none`, and draws nothing.** `era-layouts.json`
+measures three eras (`wotc`, `modern-swsh`, `modern-sv`) across eight of the
+catalog's twenty-one series. The era lookup used to fall back to `modern-sv`,
+which handed the other thirteen — **6,963 of 13,165 reverse printings, 52.9%** —
+the SV dot grid at strength 0.8 on no evidence whatsoever: the drawn-from-nothing
+defect this tier exists to end, one layer up. Set- and card-scoped rows still
+answer for those series (`ex8` and `ex11` are keyed by SET, and the `ex` series
+needs no era mapping to reach them). A new era mapping belongs in that table only
+when a row exists to serve it — it is also the FOIL resolver's art-window table,
+so a slug added for the ink tier's benefit would silently move foil geometry too.
 
 ---
 
@@ -203,6 +222,24 @@ authorship, and a traced Poké Ball is TPCi's design whoever ran the tracer.
 **Shipped — generic lattice geometry, uncopyrightable, every coordinate a round
 percentage of the cell:** `dot-grid`, `ring-dot`, `pinstripe-diagonal`,
 `crosshatch`.
+
+Two of those four — `ring-dot` and `pinstripe-diagonal` — are **drawn but not
+keyed**: no row reaches them, because no measurement yet says which era or set
+carries that mark rather than a plain dot. That is a legitimate state and it is
+DECLARED, in `unkeyedTiles` with the reason, because the alternatives are
+somebody deleting the asset as dead weight or keying it to an era on a hunch —
+and the second is the drawn-from-nothing defect again.
+`tools/build-ink-index.mjs` cross-checks the declaration against the rows in
+both directions, so it cannot rot either way.
+
+Every tile is also measured for its **seam** on each build
+(`tools/ink-tile-seam.mjs`): a tile is one lattice cell and the shader repeats
+it, so whatever leaves one edge must arrive at the opposite edge at the same
+offset. `pinstripe-diagonal.svg` shipped with its corner-wrap triangles drawn at
+half the size the geometry needs and measured a mean |Δcoverage| of 66/255
+across its own wrap — a grid line down every card it was used on, in a file that
+read as perfectly reasonable and whose own `desc` said "tiles seamlessly". Only
+0 passes now.
 
 **Queued — the slot ships EMPTY and the printings render the procedural
 fallback:** `pokeball`, `masterball`, `specialty-balls` (Love/Quick/Friend/Dusk),

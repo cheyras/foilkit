@@ -904,11 +904,28 @@ export class FoilStage {
 
     // The ink-design layer. Absent (every card today) pushes exactly the
     // structural defaults, so a stage that never hears about ink renders what it
-    // rendered before, bit for bit. `on` without a texture is the QUEUED state —
-    // a trademarked mark left unauthored — and it deliberately still suppresses
-    // the recipe's procedural stand-in only when a tile is actually there:
-    // resolveInk returns on:false for a queued row precisely so the fallback
-    // survives, and this reads that faithfully rather than second-guessing it.
+    // rendered before, bit for bit.
+    //
+    // ── THE INVARIANT THIS DEPENDS ON, AND WHERE IT IS PINNED ──────────────
+    //
+    // A QUEUED row — a trademarked mark left unauthored, and a no-ink row, which
+    // is the recorded decision that a printing needs no tile — must arrive here
+    // as `on: false`. That is what keeps the recipe's procedural stand-in alive,
+    // so an empty slot costs nothing.
+    //
+    // This file cannot enforce it, and must not try. `on: true` with NO texture
+    // is also legal and means the opposite thing: the `in-scan` state, where the
+    // scan already carries the printed design, so the tier owns the layer, the
+    // recipe must stop guessing, and we draw nothing on top of it. Gating
+    // `uInkOn` on the texture would break in-scan while pretending to protect
+    // queued — the two are indistinguishable from here.
+    //
+    // So the invariant lives at its source and is pinned there: `resolveInk`
+    // (@foilkit/resolver) returns uInkOn false for every row with a null tile,
+    // and packages/resolver/src/__tests__/ink.test.ts asserts it over EVERY row
+    // in the registry rather than over the two that happen to be queued today.
+    // What this file owes is to read that answer faithfully, which is all it
+    // does below.
     if (u.uInkTex) {
       const ink = card.config.ink ?? null
       const live = ink !== null && ink.on
