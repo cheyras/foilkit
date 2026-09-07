@@ -24,18 +24,23 @@
 
 import { ActionBtn, Chip } from '../ui.tsx'
 import { navigate } from '../router.ts'
+// NOTHING HERE INDEXES A LABEL MAP DIRECTLY. Reading a badge straight out of
+// the type table, for a type this build had not heard of, threw during render
+// and unmounted the whole app — see taskQueue.ts, "the artifact can be newer
+// than this client"; a unit test reads this file and fails on a bare `[`. Every
+// lookup goes through the degrading helpers, and the chip rows come from
+// `typeOrderFor` / `skillOrderFor` so a new kind gets a control rather than
+// having its cards hidden behind one that does not exist.
 import {
   chipCounts,
-  ESTIMATE_LABEL,
-  SKILL_LABEL,
-  SKILL_ORDER,
-  TYPE_LABEL,
-  TYPE_ORDER,
+  estimateLabel,
+  skillLabel,
+  skillOrderFor,
+  typeLabel,
+  typeOrderFor,
   type EmptyPool,
   type Filters,
-  type Skill,
   type Task,
-  type TaskType,
 } from './taskQueue.ts'
 
 /** The impact number, or an honest admission that this bake cannot size it. */
@@ -55,7 +60,7 @@ function Impact({ task }: { task: Task }): React.ReactElement {
 }
 
 export function TaskCard({ task, guardText }: { task: Task; guardText: Record<string, string> }): React.ReactElement {
-  const type = TYPE_LABEL[task.type]
+  const type = typeLabel(task.type)
   return (
     <li className="rounded-md border border-border-default bg-surface-tertiary p-[10px]">
       <div className="mb-[4px] flex items-start justify-between gap-[8px]">
@@ -74,9 +79,9 @@ export function TaskCard({ task, guardText }: { task: Task; guardText: Record<st
       <p className="mb-[6px] text-[12px] leading-[1.5] text-text-muted">{task.need}</p>
 
       <p className="mb-[6px] text-[11px] text-text-muted">
-        <span className="text-text-primary">{SKILL_LABEL[task.skill]}</span>
+        <span className="text-text-primary">{skillLabel(task.skill)}</span>
         {' · '}
-        <span className="text-text-primary">{ESTIMATE_LABEL[task.estimate]}</span>
+        <span className="text-text-primary">{estimateLabel(task.estimate)}</span>
         {' — '}
         {task.estimateWhy}
       </p>
@@ -129,14 +134,14 @@ export function TaskFilters({
         <Chip active={filters.skill === null} onClick={() => onChange({ ...filters, skill: null })}>
           Anything ({tasks.filter((t) => filters.type === null || t.type === filters.type).length})
         </Chip>
-        {SKILL_ORDER.map((s: Skill) => (
+        {skillOrderFor(tasks).map((s) => (
           <Chip
             key={s}
             active={filters.skill === s}
             disabled={(counts.skills[s] ?? 0) === 0 && filters.skill !== s}
             onClick={() => onChange({ ...filters, skill: filters.skill === s ? null : s })}
           >
-            {SKILL_LABEL[s]} ({counts.skills[s] ?? 0})
+            {skillLabel(s)} ({counts.skills[s] ?? 0})
           </Chip>
         ))}
       </div>
@@ -145,14 +150,14 @@ export function TaskFilters({
         <Chip active={filters.type === null} onClick={() => onChange({ ...filters, type: null })}>
           Everything
         </Chip>
-        {TYPE_ORDER.map((t: TaskType) => (
+        {typeOrderFor(tasks).map((t) => (
           <Chip
             key={t}
             active={filters.type === t}
             disabled={(counts.types[t] ?? 0) === 0 && filters.type !== t}
             onClick={() => onChange({ ...filters, type: filters.type === t ? null : t })}
           >
-            {TYPE_LABEL[t].badge} ({counts.types[t] ?? 0})
+            {typeLabel(t).badge} ({counts.types[t] ?? 0})
           </Chip>
         ))}
       </div>
