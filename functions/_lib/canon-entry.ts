@@ -25,6 +25,75 @@
 // paths, because the composition is one function.
 
 import { COMPOSITE_CONTRACT } from '@foilkit/core'
+import {
+  FIRST_ATTRIBUTED_VERSION,
+  deriveTier,
+  type AuthorIdentity,
+  type ProvenanceTier,
+  type VerificationRecord,
+} from '@foilkit/forge'
+
+/**
+ * A THIRD FIELD THAT MUST SURVIVE A REWRITE (#10): `provenance`.
+ *
+ * A canon file is the other thing a stranger can contribute, and until now it
+ * recorded WHAT was tuned and under which contract but never WHO tuned it or
+ * whether anybody with the capability had looked. The mask corpus grew that
+ * distinction in sidecar v5 and the two corpora should not answer the same
+ * question differently — a reviewer reading a canon PR and a mask PR should be
+ * reading the same four facts.
+ *
+ * ── WEIGHT SEMANTICS, WHICH DIFFER FROM A MASK'S AND SAY SO ────────────────
+ *
+ * A mask's tier gates an EXEMPLAR WEIGHT, because masks are training input:
+ * `selectExemplars` reads the tier and an unverified one carries 0. A canon
+ * file is not training input for anything. It is a full uniform snapshot that
+ * is either the recorded canon for its pattern or it is not, so there is no
+ * weight to discount and this block carries NO numeric weight at all — it
+ * carries attribution and a review state.
+ *
+ * What the tier means here is therefore narrower and worth stating plainly:
+ *
+ *   `owner-verified`  a writer tuned these numbers, or verified them. This is
+ *                     the state every committed canon file is in today.
+ *   `contributor`     a merged contribution. The numbers ARE the canon — they
+ *                     render, they are served, `hasCanon` is true — and no
+ *                     writer has separately signed them off.
+ *   `unattributed`    no author recorded on a block that should carry one.
+ *
+ * `frozen` remains the STRONGER statement and is unaffected: verification says
+ * "I have looked and this is right", `frozen` says "stop re-tuning this". A
+ * writer can verify a file without freezing it, and every frozen file was
+ * necessarily verified by the person who froze it.
+ */
+export interface CanonProvenance {
+  version: 1
+  /**
+   * The file this snapshot replaced, summarised. Null when the pattern had no
+   * canon — which is a real and different answer from "it had one and nothing
+   * moved", and the reviewer needs to be able to tell them apart.
+   */
+  startedFrom: {
+    savedAt: string | null
+    contract: number | null
+    tunedUnderContract: number | null
+    uniforms: number
+  } | null
+  /** WHAT CHANGED, as keys rather than prose. The reviewer's first question. */
+  changed: {
+    /** Keys whose value moved, or that are new. Sorted. */
+    keys: string[]
+    /** Keys the previous file had and this one does not. Sorted. */
+    dropped: string[]
+    n: number
+  }
+  /** Recorded server-side from a verified identity. Never from a body. */
+  author: AuthorIdentity | null
+  /** Only ever written by a writer-gated route. Honoured only for a writer. */
+  verification: VerificationRecord | null
+  /** DERIVED from the two above; recomputed rather than read. */
+  tier: ProvenanceTier
+}
 
 export interface CanonEntry {
   version: 1
@@ -37,6 +106,8 @@ export interface CanonEntry {
   tunedUnderContract?: number
   /** A human's "settled". Carried through untouched; never set by a machine. */
   frozen?: unknown
+  /** #10: who tuned it, what it started from, what moved, who verified it. */
+  provenance?: CanonProvenance
   note?: string
 }
 
@@ -81,6 +152,26 @@ export interface ComposeInput {
    * nothing here does one.
    */
   tunedNow: boolean
+  /**
+   * WHO IS SAVING, from an identity the caller has already verified. Same trust
+   * model as the mask path's `author`: the route knows, the client does not get
+   * to say, and `validate.ts` refuses a body that tries. Omitted only by
+   * callers that have no session at all (a mechanical rewrite), which then
+   * compose an `unattributed` block rather than a silently owner-shaped one.
+   */
+  author?: AuthorIdentity | null
+}
+
+/** The uniform keys that moved, and the ones that went away. Both sorted. */
+function diffUniforms(
+  previous: Record<string, number> | null,
+  next: Record<string, number>,
+): CanonProvenance['changed'] {
+  const keys = Object.keys(next)
+    .filter((k) => previous === null || previous[k] !== next[k])
+    .sort()
+  const dropped = previous === null ? [] : Object.keys(previous).filter((k) => !(k in next)).sort()
+  return { keys, dropped, n: keys.length + dropped.length }
 }
 
 export function composeCanonEntry(input: ComposeInput): CanonEntry {
@@ -107,6 +198,44 @@ export function composeCanonEntry(input: ComposeInput): CanonEntry {
       ? previous.tunedUnderContract
       : contract
   if (previous?.frozen !== undefined) entry.frozen = previous.frozen
+
+  // ── The provenance block (#10) ───────────────────────────────────────────
+  //
+  // A canon save is a REPLACEMENT — the file is a full snapshot, so there is
+  // nothing to merge — and that is exactly why the verification does NOT ride
+  // forward: whatever a writer signed off on is not what is in this file any
+  // more. A new snapshot is unverified, whoever wrote it, and it is
+  // `owner-verified` only when its author holds the capability, which
+  // `deriveTier` decides from the author rather than from a block anybody
+  // could have carried over.
+  const author = input.author ?? null
+  const previousUniforms =
+    previous?.uniforms && typeof previous.uniforms === 'object'
+      ? (previous.uniforms as Record<string, number>)
+      : null
+  entry.provenance = {
+    version: 1,
+    startedFrom:
+      previous === null
+        ? null
+        : {
+            savedAt: typeof previous.savedAt === 'string' ? previous.savedAt : null,
+            contract: typeof previous.contract === 'number' ? previous.contract : null,
+            tunedUnderContract:
+              typeof previous.tunedUnderContract === 'number' ? previous.tunedUnderContract : null,
+            uniforms: previousUniforms === null ? 0 : Object.keys(previousUniforms).length,
+          },
+    changed: diffUniforms(previousUniforms, entry.uniforms),
+    author,
+    verification: null,
+    // `FIRST_ATTRIBUTED_VERSION` puts this on the CONSERVATIVE side of
+    // `deriveTier`'s version test, which is where it belongs: the historical
+    // branch exists for records that predate authorship being recorded at all,
+    // and a canon provenance block only exists from #10 on. So a block naming
+    // no author is `unattributed` here, never the owner by default.
+    tier: deriveTier(FIRST_ATTRIBUTED_VERSION, author, null),
+  }
+
   if (input.note !== null) entry.note = input.note
   return entry
 }

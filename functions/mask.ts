@@ -15,6 +15,24 @@
 // the same list and decides what the UI offers, but it is not a boundary —
 // anybody can edit their own JavaScript. This is the check that matters, and
 // `functions/_lib/writers.test.ts` keeps the two lists honest.
+//
+// ── #10: THE AUTHOR, AND THE PROMOTION ─────────────────────────────────────
+//
+// PUT now stamps `author: { login, id, via: 'writer-direct' }` into the
+// sidecar, from the SAME claims `requireWriter` just checked. It is not read
+// from the body and there is no body field for it — `functions/_lib/validate.ts`
+// refuses one on the contribution path for the same reason. Because that login
+// holds the capability and the channel is writer-gated, `deriveTier` reads the
+// record back as `owner-verified` with no verification block: a direct write
+// runs AS the capability holder, so asking him to then countersign his own save
+// would be a ritual rather than a check.
+//
+// PATCH is the promotion. It is the only route that writes a `verification`
+// block, it writes it from the cookie's login rather than the body's, and
+// `verifyMaskRecord` refuses outright if that login does not hold the
+// capability. It touches the `.json` and nothing else — the mask PNG's sha256
+// is identical before and after — which is what makes a promotion reviewable as
+// a one-line diff instead of as a re-save nobody can tell from a repaint.
 
 import {
   headerValue,
@@ -40,7 +58,7 @@ import {
   pngFromDataUrl,
 } from './_lib/corpus.ts'
 import { commitChanges, noreplyAuthor, repoRef, type CommitChange } from './_lib/github.ts'
-import { writeMaskRecord } from '@foilkit/forge'
+import { NotAWriter, verifyMaskRecord, writeMaskRecord } from '@foilkit/forge'
 import { parsePrior } from '@foilkit/forge'
 import { rm } from 'node:fs/promises'
 import { readdirSync, rmSync } from 'node:fs'
@@ -74,8 +92,9 @@ function requireWriter(req: FnRequest, res: FnResponse): SessionClaims | null {
 
 export default async function handler(req: FnRequest, res: FnResponse): Promise<void> {
   if (req.method === 'PUT') return void (await put(req, res))
+  if (req.method === 'PATCH') return void (await verify(req, res))
   if (req.method === 'DELETE') return void (await del(req, res))
-  sendPrivateError(res, 405, 'method_not_allowed', 'PUT or DELETE')
+  sendPrivateError(res, 405, 'method_not_allowed', 'PUT, PATCH or DELETE')
 }
 
 async function put(req: FnRequest, res: FnResponse): Promise<void> {
@@ -159,6 +178,10 @@ async function put(req: FnRequest, res: FnResponse): Promise<void> {
       parentRef,
       artworkUrl: typeof body.artworkUrl === 'string' ? body.artworkUrl : null,
       card: (body.card ?? undefined) as never,
+      // The author, from the cookie `requireWriter` just verified — NEVER from
+      // the body, which carries no field for it. Same trust model as `machine`
+      // below: the route knows, the client does not get to say.
+      author: { login: writer.login, id: writer.id, via: 'writer-direct' },
       // No `machine`: only a real generator may claim a machine label, and only
       // by handing over a full identity. An HTTP caller cannot supply one, which
       // is the rule that keeps machine output out of the exemplar pool.
@@ -197,6 +220,98 @@ async function put(req: FnRequest, res: FnResponse): Promise<void> {
     // the real reason — the alternative is a 500 and a mystery.
     const status = /frame|dimensions|supersede|prior/i.test(message) ? 400 : 502
     sendPrivateError(res, status, status === 400 ? 'refused' : 'write_failed', message)
+  } finally {
+    if (workspaceRoot !== null) await rm(workspaceRoot, { recursive: true, force: true }).catch(() => undefined)
+  }
+}
+
+/**
+ * PROMOTE a mask to `owner-verified`. The writer-gated half of #10.
+ *
+ * The whole security property is one line below: `verifier` is built from
+ * `writer.login`, which came out of a signed cookie, and there is no path from
+ * the request body to it. A contributor cannot verify their own work, because
+ * `verifyMaskRecord` refuses a login without the capability — and even if a
+ * forged block somehow reached the repository, `deriveTier` re-checks the login
+ * against the same list on every single read, so the block would grant nothing.
+ *
+ * It rewrites ONE FILE. `writeMaskRecord` is deliberately not involved: it
+ * would re-derive the method against the parent as it is on disk and re-emit
+ * every artifact, which is the right behaviour for a save and the wrong one for
+ * a statement about a save.
+ */
+async function verify(req: FnRequest, res: FnResponse): Promise<void> {
+  const writer = requireWriter(req, res)
+  if (writer === null) return
+
+  let cardId: string
+  let variantId: number
+  let note: string | null
+  try {
+    const raw = await readJsonBody(req)
+    if (typeof raw !== 'object' || raw === null) throw new BadRequest('expected a JSON object')
+    const b = raw as Record<string, unknown>
+    cardId = assertCardId(b.cardId)
+    variantId = assertVariantId(b.variantId)
+    note = typeof b.note === 'string' && b.note.trim().length > 0 ? b.note.trim().slice(0, 400) : null
+  } catch (err) {
+    if (err instanceof BodyTooLarge) {
+      sendPrivateError(res, 413, 'too_large', err.message)
+      return
+    }
+    sendPrivateError(res, 400, 'bad_request', (err as Error).message)
+    return
+  }
+
+  const ref = repoRef()
+  let workspaceRoot: string | null = null
+  try {
+    const ws = await materialise(ref, [`${MASKS_PREFIX}/${cardId}`])
+    workspaceRoot = ws.root
+    const result = await verifyMaskRecord({
+      masksDir: ws.masksDir,
+      cardId,
+      variantId,
+      // From the COOKIE. There is no body field that reaches this.
+      verifier: { login: writer.login, id: writer.id },
+      via: 'writer-direct',
+      note,
+    })
+    if (result.unchanged) {
+      sendPrivateJson(res, 200, { ...result.sidecar, commit: null, unchanged: true })
+      return
+    }
+
+    const changes: CommitChange[] = changesIn(ws, MASKS_PREFIX)
+    // A verification changes exactly one file. Asserting it rather than
+    // trusting it: if this ever collected a PNG, something re-rasterized during
+    // a promotion and the commit would say "verified" over changed pixels.
+    const png = changes.find((c) => !c.path.endsWith('.json'))
+    if (png) throw new Error(`a verification must touch only the sidecar, but ${png.path} also changed`)
+    if (changes.length === 0) {
+      sendPrivateJson(res, 200, { ...result.sidecar, commit: null, unchanged: true })
+      return
+    }
+
+    const commit = await commitChanges(
+      ref,
+      changes,
+      `Verify: ${cardId}/${variantId} — ${result.from} → ${result.to}\n\n` +
+        `${result.sidecar.derivation_method} mask promoted to exemplar grade; it now carries weight in ` +
+        'selectExemplars and every rule derived through it.\n' +
+        `${note === null ? '' : `\n${note}\n`}` +
+        `\nVerified at foilkit.deckpal.app by @${writer.login}.\n`,
+      noreplyAuthor({ login: writer.login, id: writer.id, name: writer.name, avatar_url: writer.avatarUrl }),
+    )
+    sendPrivateJson(res, 200, { ...result.sidecar, commit, promoted: { from: result.from, to: result.to } })
+  } catch (err) {
+    if (err instanceof NotAWriter) {
+      sendPrivateError(res, 403, 'not_a_writer', err.message)
+      return
+    }
+    const message = (err as Error).message
+    const status = /no readable sidecar|only the sidecar/i.test(message) ? 404 : 502
+    sendPrivateError(res, status, status === 404 ? 'not_found' : 'verify_failed', message)
   } finally {
     if (workspaceRoot !== null) await rm(workspaceRoot, { recursive: true, force: true }).catch(() => undefined)
   }

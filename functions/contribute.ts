@@ -238,6 +238,9 @@ async function submitMask(res: FnResponse, body: Record<string, unknown>, contri
     derivation,
     seed: { parentSha256: seed.parentSha256, resolvedFrom: seed.resolvedFrom },
     conflict,
+    // The WHOLE body, for the forged-provenance gate. Narrowing it first would
+    // throw away the only evidence of what the client tried to claim.
+    body,
   })
   if (!validation.ok) return refuseValidation(res, validation.checks, validation.failures)
 
@@ -273,6 +276,22 @@ async function submitMask(res: FnResponse, body: Record<string, unknown>, contri
       parentRef,
       artworkUrl: typeof body.artworkUrl === 'string' ? body.artworkUrl : null,
       card: (body.card ?? undefined) as never,
+      // ── THE CONTRIBUTOR, RECORDED (#10) ──
+      //
+      // From `claims`, i.e. from the signed session cookie, i.e. from GitHub's
+      // own answer to "who is this". The contributor cannot claim otherwise
+      // because THE APP COMPOSES THE COMMIT: they send pixels, the App decides
+      // what the file says, and `validateMask` has already refused this
+      // submission if it carried an `author` or a `verification` of its own.
+      //
+      // `via: 'contribution-pr'` is what makes the resulting record
+      // `contributor`-tier and weight 0 in `selectExemplars` — even when the
+      // person submitting IS a writer. That is deliberate and it is the one
+      // case where the two paths differ in outcome for the same person: a
+      // submission is a PROPOSAL whoever wrote it, and a proposal that promoted
+      // itself on the strength of who sent it would make the pipeline
+      // untestable by the one person who most needs to test it.
+      author: { login: contributor.login, id: contributor.id, via: 'contribution-pr' },
       // No `machine`. Only a real generator may claim a machine label, and only
       // by handing over a full identity — which an HTTP caller cannot supply.
       // That is the rule that keeps machine output out of the exemplar pool
@@ -410,7 +429,7 @@ async function submitCanon(res: FnResponse, body: Record<string, unknown>, contr
   const seedContract = typeof body.seedContract === 'number' ? body.seedContract : null
   const seedSha256 = typeof body.seedSha256 === 'string' ? body.seedSha256 : null
 
-  const validation = validateCanon({ patternId, uniforms, seedContract, conflict })
+  const validation = validateCanon({ patternId, uniforms, seedContract, conflict, body })
   if (!validation.ok) return refuseValidation(res, validation.checks, validation.failures)
 
   const token = await installationToken(appCredentials())
@@ -427,6 +446,11 @@ async function submitCanon(res: FnResponse, body: Record<string, unknown>, contr
     // A live tuning session chose these numbers against the law this build
     // ships, which is what `tunedUnderContract` records.
     tunedNow: true,
+    // THE CONTRIBUTOR, from the session — which is the whole reason this cannot
+    // be forged. The App composes the commit; the contributor never touches the
+    // bytes, and `validateCanon` has already refused the submission if it tried
+    // to name an author or a verification of its own.
+    author: { login: contributor.login, id: contributor.id, via: 'contribution-pr' },
   })
 
   if (sameCanon(previous, entry)) {

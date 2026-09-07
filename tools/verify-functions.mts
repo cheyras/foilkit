@@ -338,6 +338,59 @@ async function contributionPipeline(routes: Record<string, string>): Promise<voi
     }
   }
 
+  // ── #10: A SUBMISSION THAT TRIES TO VERIFY ITSELF ───────────────────────
+  //
+  // The attack the tier split exists to stop, run end to end. A contributor who
+  // has read sidecar v5 knows that `provenanceTier: 'owner-verified'` is what
+  // buys exemplar weight, and puts it in the body. Two things must hold: a
+  // NAMED 422 rather than a silent drop, and no branch — because a pull request
+  // that looks fine is exactly how a forged claim gets merged by a tired
+  // reviewer.
+  {
+    const gh = installFakeGithub(contributionRoutes(false))
+    try {
+      const h = await load(routes['/api/contribute']!, APP_ENV)
+      const r = await call(h, {
+        method: 'POST',
+        url: '/api/contribute',
+        headers: { cookie },
+        body: {
+          ...MASK_SUBMISSION,
+          png,
+          author: { login: 'cheyras', id: 1, via: 'writer-direct' },
+          verification: {
+            verifiedBy: 'cheyras',
+            verifiedById: 1,
+            verifiedAt: '2026-09-06T00:00:00.000Z',
+            via: 'writer-direct',
+            note: 'looks right to me',
+          },
+          provenanceTier: 'owner-verified',
+        },
+      })
+      const body = r.json as { error?: { code?: string }; failures?: string[] } | null
+      ok(
+        'a submission that claims its own provenance is refused with 422',
+        r.status === 422 && body?.error?.code === 'validation_failed',
+        `status ${r.status} body ${r.body.slice(0, 200)}`,
+      )
+      ok(
+        'and the refusal NAMES every claimed field rather than dropping them silently',
+        (body?.failures ?? []).some(
+          (f) => f.includes('author') && f.includes('verification') && f.includes('provenanceTier'),
+        ),
+        JSON.stringify(body?.failures),
+      )
+      ok(
+        'AND NO BRANCH EXISTS — a forged claim never reaches a reviewer',
+        gh.calls.length === 0,
+        gh.calls.map((c) => `${c.method} ${c.path}`).join(', '),
+      )
+    } finally {
+      gh.restore()
+    }
+  }
+
   // ── A signed-out submission ─────────────────────────────────────────────
   {
     const gh = installFakeGithub(contributionRoutes(false))
@@ -367,7 +420,15 @@ async function contributionPipeline(routes: Record<string, string>): Promise<voi
       const body = r.json as {
         pr?: { url?: string; number?: number; updated?: boolean }
         branch?: string
-        sidecar?: { derivation_method?: string; diff?: { agreement?: number } }
+        sidecar?: {
+          version?: number
+          derivation_method?: string
+          reviewStatus?: string
+          diff?: { agreement?: number }
+          author?: { login?: string; id?: number | null; via?: string } | null
+          verification?: unknown
+          provenanceTier?: string
+        }
       } | null
       ok(
         'a valid mask submission answers 200 with a pull request URL',
@@ -394,6 +455,42 @@ async function contributionPipeline(routes: Record<string, string>): Promise<voi
         'and a measured agreement against the era rule',
         typeof body?.sidecar?.diff?.agreement === 'number',
         JSON.stringify(body?.sidecar?.diff),
+      )
+
+      // ── #10: THE CONTRIBUTOR-PROVENANCE COMPOSITION ────────────────────
+      //
+      // The submission body carries no author and no verification —
+      // `validate.ts` refuses one that does — so everything asserted here was
+      // composed by the App from the SESSION COOKIE. That is the whole
+      // mechanism in one place: the contributor sends pixels, the App decides
+      // what the file says, and the file says the contributor painted it and
+      // nobody has verified it.
+      ok(
+        'the sidecar records the CONTRIBUTOR as author, from the session',
+        body?.sidecar?.author?.login === 'qa-contributor' &&
+          body.sidecar.author.id === 777001 &&
+          body.sidecar.author.via === 'contribution-pr',
+        JSON.stringify(body?.sidecar?.author),
+      )
+      ok(
+        'it carries NO verification — a merge is acceptance, not exemplar grade',
+        body?.sidecar?.verification === null || body?.sidecar?.verification === undefined,
+        JSON.stringify(body?.sidecar?.verification),
+      )
+      ok(
+        'so the tier is `contributor`, and the mask carries exemplar weight 0',
+        body?.sidecar?.provenanceTier === 'contributor',
+        String(body?.sidecar?.provenanceTier),
+      )
+      ok(
+        'the method is still the honest one — the tier discounts weight, not authorship',
+        body?.sidecar?.derivation_method === 'hand' && body.sidecar.reviewStatus === 'human-authored',
+        `${String(body?.sidecar?.derivation_method)} / ${String(body?.sidecar?.reviewStatus)}`,
+      )
+      ok(
+        'and it is a v5 sidecar, which is what makes the absent-author rule conservative',
+        body?.sidecar?.version === 5,
+        String(body?.sidecar?.version),
       )
 
       const seq = gh.calls.map((c) => `${c.method} ${c.path.split('?')[0]}`)

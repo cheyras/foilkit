@@ -113,6 +113,10 @@ async function put(req: FnRequest, res: FnResponse): Promise<void> {
       previous,
       contract: explicitContract,
       tunedNow: true,
+      // From the cookie `requireWriter` just checked. A canon file records who
+      // chose its numbers for the same reason a sidecar records who painted
+      // its pixels, and on the same terms: the route knows, the body cannot say.
+      author: { login: writer.login, id: writer.id, via: 'writer-direct' },
     })
     if (sameCanon(previous, entry)) {
       sendPrivateJson(res, 200, { ...entry, savedAt: previous?.savedAt ?? entry.savedAt, commit: null, unchanged: true })

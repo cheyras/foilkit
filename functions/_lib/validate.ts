@@ -72,6 +72,93 @@ function finish(checks: Check[]): ValidationResult {
 
 const HEX64 = /^[0-9a-f]{64}$/i
 
+// ── THE FORGED-PROVENANCE GATE (#10) ───────────────────────────────────────
+//
+// Every field a submission may NOT carry, because the server derives it.
+//
+// The pre-#10 list was implicit and enforced by omission: `submitMask` reads
+// `cardId`, `png`, `prior`, `derivation`, `seed`, `conflict`, `comment` and
+// nothing else, so anything else in the body was simply ignored. Ignoring is
+// safe and it is also SILENT, and #10 adds two fields where silence is the
+// wrong answer:
+//
+//   * `verification` decides EXEMPLAR WEIGHT. A submission carrying one is not
+//     a confused client, it is an attempt to grant its own mask ground-truth
+//     status, and the pipeline should say so out loud rather than drop it on
+//     the floor and open a pull request that looks fine.
+//   * `author` is the record of WHO. The App composes it from the session it
+//     already verified; a body that also supplies one is either stale client
+//     code or a claim to be somebody else, and both deserve a named refusal.
+//
+// The older derived labels are in the list too — `derivation_method`,
+// `authorship`, `reviewStatus`, `provenanceTier`, `exemplarWeight`. They were
+// already unforgeable (forge re-derives all five from pixels and from the tier
+// rules) so this changes no outcome for them; it changes the FEEDBACK, from
+// "your claim was quietly discarded" to "this pipeline does not accept claims,
+// here is the one that was rejected". `apps/editor/src/staging/staging.test.ts`
+// already asserts a staged session carries none of them, so a submission that
+// trips this check did not come from this editor.
+export const CLIENT_MAY_NOT_CLAIM: readonly string[] = [
+  'author',
+  'verification',
+  'verifiedBy',
+  'provenanceTier',
+  'derivation_method',
+  'authorship',
+  'reviewStatus',
+  'exemplarWeight',
+]
+
+/**
+ * Every forbidden key anywhere in the submitted JSON, by path.
+ *
+ * DEEP, not top-level. The interesting shape is not `{ verification: … }` at
+ * the root — a client that wanted to lie would nest it where it looks like it
+ * belongs, inside `prior`, inside `card`, inside `seed`. Depth and breadth are
+ * bounded so a pathological body cannot turn this into the expensive part of
+ * the request; the body ceiling upstream is the real limit.
+ */
+export function claimedProvenanceKeys(body: unknown, maxNodes = 4096): string[] {
+  const found: string[] = []
+  const forbidden = new Set(CLIENT_MAY_NOT_CLAIM)
+  const stack: { node: unknown; path: string }[] = [{ node: body, path: '' }]
+  let seen = 0
+  while (stack.length > 0 && seen < maxNodes) {
+    const { node, path } = stack.pop()!
+    seen++
+    if (Array.isArray(node)) {
+      for (const [i, v] of node.entries()) stack.push({ node: v, path: `${path}[${i}]` })
+      continue
+    }
+    if (typeof node !== 'object' || node === null) continue
+    for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+      const here = path === '' ? k : `${path}.${k}`
+      if (forbidden.has(k)) found.push(here)
+      stack.push({ node: v, path: here })
+    }
+  }
+  return found.sort()
+}
+
+/**
+ * The check itself. Shared by both submission kinds, because the rule is about
+ * the pipeline rather than about masks: nothing a contributor sends may name
+ * its own provenance, in either corpus.
+ */
+export function checkNoClaimedProvenance(body: unknown): Check {
+  const claimed = claimedProvenanceKeys(body)
+  return {
+    name: 'no-claimed-provenance',
+    ok: claimed.length === 0,
+    detail:
+      claimed.length === 0
+        ? 'the submission claims no provenance — authorship and verification are recorded server-side.'
+        : `this submission carries ${claimed.join(', ')}, and a submission may not name its own provenance. ` +
+          'Authorship is recorded from your signed-in identity when the App composes the commit, and verification ' +
+          'is an act of someone holding the writer capability — neither is something a request body may assert.',
+  }
+}
+
 // ── Masks ──────────────────────────────────────────────────────────────────
 
 /**
@@ -102,6 +189,13 @@ export interface MaskCandidate {
    * contributor chose keep-mine with the conflict on screen.
    */
   conflict: { kind: string; acknowledged: boolean }
+  /**
+   * The RAW submitted body, for the forged-provenance gate. Passed whole and
+   * on purpose: the check is about what the client SENT, and a body already
+   * narrowed to the fields this function reads would have thrown away the
+   * evidence of everything it did not.
+   */
+  body?: unknown
 }
 
 export interface MaskValidation extends ValidationResult {
@@ -125,6 +219,11 @@ export interface MaskValidation extends ValidationResult {
 export function validateMask(input: MaskCandidate): MaskValidation {
   const checks: Check[] = []
   let coverage = 0
+
+  // 0. NOTHING CLAIMS ITS OWN PROVENANCE. First, because it is the cheapest
+  //    check in the function and because a submission that fails it should be
+  //    told THAT rather than told about its alpha channel.
+  checks.push(checkNoClaimedProvenance(input.body ?? {}))
 
   // 1. It is a PNG, and it decodes.
   let img: { width: number; height: number; rgba: Uint8Array } | null = null
@@ -264,6 +363,8 @@ export interface CanonCandidate {
   /** The contract the seed was tuned under, when the session recorded one. */
   seedContract: number | null
   conflict: { kind: string; acknowledged: boolean }
+  /** The RAW submitted body, for the forged-provenance gate. See MaskCandidate. */
+  body?: unknown
 }
 
 export interface CanonValidation extends ValidationResult {
@@ -365,6 +466,10 @@ function balance(source: string, open: string, close: string): number {
  */
 export function validateCanon(input: CanonCandidate): CanonValidation {
   const checks: Check[] = []
+  // Same gate as the mask path, and for the same reason: a canon file now
+  // carries a provenance block too, and it is composed from the session rather
+  // than accepted from the body.
+  checks.push(checkNoClaimedProvenance(input.body ?? {}))
   const patternId = canonicalPatternId(input.patternId)
   const pattern = patternById(patternId)
 

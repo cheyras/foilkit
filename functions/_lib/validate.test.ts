@@ -19,7 +19,14 @@ import { CANONICAL_H, CANONICAL_W, GLOBAL_DEFAULTS } from '@foilkit/core'
 import { encodePng } from '@foilkit/forge'
 import { PATTERNS, patternById } from '@foilkit/patterns'
 
-const { validateMask, validateCanon, checkAssembledGlsl, MAX_COVERAGE } = await import('./validate.ts')
+const {
+  validateMask,
+  validateCanon,
+  checkAssembledGlsl,
+  claimedProvenanceKeys,
+  CLIENT_MAY_NOT_CLAIM,
+  MAX_COVERAGE,
+} = await import('./validate.ts')
 
 /** A mask PNG at the given size with `coverage` of the pixels drawn. */
 function maskPng(width: number, height: number, coverage: number): Buffer {
@@ -314,4 +321,87 @@ test('a uniform the assembled shader never declares is caught', () => {
 test('the composite is GLSL ES 1.00 — no #version directive anywhere in it', () => {
   const c = checkAssembledGlsl('cosmos', []).find((x) => x.name === 'glsl-no-version-directive')!
   assert.equal(c.ok, true)
+})
+
+// ── #10: nothing claims its own provenance ─────────────────────────────────
+//
+// The scenario each of these is standing in for: somebody reads sidecar v5,
+// notices that `provenanceTier: 'owner-verified'` is what buys exemplar weight,
+// and puts it in the submission. What must happen is a NAMED REFUSAL before a
+// branch exists — not a silent drop, which opens a pull request that looks
+// perfectly fine and teaches the contributor that the field worked.
+
+test('a clean submission passes the provenance gate', () => {
+  const c = check(validateMask(maskInput({ body: { cardId: 'base1-8', variantId: 32, comment: 'traced it' } })), 'no-claimed-provenance')
+  assert.equal(c.ok, true)
+  assert.match(c.detail, /claims no provenance/)
+})
+
+test('a submission carrying a verification block is REFUSED, and the message says why', () => {
+  const r = validateMask(
+    maskInput({
+      body: {
+        cardId: 'base1-8',
+        verification: { verifiedBy: 'cheyras', via: 'writer-direct', verifiedAt: '2026-09-06T00:00:00.000Z' },
+      },
+    }),
+  )
+  assert.equal(r.ok, false)
+  const c = check(r, 'no-claimed-provenance')
+  assert.equal(c.ok, false)
+  assert.match(c.detail, /verification/)
+  assert.match(c.detail, /writer capability/)
+  // It is the FIRST failure reported. A contributor who tried to verify their
+  // own work should be told that, not told about their alpha channel.
+  assert.equal(r.failures[0], c.detail)
+})
+
+test('a submission carrying an author block is REFUSED — the App records who, from the session', () => {
+  const r = validateMask(maskInput({ body: { author: { login: 'somebody-else', id: 1, via: 'writer-direct' } } }))
+  assert.equal(r.ok, false)
+  assert.match(check(r, 'no-claimed-provenance').detail, /author/)
+})
+
+test('a claim NESTED inside another field is found — the gate is deep, not top-level', () => {
+  // Nobody who wanted to lie would put it at the root; they would put it where
+  // it looks like it belongs.
+  const r = validateMask(maskInput({ body: { prior: { ...PRIOR, author: { login: 'x', id: 1, via: 'writer-direct' } } } }))
+  assert.equal(r.ok, false)
+  assert.match(check(r, 'no-claimed-provenance').detail, /prior\.author/)
+})
+
+test('every derived label is in the forbidden list, and the paths are reported', () => {
+  // The older ones were already unforgeable — forge re-derives them — so this
+  // changes the FEEDBACK rather than the outcome, from "quietly discarded" to
+  // "this pipeline does not accept claims, here is the one you sent".
+  for (const key of CLIENT_MAY_NOT_CLAIM) {
+    const found = claimedProvenanceKeys({ [key]: 'anything' })
+    assert.deepEqual(found, [key], `${key} must be caught`)
+  }
+  assert.deepEqual(
+    claimedProvenanceKeys({ a: { verification: 1 }, b: [{ author: 2 }] }).sort(),
+    ['a.verification', 'b[0].author'],
+  )
+  assert.deepEqual(claimedProvenanceKeys({ cardId: 'x', prior: { eraId: 'wotc' } }), [])
+})
+
+test('a canon submission is gated the same way — the rule is about the pipeline, not about masks', () => {
+  const clean = validateCanon({
+    patternId: 'cosmos',
+    uniforms: fullCanon('cosmos'),
+    seedContract: 2,
+    conflict: FRESH,
+    body: { patternId: 'cosmos', uniforms: fullCanon('cosmos') },
+  })
+  assert.equal(clean.ok, true, clean.failures.join(' / '))
+
+  const forged = validateCanon({
+    patternId: 'cosmos',
+    uniforms: fullCanon('cosmos'),
+    seedContract: 2,
+    conflict: FRESH,
+    body: { patternId: 'cosmos', provenance: { verification: { verifiedBy: 'cheyras' } } },
+  })
+  assert.equal(forged.ok, false)
+  assert.match(check(forged, 'no-claimed-provenance').detail, /provenance\.verification/)
 })
