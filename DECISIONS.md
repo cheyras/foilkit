@@ -2341,3 +2341,19 @@ show the four seconds the notes actually cite.
 - Suites: **538 unit** (was 506 — 19 parser, 13 loop controller), **81 editor
   E2E** (was 58), **30 stage acceptance** (unchanged). No CI job was added; one
   step was, next to the two existing `--check` steps.
+- **Verified against the live API, not only against a mock** (AGENTS.md F7). The
+  built site was served locally and driven with a real network: before the
+  click, **zero** requests to any Google host; after it, the real
+  `iframe_api` script adopted our own `youtube-nocookie.com` iframe and fired
+  `onReady` — which is the confirmation that the adopt-an-existing-iframe route
+  works with the nocookie domain, and the reason the `host` option is not used.
+  `getCurrentTime()` sampled every 500ms for 20s gave **40/40 samples inside
+  45.6s–49.17s** with four clean wraps (`48.72 → 45.63`, `49.17 → 45.93`,
+  `49.09 → 45.85`, `48.98 → 45.60`) on `cosmos`, whose recorded bounds are
+  45.6s–49.1s. The loop holds the segment on the real player.
+- One thing that cost an hour and is worth writing down: the real `YT.Player`
+  **attaches its methods after construction**. An instrumentation wrapper that
+  captured `inst.seekTo` at construction time captured `undefined` and installed
+  a permanent no-op — the loop then reported five successful seeks while
+  playback ran away to 62s. Nothing in the shipped code does this; the harness
+  did. If you go to instrument this player, observe it, do not replace it.
