@@ -69,17 +69,28 @@ test('fixture bake: catalog/index.json carries the staleness stamp §1 requires'
   assert.equal(typeof index.resolverVersion, 'number')
   assert.ok(index.resolverVersion > 0)
   assert.equal(index.series.length, index.counts.series)
-  // Three series: two entirely invented, plus the CORPUS-OVERLAP one. That
-  // third series carries the real catalog ids the committed mask corpus covers
-  // (invented names, real ids — an id is a coordinate, a name is a trademark),
-  // and it exists so the editor's end-to-end run can open a card whose real
-  // hand mask loads. Without it every fixture card resolves to scope 'none' and
-  // there is nothing to draw.
-  assert.equal(index.counts.series, 3, '2 invented series + the corpus-overlap one')
-  assert.equal(index.counts.sets, 5, '4 invented sets + base1')
+  // Five series: two entirely invented, plus THREE overlap series carrying real
+  // catalog ids (invented names, real ids — an id is a coordinate, a name is a
+  // trademark).
+  //
+  //   base             the MASK-corpus overlap. Without it every fixture card
+  //                    resolves to scope 'none', renders no foil and offers no
+  //                    mask to draw, and the editor's end-to-end run has
+  //                    nothing to open.
+  //   scarlet-violet ┐ the INK-REGISTRY overlap: the set ids and variant kinds
+  //   mega-evolution ┘ data/ink-designs.json keys its queued rows on. Without
+  //                    them every ink-tile task bakes as `impact: null`, sorts
+  //                    to the bottom, lands past the editor's first screen, and
+  //                    CI cannot see the surface production sees — which is
+  //                    exactly how the queue's white screen reached production
+  //                    with this suite green.
+  assert.equal(index.counts.series, 5, '2 invented series + 3 overlap series')
+  assert.equal(index.counts.sets, 9, '4 invented sets + base1 + 4 ink-registry sets')
   const overlap = index.series.find((s) => s.slug === 'base')
   assert.ok(overlap, 'the corpus-overlap series is present')
   assert.equal(overlap.setCount, 1)
+  for (const slug of ['scarlet-violet', 'mega-evolution'])
+    assert.ok(index.series.some((s) => s.slug === slug), `the ink-registry overlap series ${slug} is missing`)
 })
 
 test('fixture bake: the counts in index.json agree with the shards they summarize', () => {
