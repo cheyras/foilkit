@@ -28,6 +28,8 @@
 import type { ConflictReport } from './conflict.ts'
 import type { ProvisionalStats } from './provisionalDiff.ts'
 import type { CanonSession, MaskSession } from './types.ts'
+// Type-only — see the note in `types.ts` about the browser-safe seam.
+import type { MaskVector } from '@foilkit/forge/geometry'
 import { NotSubmittable } from './session.ts'
 
 /** What the contributor was shown, and whether they acted on it. */
@@ -59,6 +61,18 @@ export interface MaskContribution {
   cardId: string
   variantId: number
   png: string
+  /**
+   * The paths, when the pen drew this mask. Sent so the pull request carries a
+   * readable diff — and sent KNOWING the server will rasterise it and refuse the
+   * submission if the pixels it produces are not the pixels above.
+   *
+   * That refusal is the reason this field is safe to send at all. It is the same
+   * contract as `derivation` two lines down: the client states what it did, the
+   * server measures the artifact, and nothing the client says is believed
+   * because it was said. A path list is a claim about these pixels, so it is
+   * checked against these pixels.
+   */
+  vector?: MaskVector | null
   width: number
   height: number
   prior: MaskSession['seed']['prior']
@@ -94,6 +108,7 @@ export function buildMaskContribution(
     cardId: session.cardId,
     variantId: session.variantId,
     png: session.png,
+    ...(session.vector !== undefined ? { vector: session.vector } : {}),
     width: session.width,
     height: session.height,
     prior: session.seed.prior,

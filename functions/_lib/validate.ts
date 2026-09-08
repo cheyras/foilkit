@@ -47,7 +47,15 @@
 // that trade is recorded honestly in DECISIONS.md (2026-09-05).
 
 import { CANONICAL_H, CANONICAL_W, COMPOSITE_CONTRACT, GLOBAL_DEFAULTS, MAIN, PREAMBLE } from '@foilkit/core'
-import { decodePng, parsePrior } from '@foilkit/forge'
+import {
+  decodePng,
+  iou,
+  parseMaskVector,
+  parsePrior,
+  PathTooComplex,
+  rasterizeMaskVector,
+  symmetricBoundaryDistance,
+} from '@foilkit/forge'
 import { canonicalPatternId, patternById } from '@foilkit/patterns'
 
 /** One thing that was checked, and how it went. Shown to the contributor. */
@@ -109,6 +117,16 @@ export const CLIENT_MAY_NOT_CLAIM: readonly string[] = [
   'exemplarWeight',
 ]
 
+/** What the walk below found, AND whether it got to the end of the body. */
+export interface ProvenanceWalk {
+  keys: string[]
+  /**
+   * The node budget ran out with work still on the stack, so `keys` is what was
+   * found in the part that was searched and says nothing about the rest.
+   */
+  truncated: boolean
+}
+
 /**
  * Every forbidden key anywhere in the submitted JSON, by path.
  *
@@ -117,8 +135,17 @@ export const CLIENT_MAY_NOT_CLAIM: readonly string[] = [
  * belongs, inside `prior`, inside `card`, inside `seed`. Depth and breadth are
  * bounded so a pathological body cannot turn this into the expensive part of
  * the request; the body ceiling upstream is the real limit.
+ *
+ * AND IT REPORTS WHEN THE BOUND BIT. The walk used to stop at `maxNodes` and
+ * return `[]`, which the caller then rendered as "the submission claims no
+ * provenance" — an affirmative statement about a body it had not finished
+ * reading. `{ verification: { verifiedBy: … } }` under 5,000 levels of nesting
+ * defeated it, and the receipt said the opposite of the truth. Wide shapes and
+ * arrays were always caught; depth was the hole. A bound that cannot be
+ * observed is a silent pass, and the header of this module argues at length
+ * that silence is the wrong answer here.
  */
-export function claimedProvenanceKeys(body: unknown, maxNodes = 4096): string[] {
+export function claimedProvenanceKeys(body: unknown, maxNodes = 4096): ProvenanceWalk {
   const found: string[] = []
   const forbidden = new Set(CLIENT_MAY_NOT_CLAIM)
   const stack: { node: unknown; path: string }[] = [{ node: body, path: '' }]
@@ -137,23 +164,41 @@ export function claimedProvenanceKeys(body: unknown, maxNodes = 4096): string[] 
       stack.push({ node: v, path: here })
     }
   }
-  return found.sort()
+  return { keys: found.sort(), truncated: stack.length > 0 }
 }
 
 /**
  * The check itself. Shared by both submission kinds, because the rule is about
  * the pipeline rather than about masks: nothing a contributor sends may name
  * its own provenance, in either corpus.
+ *
+ * A TRUNCATED WALK IS A REFUSAL, not a pass. It is the one outcome where the
+ * server does not know the answer, and the two ways of not knowing are not
+ * symmetrical: passing costs the corpus a forged provenance block nobody
+ * looked at, and refusing costs a contributor a message telling them their
+ * submission is nested thousands of levels deep — which no session this editor
+ * produces ever is, so the only bodies that meet it were built by hand.
  */
 export function checkNoClaimedProvenance(body: unknown): Check {
-  const claimed = claimedProvenanceKeys(body)
+  const { keys, truncated } = claimedProvenanceKeys(body)
+  if (truncated && keys.length === 0) {
+    return {
+      name: 'no-claimed-provenance',
+      ok: false,
+      detail:
+        'this submission is nested too deeply to check for claimed provenance, so it is refused rather than ' +
+        'passed — the walk ran out of budget before it reached the end of the body, and "nothing was found" by a ' +
+        'search that did not finish is not the same statement as "there is nothing there". Send the session the ' +
+        'editor exports.',
+    }
+  }
   return {
     name: 'no-claimed-provenance',
-    ok: claimed.length === 0,
+    ok: keys.length === 0,
     detail:
-      claimed.length === 0
+      keys.length === 0
         ? 'the submission claims no provenance — authorship and verification are recorded server-side.'
-        : `this submission carries ${claimed.join(', ')}, and a submission may not name its own provenance. ` +
+        : `this submission carries ${keys.join(', ')}, and a submission may not name its own provenance. ` +
           'Authorship is recorded from your signed-in identity when the App composes the commit, and verification ' +
           'is an act of someone holding the writer capability — neither is something a request body may assert.',
   }
@@ -177,6 +222,12 @@ export interface MaskCandidate {
   /** What the client says the raster is. Checked against the pixels. */
   width: number
   height: number
+  /**
+   * The pen geometry the submission wants committed beside its pixels, RAW off
+   * the request body. Absent or null for a brush contribution, which is the
+   * normal case and is checked to be exactly as it was before this existed.
+   */
+  vector?: unknown
   prior: unknown
   derivation: { startedFrom?: unknown; parent?: unknown }
   seed: {
@@ -203,6 +254,305 @@ export interface MaskValidation extends ValidationResult {
   coverage: number
   /** True when this submission supersedes upstream the contributor was shown. */
   supersede: boolean
+  /** How well the submitted vector describes the submitted pixels. Null with no vector. */
+  vectorAgreement: VectorAgreement | null
+}
+
+// ── THE CHECK THAT MAKES THE READABLE DIFF HONEST ──────────────────────────
+//
+// A pen-authored contribution commits TWO artifacts for one mask: the PNG, and
+// `<variantId>.paths.json` beside it. The second one exists so a reviewer can
+// read the change — "this anchor moved 3px in" instead of "Binary files
+// differ" — and the instant a reviewer can read it, they will believe it.
+//
+// So the pair has to be true, and the only way to know is to MAKE THE PIXELS
+// FROM THE PATHS AND LOOK. That is AGENTS.md F3 in its most literal form:
+// derived server-side from the artifact, never taken from what the caller
+// asserted. Skip it and the pipeline accepts, commits and renders a legible,
+// confident, WRONG description of a mask — which is strictly worse than the
+// binary blob it replaced, because the blob at least did not mislead anybody.
+//
+// ── WHY NOT BYTE EQUALITY ──────────────────────────────────────────────────
+//
+// Because the two sides are legitimately allowed to differ, and the difference
+// is antialiasing. The contributor's PNG comes off a browser canvas; this side
+// comes off `rasterizePolygons`. Both compute analytic coverage, both are
+// correct, and both put something near 0.5 on the pixels the true boundary
+// passes through — so along every edge there is a band of pixels where the two
+// land on opposite sides of the 128 threshold. That band is REAL AGREEMENT
+// rendered by two honest rasterisers, and a check that called it a lie would
+// fail every correct submission, which is the failure mode that gets a check
+// deleted rather than fixed.
+//
+// ── THE THREE NUMBERS, AND WHY IT TAKES THREE ──────────────────────────────
+//
+//   * IoU is an AREA measure and it is the backstop. It answers "is this the
+//     same region at all", and it is the one that cannot be fooled by geometry
+//     that is locally plausible everywhere and globally somewhere else.
+//   * Boundary p95 is a LOCALITY measure, and it is there because IoU dilutes.
+//     Drag one anchor of a 2000px boundary 40px sideways and the area changes
+//     by a fraction of a percent — an IoU floor loose enough to tolerate
+//     antialiasing would not notice. The distance from each boundary pixel to
+//     the nearest boundary pixel of the other mask does notice, because that
+//     displacement is 40px wherever it happens at all.
+//   * Boundary MAX is the third, and it exists because the first two both go
+//     quiet as the lie gets smaller: an 8x8 block present in the pixels and
+//     absent from the paths costs 0.0003 of IoU and nothing at all at the 95th
+//     percentile, and measures 98.67px here. It was computed and printed on the
+//     receipt for a whole release without ever being gated on.
+//
+// All three are measured SYMMETRICALLY — the worse of paths-against-pixels and
+// pixels-against-paths. One-directionally, everything present in the PNG and
+// missing from the paths is invisible by construction, which is the difference
+// between `boundary p95 0.00px` and `boundary p95 74.00px` on the same forged
+// pair.
+//
+// None of them is a quality score and none is claiming the vector is GOOD. The
+// question is only "do these paths describe these pixels", and the bar is set
+// where two rasterisers of the same geometry sit comfortably inside it and any
+// actual geometric edit sits far outside — measured, in `validate.test.ts`,
+// rather than asserted here.
+//
+// ── WHAT IT DOES NOT CATCH, said out loud ──────────────────────────────────
+//
+// A displacement of a pixel or two, anywhere. That is the width of the
+// antialiasing band two honest rasterisers disagree over, so tolerating it is
+// the price of not refusing every correct submission. This check is not a proof
+// that the paths are the ONLY way to get these pixels; it is a proof that they
+// are A way to get them, to within a pixel or two, EVERYWHERE — including the
+// places a percentile would have averaged away. That is the property a reviewer
+// actually relies on when they read the diff.
+
+/**
+ * The measured agreement between a submitted vector and the pixels beside it.
+ *
+ * The three boundary numbers are SYMMETRIC — the worse of paths-to-pixels and
+ * pixels-to-paths. See `VECTOR_AGREEMENT_MAX_BOUNDARY_MAX_PX` for the forgery a
+ * one-directional measurement scores 0.00px on.
+ */
+export interface VectorAgreement {
+  /** Intersection over union of the two foil regions, 0..1. */
+  iou: number
+  /** Mean, 95th-percentile and worst boundary displacement, px. */
+  boundaryMean: number
+  boundaryP95: number
+  boundaryMax: number
+}
+
+/**
+ * IoU floor.
+ *
+ * Two rasterisers drawing the same geometry disagree only in the antialiasing
+ * band along the boundary — for a canonical mask that is a few hundred pixels
+ * out of ~350,000, i.e. an IoU well above 0.999. The floor is set two orders of
+ * magnitude looser than that, because the thing being bounded is "same region",
+ * not "same rasteriser", and because a contributor who nudged a handle by half
+ * a pixel while the canvas was already committed should not be refused.
+ * `validate.test.ts` measures both sides of it.
+ */
+export const VECTOR_AGREEMENT_MIN_IOU = 0.98
+
+/**
+ * Boundary displacement ceiling, px, at the 95th percentile.
+ *
+ * 2px is the same order as every other spatial tolerance in this repository —
+ * `line-snap` may nudge a hand-drawn line ~2px and no further, `edge-trace`
+ * enforces a hard 5px corridor, and `countPaintedOver`'s seam tolerance is one
+ * pixel of antialiasing band. A vector whose boundary sits further than two
+ * pixels from the pixels it claims to describe, across more than 5% of that
+ * boundary, is not describing them.
+ */
+export const VECTOR_AGREEMENT_MAX_BOUNDARY_P95_PX = 2
+
+/**
+ * Boundary displacement ceiling, px, at the WORST point of the boundary.
+ *
+ * ── THE HOLE THIS CLOSES ───────────────────────────────────────────────────
+ *
+ * `boundaryMax` was computed, reported in the refusal text, written onto the
+ * receipt — and never gated on. A percentile answers "how MUCH of the boundary
+ * moved", so a displacement confined to a small enough fraction of it passes
+ * p95 by construction, and a small enough region costs too little area to move
+ * IoU. Measured, on the canonical raster:
+ *
+ *   | forgery (pixels carry a block the paths do not) | IoU    | p95   | max   |
+ *   |---|---|---|---|
+ *   | 60x60 = 3,600 px                                | 0.9812 | 50.33 | 98.67 |
+ *   | 30x30 =   900 px                                | 0.9952 |  0.00 | 98.67 |
+ *   | 16x16 =   256 px                                | 0.9986 |  0.00 | 98.67 |
+ *   | 8x8   =    64 px                                | 0.9997 |  0.00 | 98.67 |
+ *
+ * The other two numbers go quiet as the lie gets smaller and the max does not,
+ * because the max is the only one of the three that answers "is there anywhere
+ * at all these two disagree". A committed path diff that omits a region is
+ * exactly as misleading at 64 px as at 3,600.
+ *
+ * FIVE PIXELS, and the number is measured rather than picked. The honest worst
+ * case — a whole-boundary sub-pixel offset, two rasterisers disagreeing
+ * everywhere — reports max 1.33px at 0.9px of offset, on a straight boundary
+ * and on a curvy one alike; the next case out, 1.5px of offset, reaches 2.67px
+ * and is refused by the IoU floor at 0.9774 exactly as it was before this gate
+ * existed. So 5px sits nearly 4x clear of everything still accepted, matches
+ * `edge-trace`'s hard corridor, and refuses every forgery in the table.
+ */
+export const VECTOR_AGREEMENT_MAX_BOUNDARY_MAX_PX = 5
+
+/**
+ * The flattened-point budget for a SUBMITTED vector.
+ *
+ * ── BOUNDING THE WORK, NOT THE INPUT ───────────────────────────────────────
+ *
+ * `parseMaskVector`'s 20,000-primitive ceiling bounds how much JSON is read,
+ * and that is not the same quantity as how much work the check does:
+ * `rasterizePolygons` is O(scanlines x edges), and the edge count comes out of
+ * the FLATTENER, which answers to the geometry rather than to the byte count.
+ * Measured on this raster:
+ *
+ *   |  cubics | flattened points | rasterise |
+ *   |---|---|---|
+ *   |       8 |              531 |    10 ms  |
+ *   |      64 |            2,865 |    15 ms  |
+ *   |     512 |           10,103 |    52 ms  |
+ *   |   4,096 |           51,247 |   240 ms  |
+ *   |  19,999 |          239,989 | 5,459 ms  |
+ *
+ * The last row is a legal body at exactly the primitive ceiling, with no exotic
+ * numbers in it at all. 60,000 points keeps everything up to ~4,800 ordinary
+ * cubics — an order of magnitude more than a hand-drawn mask carries; the
+ * fixture in `validate.test.ts` flattens to 10 points — and caps the rasterise
+ * at a few hundred milliseconds. Past it the submission is refused by name
+ * instead of holding a function open.
+ */
+export const VECTOR_MAX_FLATTENED_POINTS = 60_000
+
+/** alpha >= 128 is foil, the same threshold every other measure in the corpus uses. */
+const FOIL = 128
+
+/**
+ * Rasterise the submitted vector and prove it agrees with the submitted pixels.
+ *
+ * Exported because BOTH write paths owe the corpus this. `functions/mask.ts`
+ * calls it before a direct write for the same reason `contribute.ts` calls it
+ * before opening a pull request: the artifact that lands in `data/` must not
+ * lie, and which HTTP route it came through has nothing to do with that.
+ */
+export function checkVectorAgreesWithPixels(
+  img: { width: number; height: number; rgba: Uint8Array } | null,
+  vector: unknown,
+): { check: Check; agreement: VectorAgreement | null } {
+  const name = 'vector-agrees-with-pixels'
+  if (vector === undefined || vector === null) {
+    return {
+      check: {
+        name,
+        ok: true,
+        detail: 'no vector paths were submitted; the mask PNG is the whole artifact.',
+      },
+      agreement: null,
+    }
+  }
+  if (img === null) {
+    // FAILS CLOSED. The submission is already refused for the PNG, and the
+    // alternative — passing a vector check that never looked at any pixels —
+    // would put an "ok" beside a mask nobody could decode.
+    return {
+      check: {
+        name,
+        ok: false,
+        detail: 'the submitted vector could not be checked, because the mask PNG did not decode — there are no pixels to compare it against.',
+      },
+      agreement: null,
+    }
+  }
+
+  let parsed: ReturnType<typeof parseMaskVector>
+  try {
+    parsed = parseMaskVector(vector)
+  } catch (err) {
+    return {
+      check: { name, ok: false, detail: `the submitted vector is not a readable path list: ${(err as Error).message}` },
+      agreement: null,
+    }
+  }
+
+  // The raster the paths are drawn in must be the raster the mask is drawn in.
+  // Scaling would be arithmetically easy and is refused on purpose: the numbers
+  // in the committed diff are the numbers a reviewer argues about, and paths
+  // silently rescaled on the way in would put a file in the tree whose
+  // coordinates nobody chose.
+  if (parsed.space.width !== img.width || parsed.space.height !== img.height) {
+    return {
+      check: {
+        name,
+        ok: false,
+        detail:
+          `the vector declares a ${parsed.space.width}×${parsed.space.height} space and the mask pixels are ` +
+          `${img.width}×${img.height}; paths are committed in the raster they were drawn in, not rescaled into it.`,
+      },
+      agreement: null,
+    }
+  }
+
+  // BOUNDED. The flattener's cost is set by the geometry rather than by the
+  // byte count, so this call is the only place the work can be capped — see
+  // `VECTOR_MAX_FLATTENED_POINTS`. The refusal reads like the parse refusals
+  // above it because to a contributor it is the same kind of answer: this file
+  // is not something the pipeline will look at.
+  let drawn: Uint8Array
+  try {
+    drawn = rasterizeMaskVector(parsed, img.width, img.height, { maxPoints: VECTOR_MAX_FLATTENED_POINTS })
+  } catch (err) {
+    if (!(err instanceof PathTooComplex)) throw err
+    return {
+      check: {
+        name,
+        ok: false,
+        detail:
+          `the submitted vector is too complex to check: ${(err as Error).message}. Drawing it would cost more ` +
+          'than the whole rest of this submission put together, and a mask nobody can afford to verify is a mask ' +
+          'nobody should commit. A hand-drawn mask is hundreds of points, not tens of thousands.',
+      },
+      agreement: null,
+    }
+  }
+  const submitted = new Uint8Array(img.width * img.height)
+  for (let i = 0; i < submitted.length; i++) submitted[i] = img.rgba[i * 4 + 3]!
+
+  const overlap = iou(drawn, submitted)
+  // SYMMETRIC, and that is the whole of this line. `boundaryDistance` walks the
+  // FIRST mask's boundary and asks how far each of its pixels is from the
+  // second, so a region present in the PNG and absent from the paths is never
+  // visited and scores 0.00px — measured: a 3,600px block missing from the
+  // paths reported `boundary p95 0.00px (mean 0.00px, max 0.00px)` beside an
+  // IoU of 0.9804, and the receipt certified that the pair agreed. See
+  // `symmetricBoundaryDistance` in forge for why both functions exist.
+  const b = symmetricBoundaryDistance(drawn, submitted, img.width, img.height)
+  const agreement: VectorAgreement = {
+    iou: overlap,
+    boundaryMean: b.mean,
+    boundaryP95: b.p95,
+    boundaryMax: b.max,
+  }
+
+  const areaOk = overlap >= VECTOR_AGREEMENT_MIN_IOU
+  const edgeOk = b.p95 <= VECTOR_AGREEMENT_MAX_BOUNDARY_P95_PX
+  const worstOk = b.max <= VECTOR_AGREEMENT_MAX_BOUNDARY_MAX_PX
+  const measured = `IoU ${overlap.toFixed(4)}, boundary p95 ${b.p95.toFixed(2)}px (mean ${b.mean.toFixed(2)}px, max ${b.max.toFixed(2)}px)`
+  return {
+    check: {
+      name,
+      ok: areaOk && edgeOk && worstOk,
+      detail:
+        areaOk && edgeOk && worstOk
+          ? `the submitted paths rasterise to the submitted pixels — ${measured}.`
+          : `the submitted paths do not describe the submitted pixels: ${measured}, against a floor of IoU ` +
+            `${VECTOR_AGREEMENT_MIN_IOU} and ceilings of ${VECTOR_AGREEMENT_MAX_BOUNDARY_P95_PX}px at the 95th ` +
+            `percentile and ${VECTOR_AGREEMENT_MAX_BOUNDARY_MAX_PX}px at the worst point. ` +
+            'The pull request would show a path diff that a reviewer could read and that does not match the mask ' +
+            'being committed. Re-export the mask from the same geometry, or submit it without the paths.',
+    },
+    agreement,
+  }
 }
 
 /**
@@ -219,6 +569,7 @@ export interface MaskValidation extends ValidationResult {
 export function validateMask(input: MaskCandidate): MaskValidation {
   const checks: Check[] = []
   let coverage = 0
+  let vectorAgreement: VectorAgreement | null = null
 
   // 0. NOTHING CLAIMS ITS OWN PROVENANCE. First, because it is the cheapest
   //    check in the function and because a submission that fails it should be
@@ -274,7 +625,7 @@ export function validateMask(input: MaskCandidate): MaskValidation {
   if (img !== null) {
     const pixels = img.width * img.height
     let foil = 0
-    for (let i = 0; i < pixels; i++) if (img.rgba[i * 4 + 3]! >= 128) foil++
+    for (let i = 0; i < pixels; i++) if (img.rgba[i * 4 + 3]! >= FOIL) foil++
     coverage = pixels === 0 ? 0 : foil / pixels
     const drawn = foil > 0
     checks.push({
@@ -292,6 +643,15 @@ export function validateMask(input: MaskCandidate): MaskValidation {
         ? 'the mask distinguishes foil from non-foil.'
         : `the mask covers ${(coverage * 100).toFixed(1)}% of the card, which is what the renderer already does with no mask at all.`,
     })
+  }
+
+  // 3b. THE VECTOR DESCRIBES THESE PIXELS, or there is no vector. Measured, by
+  //     rasterising the paths and comparing — never taken from the client's
+  //     word that they belong together. See the block above this function.
+  {
+    const { check, agreement } = checkVectorAgreesWithPixels(img, input.vector)
+    checks.push(check)
+    vectorAgreement = agreement
   }
 
   // 4. The sidecar fields the client is allowed to assert.
@@ -349,7 +709,7 @@ export function validateMask(input: MaskCandidate): MaskValidation {
         : `upstream moved (${input.conflict.kind}) since this session was seeded. Re-open the session, look at the conflict, and choose keep-mine, take-theirs or re-trace before submitting.`,
   })
 
-  return { ...finish(checks), coverage, supersede: conflicted && input.conflict.acknowledged }
+  return { ...finish(checks), coverage, supersede: conflicted && input.conflict.acknowledged, vectorAgreement }
 }
 
 // ── Canon ──────────────────────────────────────────────────────────────────

@@ -22,7 +22,7 @@
 
 import { strict as assert } from 'node:assert';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -30,6 +30,7 @@ import { test } from 'node:test';
 import { encodePng } from '../png.ts';
 import { headerDims } from '../image-dims.ts';
 import { rasterizePriorAlpha, type MaskPrior } from '../mask-artifacts.ts';
+import { MASK_VECTOR_VERSION, type MaskVector } from '../vector-template.ts';
 import {
   AUTHORSHIP_BY_METHOD,
   EXEMPLAR_WEIGHT,
@@ -824,6 +825,149 @@ void test('report and training manifest describe the corpus honestly', async () 
     const ai = m.tuples.find((t) => t.method === 'ai')!;
     assert.equal(ai.exemplarWeight, 0);
     assert.equal(ai.files.mask, 'data/foil-masks/base1-4/15.png');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ── 7. The vector artifact: written beside the pixels, evidence for nothing ──
+//
+// A pen-authored mask commits `<variantId>.paths.json` so a contribution's diff is TEXT rather
+// than "Binary files differ". These three tests pin the three ways that could go wrong: the
+// vector quietly becoming an input to provenance, the file churning on a no-op re-save, or a
+// stale one surviving a save that invalidated it.
+
+/** A closed rectangle in the fixture raster, with one anchor movable. */
+function fixtureVector(dx = 0): MaskVector {
+  return {
+    version: MASK_VECTOR_VERSION,
+    space: { width: W, height: H },
+    paths: [
+      {
+        start: [8, 40],
+        startType: 'c',
+        prims: [
+          { k: 'line', to: [56 + dx, 40], t: 'c' },
+          { k: 'line', to: [56, 76], t: 'c' },
+          { k: 'line', to: [8, 76], t: 'c' },
+          { k: 'line', to: [8, 40], t: 'c' },
+        ],
+      },
+    ],
+  };
+}
+
+void test('a vector changes NOTHING the sidecar derives — it is an authoring artifact, not evidence', async () => {
+  // THE LOAD-BEARING ONE. `derivation_method`, `authorship`, `reviewStatus`, `provenanceTier`
+  // and the rule-diff numbers all come from PIXELS (AGENTS.md F3), and a mask must not become
+  // better-attested for having been drawn with the nicer tool — "a human used the pen" is not a
+  // claim about whether the foil is really there. So the same save runs twice, once with paths
+  // and once without, and every derived field is compared.
+  const bare = scratch();
+  const withPaths = scratch();
+  try {
+    const painted = rasterizePriorAlpha(W, H, PRIOR);
+    for (let i = 0; i < 400; i++) painted[i] = 255;    // a real stroke, so this is `hand`
+    const png = maskPng(painted);
+    const common = {
+      cardId: 'base1-8', variantId: '32', png, width: W, height: H, prior: PRIOR,
+      startedFrom: 'layout' as const, author: OWNER,
+    };
+    const a = await writeMaskRecord({ ...common, masksDir: bare });
+    const b = await writeMaskRecord({ ...common, masksDir: withPaths, vector: fixtureVector() });
+
+    for (const field of ['derivation_method', 'authorship', 'reviewStatus', 'provenanceTier', 'frame', 'channel'] as const) {
+      assert.equal(b[field], a[field], `${field} moved when a vector was added`);
+    }
+    assert.deepEqual(b.diff, a.diff, 'the rule-vs-mask numbers are about pixels and may not move');
+    assert.deepEqual(b.prior, a.prior);
+    assert.equal(b.correction, a.correction);
+    assert.deepEqual(b.lineage!.map((l) => l.method), a.lineage!.map((l) => l.method));
+    assert.equal(a.derivation_method, 'hand', 'and the shared answer is the one the pixels support');
+
+    // The ONE difference in the whole record, and it is a filename.
+    assert.equal(a.vectorPaths, undefined);
+    assert.equal(b.vectorPaths, '32.paths.json');
+
+    // The PIXELS are byte-identical too, which is what makes the pair reviewable: adding paths
+    // did not re-rasterise anything.
+    assert.equal(
+      createHash('sha256').update(readFileSync(join(bare, 'base1-8', '32.png'))).digest('hex'),
+      createHash('sha256').update(readFileSync(join(withPaths, 'base1-8', '32.png'))).digest('hex'),
+    );
+  } finally {
+    rmSync(bare, { recursive: true, force: true });
+    rmSync(withPaths, { recursive: true, force: true });
+  }
+});
+
+void test('the vector file is written pretty and STABLE — a re-save of the same geometry has no diff', async () => {
+  const dir = scratch();
+  try {
+    const png = maskPng(rasterizePriorAlpha(W, H, PRIOR));
+    const write = async (vector: MaskVector | null): Promise<void> => {
+      await writeMaskRecord({
+        masksDir: dir, cardId: 'base1-8', variantId: '32', png, width: W, height: H,
+        prior: PRIOR, startedFrom: 'layout', author: OWNER, vector,
+      });
+    };
+
+    await write(fixtureVector());
+    const path = join(dir, 'base1-8', '32.paths.json');
+    const first = readFileSync(path, 'utf8');
+    assert.ok(first.includes('"k": "line", "to": [56, 40], "t": "c"'), 'the geometry is legible in the file');
+    assert.ok(first.endsWith('\n'));
+    // It still parses as JSON, so everything that reads JSON still reads it — the hand-written
+    // layout buys readability without inventing a format.
+    assert.deepEqual(JSON.parse(first), fixtureVector());
+
+    // Save again with the same geometry: byte-identical. This is what stops a pull request from
+    // showing a `.paths.json` hunk on every submission whether or not anything moved.
+    await write(fixtureVector());
+    assert.equal(readFileSync(path, 'utf8'), first, 'an unchanged re-save must produce an identical file');
+
+    // Move ONE anchor: exactly one line changes.
+    await write(fixtureVector(4));
+    const movedLines = readFileSync(path, 'utf8').split('\n');
+    const changed = first.split('\n').filter((l, i) => l !== movedLines[i]);
+    assert.equal(changed.length, 1, 'moving one anchor must be a one-line diff');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+void test('a raster-only save REMOVES the stale vector — a legible wrong diff is worse than none', async () => {
+  // The decision, stated: paths that described the previous save describe the new pixels only
+  // by luck. Left in the tree they are a confident, readable, WRONG description of the mask
+  // beside them, and a reviewer would believe them — which is exactly the failure this feature
+  // exists to avoid. Same discipline as the `.parent.png` cleanup, for a worse failure mode: a
+  // stale parent artifact is merely orphaned, a stale vector actively misdescribes.
+  const dir = scratch();
+  try {
+    const seeded = rasterizePriorAlpha(W, H, PRIOR);
+    const path = join(dir, 'base1-8', '32.paths.json');
+
+    await writeMaskRecord({
+      masksDir: dir, cardId: 'base1-8', variantId: '32', png: maskPng(seeded), width: W, height: H,
+      prior: PRIOR, startedFrom: 'layout', author: OWNER, vector: fixtureVector(),
+    });
+    assert.ok(existsSync(path), 'the pen save wrote it');
+    assert.equal((await readSidecarFile(dir, 'base1-8', '32'))!.vectorPaths, '32.paths.json');
+
+    // Now a brush save over the same mask: different pixels, no paths.
+    const painted = Uint8Array.from(seeded);
+    for (let i = 0; i < 600; i++) painted[i] = 255;
+    await writeMaskRecord({
+      masksDir: dir, cardId: 'base1-8', variantId: '32', png: maskPng(painted), width: W, height: H,
+      prior: PRIOR, startedFrom: 'layout', author: OWNER,
+    });
+
+    assert.equal(existsSync(path), false, 'a save with no vector must not leave the old one behind');
+    assert.equal(
+      (await readSidecarFile(dir, 'base1-8', '32'))!.vectorPaths,
+      undefined,
+      'and the sidecar must stop pointing at a file that is gone',
+    );
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

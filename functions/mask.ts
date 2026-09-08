@@ -58,8 +58,9 @@ import {
   pngFromDataUrl,
 } from './_lib/corpus.ts'
 import { commitChanges, noreplyAuthor, repoRef, type CommitChange } from './_lib/github.ts'
-import { NotAWriter, verifyMaskRecord, writeMaskRecord } from '@foilkit/forge'
+import { NotAWriter, decodePng, parseMaskVector, verifyMaskRecord, writeMaskRecord } from '@foilkit/forge'
 import { parsePrior } from '@foilkit/forge'
+import { checkVectorAgreesWithPixels } from './_lib/validate.ts'
 import { rm } from 'node:fs/promises'
 import { readdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
@@ -123,6 +124,7 @@ async function put(req: FnRequest, res: FnResponse): Promise<void> {
   let prior: ReturnType<typeof parsePrior>
   let startedFrom: 'layout' | 'window-bake' | 'mask'
   let parentRef: { cardId: string; variantId: number } | null
+  let vector: ReturnType<typeof parseMaskVector> | null
   try {
     cardId = assertCardId(body.cardId)
     variantId = assertVariantId(body.variantId)
@@ -150,6 +152,24 @@ async function put(req: FnRequest, res: FnResponse): Promise<void> {
       p === null || p === undefined
         ? null
         : { cardId: assertCardId(p.cardId), variantId: assertVariantId(p.variantId) }
+
+    // ── THE VECTOR MUST DESCRIBE THESE PIXELS, on this path too ────────────
+    //
+    // The writer-gated route runs the SAME check the contribution route runs,
+    // and that is not belt-and-braces. `data/foil-masks/**` is one corpus; a
+    // `.paths.json` that misdescribes its own mask is exactly as untrue when a
+    // writer committed it, and the reviewer reading it a year from now has no
+    // way to tell which route it came in through. F3 is about the artifact, not
+    // about who was holding the keyboard.
+    //
+    // Omitting `vector` REMOVES a stale one. A brush save over a pen-authored
+    // mask has produced pixels the old paths no longer describe; `deletionsIn`
+    // below carries the removal into the commit.
+    vector = body.vector === undefined || body.vector === null ? null : parseMaskVector(body.vector)
+    if (vector !== null) {
+      const { check } = checkVectorAgreesWithPixels(decodePng(png), body.vector)
+      if (!check.ok) throw new BadRequest(check.detail)
+    }
   } catch (err) {
     sendPrivateError(res, 400, 'bad_request', (err as Error).message)
     return
@@ -178,6 +198,9 @@ async function put(req: FnRequest, res: FnResponse): Promise<void> {
       parentRef,
       artworkUrl: typeof body.artworkUrl === 'string' ? body.artworkUrl : null,
       card: (body.card ?? undefined) as never,
+      // Checked against the pixels above before it got here; forge writes it
+      // beside them and derives nothing from it.
+      vector,
       // The author, from the cookie `requireWriter` just verified — NEVER from
       // the body, which carries no field for it. Same trust model as `machine`
       // below: the route knows, the client does not get to say.

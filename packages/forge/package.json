@@ -1,7 +1,7 @@
 {
   "name": "@foilkit/forge",
   "version": "0.0.0",
-  "description": "The authoring stack: provenance, mask corpus, generator, edge trace, line snap, region learn, vector templates. node: builtins only.",
+  "description": "The authoring stack: provenance, mask corpus, generator, edge trace, line snap, region learn, vector templates, and the headless pen engine (Illustrator's anchor-editing model as a pure reducer). node: builtins only, except the browser-safe ./geometry subpath.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -11,6 +11,11 @@
       "types": "./dist/index.d.ts",
       "source": "./src/index.ts",
       "default": "./dist/index.js"
+    },
+    "./geometry": {
+      "types": "./dist/geometry.d.ts",
+      "source": "./src/geometry.ts",
+      "default": "./dist/geometry.js"
     }
   },
   "files": [

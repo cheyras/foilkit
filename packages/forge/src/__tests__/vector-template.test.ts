@@ -19,8 +19,10 @@ import { alphaOf, EXEMPLAR_WEIGHT } from '../provenance.ts';
 import { readCorpus, selectExemplars } from '../mask-corpus.ts';
 import {
   vectorizeLoop, vectorness, rasterizeTemplate, flattenPath, subpixelLoops,
-  discoverOptionalElement, fitTemplate, probeOptional, toBin01,
-  DEFAULT_VECTOR_FIT_PARAMS, type VectorTemplate, type Prim, type VPath,
+  discoverOptionalElement, fitTemplate, probeOptional, toBin01, mapPathCoords,
+  reversePath, serializeMaskVector, parseMaskVector, rasterizeMaskVector, BadMaskVector,
+  MASK_VECTOR_VERSION, MASK_VECTOR_MAX_COORD_SPANS, PathTooComplex,
+  DEFAULT_VECTOR_FIT_PARAMS, type VectorTemplate, type VPath, type MaskVector,
 } from '../vector-template.ts';
 import { traceLoops } from '../line-snap.ts';
 import { iou } from '../region-learn.ts';
@@ -133,13 +135,10 @@ test('vector -> raster round trip is faithful on a shape that IS lines and arcs'
   const tpl: VectorTemplate = {
     id: 't', version: 1, eraId: 'x', scope: 'sheet',
     space: { width: 220, height: 180 },
-    outer: {
-      start: [fit!.path.start[0] / 220, fit!.path.start[1] / 180],
-      prims: fit!.path.prims.map((p): Prim =>
-        p.k === 'line'
-          ? { k: 'line', to: [p.to[0] / 220, p.to[1] / 180] }
-          : { k: 'arc', to: [p.to[0] / 220, p.to[1] / 180], r: p.r / 220, sweep: p.sweep }),
-    },
+    // Through the shipped converter, not a hand-rolled ternary. The ternary this replaces
+    // read "line or arc" and MEANT "line or not-a-line", so it silently mis-scaled the day
+    // a third primitive existed; `mapPathCoords` switches exhaustively instead.
+    outer: mapPathCoords(fit!.path, ([x, y]) => [x / 220, y / 180], (r) => r / 220),
     holes: [],
     provenance: {
       generator: { name: 'test', version: 1, modelId: null, runId: 'test' },
@@ -288,4 +287,240 @@ test('probeOptional reads the element off the artwork: colour = absent, silver =
   };
   assert.equal(probeOptional(paint(220, 90, 40), region).hasElement, false, 'a coloured frame means no medallion');
   assert.equal(probeOptional(paint(180, 182, 181), region).hasElement, true, 'silver means the medallion is there');
+});
+
+// ══ The mask's own vector artifact — the readable half of a contribution ═════
+//
+// The whole reason this type exists is that `git diff` on a mask PNG says "Binary files
+// differ", and a reviewer who cannot read the change cannot review it. So these tests are all,
+// ultimately, about ONE property: the committed text moves when the geometry moves, and NOT
+// OTHERWISE.
+
+/** A small closed shape with one curve in it — enough to exercise every primitive kind. */
+function sampleVector(handleDx = 0): MaskVector {
+  return {
+    version: MASK_VECTOR_VERSION,
+    space: { width: 200, height: 160 },
+    paths: [
+      {
+        start: [20, 20],
+        startType: 'c',
+        prims: [
+          { k: 'line', to: [180, 20], t: 'c' },
+          { k: 'cubic', c1: [180 + handleDx, 80], c2: [180, 120], to: [180, 140], t: 's' },
+          { k: 'line', to: [20, 140], t: 'c' },
+          { k: 'line', to: [20, 20], t: 'c' },
+        ],
+      },
+      {
+        // A hole, wound the other way — nonzero winding cuts it out.
+        start: [60, 60],
+        prims: [
+          { k: 'line', to: [60, 100] },
+          { k: 'line', to: [140, 100] },
+          { k: 'line', to: [140, 60] },
+          { k: 'line', to: [60, 60] },
+        ],
+      },
+    ],
+  };
+}
+
+test('a re-save of unchanged geometry is BYTE-IDENTICAL — the whole feature rests on this', () => {
+  // A file that changes when nothing changed is a file reviewers learn to skip, and a path diff
+  // nobody reads is worth exactly what the binary blob it replaced was worth. So: serialise,
+  // parse it back the way the server will, serialise again, and compare BYTES, not values.
+  const once = serializeMaskVector(sampleVector());
+  const twice = serializeMaskVector(parseMaskVector(JSON.parse(once)));
+  assert.equal(twice, once, 'a load-and-save round trip must produce no diff at all');
+
+  // …and it survives the float noise a real coordinate transform introduces: 200 * (1/200) is
+  // not 1 in binary floating point, and the rounding at the serialiser is what stops that from
+  // surfacing as a spurious hunk in somebody's pull request.
+  const wobbled = parseMaskVector(JSON.parse(once));
+  wobbled.paths[0]!.start = [20 + 1e-12, 20 - 1e-12];
+  assert.equal(serializeMaskVector(wobbled), once, 'sub-ulp noise must not reach the committed file');
+
+  assert.ok(once.endsWith('\n'), 'newline-terminated, like every other artifact here');
+});
+
+test('the committed text puts ONE PRIMITIVE PER LINE, so moving an anchor is a one-line diff', () => {
+  // THE PAYOFF, asserted rather than described. `JSON.stringify(v, null, 2)` breaks every array
+  // onto its own lines, so one cubic becomes fourteen lines of single numbers and a two-number
+  // edit reads as a fourteen-line hunk. The hand-written layout is what keeps a primitive atomic.
+  const before = serializeMaskVector(sampleVector()).split('\n');
+  const after = serializeMaskVector(sampleVector(30)).split('\n');
+
+  assert.equal(before.length, after.length, 'moving a handle must not reflow the file');
+  const changed = before.map((l, i) => (l === after[i] ? null : i)).filter((i): i is number => i !== null);
+  assert.equal(changed.length, 1, `exactly one line should change, ${changed.length} did`);
+
+  // And the whole cubic — two handles and an endpoint — really is on that one line, which is
+  // the claim this module's own header makes about why cubics are storable at all.
+  assert.equal(
+    after[changed[0]!],
+    '        { "k": "cubic", "c1": [210, 80], "c2": [180, 120], "to": [180, 140], "t": "s" },',
+  );
+  assert.match(before[changed[0]!]!, /"c1": \[180, 80\]/);
+});
+
+test('parseMaskVector refuses what it cannot vouch for, and names the primitive', () => {
+  const good = JSON.parse(serializeMaskVector(sampleVector())) as Record<string, unknown>;
+  assert.doesNotThrow(() => parseMaskVector(good));
+
+  assert.throws(() => parseMaskVector({ ...good, version: 2 }), /version 2/);
+  assert.throws(() => parseMaskVector({ ...good, space: { width: 0, height: 10 } }), /whole pixels/);
+  assert.throws(() => parseMaskVector({ ...good, paths: [] }), /non-empty/);
+  assert.throws(() => parseMaskVector({ ...good, paths: [{ start: [0, 0], prims: [] }] }), /non-empty/);
+  assert.throws(
+    () => parseMaskVector({ ...good, paths: [{ start: [0, Number.NaN], prims: [{ k: 'line', to: [1, 1] }] }] }),
+    /finite/,
+  );
+  // A cubic missing a handle is the dangerous one: `undefined` flows into the flattener as NaN,
+  // produces an empty polygon rather than an error, and the submission would then be refused
+  // for "not describing the pixels" instead of for being broken.
+  assert.throws(
+    () => parseMaskVector({ ...good, paths: [{ start: [0, 0], prims: [{ k: 'cubic', c1: [1, 1], to: [2, 2] }] }] }),
+    /both handles/,
+  );
+  assert.throws(
+    () => parseMaskVector({ ...good, paths: [{ start: [0, 0], prims: [{ k: 'bezier', to: [1, 1] }] }] }),
+    /unknown primitive kind/,
+  );
+  assert.throws(
+    () => parseMaskVector({ ...good, paths: [{ start: [0, 0], prims: [{ k: 'line', to: [1, 1], t: 'smooth' }] }] }),
+    /must be "s" or "c"/,
+  );
+  assert.throws(() => parseMaskVector(good, 2), BadMaskVector);
+});
+
+test('parseMaskVector refuses a coordinate that is not a point on a card', () => {
+  // The cheapest half of the denial-of-service fix. `c1: [1e13, 0]` is finite, parses as a
+  // pair, and describes a hull 1e13 across on a 200x160 raster — which the flattener then
+  // subdivides to the depth cap. Refusing it at the parse means the expensive question is
+  // never asked, and the message says what is wrong rather than reporting an IoU of 0.
+  const good = JSON.parse(serializeMaskVector(sampleVector())) as Record<string, unknown>;
+  const withPrim = (pr: unknown): unknown => ({ ...good, paths: [{ start: [20, 20], prims: [pr] }] });
+
+  assert.throws(() => parseMaskVector(withPrim({ k: 'cubic', c1: [1e13, 0], c2: [0, 1e13], to: [100, 100] })), /not a point on a card/);
+  assert.throws(() => parseMaskVector(withPrim({ k: 'line', to: [1e9, 20] })), /not a point on a card/);
+  assert.throws(() => parseMaskVector({ ...good, paths: [{ start: [0, 1e9], prims: [{ k: 'line', to: [20, 20] }] }] }), /not a point on a card/);
+  // A radius is a length and gets the same treatment: `acos(1 - sagitta/r)` at r = 1e13 asks
+  // the arc flattener for ~5e7 points.
+  assert.throws(() => parseMaskVector(withPrim({ k: 'arc', to: [100, 100], r: 1e13, sweep: 1 })), /an arc that flat is a line/);
+
+  // …and a handle OUTSIDE the raster is still perfectly legal, because that is where handles
+  // live: pull a direction point off the top edge to flatten a curve and the number is
+  // negative. The ceiling is 16 rasters out, not one.
+  const w = (good.space as { width: number }).width;
+  assert.doesNotThrow(() => parseMaskVector(withPrim({ k: 'cubic', c1: [-w, -20], c2: [w * 2, 300], to: [100, 100] })));
+  assert.throws(
+    () => parseMaskVector(withPrim({ k: 'cubic', c1: [w * (MASK_VECTOR_MAX_COORD_SPANS + 1), 0], c2: [0, 0], to: [100, 100] })),
+    /not a point on a card/,
+  );
+});
+
+test('the flattener spends a BUDGET when it is given one, and is unbounded when it is not', () => {
+  // The other half, and the one that catches ordinary numbers. `CUBIC_MAX_DEPTH` was commented
+  // as unreachable; orthogonal handles reach it, and 20,000 legal cubics get there without any
+  // exotic coordinate at all. The bound is on POINTS because that is what the work is
+  // proportional to — `rasterizePolygons` is O(scanlines x edges).
+  //
+  // DEFAULT UNBOUNDED, on purpose: the template fitter and the editor's preview flatten
+  // geometry this process authored, and a budget there could only turn a correct render into
+  // an exception. The bound is for the caller with an adversary.
+  const path: VPath = {
+    start: [10, 10],
+    prims: [{ k: 'cubic', c1: [3000, 0], c2: [0, 2400], to: [190, 150] }],
+  };
+  const free = flattenPath(path, 0.02);
+  assert.ok(free.length > 500, `an unbudgeted flatten emits what it always did (${free.length} points)`);
+  assert.throws(() => flattenPath(path, 0.02, 100), PathTooComplex);
+  assert.doesNotThrow(() => flattenPath(path, 0.02, free.length + 1));
+
+  // The same geometry through the same function with no budget is byte-identical to before,
+  // which is the property the fitter depends on.
+  assert.deepEqual(flattenPath(path, 0.02, Infinity), free);
+
+  // An arc's step count is checked BEFORE the loop rather than after it, so the refusal costs
+  // nothing. A single arc cannot run away — the flattener's `max(1e-4, …)` step floor caps one
+  // at ~62,832 points whatever `r` is — but the primitive ceiling allows 20,000 arcs, and the
+  // budget has to see them.
+  const bigArc: VPath = { start: [0, 0], prims: [{ k: 'arc', to: [22528, 0], r: 11264, sweep: 1 }] };
+  assert.equal(flattenPath(bigArc, 0.02).length, 835, 'measured, so a change to the arc stepper shows up here');
+  const t0 = performance.now();
+  assert.throws(() => flattenPath(bigArc, 0.02, 100), PathTooComplex);
+  assert.ok(performance.now() - t0 < 500, 'and refusing it is instant');
+});
+
+test('rasterizeMaskVector spends the budget across ALL subpaths, not per subpath', () => {
+  // A per-path budget times however many paths a body carries is not a bound at all: the
+  // primitive ceiling allows 20,000 of them spread over as many subpaths as you like.
+  const many: MaskVector = {
+    version: MASK_VECTOR_VERSION,
+    space: { width: 200, height: 160 },
+    paths: Array.from({ length: 20 }, (_, k) => ({
+      start: [10 + k, 10] as [number, number],
+      prims: [
+        { k: 'cubic' as const, c1: [600, 0] as [number, number], c2: [0, 500] as [number, number], to: [190, 150] as [number, number] },
+        { k: 'line' as const, to: [10 + k, 10] as [number, number] },
+      ],
+    })),
+  };
+  const perPath = flattenPath(many.paths[0]!, DEFAULT_VECTOR_FIT_PARAMS.flattenSagittaPx).length;
+  // Each path alone fits inside the budget; twenty of them do not.
+  assert.doesNotThrow(() => rasterizeMaskVector(many, 200, 160, { maxPoints: perPath * 20 + 40 }));
+  assert.throws(() => rasterizeMaskVector(many, 200, 160, { maxPoints: perPath * 3 }), PathTooComplex);
+  // And with no budget it behaves exactly as it did.
+  assert.doesNotThrow(() => rasterizeMaskVector(many, 200, 160));
+});
+
+test('rasterizeMaskVector fills through the SAME rasteriser the editor previews with', () => {
+  // Not an implementation note: the server's "do these paths make these pixels" question is
+  // only meaningful if both sides come off one rasteriser. The expected area is computed here
+  // from the rectangle arithmetic, never by calling the function under test.
+  const v = sampleVector();
+  const a = rasterizeMaskVector(v, 200, 160);
+  let foil = 0;
+  for (const px of a) if (px >= 128) foil++;
+  // Outer 160 x 120 = 19200, minus the 80 x 40 = 3200 hole; the one cubic edge bows the right
+  // side in slightly, so this is a bound rather than an equality.
+  assert.ok(foil > 15000 && foil < 16100, `expected ~16000 foil px, got ${foil}`);
+  assert.equal(a[80 * 200 + 100], 0, 'the hole is cut, not filled');
+  assert.ok(a[30 * 200 + 100]! >= 128, 'and the body around it is foil');
+
+  // Scaled to another raster, the shape is the same shape.
+  const big = rasterizeMaskVector(v, 400, 320);
+  let bigFoil = 0;
+  for (const px of big) if (px >= 128) bigFoil++;
+  assert.ok(Math.abs(bigFoil / 4 - foil) / foil < 0.01, 'a 2x raster holds ~4x the pixels of the same region');
+});
+
+test('anchor types survive a coordinate transform, and MOVE ONE SLOT under a reversal', () => {
+  const p: VPath = {
+    start: [0, 0],
+    startType: 'c',
+    prims: [
+      { k: 'line', to: [10, 0], t: 's' },
+      { k: 'cubic', c1: [20, 0], c2: [30, 10], to: [30, 20], t: 'c' },
+      { k: 'line', to: [0, 0], t: 's' },
+    ],
+  };
+
+  // A change of units is not a change of shape: a corner does not become smooth because
+  // somebody rescaled the card. This is the function the editor runs on every load and every
+  // save, so a drop here would launder the stored flag straight back into an inference.
+  const scaled = mapPathCoords(p, ([x, y]) => [x / 100, y / 100], (r) => r / 100);
+  assert.equal(scaled.startType, 'c');
+  assert.deepEqual(scaled.prims.map((q) => q.t), ['s', 'c', 's']);
+
+  // Reversed, `t` names a DIFFERENT anchor. The anchors are A0=(0,0) 'c', A1=(10,0) 's',
+  // A2=(30,20) 'c', A3=(0,0) 's'. Walking backwards the path starts on A3 and its primitives
+  // land on A2, A1, A0 in that order — so the expected answer is read off that anchor list
+  // here, not off the helper being tested.
+  const back = reversePath(p);
+  assert.equal(back.startType, 's', 'the reversed path starts on the old final anchor');
+  assert.deepEqual(back.prims.map((q) => q.t), ['c', 's', 'c']);
+  // Reversing twice is the identity, types included.
+  assert.deepEqual(reversePath(back), p);
 });

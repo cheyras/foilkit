@@ -25,6 +25,7 @@ import {
   updateCanonSession,
   updateMaskSession,
 } from './session.ts'
+import { buildMaskContribution } from './submit.ts'
 import { detectCanonConflict, detectMaskConflict } from './conflict.ts'
 import { canonicalUniforms, dataUrlToBytes, sha256Bytes, sha256Text, sha256Uniforms } from './sha.ts'
 import { memorySessionStore } from './store.ts'
@@ -303,6 +304,143 @@ test('import refuses anything it cannot vouch for', () => {
   assert.throws(() => parseBundle(bundle([{ ...good, kind: 'something' }])), BadBundle)
   // And the good one still passes, so the guards are not just rejecting everything.
   assert.equal(parseBundle(bundle([good])).sessions.length, 1)
+})
+
+// ── The pen's geometry, staged ─────────────────────────────────────────────
+//
+// A pen-authored mask carries its PATHS as well as its pixels, so the pull request it opens
+// has a diff a reviewer can read. What these lock down is that carrying them changed nothing
+// else: the seed is still immutable, the client still labels nothing, pixels are still the
+// comparison form, and a brush session is byte-for-byte what it always was.
+
+const VECTOR = {
+  version: 1 as const,
+  space: { width: 504, height: 704 },
+  paths: [
+    {
+      start: [36, 40] as [number, number],
+      startType: 'c' as const,
+      prims: [
+        { k: 'line' as const, to: [468, 40] as [number, number], t: 'c' as const },
+        { k: 'cubic' as const, c1: [468, 300] as [number, number], c2: [468, 420] as [number, number], to: [468, 560] as [number, number], t: 's' as const },
+        { k: 'line' as const, to: [36, 560] as [number, number], t: 'c' as const },
+        { k: 'line' as const, to: [36, 40] as [number, number], t: 'c' as const },
+      ],
+    },
+  ],
+}
+
+test('a BRUSH session is exactly what it always was — the pen costs it nothing', () => {
+  // The regression test for everybody who is not using the pen, and it checks the SHAPE rather
+  // than the behaviour: an optional field implemented as `vector: undefined` would add a key
+  // that JSON drops and `deepStrictEqual` does not, which is how an "optional" field quietly
+  // breaks an export round trip for the sessions that never asked for it.
+  const s = updateMaskSession(seed(), { png: PNG_A }, T1)
+  assert.equal('vector' in s, false, 'a session that never met the pen must not mention it')
+  assert.equal('vector' in buildMaskSubmission(s), false)
+  assert.equal('vector' in buildMaskContribution(s, null, null), false)
+  assert.deepEqual(parseBundle(JSON.stringify(buildBundle([s], { now: T2, resolverVersion: 5, buildId: 't' }))).sessions[0], s)
+})
+
+test('the vector rides seed → save → submission, and the seed stays immutable underneath it', () => {
+  const s0 = seed({ vector: null })
+  assert.equal(s0.vector, null, 'a mask reopened with no committed paths says so explicitly')
+
+  const s = updateMaskSession(s0, { png: PNG_A, vector: VECTOR }, T1)
+  assert.deepEqual(s.vector, VECTOR)
+  // Ten more saves, the way the old lab worked. The seed is still the seed.
+  let n = s
+  for (let i = 0; i < 10; i++) n = updateMaskSession(n, { png: i % 2 === 0 ? PNG_B : PNG_A }, T1)
+  assert.deepEqual(n.vector, VECTOR, 'a save that does not mention the vector leaves it alone')
+  assert.equal(n.seed.parentSha256, 'aaaa')
+
+  const sub = buildMaskSubmission(n)
+  assert.deepEqual(sub.vector, VECTOR)
+  assert.deepEqual(sub.derivation, { startedFrom: 'mask', parent: { cardId: 'base1-4', variantId: 1 } })
+  assert.deepEqual(buildMaskContribution(n, null, null).vector, VECTOR)
+
+  // …and `updateMaskSession` still has no path to the seed, vector or not.
+  assert.equal(updateMaskSession(n, { seed: { parentSha256: 'zzzz' } } as never, T2).seed.parentSha256, 'aaaa')
+})
+
+test('a brush stroke over a pen mask CLEARS the paths — they no longer describe these pixels', () => {
+  // The client half of the rule the server enforces. Painting over pen-authored pixels makes
+  // the old geometry a confident, readable, wrong description of the mask, so the session drops
+  // it and the write path then removes the committed `.paths.json`.
+  const pen = updateMaskSession(seed(), { png: PNG_A, vector: VECTOR }, T1)
+  const painted = updateMaskSession(pen, { png: PNG_B, vector: null }, T2)
+  assert.equal(painted.vector, null)
+  assert.equal(painted.png, PNG_B)
+  assert.equal(buildMaskContribution(painted, null, null).vector, null)
+})
+
+test('the client still labels nothing — a vector smuggles in no provenance claim', () => {
+  // Same assertion as the brush case above, run over a session that carries geometry. The
+  // vector is paths and a raster; if it ever grew a field naming how the mask was made, this is
+  // where it would be caught.
+  const s = updateMaskSession(seed(), { png: PNG_A, vector: VECTOR, comment: 'traced the bevel' }, T1)
+  const json = JSON.stringify({
+    session: s,
+    submission: buildMaskSubmission(s),
+    contribution: buildMaskContribution(s, null, null),
+  })
+  for (const forbidden of ['derivation_method', 'reviewStatus', 'agreement', 'authorship', 'provenanceTier', 'verification']) {
+    assert.ok(!json.includes(forbidden), `a staged session must not carry ${forbidden}`)
+  }
+})
+
+test('the vector survives export → import, and a bundle cannot smuggle in one the editor cannot read', () => {
+  const s = updateMaskSession(seed(), { png: PNG_A, vector: VECTOR }, T1)
+  const back = parseBundle(JSON.stringify(buildBundle([s], { now: T2, resolverVersion: 5, buildId: 'test' })))
+  assert.deepEqual(back.sessions[0], s, 'a bundle is the only bridge between two devices; it must be lossless')
+
+  const bundle = (session: unknown): string =>
+    JSON.stringify({ kind: 'foilkit.staged-sessions', bundleVersion: 1, exportedAt: T2, editor: {}, sessions: [session] })
+  // A vector from a future build would load as an empty document and then be SUBMITTED — the
+  // geometry silently discarded, the pixels committed with no diff to read.
+  assert.throws(() => parseBundle(bundle({ ...s, vector: { ...VECTOR, version: 2 } })), BadBundle)
+  assert.throws(() => parseBundle(bundle({ ...s, vector: { ...VECTOR, space: { width: 0, height: 0 } } })), BadBundle)
+  assert.throws(() => parseBundle(bundle({ ...s, vector: { ...VECTOR, paths: [] } })), BadBundle)
+  assert.throws(() => parseBundle(bundle({ ...s, vector: { ...VECTOR, paths: [{ start: [0, 0], prims: [] }] } })), BadBundle)
+  assert.throws(() => parseBundle(bundle({ ...s, vector: 'a picture of a path' })), BadBundle)
+  // `null` is legal and means "this mask has no paths", which is what the brush says out loud.
+  assert.equal(parseBundle(bundle({ ...s, vector: null })).sessions[0]!.id, s.id)
+})
+
+test('a staged pen session survives a stage → reload', async () => {
+  // The browser is the database until Submit, so "my work is trapped / lost" is a real fear and
+  // the store is the answer to it. Geometry has to come back too, or a reopened session would
+  // silently downgrade to a raster.
+  const store = memorySessionStore()
+  const s = updateMaskSession(seed(), { png: PNG_A, vector: VECTOR }, T1)
+  await store.put(s)
+  const back = (await store.get(s.id)) as MaskSession | null
+  assert.deepEqual(back?.vector, VECTOR)
+  assert.deepEqual(back, s)
+})
+
+test('re-seeding after a conflict takes upstream’s geometry, not the contributor’s', () => {
+  // `take-theirs` and `re-trace` both mean "the canvas is upstream now". Carrying the old paths
+  // across would leave the session holding geometry for pixels it just discarded.
+  const worked = updateMaskSession(seed(), { png: PNG_A, vector: VECTOR, comment: 'the bevel is 3px in' }, T1)
+  const fresh = {
+    cardId: 'base1-4',
+    variantId: 1,
+    startedFrom: 'mask' as const,
+    parent: { cardId: 'base1-4', variantId: 1 },
+    resolvedFrom: { cardId: 'base1-4', variantId: 1 },
+    parentSha256: 'bbbb',
+    prior: PRIOR,
+    width: 504,
+    height: 704,
+    png: PNG_B,
+    vector: null,
+    now: T2,
+  }
+  const r = reseedMaskSession(worked, fresh, 're-trace')
+  assert.equal(r.session.vector, null, 'the seed decides the geometry, as it decides the pixels')
+  assert.equal(r.ghostPng, PNG_A, 'and the old pixels are still the ghost to redraw against')
+  assert.equal(r.session.comment, 'the bevel is 3px in')
 })
 
 test('an import collision is presented, never merged', () => {

@@ -88,8 +88,10 @@ import {
 import { readFileAt } from './_lib/github.ts'
 import { canonicalPatternId, patternById } from '@foilkit/patterns'
 import { COMPOSITE_CONTRACT } from '@foilkit/core'
-import { parsePrior, writeMaskRecord } from '@foilkit/forge'
+import { MASK_VECTOR_FILE_SUFFIX, parseMaskVector, parsePrior, writeMaskRecord } from '@foilkit/forge'
 import { rm } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 
 /**
  * The App's own identity in a commit author line.
@@ -234,6 +236,10 @@ async function submitMask(res: FnResponse, body: Record<string, unknown>, contri
     png,
     width,
     height,
+    // RAW off the body. `validateMask` rasterises it and refuses the pair when
+    // it does not describe the pixels — the check that makes a readable path
+    // diff worth reading (AGENTS.md F3).
+    vector: body.vector,
     prior: body.prior,
     derivation,
     seed: { parentSha256: seed.parentSha256, resolvedFrom: seed.resolvedFrom },
@@ -245,8 +251,10 @@ async function submitMask(res: FnResponse, body: Record<string, unknown>, contri
   if (!validation.ok) return refuseValidation(res, validation.checks, validation.failures)
 
   // Past validation, the shapes below are known good — `validateMask` already
-  // ran `parsePrior` and checked `startedFrom`, so these cannot throw.
+  // ran `parsePrior`, checked `startedFrom` and parsed the vector, so these
+  // cannot throw.
   const prior = parsePrior(body.prior)
+  const vector = body.vector === undefined || body.vector === null ? null : parseMaskVector(body.vector)
   const startedFrom = derivation.startedFrom as 'layout' | 'window-bake' | 'mask'
   const parentRef = readRef(derivation.parent)
 
@@ -276,6 +284,11 @@ async function submitMask(res: FnResponse, body: Record<string, unknown>, contri
       parentRef,
       artworkUrl: typeof body.artworkUrl === 'string' ? body.artworkUrl : null,
       card: (body.card ?? undefined) as never,
+      // The geometry, written beside the pixels as `<variantId>.paths.json` so
+      // this pull request's diff is TEXT. It reaches forge only after
+      // `validateMask` has rasterised it and proved it makes these pixels; forge
+      // itself treats it as bytes to serialise and as an input to nothing.
+      vector,
       // ── THE CONTRIBUTOR, RECORDED (#10) ──
       //
       // From `claims`, i.e. from the signed session cookie, i.e. from GitHub's
@@ -305,6 +318,27 @@ async function submitMask(res: FnResponse, body: Record<string, unknown>, contri
     // from `data/` is a different act with a different review, and a
     // contribution must not be able to perform one as a side effect.
     const changes: FileChange[] = changesIn(ws, MASKS_PREFIX)
+
+    // ── THE ONE EXCEPTION, and it is not a removal of ground truth ──────────
+    //
+    // A mask that HAD paths and is being replaced by a raster-only save leaves
+    // `<variantId>.paths.json` on disk describing pixels that are gone.
+    // `writeMaskRecord` already unlinked it in the workspace, and `changesIn`
+    // reports added and modified files only — so without this the pull request
+    // would quietly leave the stale vector in the branch, and the branch would
+    // then carry a legible, confident, WRONG description of the mask it commits.
+    // That is precisely the lie the whole feature exists not to tell, and it is
+    // worse than a stale `.parent.png`, which is merely orphaned.
+    //
+    // Narrow on purpose: exactly this path, only when the write removed it,
+    // only when the base branch actually had one. It is the write path cleaning
+    // up an artifact it owns and its own save invalidated — the same act as the
+    // `.parent.png` cleanup — and not a contributor deleting somebody's work.
+    const vectorPath = `${MASKS_PREFIX}/${cardId}/${variantId}.${MASK_VECTOR_FILE_SUFFIX}`
+    if (ws.before.has(vectorPath) && !existsSync(join(ws.root, vectorPath))) {
+      changes.push({ path: vectorPath, content: null })
+    }
+
     if (changes.length === 0) {
       sendPrivateJson(res, 200, {
         unchanged: true,

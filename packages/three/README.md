@@ -84,9 +84,29 @@ it required.
   over `@foilkit/stage`'s sources, which hold the mapping.
 - `ViewTransform` — the pan/zoom controller. Zooming re-rasterises at the zoomed
   size rather than scaling pixels, which is what makes 4× zoom show 4× real
-  detail — the whole point of the feature for edge tracing.
+  detail — the whole point of the feature for edge tracing. An overlay can take
+  individual keys off it with `suspendKeys`, and arm its Space-drag pan through
+  `setSpacePan` — opt-in, key by key, so the controller never learns which
+  surfaces exist.
 - `MaskEditor` — the raster brush: pressure-modulated width, a screen-constant
   tip, drawing in canonical space.
+- `PenEditor` — the bezier surface, and deliberately the dumb half of one: every
+  judgement about what a gesture means lives in `@foilkit/forge`'s `pen-engine`,
+  and this normalises pointer events into `PenInput`, calls `reduce`, and renders
+  `state`. Two layers that never mix — the fill rasterises through the SHARED
+  `rasterizePolygons` into the same mask canvas the brush owns, and the chrome
+  (anchors, direction lines, rubber band, marquee) renders to an SVG layer above
+  it, so no UI furniture can reach the committed artifact. The brush is not
+  deprecated by it; they trace and retouch respectively, and they hand the same
+  canvas back and forth. It also carries the one visible control the pen needs
+  that the engine cannot draw for itself: the snap strip — Smart Guides on or off
+  (Ctrl+U, the button dispatching the same binding), 45° construction guides off
+  by default, and one quiet line saying what the last gesture caught or why the
+  snapper declined to move it. The snap PROVIDER is the host's to supply
+  (`config.snap`), because it is evidence read off one card's scan.
+- `pen-surface` — the pen's arithmetic without the React: event normalisation,
+  screen-constant chrome sizing, and the document → mask-alpha rasterisation.
+  Split out so `node --test` can drive it.
 - `WindowEditor` — the art-window handles.
 
 Not carried from the origin repository: the lab shell itself — its page layout,

@@ -109,6 +109,15 @@ function validateSession(raw: unknown, where: string): StagedSession {
       throw new BadBundle(`${where}: png must be an inline data:image/png URL`)
     }
     if (typeof s.width !== 'number' || typeof s.height !== 'number') throw new BadBundle(`${where}: no raster size`)
+    // The pen's geometry, when the bundle carries any. Checked to the same standard as the
+    // seed and for the same reason the file header gives: an import is where data the editor
+    // did not create becomes a record it will later submit. A malformed path list that
+    // survived import would reach `/api/contribute`, be rasterised there, and be REFUSED for
+    // disagreeing with its own pixels — a correct refusal with an unhelpful message, arriving
+    // one network round trip and one sign-in after the point where the file could have been
+    // named. `null` is allowed and means "this mask has no paths", which is what a brush
+    // session says out loud after painting over a pen-authored one.
+    if (s.vector !== undefined && s.vector !== null) validateVector(s.vector, `${where}.vector`)
     return raw as StagedSession
   }
 
@@ -120,6 +129,51 @@ function validateSession(raw: unknown, where: string): StagedSession {
   }
 
   throw new BadBundle(`${where}: unknown session kind ${String(s.kind)}`)
+}
+
+/**
+ * The mask vector's SHAPE, checked shallowly and on purpose.
+ *
+ * DELIBERATELY NOT A SECOND PARSER. `parseMaskVector` in `@foilkit/forge` is the authority on
+ * what a path list is, it runs server-side on every submission, and re-implementing it here
+ * would fork the format — two definitions of a committed artifact, drifting apart the first
+ * time one of them is fixed. So this checks only the envelope: the version the editor can
+ * actually edit, a raster the canvas can actually be sized to, and paths that are paths. A
+ * primitive that is malformed INSIDE that envelope is caught by the real parser, which is also
+ * the thing that can say something useful about it.
+ *
+ * What it buys is the failure that would otherwise be silent: a bundle from a future build,
+ * whose vector this editor would load, render as an empty document, and then submit — quietly
+ * throwing away the geometry it could not understand.
+ */
+function validateVector(raw: unknown, where: string): void {
+  if (typeof raw !== 'object' || raw === null) throw new BadBundle(`${where} is not an object`)
+  const v = raw as Record<string, unknown>
+  if (v.version !== 1) {
+    throw new BadBundle(`${where}: vector version ${String(v.version)} — this editor reads version 1`)
+  }
+  const space = v.space as Record<string, unknown> | undefined
+  if (
+    typeof space !== 'object' ||
+    space === null ||
+    typeof space.width !== 'number' ||
+    typeof space.height !== 'number' ||
+    space.width <= 0 ||
+    space.height <= 0
+  ) {
+    throw new BadBundle(`${where}: space must be { width, height } in pixels`)
+  }
+  if (!Array.isArray(v.paths) || v.paths.length === 0) throw new BadBundle(`${where}: paths must be a non-empty array`)
+  for (const [i, p] of v.paths.entries()) {
+    if (typeof p !== 'object' || p === null) throw new BadBundle(`${where}.paths[${i}] is not an object`)
+    const path = p as Record<string, unknown>
+    if (!Array.isArray(path.start) || path.start.length !== 2) {
+      throw new BadBundle(`${where}.paths[${i}]: start must be two numbers`)
+    }
+    if (!Array.isArray(path.prims) || path.prims.length === 0) {
+      throw new BadBundle(`${where}.paths[${i}]: prims must be a non-empty array`)
+    }
+  }
 }
 
 /** What an import would do, decided before anything is written. */

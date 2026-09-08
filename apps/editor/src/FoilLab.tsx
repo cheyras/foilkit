@@ -49,6 +49,7 @@ import {
   MASK_H,
   MASK_TINT,
   MASK_W,
+  PenEditor,
   WindowEditor,
   ZoomHud,
   cardScreenRect,
@@ -58,9 +59,20 @@ import {
   useViewTransform,
   type BrushMode,
   type MaskEditorHandle,
+  type PenEditorHandle,
   type ViewerSettings,
   type WindowGeom,
 } from '@foilkit/three/react'
+import {
+  DEFAULT_PEN_CONFIG,
+  PEN_CLAIMED_HOST_KEYS,
+  fromMaskVector,
+  toMaskVector,
+  type MaskVector,
+  type PenConfig,
+  type PenPath,
+} from '@foilkit/forge/geometry'
+import { usePenSnap } from './penSnap.ts'
 import { ActionBtn, Chip, CoreSliders, Section, Select, Slider, SurfaceTabs } from './ui.tsx'
 import { CorpusView, FILTER_LABEL, type ContributionFilter } from './catalog/manifest.ts'
 import { navigate, setParam } from './router.ts'
@@ -85,6 +97,19 @@ const LS_KEY = 'foil-lab:selection'
  * answered from the corpus manifest rather than from a query parameter.
  */
 const LS_FILTER_KEY = 'foilkit:contribution-filter'
+
+/**
+ * The keys the pen takes off the view controller, frozen at module scope.
+ *
+ * `PEN_CLAIMED_HOST_KEYS` is the engine's own list — `+ = - _`, Illustrator's
+ * anchor-tool keys, which `ViewTransform` otherwise binds to zoom — plus Space,
+ * which the pen must route through `reduce` because it means two different
+ * things depending on whether a button is down (spec B.3). Module constants
+ * rather than inline literals so the `useViewTransform` opts object does not
+ * get a fresh array identity on every render.
+ */
+const PEN_HOST_KEYS: readonly string[] = Object.freeze([...PEN_CLAIMED_HOST_KEYS, ' '])
+const NO_KEYS: readonly string[] = Object.freeze([])
 
 interface Selection {
   seriesSlug?: string
@@ -210,6 +235,52 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   const [brushMode, setBrushMode] = useState<BrushMode>('brush')
   const [brushSize, setBrushSize] = useState(28)
   const [allowTouch, setAllowTouch] = useState(false)
+  /**
+   * The pen surface (packages/three/src/react/PenEditor.tsx), a third editing
+   * mode alongside the brush and the window adjuster and mutually exclusive
+   * with both — they all own the same mask canvas, and two owners is a race.
+   *
+   * THE BRUSH IS NOT DEPRECATED. A pen traces an edge you can see; a brush
+   * fixes the twelve pixels where the scan is ambiguous, and the mask corpus
+   * has plenty of both. Nothing on the brush path changed to make room for
+   * this — the pen is an addition, and the e2e run still drives the brush
+   * journey it always did.
+   */
+  const [penMode, setPenMode] = useState(false)
+  const penRef = useRef<PenEditorHandle | null>(null)
+  /**
+   * THE PEN'S GEOMETRY, AND THE ONE THING THAT MAKES IT PERSIST.
+   *
+   * `toMaskVector` had no caller outside its own test, so every save sent only
+   * `maskCanvas.toDataURL()` and the anchors died with the tab: reopen the card
+   * and the pen came up with `data-pen-anchors="0"` over a raster it could only
+   * trace again. The whole `.paths.json` slice — the schema, the parser, the
+   * server-side agreement check, the readable diff — had no producer.
+   *
+   * Held HERE rather than read off `penRef` at save time, for two reasons that
+   * are both about lifetime. `PenEditor` unmounts when the pen closes, so a
+   * handle read afterwards is a closure over a dead component; and the pixels
+   * on the canvas can stop being the pen's work without the pen knowing — a
+   * brush stroke, a flatten, a re-seed. Whoever invalidates the pixels clears
+   * this in the same breath, so `null` means exactly "no paths describe what is
+   * on the canvas", which is the question both save paths ask.
+   *
+   * A REF, AND NOT STATE, because both readers are imperative and one of them
+   * cannot wait for a render: `flattenWindow` re-seeds the canvas and saves in
+   * the same tick — the reason `saveMask` already takes a session `override` —
+   * so a save reading state would send the geometry of the mask the bake had
+   * just replaced. Nothing renders from this value, so there is nothing for a
+   * re-render to do.
+   */
+  const penVectorRef = useRef<MaskVector | null>(null)
+  const setPenGeometry = useCallback((v: MaskVector | null) => {
+    penVectorRef.current = v
+  }, [])
+  /**
+   * The document the pen OPENS with — the other half of persistence, snapshotted
+   * by `startPen` rather than tracked live. See the note there.
+   */
+  const [penOpenWith, setPenOpenWith] = useState<PenPath[] | null>(null)
   const [maskDirty, setMaskDirty] = useState(false)
   const [savedMask, setSavedMask] = useState(false)
   /** Sidecar meta of the hand mask on screen (null = none / layout tier). */
@@ -298,9 +369,15 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   // Pan/pinch-zoom while editing (foil/ViewTransform.tsx). Live only on the
   // editing surfaces — normal viewing keeps the tilt interaction untouched.
   const viewCtl = useViewTransform({
-    enabled: editMode || adjustMode,
+    enabled: editMode || adjustMode || penMode,
     editing: editMode,
     fingerDraws: allowTouch,
+    // The pen claims Illustrator's Add / Delete Anchor Point keys outright, and
+    // Space conditionally — with a button down it translates the anchor being
+    // placed, with the button up the engine emits a pan intent and calls back
+    // into `setSpacePan`. Empty while the pen is closed, so the brush and the
+    // window adjuster keep exactly the bindings they have always had.
+    suspendKeys: penMode ? PEN_HOST_KEYS : NO_KEYS,
   })
 
   // ── Data: series → sets → cards. The full catalog, always. ──
@@ -548,6 +625,10 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
     setGhostPng(null)
     setMaskSaveStatus('idle')
     setMaskSaveError(null)
+    // Geometry belongs to a printing exactly as its pixels do. Carrying the
+    // last card's paths onto this one would offer to commit them beside a mask
+    // they have never described.
+    setPenGeometry(null)
     // A different printing is a different canvas, so the staged-restore latch
     // has to let the next session paint. Without this, leaving a staged card
     // and coming back showed the pixels of whatever was opened in between.
@@ -582,6 +663,13 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
         setMaskMeta(r.meta)
         setMaskSource('hand')
         setMaskTexVersion((v) => v + 1)
+        // A committed mask arrives as PIXELS here — `getMask` reads the PNG,
+        // and the manifest carries no path artifact to read alongside it. So
+        // the pen opens over it as a backdrop to trace, which is what it has
+        // always done and what `startPen` documents. Geometry survives a
+        // reload through the staged session below; a committed `.paths.json`
+        // is written by the save path and is not yet read back here.
+        setPenGeometry(null)
         // The mask that answered IS the parent of whatever gets saved next —
         // an aliased answer means the sibling variant's file, not this one.
         setSession({
@@ -684,6 +772,11 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
       setMaskDirty(false)
       setMaskTexVersion((v) => v + 1)
       setSession({ startedFrom: staged.seed.startedFrom, parent: staged.seed.parent, painted: true })
+      // The paths come back with the pixels they drew, or are absent together
+      // with them. `staged.vector` is undefined on a brush session and on every
+      // session stored before the field existed — both mean "these pixels have
+      // no geometry", and the pen opens over them as a trace.
+      setPenGeometry(staged.vector ?? null)
     }
     img.src = staged.png
   }, [staged, maskCanvas])
@@ -713,7 +806,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
     }
   }, [staged])
 
-  const handActive = maskSource === 'hand' || editMode
+  const handActive = maskSource === 'hand' || editMode || penMode
   const settingsRef = useRef<ViewerSettings>({
     uniforms,
     maskRect: mask.rect,
@@ -735,9 +828,9 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
       maskView,
       maskTexOn: handActive,
       maskTexVersion,
-      maxTiltDeg: editMode || adjustMode ? 0 : maxTiltDeg,
+      maxTiltDeg: editMode || adjustMode || penMode ? 0 : maxTiltDeg,
     }
-  }, [uniforms, mask, maskFeather, maskView, maxTiltDeg, handActive, maskTexVersion, editMode, adjustMode])
+  }, [uniforms, mask, maskFeather, maskView, maxTiltDeg, handActive, maskTexVersion, editMode, adjustMode, penMode])
 
   const setU = (k: string, v: number) => setUniforms((u) => ({ ...u, [k]: v }))
 
@@ -748,6 +841,13 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
     // Human pixels touched this canvas — the save is no longer a pure bake.
     setSession((s) => (s.painted ? s : { ...s, painted: true }))
     setProvisionalStale(true)
+    // A BRUSH STROKE INVALIDATES THE PATHS, and dropping them is the honest
+    // move rather than a loss. These pixels are no longer the ones those
+    // anchors rasterise to, so a `.paths.json` beside them would be a legible,
+    // confident, wrong description of the mask — worse than none, because a
+    // reviewer would believe it. The server enforces the same rule from the
+    // other side: a save carrying no vector REMOVES the committed one.
+    setPenGeometry(null)
   }, [])
 
   /**
@@ -763,7 +863,72 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
     editorRef.current = h
   }, [])
 
+  const registerPen = useCallback((h: PenEditorHandle) => {
+    penRef.current = h
+  }, [])
+
+  /**
+   * The pen rewrote the mask canvas.
+   *
+   * Identical bookkeeping to a brush stroke — dirty, hand-sourced, texture
+   * version bumped, session marked painted — because it IS the same act: a
+   * human put those pixels there. The one difference is that the pen writes on
+   * every committed frame rather than once per stroke, which is why it goes
+   * through the rAF-coalesced path in `PenEditor` rather than firing per event.
+   */
+  const onPenCommit = useCallback(() => {
+    setMaskDirty(true)
+    setMaskSource('hand')
+    setMaskTexVersion((v) => v + 1)
+    setSession((s) => (s.painted ? s : { ...s, painted: true }))
+    setProvisionalStale(true)
+    // The geometry is captured on the same commit that wrote the pixels, so the
+    // two can never be one edit apart. `toMaskVector` answers null for a
+    // document with nothing closed in it yet — a click on an empty canvas is
+    // not geometry, and committing a file that says a human drew something is
+    // the thing the whole provenance contract exists to prevent.
+    const doc = penRef.current?.doc()
+    setPenGeometry(doc === undefined ? null : toMaskVector(doc, { width: MASK_W, height: MASK_H }))
+  }, [])
+
+  /**
+   * Open the pen over whatever is on the canvas.
+   *
+   * The existing mask is a BACKDROP, not a starting document: `PenEditor`
+   * captures it and shows it faintly to trace over, and the pen document starts
+   * empty. Auto-vectorising it would be a machine guess dressed as a human
+   * decision (AGENTS.md F3/F4), and it is also just wrong about what the user
+   * asked for — "trace this" and "convert this" are different requests.
+   *
+   * `initialPaths` is the other branch, and it is LIVE: a mask this session
+   * drew with the pen — or a staged session restored from IndexedDB after a
+   * reload — carries its `MaskVector`, and the pen opens on those anchors
+   * rather than on a raster. That is the whole point of storing the paths; a
+   * mask you cannot reopen and adjust is a mask you redraw.
+   *
+   * What still opens as a trace: every brush mask, and every mask committed to
+   * `data/foil-masks` before this existed. The committed `.paths.json` is
+   * WRITTEN by the save path below and is not read back by `getMask`, which
+   * answers from the corpus manifest and the PNG — so a pen mask reopened from
+   * upstream in a fresh browser traces, and reopened from its own staged
+   * session edits. Said out loud because the difference is invisible from the
+   * outside and a reader would otherwise assume one of the two is broken.
+   */
+  const startPen = () => {
+    if (adjustMode) endAdjust()
+    setEditMode(false)
+    // SNAPSHOT AT OPEN, not a live binding. `PenEditor` reads `initialPaths`
+    // once, when it mounts, and the pen then owns its own document — so handing
+    // it a value that changes on every commit would be an invitation for a
+    // future `useEffect([initialPaths])` over there to reload the document out
+    // from under the hand drawing it. What the pen opens with is a question
+    // asked exactly once, and this is where it is asked.
+    setPenOpenWith(penVectorRef.current === null ? null : fromMaskVector(penVectorRef.current).paths)
+    setPenMode(true)
+  }
+
   const startEdit = () => {
+    setPenMode(false)
     setEditMode(true)
     // Editing starts from the current mask: saved hand mask if loaded,
     // otherwise rasterize the current window (adjusted geometry if present,
@@ -782,6 +947,9 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   /** The canvas was re-seeded from geometry — no parent, nothing painted yet. */
   const seedFromGeometry = () => {
     setSession({ startedFrom: windowScoped && winDiffers ? 'window-bake' : 'layout', parent: null, painted: false })
+    // Machine geometry replaced the pixels. Whatever the pen was holding
+    // described the mask that used to be there.
+    setPenGeometry(null)
   }
 
   /**
@@ -819,9 +987,21 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
     try {
       const png = maskCanvas.toDataURL('image/png')
       const now = new Date().toISOString()
+      // THE PEN'S HALF OF THE STAGED SESSION.
+      //
+      // A brush session must carry no `vector` key at all — ABSENT, not null —
+      // because a session that never touched the pen should not mention it, and
+      // because `assert.deepStrictEqual` tells the two apart where a JSON
+      // export does not (see `seedMaskSession`'s own note). The session that
+      // HAD geometry and has since been brushed over is the other case
+      // entirely: there the key must be present and null, because that is what
+      // tells `updateMaskSession` to clear the stale paths rather than keep
+      // them.
+      const vector = penVectorRef.current
       const next =
         staged === null
           ? seedMaskSession({
+              ...(vector !== null ? { vector } : {}),
               cardId: detail.card.cardId,
               variantId: sel.variantId,
               card: {
@@ -848,6 +1028,9 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
               staged,
               {
                 png,
+                // `undefined` leaves the key alone, which is what a brush
+                // session that never had one wants; `null` clears one that did.
+                ...(vector !== null || staged.vector !== undefined ? { vector } : {}),
                 window:
                   windowScoped && winGeom && winDiffers
                     ? {
@@ -952,6 +1135,15 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
             name: detail.card.name,
             number: detail.card.number,
           },
+          // THE PEN'S GEOMETRY, or a deliberate null.
+          //
+          // Read from the ref rather than from state for the same reason `s`
+          // is: `flattenWindow` re-seeds the canvas and calls this in the same
+          // tick. Null is not "nothing to send" — it is an instruction, and
+          // `functions/mask.ts` acts on it: a save with no vector REMOVES a
+          // committed `.paths.json`, which is exactly right when a brush stroke
+          // or a bake has just made the old paths untrue.
+          vector: penVectorRef.current,
         },
       )
       setSavedMask(true)
@@ -1048,6 +1240,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   // ── Adjusted-window actions (handles → save/flatten) ──
 
   const startAdjust = () => {
+    setPenMode(false)
     setAdjustMode(true)
     // Start from the saved/live geometry if any, else the era rule.
     if (!winGeom) setWinGeom({ rect: layoutMask.rect, radius: layoutMask.radius })
@@ -1124,6 +1317,9 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
     setMaskDirty(true) // cleared by the save below; stays visible if it fails
     setMaskTexVersion((v) => v + 1)
     setSession({ startedFrom: 'window-bake', parent: null, painted: false })
+    // The bake owns the canvas now; any pen geometry described what it replaced.
+    // The save below therefore sends no vector, which REMOVES a committed one.
+    setPenGeometry(null)
     await saveMask({ startedFrom: 'window-bake', parent: null, painted: false })
     endAdjust()
     setEditMode(true)
@@ -1243,6 +1439,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
     era: resolved.eraId,
     maskSource,
     maskEditActive: editMode,
+    penActive: penMode,
     maskDirty,
     savedMask,
     // Adjusted-window linkage (foil/mask-refine): the geometry state this
@@ -1327,6 +1524,24 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   const imageUrl = detail?.card.images.high ? proxied(detail.card.images.high) : null
   const cardRect = cardScreenRect(hostSize.w, hostSize.h)
 
+  /**
+   * THE PEN'S SNAP EVIDENCE — this card's own scan, and only while the pen is up.
+   *
+   * The engine has always accepted an injected `SnapFn` and policed it; until now nothing was
+   * ever injected, so `DEFAULT_PEN_CONFIG.snap` was null and the pen could not catch the printed
+   * edge a person is visibly tracing. This is the injection, and it is deliberately the ONLY
+   * place a provider is wired: the snapper is evidence read off one card's pixels, so it belongs
+   * where the card is chosen, and it is dropped the moment the card changes rather than left to
+   * snap the next card's anchors onto the previous card's furniture.
+   *
+   * Gated on `penMode` because preparing it costs ~70ms of main thread; nobody who is not drawing
+   * should pay that, and `usePenSnap` waits for an idle callback even then. Until it is ready the
+   * config carries `snap: null` and the pen simply draws unsnapped — which is the pen's normal,
+   * fully working behaviour, not a degraded mode.
+   */
+  const penSnap = usePenSnap(imageUrl, penMode)
+  const penConfig = useMemo<PenConfig>(() => ({ ...DEFAULT_PEN_CONFIG, snap: penSnap.snap }), [penSnap.snap])
+
   // A HEAD, not a second GET: `/api/image` answers every header and no body for
   // one, which is exactly the "does this scan exist" question. Only asked of
   // OUR proxy — a cross-origin url's status is not readable, and guessing at one
@@ -1379,12 +1594,12 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
           imageUrl={imageUrl}
           pattern={pattern}
           settingsRef={settingsRef}
-          tiltTarget={editMode || adjustMode ? zeroTilt : tilt.target}
+          tiltTarget={editMode || adjustMode || penMode ? zeroTilt : tilt.target}
           maskCanvas={handActive ? maskCanvas : null}
           ink={inkForViewer}
           view={viewCtl}
-          onPointerMove={editMode || adjustMode ? undefined : tilt.onPointerMove}
-          onPointerLeave={editMode || adjustMode ? undefined : tilt.onPointerLeave}
+          onPointerMove={editMode || adjustMode || penMode ? undefined : tilt.onPointerMove}
+          onPointerLeave={editMode || adjustMode || penMode ? undefined : tilt.onPointerLeave}
           className="h-full w-full"
         >
           {editMode && cardRect.width > 0 && (
@@ -1400,6 +1615,23 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
               registerHandle={registerEditor}
             />
           )}
+          {penMode && !editMode && !adjustMode && cardRect.width > 0 && (
+            <PenEditor
+              canvas={maskCanvas}
+              rect={cardRect}
+              allowTouch={allowTouch}
+              // The saved geometry, when these pixels have any, as it stood the
+              // moment the pen opened. Null opens the mask as a backdrop to
+              // trace — every brush mask, and every mask drawn before the pen
+              // existed.
+              initialPaths={penOpenWith}
+              config={penConfig}
+              snapNote={penSnap.note}
+              view={viewCtl}
+              onCommit={onPenCommit}
+              registerHandle={registerPen}
+            />
+          )}
           {adjustMode && !editMode && cardRect.width > 0 && winGeom && (
             <WindowEditor
               rect={cardRect}
@@ -1412,7 +1644,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
             />
           )}
         </CardViewer>
-        {(editMode || adjustMode) && (
+        {(editMode || adjustMode || penMode) && (
           <ZoomHud ctl={viewCtl} className="absolute bottom-[52px] right-[12px]" />
         )}
         <div className="pointer-events-none absolute left-[12px] top-[10px] text-[12px]">
@@ -1433,7 +1665,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
           </div>
         )}
         <div className="pointer-events-none absolute right-[12px] top-[10px] rounded-full bg-surface-secondary/70 px-[8px] py-[2px] text-[11px] text-text-muted">
-          {editMode ? 'mask edit' : adjustMode ? 'window adjust' : tilt.mode}
+          {editMode ? 'mask edit' : penMode ? 'pen' : adjustMode ? 'window adjust' : tilt.mode}
           {handActive && !editMode ? ' · hand mask' : ''}
           {!handActive && !adjustMode && windowScoped && winDiffers ? ' · window adjusted' : ''}
         </div>
@@ -1454,6 +1686,12 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
               Erase
             </ActionBtn>
             <ActionBtn onClick={() => editorRef.current?.undo()}>Undo</ActionBtn>
+          </div>
+        )}
+        {penMode && (
+          <div className="absolute bottom-[12px] right-[12px] flex gap-[6px]">
+            <ActionBtn onClick={() => penRef.current?.undo()}>Undo</ActionBtn>
+            <ActionBtn onClick={() => penRef.current?.redo()}>Redo</ActionBtn>
           </div>
         )}
       </div>
@@ -1829,6 +2067,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
                   setScopeOverride(s)
                   setMaskSource('layout')
                   setEditMode(false)
+                  setPenMode(false)
                   if (adjustMode) endAdjust()
                 }}
               >
@@ -1837,7 +2076,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
             ))}
             <Chip
               active={handActive}
-              disabled={!savedMask && !maskDirty && !editMode}
+              disabled={!savedMask && !maskDirty && !editMode && !penMode}
               onClick={() => {
                 setMaskSource('hand')
                 if (adjustMode) endAdjust()
@@ -1897,9 +2136,49 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
                   </p>
                 )}
               </div>
+            ) : penMode ? (
+              <div className="space-y-[8px]">
+                <p className="text-[11px] leading-[15px] text-text-muted">
+                  Click to place a corner anchor; click-and-drag to pull a curve out of one — the cursor holds the
+                  OUTGOING handle, so dragging toward where you are going bulges the segment behind you away from the
+                  drag. Alt breaks the handle pair, Shift constrains to 45°, Space while the button is down moves the
+                  anchor you are placing (and pans while it is up). Click the first anchor to close. Draw as many
+                  subpaths as the mask needs: wound the same way they union, wound the other way they cut a hole.
+                </p>
+                <p className="text-[11px] leading-[15px] text-text-muted">
+                  The saved mask underneath is a <em>backdrop to trace</em>, shown faintly — it is not converted to
+                  paths, and it stays on the card until your first closed subpath replaces it.
+                </p>
+                <div className="flex flex-wrap gap-[6px]">
+                  <ActionBtn onClick={() => penRef.current?.undo()}>Undo (Ctrl+Z)</ActionBtn>
+                  <ActionBtn onClick={() => penRef.current?.redo()}>Redo (Ctrl+Shift+Z)</ActionBtn>
+                  <ActionBtn onClick={() => penRef.current?.clear()}>Clear paths</ActionBtn>
+                  <ActionBtn onClick={() => setPenMode(false)}>Done</ActionBtn>
+                </div>
+                <div className="flex flex-wrap gap-[6px]">
+                  <ActionBtn onClick={() => void saveMask()}>
+                    {maskSaveStatus === 'saving'
+                      ? 'Saving…'
+                      : maskSaveStatus === 'saved'
+                        ? 'Saved ✓'
+                        : maskDirty
+                          ? 'Save mask ●'
+                          : 'Save mask'}
+                  </ActionBtn>
+                  <ActionBtn
+                    onClick={() => {
+                      setPenMode(false)
+                      setEditMode(true)
+                    }}
+                  >
+                    ✏️ Refine with the brush
+                  </ActionBtn>
+                </div>
+              </div>
             ) : !editMode ? (
               <div className="mb-[6px] flex flex-wrap gap-[6px]">
                 <ActionBtn onClick={startEdit}>✏️ Edit mask (Pencil)</ActionBtn>
+                <ActionBtn onClick={startPen}>✒️ Pen (trace)</ActionBtn>
                 {maskSource === 'layout' && windowScoped && (
                   <ActionBtn onClick={startAdjust}>⤡ Adjust window</ActionBtn>
                 )}

@@ -2633,3 +2633,242 @@ predicted period and every real scan returned peaks at the high-pass adjacency
 length instead — but the per-scan SNR figures are a property of scan and encoding
 as much as of the printing, and should not be read as "how much design each scan
 carries".
+
+
+## 2026-09-07 -- The path language gains a cubic, because a pen tool is cubics
+
+**Decided by:** Chey Rasmussen, implemented by Claude Opus 4.6
+
+**Decision:** `Prim` becomes `LinePrim | ArcPrim | CubicPrim`. The stored vector
+language keeps lines and arcs exactly as they were and adds
+`{ k: 'cubic', c1, c2, to }`, with control points in the same fractional,
+y-down space as every other coordinate.
+
+**Why:** #17 asks for a pen tool that authors vector masks, and specifies both
+"bezier handles are a click-drag gesture" and "store as `VPath` primitives" --
+which the language could not do, because it had no bezier. The entry that
+established the two-primitive language argued a bezier is "more general and less
+checkable -- an arc has a radius you can read and argue with". That argument was
+about a FITTER's output, where a curve nobody chose is harder to audit than a
+radius somebody can measure. It does not carry to a curve a human placed on
+purpose: the reason #17 wants vector at all is that "a vector diff is readable
+text in a pull request", and six numbers in a diff satisfy that as well as three
+do. The alternative -- beziers while editing, arcs on save -- reintroduces
+exactly the lossy round trip the task exists to remove.
+
+**Implications:**
+- The pen emits a plain `LinePrim` whenever both adjacent handles are retracted,
+  so straight segments stay in the old language and the committed corpus is not
+  churned into curves that merely look straight. `data/vector-templates.json` is
+  untouched and still fits and rasterises bit-identically.
+- **The trap this created, and how it is now closed.** Every consumer that
+  branched on primitive kind did so with a ternary -- `pr.k === 'line' ? .. : ..`
+  -- whose else-branch silently means "arc". A third kind makes each of those a
+  wrong answer that TypeScript cannot see, because a ternary's else-branch was
+  never asked to be exhaustive. All four sites are now `switch` statements with a
+  `never`-typed default, so a FOURTH primitive is a compile error rather than a
+  silent misrender. `toPx` and `norm` were doing the same job and were collapsed
+  into one exported `mapPathCoords`, because "scaled `to`, forgot `c1`/`c2`" had
+  two places to hide; a test rasterises the bug's own output alongside the right
+  one and asserts they disagree.
+- Cubic flattening uses the convex-hull bound rather than the textbook
+  `3/4 x max(d1,d2)` flatness test. The 3/4 factor is only valid when both
+  handles project onto the chord, and a pen produces the other case constantly --
+  drag a handle back past its anchor and the cheap test calls a cusp flat.
+- `pointType` (smooth vs corner) is deliberately NOT stored yet. It is Illustrator's
+  stored flag, not a derived property, and a corner may legitimately carry two
+  collinear handles; the plan is an optional one-character field per primitive
+  when the editor persists pen masks, so that a corner does not silently become a
+  smooth point the first time someone drags its handle.
+
+## 2026-09-07 -- The editor stops hand-porting forge, via a guarded browser subpath
+
+**Decided by:** Chey Rasmussen, implemented by Claude Opus 4.6
+
+**Decision:** `@foilkit/forge` gains a `./geometry` subpath exporting only the
+modules that are free of node builtins -- the vector language, the pen geometry
+and engine, the shared rasteriser, the contour tracer. `tools/check-geometry-browser-safe.mjs`
+walks the import graph from it on every push and fails if any reachable module
+gains a *value* import of a `node:` builtin. A statement-level `import type` stays
+legal, which is what keeps `edge-trace` -> `png.ts` allowed.
+
+**Why:** the barrel pulls `node:fs`, `node:zlib` and `node:child_process`, so the
+editor could not import forge at all. The existing answer was to hand-port the
+functions it needed into `apps/editor/src/staging/provisionalDiff.ts` and keep a
+byte-parity test in step. That is a reasonable answer for two functions and a
+terrible one for a pen tool, which needs the snapping and the rasteriser to be
+*the same code* -- a second implementation of a rasteriser is a second answer to
+"where exactly is this mask's edge", and the whole point of the corpus is that
+there is one.
+
+**Implications:**
+- The pen's live preview rasterises through `rasterizePolygons`, the same
+  function templates and masks already go through, so what the shader shows while
+  drawing is what gets committed.
+- The guard is proven non-vacuous rather than assumed: injecting a `node:fs`
+  import three modules down fails it, and narrowing that same import to
+  `import type` passes it.
+- `README.md`'s line saying every forge import is a node builtin was the exact
+  sentence that would send the next person back to hand-porting. It now names the
+  subpath and the guard.
+
+
+## 2026-09-07 -- The pen tool: an Illustrator clone, and what "clone" was allowed to mean
+
+**Decided by:** Chey Rasmussen, implemented by Claude Opus 4.6
+
+**Decision:** #17's pen tool is built to Adobe Illustrator's interaction model
+deliberately and specifically -- same gestures, same modifier semantics, same
+keyboard bindings -- rather than to a reasonable-looking approximation. The
+behaviour was researched into a 126-item conformance checklist first, and the
+checklist is the acceptance criteria: engine tests are named after the items they
+prove.
+
+**Why:** the person who has to use this tool lives in Illustrator. A pen that is
+90% right is worse than one that is obviously different, because the missing 10%
+is discovered one muscle-memory failure at a time, mid-task, forever. Deciding
+fidelity by argument was not an option either -- most of what makes the tool feel
+right is undocumented folklore -- so it was verified against Adobe's own
+reference material, with the parts that could not be verified flagged rather than
+guessed.
+
+**Implications:**
+- **The engine is headless.** `pen-engine.ts` has no DOM, no React, no canvas: it
+  is `reduce(state, input, cfg)` over a plain serialisable state, driven in tests
+  by synthetic events. "Feels like Illustrator" is a claim about behaviour, and
+  behaviour that can only be exercised through a browser barely gets exercised.
+  The React surface is deliberately dumb -- the cursor comes from `cursorFor`,
+  the handle stubs from `visibleHandles`, the bindings from one exported table.
+- **The two smooth-point rules are kept apart**, because collapsing them is the
+  single most common way a bezier editor feels wrong: handles are created
+  MIRRORED at placement, but on a later edit dragging one handle rotates the
+  opposite to stay collinear while KEEPING ITS OWN LENGTH.
+- **`pointType` is stored, never inferred.** A corner may legitimately carry two
+  collinear handles. The stored language had no room for the flag, so each
+  primitive gained an optional `t`. It names the anchor a primitive LANDS ON,
+  which means under `reversePath` every flag moves one slot -- copying them across
+  with their primitives yields identical shape, identical pixels, and permanently
+  wrong editing behaviour. Both that and the `mapPathCoords` equivalent are tested.
+- **Deliberate deviations, all of them flagged rather than silent:** Illustrator's
+  arrow-key nudge breaks the pen's connection to the active path, which its own
+  users call a bug -- ours does not, and the flag to restore it is tested in both
+  positions. Illustrator's `+`/`-` select separate tools; we have no tool slot for
+  them, so they act on the selection. And the host editor bound bare `+`/`-`/`0`
+  to zoom, so the pen claims `+`/`-` while it is active and hands them straight
+  back when it is not.
+- **We do not own Ctrl+0 / Ctrl+= / Ctrl+-.** They are Illustrator's zoom bindings
+  and also Chrome's, and a page cannot reliably take them. They are wired
+  best-effort; the wheel and the ZoomHud remain the reliable path, and the comment
+  says so rather than implying we won that fight.
+- **No Adobe cursor art.** F2 forbids tracing their glyphs, so `cursorFor`'s ten
+  states render as the nearest standard CSS cursor plus a `data-pen-cursor`
+  attribute that the acceptance run asserts on. The states are semantically
+  distinct and not yet visually distinct; adding art later is one table.
+
+## 2026-09-07 -- A path diff that does not describe its pixels is worse than a binary one
+
+**Decided by:** Chey Rasmussen, implemented by Claude Opus 4.6
+
+**Decision:** a submission carrying both a mask PNG and pen-authored paths is
+refused unless the server rasterises the paths and finds they agree with the
+pixels: **IoU >= 0.98 and boundary p95 <= 2px**, checked in
+`functions/_lib/validate.ts` and called from both the contribution route and the
+direct-write route. A raster-only save REMOVES any existing `.paths.json` rather
+than leaving it.
+
+**Why:** the entire justification for storing vector is that a reviewer can read
+the change. A `.paths.json` that no longer describes the mask beside it is a
+confident, legible, wrong description -- and it is worse than the binary blob it
+replaced, because a reviewer would believe it. This is F3 in its usual form:
+derived from the artifact, never taken from what the caller asserted.
+
+**Implications:**
+- The two thresholds do different jobs and both are needed. **IoU** is the area
+  backstop and must tolerate two honest rasterisers disagreeing along the
+  antialiased rim, so its floor sits just outside a full pixel of systematic
+  boundary offset. **Boundary p95** is the locality measure, and it exists because
+  IoU dilutes: dragging one anchor of a 2000px boundary costs a fraction of a
+  percent of area, which a floor loose enough for antialiasing would never catch.
+  Measured, not guessed: a 0.9px whole-boundary offset passes on IoU, one handle
+  moved 10px is refused on p95.
+- Stated limitation: a displacement confined to under ~5% of the boundary passes
+  p95 by definition. The check proves the paths are *a* way to reach these pixels
+  to within a pixel or two everywhere, not the *only* way.
+- The check rasterises through the same `rasterizePolygons` the editor previews
+  with. A second rasteriser would put the two sides of the comparison a fraction
+  of a pixel apart everywhere, and the tolerance would then be covering the
+  disagreement between rasterisers rather than the one that matters.
+- The frame migration removes vectors rather than rescaling them: 490x674 ->
+  504x704 is anisotropic, and an arc under anisotropic scale is an ellipse this
+  language cannot express. The archive keeps a verbatim copy, so a revert restores.
+
+## 2026-09-08 -- The pen learns to catch a printed edge, and to say when it cannot
+
+**Decided by:** Chey Rasmussen, implemented by Claude Opus 5
+
+**Decision:** `pen-engine` has always accepted an injected `SnapFn` and policed
+it with `maxSnapMovePx`, and nothing was ever injected -- `DEFAULT_PEN_CONFIG.snap`
+shipped `null`, so the pen could not catch the printed edge a person was visibly
+tracing, and `constructionAngles` was declared, defaulted, asserted in a test and
+read by no code. Three things close that:
+
+- **`forge/pen-snap.ts`**, a pure provider built on the detectors that already
+  exist. It prepares `edge-trace`'s colour structure tensor ONCE per scan in
+  canonical mask space and then answers point queries in microseconds, in the
+  spec's priority order: an existing anchor a human placed, a printed-edge
+  INTERSECTION, then the nearest point on a printed edge.
+- **A refusal channel.** `SnapFn` may now return `{ refused }` as well as a
+  proposal or `null`, and the reason lands in `state.snapRefusal`. Two comparable
+  parallel ridges within `line-snap`'s own `ambiguityRatio` of 0.85 mean the scan
+  says "you are near some edges", not "you meant THAT edge", and the point does
+  not move.
+- **Ctrl+U (I.102) as the master switch**, in the engine's binding table and in
+  `PenState`, with a visible control on the surface that dispatches the same
+  binding rather than a private code path. Edge snapping ships ON;
+  `constructionAngles` -- now actually read, at the two placement sites where
+  Shift is read, with its own screen-px tolerance -- ships OFF, as Illustrator's
+  Construction Guides do.
+
+**Why:** the acceptance criterion for the pen was "trace a rounded-rect foil
+window on a real scan, watch the segments snap to the printed edges, save it as a
+vector mask". Every clause of that was true except the middle one, and the middle
+one is the reason a pen beats a brush on a scan. The guardrail is not
+negotiable in the process: `line-snap`'s test says an ambiguous band may nudge a
+line and never relocate it, and a pen that obeyed an unbounded snap callback
+would have been the hole in that.
+
+**Implications:**
+
+- **TWO INDEPENDENT LAYERS, and the test file says so.** The provider refuses on
+  the EVIDENCE ("two comparable ridges"); the engine refuses on the DISPLACEMENT
+  ("3.5 screen px, over the 2px limit"). The engine is never told whether the
+  provider feels confident, and `pen-snap.test.ts` drives a REAL provider aimed at
+  a real edge too far away to prove the second layer holds without the first.
+- **Measured, with its n** (`tools/measure-pen-snap.mts`, synthetic cards whose
+  edge coordinates are known exactly, because on a real scan the "true" edge is
+  itself an estimate). Edges, n=360 queries per condition: 100% answered, residual
+  mean 0.047px on a crisp step, and unchanged through a 3px Gaussian blur; with
+  +/-6 noise, 0.299px. Corners, n=64: on a crisp step 52 answer `corner` with mean
+  residual 0.435px, and by a 3px blur NONE do -- every one degrades to the edge
+  snap it can still see rather than to a corner it cannot. On a card with no edges
+  at all, n=360: zero proposals, on flat grey and on flat grey with +/-14 noise.
+- **Stated limitation.** Edge snapping is the robust half; corner detection is the
+  fragile half and vanishes as a corner rounds off. The blur sweep is a stand-in
+  for scan quality and nothing more -- it says nothing about halftone rosettes,
+  JPEG ringing, or foil blowing out under a flash.
+- **A degenerate scan gets a refusal, not a guess, and this is now visible in the
+  acceptance run.** The e2e's 64x88 stand-in has to be blown up nearly 8x to reach
+  canonical space, and a bilinear 8x upscale turns a step edge into a 16px ramp
+  with a comparable ridge at each shoulder -- so the snapper refuses on it, out
+  loud, and the run asserts that. Snapping itself is asserted against a 600x825
+  fixture, which is the resolution `images.high` actually serves. A test that
+  asserted snapping against the small one would have been asserting that the
+  snapper guesses.
+- **Preparation is off the interaction path**: ~70ms for the tensor at 504x704,
+  once per card, behind an idle callback, and the pen is fully usable unsnapped
+  until it lands. `data-pen-snap-provider` distinguishes "not wired yet" from
+  "switched off", because a test that cannot tell those apart races the callback.
+- **The refusal is shown, quietly.** One dim line in a strip on the card face that
+  never blocks a click and is gone on the next gesture. A user who cannot tell a
+  deliberate refusal from a snapper that failed to notice learns to distrust the
+  whole feature.

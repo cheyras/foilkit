@@ -62,6 +62,7 @@ import {
   type MaskPrior,
 } from './mask-artifacts.ts';
 import type { RgbaImage } from './png.ts';
+import { serializeMaskVector, type MaskVector } from './vector-template.ts';
 import { headerDims, HEADER_BYTES } from './image-dims.ts';
 import { assertAuthorable, resolveFrame, UNKNOWN_FRAME_ID } from './frames.ts';
 import { isWriter } from '@foilkit/core';
@@ -728,6 +729,22 @@ export interface MaskSidecar {
   prior: MaskPrior;
   priorPng?: string;
   diffPng?: string;
+  /**
+   * Filename of the pen-authored geometry beside this mask, when there is any.
+   *
+   * A POINTER, exactly like `priorPng` and `diffPng`, and emphatically NOT evidence. The vector
+   * is an AUTHORING artifact: it is what makes a contribution's diff readable and what lets the
+   * pen reopen the mask in the state it was left, and it is an input to no provenance decision
+   * whatsoever. `derivation_method`, `authorship`, `reviewStatus`, `provenanceTier` and the
+   * correction metrics are all still derived from PIXELS, by the same code, from the same
+   * comparison, whether or not this field is present — which `provenance.test.ts` asserts by
+   * writing the same mask twice, once with paths and once without, and diffing the record.
+   *
+   * That is not a technicality. A mask that shipped its own vector would otherwise be one short
+   * argument away from being treated as better-attested than one that did not, and "the human
+   * drew it with the nicer tool" is not a claim about whether the foil is really there.
+   */
+  vectorPaths?: string;
   /** RULE-vs-mask (v2 semantics, preserved): how wrong the era rule was. */
   diff?: DiffStats;
   /** HUMAN-vs-parent: what the human changed. Present only on a correction. */
@@ -1154,7 +1171,21 @@ export interface MaskPaths {
   diff: string;
   parent: string;
   parentDiff: string;
+  /** The pen-authored geometry, when the mask has any. See `MASK_VECTOR_FILE_SUFFIX`. */
+  vector: string;
 }
+
+/**
+ * `<variantId>.paths.json`, and the name is chosen against the two obvious alternatives.
+ *
+ * Not `<variantId>.vector.json`, because what is in it is PATHS and a reviewer reading a file
+ * list should be able to tell that without opening it. Not a bare `<variantId>.json` sibling
+ * directory, because every artifact this corpus keeps for a mask is `<variantId>.<what>` in the
+ * card's own directory — the prior, the diff, the parent, the parent diff — and the DELETE
+ * route removes them by matching that exact prefix. A file that broke the convention would
+ * survive a delete and re-attach itself to whatever mask took the variant id next.
+ */
+export const MASK_VECTOR_FILE_SUFFIX = 'paths.json';
 
 export function maskPathsIn(masksDir: string, cardId: string, variantId: string | number): MaskPaths {
   const dir = join(masksDir, cardId);
@@ -1166,6 +1197,7 @@ export function maskPathsIn(masksDir: string, cardId: string, variantId: string 
     diff: join(dir, `${variantId}.diff.png`),
     parent: join(dir, `${variantId}.parent.png`),
     parentDiff: join(dir, `${variantId}.parent.diff.png`),
+    vector: join(dir, `${variantId}.${MASK_VECTOR_FILE_SUFFIX}`),
   };
 }
 
@@ -1236,7 +1268,10 @@ async function archiveExisting(
   const dir = join(paths.dir, archiveDirName(variantId, runId));
   mkdirSync(dir, { recursive: true });
   const files: Record<string, string> = {};
-  for (const src of [paths.png, paths.json, paths.prior, paths.diff, paths.parent, paths.parentDiff]) {
+  // `paths.vector` is in the list for the same reason every other artifact is: a restore must
+  // put the mask back as it WAS, and a mask whose geometry did not come back would reopen in
+  // the pen as a raster with no paths — silently downgrading a vector mask to a painted one.
+  for (const src of [paths.png, paths.json, paths.prior, paths.diff, paths.parent, paths.parentDiff, paths.vector]) {
     const buf = await readFile(src).catch(() => null);
     if (!buf) continue;
     const name = basename(src);
@@ -1314,7 +1349,7 @@ export async function restoreArchive(masksDir: string, found: FoundArchive): Pro
     throw new Error(`archive ${found.dir} has no ${found.variantId}.png — refusing to delete the live mask`);
   }
 
-  for (const f of [paths.png, paths.json, paths.prior, paths.diff, paths.parent, paths.parentDiff]) {
+  for (const f of [paths.png, paths.json, paths.prior, paths.diff, paths.parent, paths.parentDiff, paths.vector]) {
     await unlink(f).catch(() => undefined);
   }
   for (const s of staged) await writeFile(join(paths.dir, s.name), s.buf);
@@ -1507,6 +1542,9 @@ export async function migrateMaskFrame(input: FrameMigrationInput): Promise<Fram
     verification: existing.verification ?? null,
     provenanceTier: deriveTier(SIDECAR_VERSION, authorForUpgrade(existing), existing.verification),
     savedAt: existing.savedAt,
+    // …and the pointer to it goes with it. `undefined` rather than a delete because
+    // `JSON.stringify` omits it, so the migrated file simply does not mention a vector.
+    vectorPaths: undefined,
     diff: stats,
     ...(correction ? { correction } : {}),
     lineage,
@@ -1516,6 +1554,16 @@ export async function migrateMaskFrame(input: FrameMigrationInput): Promise<Fram
   await writeFile(paths.png, migratedPng);
   await writeFile(paths.prior, priorPng);
   await writeFile(paths.diff, diffPng);
+  // A VECTOR DOES NOT SURVIVE A FRAME CHANGE, and it is removed rather than rescaled.
+  //
+  // Rescaling looks tempting — the geometry is analytic and a scale is exact — and it is wrong
+  // for these frames specifically: 490 x 674 into 504 x 704 is ANISOTROPIC (1.0286 in x,
+  // 1.0445 in y), and an `ArcPrim` under an anisotropic scale is an ellipse, which the language
+  // cannot express and `mapPathCoords` would silently misrepresent by scaling the radius on x
+  // alone. So the honest outcome is: the pixels moved frames, the paths did not, and paths that
+  // do not describe the pixels beside them must not stay in the tree. `archiveExisting` above
+  // already took a verbatim copy, so `revert --run-id` brings the original back with the rest.
+  await unlink(paths.vector).catch(() => undefined);
   await writeFile(paths.json, JSON.stringify(sidecar, null, 2) + '\n', 'utf8');
 
   if (sidecar.derivation_method !== existing.derivation_method) {
@@ -1581,6 +1629,27 @@ export interface WriteMaskInput {
    * sha256s that make `restoreSuperseded()` an exact undo.
    */
   supersede?: { runId: string } | null;
+  /**
+   * The pen-authored geometry these pixels were rasterised from, written beside them as
+   * `<variantId>.paths.json` so a contribution's diff is TEXT.
+   *
+   * TAKEN ON TRUST AS GEOMETRY AND ON TRUST FOR NOTHING ELSE, and the line between those two is
+   * the whole reason this parameter is safe to accept from a request at all. It changes not one
+   * derived field: the method still comes from `countPaintedOver`, the correction metrics still
+   * come from `correctionMetrics`, the frame still comes from the raster. All it does is get
+   * serialised to a file. So the worst a lying caller achieves by supplying one is a committed
+   * path list that does not describe the committed mask — which is exactly the lie the pipeline
+   * refuses BEFORE reaching here, in `functions/_lib/validate.ts`, by rasterising it and
+   * comparing (AGENTS.md F3: derived from the artifact, never taken from the claim).
+   *
+   * OMITTING IT REMOVES A STALE ONE. That is the other half of the same rule and it is not a
+   * convenience: a save that rasters over a previously vector-authored mask has produced pixels
+   * the old paths no longer describe, and leaving the file behind would leave a legible,
+   * confident, wrong diff in the tree for the next reviewer to trust. Same discipline as the
+   * `.parent.png` cleanup below, and for a worse failure mode — a stale parent artifact is
+   * merely orphaned, a stale vector actively misdescribes.
+   */
+  vector?: MaskVector | null;
 }
 
 /**
@@ -1653,6 +1722,7 @@ export async function writeMaskRecord(input: WriteMaskInput): Promise<MaskSideca
   }
   const painted = countPaintedOver(saved, startingAlpha, width, height, seamTolerant) > 0;
 
+  const vector = input.vector ?? null;
   const machine = input.machine ?? null;
   // A generator identity IS the author when there is no human one — otherwise a
   // machine write would land as `unattributed`-because-nobody-said, which reads
@@ -1838,6 +1908,12 @@ export async function writeMaskRecord(input: WriteMaskInput): Promise<MaskSideca
     prior: fullPrior,
     priorPng: `${variantId}.prior.png`,
     diffPng: `${variantId}.diff.png`,
+    // The one recorded field the vector touches, and it is a FILENAME. Placed here beside the
+    // other two pointers rather than anywhere near the derived block above, because that is
+    // literally all it is: a note that the file is there. Every value the exemplar pool, the
+    // rule learner and the badges read is computed from the pixels, and this save computes them
+    // identically whether `input.vector` was supplied or not.
+    ...(vector ? { vectorPaths: `${variantId}.${MASK_VECTOR_FILE_SUFFIX}` } : {}),
     diff: stats,
     ...(correction ? { correction } : {}),
     ...(supersedes ? { supersedes } : {}),
@@ -1854,6 +1930,12 @@ export async function writeMaskRecord(input: WriteMaskInput): Promise<MaskSideca
     await unlink(paths.parent).catch(() => undefined);
     await unlink(paths.parentDiff).catch(() => undefined);
   }
+  // THE VECTOR, OR THE REMOVAL OF ONE. Never "leave whatever was there": these pixels are the
+  // product of this save, and paths that described the previous save describe them only by
+  // luck. Serialised through `serializeMaskVector` rather than `JSON.stringify` so a re-save of
+  // unchanged geometry is byte-identical and shows no diff at all — see there.
+  if (vector) await writeFile(paths.vector, serializeMaskVector(vector), 'utf8');
+  else await unlink(paths.vector).catch(() => undefined);
   await writeFile(paths.json, JSON.stringify(sidecar, null, 2) + '\n', 'utf8');
   return sidecar;
 }

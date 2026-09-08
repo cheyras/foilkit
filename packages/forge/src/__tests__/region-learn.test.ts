@@ -28,6 +28,7 @@ import {
   DEFAULT_REGION_LEARN_PARAMS,
   applyPolicy,
   boundaryDistance,
+  symmetricBoundaryDistance,
   detectWindow,
   iou,
   learnPolicy,
@@ -403,4 +404,39 @@ test('a chromatic island marooned inside silver furniture is not frame body', ()
   for (let y = cy - 6; y < cy + 6; y++)
     for (let x = cx - 6; x < cx + 6; x++) if (part.cls[y * W + x] === CLASS_INDEX.frameBody) spriteFrame++;
   assert.equal(spriteFrame, 0, 'the marooned coloured sprite must not be classed as frame body');
+});
+
+// ── The boundary metric, in both directions ────────────────────────────────
+
+test('boundaryDistance is one-directional, and symmetricBoundaryDistance is what a PAIR needs', () => {
+  // The blind spot, stated as arithmetic. `boundaryDistance(a, b)` walks A's boundary; a
+  // region that exists in B and not in A is never visited, so it scores zero however large
+  // it is. That is the right measurement for "how far did the generator land from the human"
+  // (generate-masks) and the wrong one for "do these paths describe these pixels", where a
+  // missing region IS the forgery — it let `functions/_lib/validate.ts` accept a mask whose
+  // committed paths omitted 3,600px of it and print `boundary p95 0.00px` on the receipt.
+  const a = new Uint8Array(W * H);
+  for (let y = 60; y < 190; y++) for (let x = 30; x < 210; x++) a[y * W + x] = 255;
+  const b = Uint8Array.from(a);
+  // …plus a block B carries and A does not, far from anything A draws.
+  for (let y = 260; y < 300; y++) for (let x = 40; x < 80; x++) b[y * W + x] = 255;
+
+  const oneWay = boundaryDistance(a, b, W, H);
+  assert.equal(oneWay.p95, 0, 'A’s boundary is unchanged, so one direction sees nothing');
+  assert.equal(oneWay.max, 0);
+
+  const other = boundaryDistance(b, a, W, H);
+  assert.ok(other.max > 50, `the other direction sees it at ${other.max}px`);
+
+  const sym = symmetricBoundaryDistance(a, b, W, H);
+  assert.equal(sym.max, other.max, 'the symmetric measure reports the worse of the two');
+  assert.equal(sym.p95, Math.max(oneWay.p95, other.p95));
+  assert.ok(sym.mean >= oneWay.mean);
+
+  // Symmetric in the literal sense, too: swapping the arguments cannot change the answer.
+  assert.deepEqual(symmetricBoundaryDistance(b, a, W, H), sym);
+
+  // And on two masks that really do agree, it stays zero — the second direction adds no
+  // penalty of its own.
+  assert.deepEqual(symmetricBoundaryDistance(a, Uint8Array.from(a), W, H), { mean: 0, p95: 0, max: 0 });
 });

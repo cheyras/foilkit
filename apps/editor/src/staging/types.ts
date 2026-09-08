@@ -38,6 +38,12 @@
 //    preserve a 12-step undo through a tab close. Bad trade, declined.
 
 import type { FoilMaskPrior } from '../api.ts'
+// TYPE-ONLY, and that matters: `@foilkit/forge/geometry` is the browser-safe seam
+// (`tools/check-geometry-browser-safe.mjs` proves it transitively), and a statement-level
+// `import type` erases entirely under `verbatimModuleSyntax` so nothing is loaded here at all.
+// The alternative was to redeclare `VPath` in the editor, which is precisely the hand-porting
+// that seam exists to stop — two copies of a geometry format is a fork that has not noticed yet.
+import type { MaskVector } from '@foilkit/forge/geometry'
 
 export const SESSION_VERSION = 1 as const
 
@@ -102,11 +108,43 @@ export interface MaskSession {
   artworkUrl: string | null
   seed: SessionSeed
   /**
-   * Current mask state. A PNG data URL today — the exact thing `putMask` takes.
-   * Vector paths land here as a second representation once the pen tool ships;
-   * that changes what a session HOLDS and nothing about how it is staged.
+   * Current mask state, as pixels. A PNG data URL — the exact thing `putMask`
+   * takes, and still the ONLY thing anything compares.
+   *
+   * `vector` below is the second representation this comment used to promise.
+   * Note what did NOT move when it arrived: the sha comparison, the conflict
+   * detection and the submission's identity are all still about these pixels.
+   * Vector is the storage and editing form; PIXELS REMAIN THE COMPARISON FORM,
+   * because two path lists can describe the same mask and a hundred different
+   * path lists describe it equally well — "did upstream move under me" is a
+   * question about the artifact, and the artifact is the raster.
    */
   png: string | null
+  /**
+   * The pen-authored geometry these pixels were rasterised from, when the mask
+   * was drawn with the pen rather than painted with the brush.
+   *
+   * OPTIONAL, AND IT HAS TO BE. A brush session has no paths and never will,
+   * and a brush session must behave in exactly the way it did before this field
+   * existed — same session JSON, same submission, same pull request. Absent is
+   * therefore the normal case rather than a gap, and every consumer treats it
+   * that way: `session.ts` only sets the key when there is one, and a session
+   * stored before this field existed loads unchanged, which is why
+   * `SESSION_VERSION` is still 1.
+   *
+   * WHAT IT BUYS, and it is one thing: a contribution PR whose diff is TEXT.
+   * `data/foil-masks/<card>/<variant>.paths.json` lands beside the PNG, and
+   * moving one anchor becomes two numbers changing on one line instead of
+   * "Binary files differ". A reviewer can then argue with the geometry, which
+   * is the only kind of mask review that is review rather than assent.
+   *
+   * IT CARRIES NO PROVENANCE CLAIM, and it must never grow one. Paths, and the
+   * raster they are drawn in. The server rasterises them, proves they agree
+   * with the submitted pixels, and refuses the pair when they do not — that
+   * check is what makes the readable diff honest, and it happens server-side
+   * from the artifact, never from anything asserted here.
+   */
+  vector?: MaskVector | null
   width: number
   height: number
   /** Adjusted window geometry, or null when the era rule was left alone. */

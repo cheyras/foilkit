@@ -28,9 +28,39 @@
 //   one finger    pans UNLESS it is a drawing finger ("Allow finger drawing")
 //                 or it grabbed a window handle — Procreate's model
 //   pen           always draws; while a pen is down, touches are ignored (palm)
-//   mouse         wheel/trackpad-pinch zooms at the cursor; middle-drag or
-//                 Space+drag pans; +/−/0 keys
+//   mouse         wheel/trackpad-pinch/Alt+wheel zooms at the cursor; Shift+wheel
+//                 scrolls vertically; a trackpad's deltaX scrolls horizontally;
+//                 middle-drag or Space+drag pans; +/−/0 keys, and Illustrator's
+//                 Ctrl+= / Ctrl+- / Ctrl+0 / Ctrl+1 where the browser lets them
+//                 through (see the caveat at the binding — Chrome owns those and
+//                 can keep them)
 //   a second finger landing mid-stroke ABORTS and rolls back that stroke.
+//
+// WHAT WE DELIBERATELY DID NOT CLONE from the spec's view section, so nobody has
+// to re-derive it. The full argument for each lives at its code, or — for the
+// two with no code — here:
+//
+//   • Ctrl+wheel = horizontal scroll (§E.6). On the web a trackpad PINCH arrives
+//     as wheel+ctrlKey and cannot be told apart from it; taking the chord would
+//     break pinch-zoom everywhere. See `onWheel`. Horizontal scroll lives on
+//     `deltaX` instead.
+//   • plain wheel = vertical scroll (§E.6). §E.6 itself says the zoom-with-wheel
+//     preference is a MODE SWITCH that displaces plain scroll onto Shift, and
+//     this app is permanently in that mode: the view is clamped and the card is
+//     fully framed at 1x, so there is nothing to scroll to. See `onWheel`.
+//   • `Z` Zoom tool + Alt+click to zoom out (I.119). A fifth tool through the
+//     pen engine — its own ToolId, its own cursor, its own branch in every
+//     pointer handler, and a handover so the pen surface yields the press it
+//     currently owns — for a gesture this app already offers four ways: the
+//     wheel, Ctrl+=/-/0/1, the ZoomHud's steppers, and ⤢ to fit. A marquee zoom
+//     has no target here that one wheel notch does not reach.
+//   • `H` Hand tool (§E). Space-drag is the same gesture and is already bound,
+//     on both the host and — via the pen's pan intent — the pen surface.
+//
+// An overlay may take individual keys off this controller by passing
+// `suspendKeys` — opt-in, key-by-key, and inert when nobody asks. That is how
+// the pen surface claims `+ = - _` (Illustrator's anchor-tool keys) and routes
+// Space through its own reducer without this file learning what a pen is.
 //
 // Pan is clamped to the virtual render, so the card can never be lost off-screen
 // and "fit" is always one tap away anyway (⤢ in the HUD).
@@ -54,6 +84,19 @@ export interface ViewOpts {
   editing: boolean
   /** "Allow finger drawing" — when on, one finger paints so pan needs two. */
   fingerDraws: boolean
+  /**
+   * `KeyboardEvent.key` values this controller must NOT act on while an overlay owns them.
+   *
+   * The handover is opt-in and it is a LIST OF KEYS rather than a mode, because the alternative
+   * — teaching the view controller which surfaces exist and what each one wants — puts knowledge
+   * of the pen in a file that has no other reason to know the pen exists. The pen surface passes
+   * `PEN_CLAIMED_HOST_KEYS` plus `' '`: `+`/`-`/`=`/`_` are Illustrator's Add / Delete Anchor
+   * Point tool keys, and Space is routed through the pen's reducer instead (with a button down
+   * it translates the anchor being placed; with the button up the engine emits a pan intent and
+   * calls `setSpacePan` right back here). Pass nothing and every binding below is exactly what
+   * it was — this changes no behaviour for the brush or the window-adjust surface.
+   */
+  suspendKeys?: readonly string[]
 }
 
 export interface ViewController {
@@ -73,6 +116,24 @@ export interface ViewController {
   gesturing: () => boolean
   /** MaskEditor registers a rollback for a stroke a gesture interrupts. */
   setStrokeAbort: (fn: (() => void) | null) => void
+  /**
+   * Arm/disarm Space-drag panning from outside.
+   *
+   * The other half of `suspendKeys`. A surface that has taken Space off this controller still
+   * needs to be able to say "now pan" — the pen's engine decides that, per spec B.3, and the
+   * host does it. Identical to what the controller's own Space handler does, so the two routes
+   * cannot drift.
+   */
+  setSpacePan: (on: boolean) => void
+  /**
+   * Scroll the view by screen px, clamped to the virtual render like every other move.
+   *
+   * The pen's auto-scroll (I.14) is the caller that needed this: a drag that leaves the surface
+   * has to keep going, and the engine deliberately owns no viewport — it says what should happen
+   * (spec B.3) and the host does it. Returns nothing; at 1x the clamp makes it a no-op, which is
+   * honest, because at 1x the card is already fully framed.
+   */
+  panBy: (dx: number, dy: number) => void
   zoomBy: (factor: number) => void
   reset: () => void
   subscribe: (fn: () => void) => () => void
@@ -270,13 +331,59 @@ function makeController(optsRef: { current: ViewOpts }): ViewController {
     else if (mode === 'pan' && e.pointerId === panId) endGesture()
   }
 
+  /** Scroll the view by screen px, clamped like every other move. Used by wheel + auto-scroll. */
+  const panBy = (dx: number, dy: number) => {
+    if (dx === 0 && dy === 0) return
+    const v = view.current
+    v.x += dx
+    v.y += dy
+    apply()
+  }
+
+  /**
+   * The wheel. Spec §E.6 — and the ONE binding set that needed a decision rather than a clone.
+   *
+   * Illustrator's table is: plain wheel scrolls vertically, Shift+wheel scrolls vertically FASTER,
+   * Ctrl+wheel scrolls HORIZONTALLY, Alt+wheel zooms about the cursor. The spec flags this as the
+   * set most secondary sources get wrong, because browsers train Shift=horizontal and Ctrl=zoom.
+   * Here is what we took, what we did not, and why — the reasoning belongs next to the code
+   * because the next person to read this file will otherwise "fix" it back.
+   *
+   * PLAIN WHEEL STAYS ZOOM, and that is not a lapse. §E.6 says `Zoom with Mouse Wheel` is a MODE
+   * SWITCH rather than an added binding (I.122), and enabling it in Illustrator DISPLACES plain
+   * scroll onto Shift. This app is permanently in that mode, for a reason the artboard does not
+   * have: the view is clamped to the virtual render and `MIN_ZOOM` is 1, so at the zoom the
+   * surface opens in the card is fully framed and there is nowhere to scroll TO. Cloning plain
+   * scroll would trade the one wheel gesture that always does something for one that usually does
+   * nothing — and it would take the brush's wheel with it, which has zoomed since long before the
+   * pen existed. So: mode on, plain wheel zooms, and Shift takes the vertical scroll it displaces.
+   *
+   * CTRL+WHEEL STAYS ZOOM TOO, and this is the one item we deliberately did not clone. On the web
+   * a trackpad PINCH is delivered as `wheel` with `ctrlKey: true` and there is no reliable way to
+   * tell it from a real Ctrl+wheel. Taking Ctrl for horizontal scroll would break pinch-zoom on
+   * every trackpad in exchange for a scroll axis a two-finger swipe already supplies as `deltaX`
+   * — which is honoured below, so horizontal scrolling exists, just not on that chord.
+   *
+   * ALT+WHEEL is Illustrator's zoom and now works here as well, unchanged: an Illustrator user's
+   * hand finds it, and it costs nothing because it lands on the same behaviour.
+   */
   const onWheel = (e: WheelEvent) => {
     if (!optsRef.current.enabled || !hostEl) return
-    e.preventDefault() // trackpad pinch arrives here as ctrlKey+wheel
+    e.preventDefault()
     const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? hostEl.clientHeight || 400 : 1
     const dy = clamp(e.deltaY * unit, -240, 240)
+    const dx = clamp((e.deltaX || 0) * unit, -240, 240)
+    // Shift+wheel: the vertical scroll the zoom mode displaced. Accelerated, as §E.6 has it —
+    // Shift is a speed multiplier on this axis in Illustrator, never a switch to the other one.
+    if (e.shiftKey && !e.ctrlKey && !e.altKey) {
+      panBy(0, dy * 3)
+      return
+    }
     const p = pt(e)
     zoomAbout(Math.exp(-dy * 0.0028), p.x, p.y)
+    // A trackpad's sideways swipe, free: it arrives as `deltaX` on the same event and is the
+    // horizontal scroll Ctrl+wheel could not safely be.
+    if (dx !== 0) panBy(dx, 0)
   }
 
   // Safari (iOS + macOS) still page-zooms on a pinch even with touch-action:none
@@ -293,25 +400,45 @@ function makeController(optsRef: { current: ViewOpts }): ViewController {
   const onSelectStart = (e: Event) => e.preventDefault()
   const onDragStart = (e: Event) => e.preventDefault()
 
+  const setSpacePan = (on: boolean) => {
+    if (space === on) return
+    space = on
+    if (mode !== 'pan') cursor(on ? 'grab' : null)
+  }
+
   const onKey = (e: KeyboardEvent) => {
     const o = optsRef.current
     if (!o.enabled) return
     const t = e.target as HTMLElement | null
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+    // Illustrator's own zoom bindings, added alongside the bare keys rather than replacing them.
+    // ABOVE the handover on purpose: what an overlay claims is the BARE key — `+` is the Add
+    // Anchor Point TOOL — and `Ctrl+=` is a different chord that has always meant zoom. Putting
+    // this below the gate would make the pen swallow a shortcut it does not implement.
+    //
+    // HONEST CAVEAT: Ctrl+= / Ctrl+- / Ctrl+0 are ALSO Chrome's page-zoom shortcuts, and a web
+    // page cannot reliably veto those — `preventDefault` is ignored for browser zoom in current
+    // Chrome. So these are best-effort: where the browser lets them through the view zooms, and
+    // where it does not the page zooms instead and nothing here breaks. The bindings you can
+    // count on remain the wheel, the pinch, the bare keys and the ZoomHud, which is why none of
+    // those moved to make room for these.
+    if (e.type === 'keydown' && e.ctrlKey && !e.altKey) {
+      if (e.key === '=' || e.key === '+') return void ctl.zoomBy(1.5)
+      if (e.key === '-' || e.key === '_') return void ctl.zoomBy(1 / 1.5)
+      // Fit and 100% are the same view here: MIN_ZOOM is 1 and the fit framing IS 1x, so both
+      // reset. Bound separately anyway because an Illustrator user presses whichever they mean.
+      if (e.key === '0' || e.key === '1') return void ctl.reset()
+    }
+    // The opt-in handover. An overlay that claimed a key gets it whole — this controller does
+    // not act on it and does not preventDefault it either, or both would be handling it.
+    const claimed = o.suspendKeys
+    if (claimed && claimed.length > 0 && (claimed.includes(e.key) || (e.code === 'Space' && claimed.includes(' ')))) return
     if (e.code === 'Space') {
       // Both halves are prevented: Space is the pan modifier here, and a
       // <button> in the HUD activates on keyUP — an unprevented keyup would
       // re-fire whichever zoom button was last clicked.
       e.preventDefault()
-      if (e.type === 'keydown') {
-        if (!space) {
-          space = true
-          if (mode !== 'pan') cursor('grab')
-        }
-      } else {
-        space = false
-        if (mode !== 'pan') cursor(null)
-      }
+      setSpacePan(e.type === 'keydown')
       return
     }
     if (e.type !== 'keydown') return
@@ -320,10 +447,7 @@ function makeController(optsRef: { current: ViewOpts }): ViewController {
     else if (e.key === '-' || e.key === '_') ctl.zoomBy(1 / 1.5)
   }
 
-  const onBlur = () => {
-    space = false
-    if (mode !== 'pan') cursor(null)
-  }
+  const onBlur = () => setSpacePan(false)
 
   const HOST_EVENTS: [string, EventListener, AddEventListenerOptions?][] = [
     ['pointerdown', onDown as EventListener],
@@ -386,6 +510,8 @@ function makeController(optsRef: { current: ViewOpts }): ViewController {
     setStrokeAbort: (fn) => {
       abortStroke = fn
     },
+    setSpacePan,
+    panBy,
     zoomBy: (factor) => {
       const W = hostEl?.clientWidth ?? 0
       const H = hostEl?.clientHeight ?? 0

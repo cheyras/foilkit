@@ -41,6 +41,17 @@ ground-truth corpus**: hand masks + their priors + diffs + linked comments are t
 instruction set from which agents codify how masks are really made per era (see
 "Codify" below) — masks are more complicated than a square.
 
+**The pen is the second way in, not a replacement for the first.** `foil/PenEditor.tsx`
+is an Illustrator-model bezier surface over the same canonical canvas: place anchors,
+pull handles, close subpaths, and the fill rasterises through the SHARED
+`rasterizePolygons` so the preview and the export cannot disagree. Its chrome renders to
+its own SVG layer and never reaches the mask bytes. The two tools trade the same canvas
+back and forth on purpose — a pen traces an edge you can see, a brush fixes the twelve
+pixels where the scan is ambiguous, and the corpus has plenty of both. A saved raster
+mask opens under the pen as a **backdrop to trace**, shown faintly; it is never silently
+vectorised, because a machine's guess at where a hand-drawn edge "really" was would be a
+guess wearing a decision's clothes (AGENTS.md F3/F4).
+
 ### Canonical space (4b, 2026-09-01) — read this before you draw anything
 
 **A mask is a stencil, and a stencil only fits if the picture underneath is the shape it
@@ -76,9 +87,57 @@ data/foil-masks/<cardId>/<variantId>.prior.png        # the era-RULE output, ren
 data/foil-masks/<cardId>/<variantId>.diff.png         # mask vs rule: GREEN added, RED removed
 data/foil-masks/<cardId>/<variantId>.parent.png       # the mask BEFORE this save (correction OR supersede)
 data/foil-masks/<cardId>/<variantId>.parent.diff.png  # what this save changed
+data/foil-masks/<cardId>/<variantId>.paths.json       # pen geometry — present only on a pen-drawn mask
 data/foil-masks/<cardId>/<variantId>.json             # sidecar v4
 data/foil-masks/<cardId>/superseded/<variantId>.<runId>/  # verbatim undo archive + archive.json
 ```
+
+#### `<variantId>.paths.json` — the readable half of a mask
+
+Present only on a mask the PEN drew, and pointed at by the sidecar's `vectorPaths`.
+It holds the same `VPath` primitives the vector templates use — lines, arcs and
+cubics — in the mask's own raster, ONE PRIMITIVE PER LINE, so `git diff` on a moved
+anchor is two numbers changing on one line instead of "Binary files differ". That is
+its entire purpose: a mask review that reads geometry is review, and one that
+compares two thumbnails is assent.
+
+**Who writes one.** The editor's save path, both halves of it: `FoilLab.saveMask`
+sends the pen's document as `vector` on the direct PUT, and `stageMask` puts the
+same value in the staged session, from where the contribution route commits it
+beside the PNG. The pen's document is converted once, by `toMaskVector`, and there
+is no second serialiser — `apps/editor/e2e/run.mjs` drives the whole journey
+(draw → save → reload → the anchors are still anchors), because every piece of
+this was individually green while the slice as a whole had no producer at all and
+every anchor died with the tab.
+
+**What reopens one.** A staged session brings its geometry back with its pixels, so
+the pen reopens on the anchors that drew them. A mask read back from `data/` opens
+as a BACKDROP to trace: `getMask` answers from the corpus manifest and the PNG, and
+nothing reads the committed `.paths.json` back into the editor yet.
+
+Three rules keep it honest, all enforced in code rather than by convention:
+
+* **It is an AUTHORING artifact, never evidence.** `derivation_method`, the
+  rollups, the tier and the correction metrics are all still derived from PIXELS
+  (AGENTS.md F3). Adding paths to a submission changes no derived field —
+  `provenance.test.ts` asserts it by writing the same mask twice, once with paths
+  and once without, and comparing the records.
+* **The pair must agree.** `functions/_lib/validate.ts` rasterises the submitted
+  paths through the same rasteriser the editor previews with, and REFUSES the
+  submission when they do not make the submitted pixels. Three numbers, all
+  calibrated in `validate.test.ts`: IoU ≥ 0.98 (same region), boundary p95 ≤ 2px
+  (how much of the boundary moved), boundary max ≤ 5px (whether the two disagree
+  *anywhere*). The boundary distance is measured in BOTH directions — one-way it
+  reported `0.00px` for a mask whose paths omitted 3,600px of it, because a region
+  missing from the paths never touches the paths' own boundary. The work is bounded
+  as well as the input: a submitted vector that flattens past 60,000 points is
+  refused by name rather than rasterised, because the flattener's cost answers to
+  the geometry and not to the byte count. A legible diff that misdescribes the mask
+  beside it is worse than no diff, because a reviewer would believe it.
+* **A save with no vector REMOVES it.** A brush save over a pen-authored mask, and
+  a frame migration, both leave paths that no longer describe the pixels beside
+  them; both delete the file rather than leave it. The supersede archive keeps a
+  verbatim copy, so `revert --run-id` brings it back with everything else.
 
 #### The provenance taxonomy (`derivation_method`)
 

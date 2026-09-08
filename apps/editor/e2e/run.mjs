@@ -180,6 +180,38 @@ const FAKE_SCAN = (() => {
 })()
 
 /**
+ * The same card, at the resolution a real scan actually arrives in — and the
+ * only fixture the SNAPPING section can be run against.
+ *
+ * MEASURED, and it is a fact about scans rather than about this test. The 64x88
+ * stand-in above has to be blown up nearly 8x to reach canonical mask space, and
+ * a bilinear 8x upscale turns a step edge into a 16px linear RAMP. A ramp has no
+ * edge position: its gradient is flat across the whole run, so the structure
+ * tensor finds two comparable ridges at the ramp's shoulders and none in the
+ * middle. Run `pen-snap` on it and it REFUSES — correctly, and for exactly the
+ * reason its guardrail exists. A test that asserted snapping against that
+ * fixture would be asserting that the snapper guesses.
+ *
+ * 600x825 is what `images.high` serves for a real card, so this is the condition
+ * the feature actually ships into: crisp at canonical size, one ridge, one
+ * answer. The split stays at half height, so in mask space its edge is y = 352.
+ */
+const SHARP_W = 600
+const SHARP_H = 825
+const SHARP_SCAN = (() => {
+  const rgba = new Uint8Array(SHARP_W * SHARP_H * 4)
+  for (let y = 0; y < SHARP_H; y++) {
+    const v = y < SHARP_H / 2 ? 255 : 0
+    for (let x = 0; x < SHARP_W; x++) {
+      const o = (y * SHARP_W + x) * 4
+      rgba[o] = rgba[o + 1] = rgba[o + 2] = v
+      rgba[o + 3] = 255
+    }
+  }
+  return encodePng({ width: SHARP_W, height: SHARP_H, rgba })
+})()
+
+/**
  * Press "Provisional diff" and return the numbers it prints, as one string.
  *
  * The numbers are a fingerprint of the CANVAS — the editor rasterizes the era
@@ -594,6 +626,10 @@ try {
   let s = staged[0] ?? {}
   ok('it is keyed by card and variant', s.id === `mask:base1-4:${variantId}`, String(s.id))
   ok('it carries pixels', typeof s.png === 'string' && s.png.startsWith('data:image/png;base64,'))
+  // THE BRUSH DOES NOT PAY FOR THE PEN. A brush session carries no `vector`
+  // key at all — absent, not null — so its session JSON, its export bundle and
+  // its pull request are byte-for-byte what they were before the pen existed.
+  ok('a brush-drawn session carries no pen geometry — the key is ABSENT, not null', !('vector' in s), JSON.stringify(s.vector ?? null))
   ok('it pins the parent sha at seed time', typeof s.seed?.parentSha256 === 'string', String(s.seed?.parentSha256))
   ok('it records what it started from', s.seed?.startedFrom === 'mask', String(s.seed?.startedFrom))
   ok(
@@ -1082,6 +1118,807 @@ try {
   )
   await cold.close()
   slowUrls = null
+
+  // ── 10b. THE PEN ─────────────────────────────────────────────────────────
+  //
+  // A real bezier journey, driven with real `page.mouse` and `page.keyboard`:
+  // place anchors, click-DRAG one for a curve, watch the rubber band, close on
+  // the first anchor, watch the shader preview change, undo, redo.
+  //
+  // SYNTHETIC EVENTS WOULD PROVE NOTHING HERE. The pen's behaviour is already
+  // exhaustively tested in `pen-engine.test.ts` without a browser — that is the
+  // whole design. What is UNTESTED until this runs is the DOM layer: pointer
+  // capture, the client → document coordinate map through a rect that carries a
+  // CSS zoom, the modifier normalisation, the keyboard handover with
+  // `ViewTransform`, and whether the mask canvas the shader samples actually
+  // gets rewritten. Every one of those is invisible to a dispatched
+  // `new PointerEvent`, so this drives the mouse.
+  //
+  // Its own context, because the sections above stage a session against a
+  // canvas whose pixels they then assert on across a reload; tracing over that
+  // canvas here would break them from a distance.
+  {
+    const penCtx = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    await penCtx.route('**://fixture.invalid/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/png', body: FAKE_SCAN }),
+    )
+    const pen = await penCtx.newPage()
+    const penErrors = []
+    pen.on('pageerror', (e) => penErrors.push(e.message))
+    await pen.goto(`${BASE}/card?id=base1-4&v=${variantId}`, { waitUntil: 'networkidle' })
+    await pen.waitForSelector('text=Card (full catalog, by era)', { timeout: 20000 })
+    await pen.waitForTimeout(1500)
+
+    // THE BRUSH IS NOT DEPRECATED. Both entry points are offered, side by side.
+    ok(
+      'the pen is offered ALONGSIDE the brush, not instead of it',
+      (await pen.getByRole('button', { name: /Edit mask/ }).count()) === 1 &&
+        (await pen.getByRole('button', { name: /Pen \(trace\)/ }).count()) === 1,
+    )
+
+    await pen.getByRole('button', { name: /Pen \(trace\)/ }).click()
+    const chrome = pen.locator('[data-testid="pen-chrome"]')
+    await chrome.waitFor({ timeout: 15000 })
+    const pbox = await chrome.boundingBox()
+    ok('the pen surface mounts aligned to the card face', pbox !== null && pbox.width > 100, JSON.stringify(pbox))
+    const px = (fx, fy) => [pbox.x + pbox.width * fx, pbox.y + pbox.height * fy]
+    const clip = {
+      x: Math.round(pbox.x),
+      y: Math.round(pbox.y),
+      width: Math.round(pbox.width),
+      height: Math.round(pbox.height),
+    }
+
+    // base1-4 carries a committed hand mask. It must load as something to TRACE
+    // and NOT be silently converted to paths — the pen document starts empty.
+    ok(
+      'a saved raster mask opens as a BACKDROP to trace, not as auto-vectorised paths',
+      (await chrome.getAttribute('data-pen-backdrop')) === 'raster' &&
+        (await chrome.getAttribute('data-pen-anchors')) === '0',
+      `backdrop=${await chrome.getAttribute('data-pen-backdrop')} anchors=${await chrome.getAttribute('data-pen-anchors')}`,
+    )
+    // Spec A.1 / conformance 3: there is nothing to rubber-band FROM yet.
+    await pen.mouse.move(...px(0.5, 0.5))
+    await pen.waitForTimeout(150)
+    ok(
+      'no rubber band is rendered before the first anchor exists',
+      (await pen.locator('[data-testid="pen-rubber-band"]').count()) === 0,
+    )
+
+    const beforeDrawing = await pen.screenshot({ clip })
+
+    await pen.mouse.click(...px(0.2, 0.2))
+    await pen.mouse.click(...px(0.75, 0.22))
+    await pen.mouse.move(...px(0.5, 0.4))
+    await pen.waitForTimeout(150)
+    ok(
+      'two clicks place two anchors, and the rubber band previews the next segment',
+      (await chrome.getAttribute('data-pen-anchors')) === '2' &&
+        (await pen.locator('[data-testid="pen-rubber-band"]').count()) === 1,
+      `anchors=${await chrome.getAttribute('data-pen-anchors')}`,
+    )
+
+    // A click-DRAG. The handles must be visible WHILE the button is down — spec
+    // A.3's whole point is that you aim by watching them and by watching the
+    // committed segment behind you re-render against them.
+    await pen.mouse.move(...px(0.8, 0.6))
+    await pen.mouse.down()
+    for (let i = 1; i <= 8; i++) await pen.mouse.move(...px(0.8 + i * 0.015, 0.6 + i * 0.012))
+    await pen.waitForTimeout(150)
+    const midDragHandles = await pen.locator('[data-testid="pen-handle"]').count()
+    ok(
+      'a click-drag shows the mirrored handles of the anchor in the hand',
+      midDragHandles === 2,
+      `${midDragHandles} handle(s)`,
+    )
+    ok(
+      'and the rubber band is suppressed while a button is down',
+      (await pen.locator('[data-testid="pen-rubber-band"]').count()) === 0,
+    )
+    await pen.mouse.up()
+    await pen.mouse.click(...px(0.25, 0.78))
+
+    // Spec A.7: the far endpoint of the active open path offers the close badge,
+    // and `cursorFor` is the ONLY thing that decides it — the badge cannot
+    // promise something the click will not do.
+    await pen.mouse.move(...px(0.2, 0.2))
+    await pen.waitForTimeout(200)
+    ok(
+      'hovering the first anchor of the active path offers CLOSE',
+      (await chrome.getAttribute('data-pen-cursor')) === 'close',
+      String(await chrome.getAttribute('data-pen-cursor')),
+    )
+    await pen.mouse.click(...px(0.2, 0.2))
+    await pen.waitForTimeout(500)
+    ok(
+      'clicking it closes the path and ends drawing',
+      (await chrome.getAttribute('data-pen-closed')) === '1' &&
+        (await pen.locator('[data-testid="pen-rubber-band"]').count()) === 0,
+      `closed=${await chrome.getAttribute('data-pen-closed')}`,
+    )
+
+    // THE SHADER PREVIEW. The pen rasterises into the same mask canvas the brush
+    // owns and bumps `maskTexVersion`, so the three.js render under the overlay
+    // has to have moved. Compared as PIXELS of the card, not as a state flag.
+    const afterClosing = await pen.screenshot({ clip })
+    ok(
+      'the foil preview under the overlay re-rendered from the pen’s mask',
+      Buffer.compare(beforeDrawing, afterClosing) !== 0,
+    )
+
+    // THE ASSERTION THIS SURFACE EXISTS TO KEEP: the mask carries the pen's tint
+    // and NOTHING else. The chrome palette is blue (61,139,255), white and a
+    // black casing — all three are blue-or-grey dominant, and the tint
+    // (255,45,100) is emphatically red dominant. So the test is a HUE test
+    // rather than an equality test, and that is not a softening: an equality
+    // test here measures the canvas's premultiplied-alpha rounding at the
+    // antialiased rim (a pixel at alpha 1 round-trips to (255,0,0)) and reports
+    // hundreds of "stray" pixels that are the rasteriser's own edge. A test that
+    // fails on arithmetic it cannot control is a test that gets deleted.
+    const strayChrome = await pen.evaluate(() => {
+      const c = document.querySelector('[data-testid="pen-fill"]')
+      const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data
+      let lit = 0
+      const stray = []
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i + 3] === 0) continue
+        lit++
+        // Anything not red-dominant cannot have come from the tint.
+        if (d[i + 2] >= d[i] || d[i + 1] > d[i]) {
+          if (stray.length < 4) stray.push(`${d[i]},${d[i + 1]},${d[i + 2]}@${d[i + 3]}`)
+        }
+      }
+      return { lit, stray, strayCount: stray.length }
+    })
+    ok(
+      'no chrome pixel reached the mask — every lit pixel is the mask tint, none is chrome',
+      strayChrome.lit > 1000 && strayChrome.strayCount === 0,
+      `${strayChrome.lit} lit; stray samples ${strayChrome.stray.join(' ')}`,
+    )
+
+    // Conformance 123/124: undo is one step and it restores the state, not just
+    // the geometry — driven from the KEYBOARD, through the same binding table.
+    await pen.keyboard.press('Control+z')
+    await pen.waitForTimeout(300)
+    ok(
+      'Ctrl+Z re-opens the path it just closed',
+      (await chrome.getAttribute('data-pen-closed')) === '0' &&
+        (await chrome.getAttribute('data-pen-anchors')) === '4',
+      `closed=${await chrome.getAttribute('data-pen-closed')} anchors=${await chrome.getAttribute('data-pen-anchors')}`,
+    )
+    await pen.keyboard.press('Control+Shift+z')
+    await pen.waitForTimeout(300)
+    ok(
+      'Ctrl+Shift+Z closes it again',
+      (await chrome.getAttribute('data-pen-closed')) === '1' &&
+        (await chrome.getAttribute('data-pen-anchors')) === '4',
+      `closed=${await chrome.getAttribute('data-pen-closed')}`,
+    )
+
+    // THE KEYBOARD HANDOVER, both directions. `+` is `ViewTransform`'s zoom-in
+    // key and Illustrator's Add Anchor Point key; while the pen is up it belongs
+    // to the pen, and the moment the pen closes the host has it back.
+    ok('the view starts at 100%', (await pen.locator('[data-testid="zoom-pct"]').innerText()) === '100%')
+    await pen.keyboard.press('+')
+    await pen.waitForTimeout(250)
+    ok(
+      'while the pen is active, `+` belongs to the pen and does NOT zoom the host',
+      (await pen.locator('[data-testid="zoom-pct"]').innerText()) === '100%',
+      await pen.locator('[data-testid="zoom-pct"]').innerText(),
+    )
+    await pen.getByRole('button', { name: '✏️ Refine with the brush' }).click()
+    await pen.waitForSelector('[data-testid="mask-canvas"]', { timeout: 15000 })
+    ok('leaving the pen hands the canvas to the brush, still working', true)
+    await pen.keyboard.press('+')
+    await pen.waitForTimeout(250)
+    ok(
+      'and with the pen closed, `+` zooms the host exactly as it always did',
+      (await pen.locator('[data-testid="zoom-pct"]').innerText()) === '150%',
+      await pen.locator('[data-testid="zoom-pct"]').innerText(),
+    )
+    ok('the pen journey threw no page errors', penErrors.length === 0, penErrors.slice(0, 2).join(' | '))
+    await penCtx.close()
+  }
+
+  // ── 10b-2. THE PEN CATCHES THE PRINTED EDGE ──────────────────────────────
+  //
+  // The acceptance criterion the pen tool was accepted against: trace a window
+  // on a real scan and WATCH THE SEGMENTS SNAP TO THE PRINTED EDGES. Everything
+  // else in that sentence has been true since the pen shipped; snapping was the
+  // hole in it — `DEFAULT_PEN_CONFIG.snap` was null and no provider existed.
+  //
+  // WHY THIS CANNOT BE A UNIT TEST. `pen-snap.test.ts` proves the snapper finds
+  // the edge and `pen-engine.test.ts` proves the engine bounds it, both without
+  // a browser. What neither can see is the WIRING: whether the editor actually
+  // builds a provider from this card's scan, whether it can read pixels back out
+  // of a cross-origin image at all, whether the canonical raster it draws into
+  // is the same 504x704 space the pen's anchors live in, and whether a half
+  // pixel of coordinate confusion puts the "edge" somewhere the edge is not.
+  // Every one of those is invisible to `node --test` and fatal in the product.
+  //
+  // THE FIXTURE HAS EXACTLY ONE PRINTED EDGE and we know where it is:
+  // SHARP_SCAN is white over black, split at half height, so in canonical mask
+  // space its edge is the line y = 352.0. An anchor that lands there landed on
+  // the print. It is the 600x825 fixture rather than the 64x88 one for a
+  // measured reason — see the note on SHARP_SCAN, and the refusal section below,
+  // which drives the small one deliberately.
+  //
+  // THE CORS HEADER IS NOT A CONVENIENCE. Reading pixels back needs the image to
+  // be CORS-clean, and `assets.tcgdex.net` sends `access-control-allow-origin: *`
+  // in production (measured — see the note on `proxied()` in api.ts). A fixture
+  // route that omitted it would test a stricter world than the real one and
+  // would report the feature broken when it is not.
+  {
+    const EDGE_Y = 352 // where FAKE_SCAN's white/black split lands in canonical mask space
+    const snapCtx = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    await snapCtx.route('**://fixture.invalid/**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'image/png',
+        headers: { 'access-control-allow-origin': '*' },
+        body: SHARP_SCAN,
+      }),
+    )
+    const sp = await snapCtx.newPage()
+    const snapErrors = []
+    sp.on('pageerror', (e) => snapErrors.push(e.message))
+    await sp.goto(`${BASE}/card?id=base1-4&v=${variantId}`, { waitUntil: 'networkidle' })
+    await sp.waitForSelector('text=Card (full catalog, by era)', { timeout: 20000 })
+    await sp.waitForTimeout(1500)
+    await sp.getByRole('button', { name: /Pen \(trace\)/ }).click()
+    const sc = sp.locator('[data-testid="pen-chrome"]')
+    await sc.waitFor({ timeout: 15000 })
+    const sbox = await sc.boundingBox()
+    const clip2 = {
+      x: Math.round(sbox.x),
+      y: Math.round(sbox.y),
+      width: Math.round(sbox.width),
+      height: Math.round(sbox.height),
+    }
+    /** Document (mask-space) coordinates -> client pixels. The SVG's viewBox is 504x704. */
+    const doc = (x, y) => [sbox.x + (x / 504) * sbox.width, sbox.y + (y / 704) * sbox.height]
+    /** Screen px per document unit — the same number the engine gets as `input.zoom`. */
+    const scale = sbox.width / 504
+    /** Every anchor's DOCUMENT position, read off the chrome. */
+    const anchors = () =>
+      sp.evaluate(() =>
+        [...document.querySelectorAll('[data-testid="pen-anchor"]')].map((e) =>
+          e.getAttribute('data-anchor').split(',').map(Number),
+        ),
+      )
+
+    // The strip is the whole visible half of this feature: a switch, its state,
+    // and a sentence about what the snapper is doing.
+    const note = sp.locator('[data-testid="pen-snap-note"]')
+    await note.waitFor({ timeout: 15000 })
+    ok(
+      'the pen shows a snap control with its state on it, not a hidden preference',
+      (await sp.locator('[data-testid="pen-snap-toggle"]').innerText()).includes('Snap on') &&
+        (await sc.getAttribute('data-pen-snap')) === 'on',
+      `${await sp.locator('[data-testid="pen-snap-toggle"]').innerText()} / ${await sc.getAttribute('data-pen-snap')}`,
+    )
+    ok('and 45° construction guides ship OFF, as Illustrator does', (await sc.getAttribute('data-pen-guides')) === 'off')
+
+    // Preparing the edge map is deliberately deferred to an idle callback, so the
+    // pen is usable UNSNAPPED first and a provider appears afterwards. Waited on
+    // the attribute rather than on the note's wording: the note says "reading the
+    // printed edges off this scan…" while it is still working, and a substring
+    // match on that is a test that clicks before the snapper exists and then
+    // reports the feature broken. (It did, on the first run of this file.)
+    await sp.waitForFunction(
+      () => document.querySelector('[data-testid="pen-chrome"]')?.getAttribute('data-pen-snap-provider') === 'wired',
+      null,
+      { timeout: 20000 },
+    )
+    const readyNote = await note.innerText()
+    ok('the snapper says what it measured on this card, with a number', /\d/.test(readyNote), readyNote)
+
+    // ── The gesture. A window whose TOP edge is the printed one. ──
+    //
+    // The click sits a fraction over one screen pixel above the print — a hand
+    // that missed, which is the only interesting case: land exactly on it and a
+    // snap that does nothing looks identical to one that works.
+    const missPx = 1.2 / scale // document units that come to 1.2 SCREEN px
+    const topY = EDGE_Y - missPx
+    await sp.mouse.click(...doc(150, topY))
+    await sp.mouse.click(...doc(360, topY))
+    await sp.waitForTimeout(200)
+    const snapped = await anchors()
+    console.log(`    pen-snap: clicked y=${topY.toFixed(3)} (doc), anchors landed at ${JSON.stringify(snapped)}`)
+    ok(
+      'an anchor clicked just off the printed edge LANDS ON IT',
+      snapped.length === 2 && snapped.every((a) => Math.abs(a[1] - EDGE_Y) <= 0.75),
+      `wanted y≈${EDGE_Y}, got ${JSON.stringify(snapped.map((a) => a[1]))}`,
+    )
+    ok(
+      'and it moved to get there — the snap is a displacement, not a label',
+      snapped.every((a) => Math.abs(a[1] - topY) > 0.3),
+      `clicked ${topY.toFixed(3)}, landed ${JSON.stringify(snapped.map((a) => a[1]))}`,
+    )
+    ok(
+      'the along-edge coordinate is left alone: a snap moves ACROSS an edge, never along it',
+      Math.abs(snapped[0][0] - 150) < 1.5 && Math.abs(snapped[1][0] - 360) < 1.5,
+      JSON.stringify(snapped.map((a) => a[0])),
+    )
+    ok(
+      'the surface names what it caught',
+      (await sc.getAttribute('data-pen-snap-kind')) === 'edge',
+      String(await sc.getAttribute('data-pen-snap-kind')),
+    )
+    ok('and draws the capture ring', (await sp.locator('[data-testid="pen-snap"]').count()) === 1)
+
+    // The other two corners are 200px from any printed edge. Nothing is there,
+    // and the snapper must invent nothing: they land where the mouse went.
+    await sp.mouse.click(...doc(360, 560))
+    await sp.mouse.click(...doc(150, 560))
+    await sp.waitForTimeout(200)
+    const four = await anchors()
+    ok(
+      'anchors placed where the scan has no edge are NOT moved',
+      four.length === 4 &&
+        Math.abs(four[2][1] - 560) < 1 &&
+        Math.abs(four[3][1] - 560) < 1 &&
+        Math.abs(four[2][0] - 360) < 1.5 &&
+        Math.abs(four[3][0] - 150) < 1.5,
+      JSON.stringify(four),
+    )
+    // Close it on the first anchor: a finished window, four anchors, two of them
+    // sitting on the print.
+    await sp.mouse.move(...doc(snapped[0][0], snapped[0][1]))
+    await sp.waitForTimeout(200)
+    await sp.mouse.click(...doc(snapped[0][0], snapped[0][1]))
+    await sp.waitForTimeout(400)
+    const closedWindow = await anchors()
+    ok(
+      'the traced window closes with its top edge still on the print',
+      (await sc.getAttribute('data-pen-closed')) === '1' &&
+        closedWindow.filter((a) => Math.abs(a[1] - EDGE_Y) <= 0.75).length === 2,
+      `closed=${await sc.getAttribute('data-pen-closed')} ${JSON.stringify(closedWindow)}`,
+    )
+    const shotDir = process.env.PEN_SHOTS ?? mkdtempSync(path.join(tmpdir(), 'foilkit-pen-'))
+    const tracedShot = path.join(shotDir, 'pen-snap-traced.png')
+    await sp.screenshot({ path: tracedShot, clip: clip2 })
+
+    // ── THE SWITCH. Same click, snapping off, and the anchor obeys the hand. ──
+    //
+    // This is what makes the assertions above mean something: without it, "the
+    // anchor is at y=352" is equally consistent with a click that happened to
+    // land there. Two states of one switch, one screen position, two answers.
+    await sp.keyboard.press('Escape')
+    await sp.keyboard.press('Control+a')
+    await sp.keyboard.press('Delete')
+    await sp.keyboard.press('Control+u')
+    await sp.waitForTimeout(200)
+    ok('Ctrl+U switches snapping off from the keyboard', (await sc.getAttribute('data-pen-snap')) === 'off')
+    ok(
+      'and the strip says what that means for the next click',
+      (await note.innerText()).includes('exactly where you click'),
+      await note.innerText(),
+    )
+    await sp.mouse.click(...doc(150, topY))
+    await sp.waitForTimeout(200)
+    const unsnapped = await anchors()
+    console.log(`    pen-snap: same click with snapping OFF landed at ${JSON.stringify(unsnapped)}`)
+    ok(
+      'the SAME click, unsnapped, lands where the hand put it and not on the edge',
+      unsnapped.length === 1 && Math.abs(unsnapped[0][1] - topY) < 0.6 && Math.abs(unsnapped[0][1] - EDGE_Y) > 0.6,
+      `clicked ${topY.toFixed(3)}, landed ${JSON.stringify(unsnapped[0])}`,
+    )
+    const offShot = path.join(shotDir, 'pen-snap-off.png')
+    await sp.screenshot({ path: offShot, clip: clip2 })
+
+    // Back on, from the BUTTON this time — the affordance and the shortcut are
+    // the same command through the same binding table, or the two can drift.
+    await sp.locator('[data-testid="pen-snap-toggle"]').click()
+    await sp.waitForTimeout(150)
+    ok('the on-screen control drives the same toggle as the shortcut', (await sc.getAttribute('data-pen-snap')) === 'on')
+
+    ok('the snapping journey threw no page errors', snapErrors.length === 0, snapErrors.slice(0, 2).join(' | '))
+    console.log(`    pen-snap screenshots: ${tracedShot} | ${offShot}`)
+    await snapCtx.close()
+
+    // ── 10b-3. AND WHEN IT CANNOT TELL, IT SAYS SO ─────────────────────────
+    //
+    // The other half of the promise, and the half that is easy to ship broken
+    // because nothing looks wrong when it is: a snapper that quietly does
+    // nothing and a snapper that has decided not to guess are the same pixels.
+    //
+    // The 64x88 stand-in is the perfect instrument for it. Blown up to canonical
+    // size it is a 16px ramp with a comparable ridge at each shoulder — the scan
+    // genuinely does not say where the edge is — so this is not a contrived
+    // input, it is the real answer to a real degenerate scan, and the user is
+    // entitled to read it rather than to wonder.
+    const vagueCtx = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    await vagueCtx.route('**://fixture.invalid/**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'image/png',
+        headers: { 'access-control-allow-origin': '*' },
+        body: FAKE_SCAN,
+      }),
+    )
+    const vp = await vagueCtx.newPage()
+    await vp.goto(`${BASE}/card?id=base1-4&v=${variantId}`, { waitUntil: 'networkidle' })
+    await vp.waitForSelector('text=Card (full catalog, by era)', { timeout: 20000 })
+    await vp.waitForTimeout(1500)
+    await vp.getByRole('button', { name: /Pen \(trace\)/ }).click()
+    const vc = vp.locator('[data-testid="pen-chrome"]')
+    await vc.waitFor({ timeout: 15000 })
+    const vbox = await vc.boundingBox()
+    await vp.waitForFunction(
+      () => document.querySelector('[data-testid="pen-chrome"]')?.getAttribute('data-pen-snap-provider') === 'wired',
+      null,
+      { timeout: 20000 },
+    )
+    // Dead centre of the ramp: equidistant from both shoulders, which is exactly
+    // the case the ambiguity rule is written about.
+    await vp.mouse.click(vbox.x + (150 / 504) * vbox.width, vbox.y + (EDGE_Y / 704) * vbox.height)
+    await vp.waitForTimeout(250)
+    const refusal = await vc.getAttribute('data-pen-snap-refusal')
+    const landed = await vp.evaluate(
+      () => document.querySelector('[data-testid="pen-anchor"]')?.getAttribute('data-anchor') ?? '',
+    )
+    console.log(`    pen-snap: on a scan with no locatable edge → refusal "${refusal}" | anchor ${landed}`)
+    ok(
+      'a scan that cannot say where its edge is gets a REFUSAL, not a guess',
+      (refusal ?? '').includes('comparable edges'),
+      String(refusal),
+    )
+    ok(
+      'and the refused anchor stays exactly where the hand put it',
+      Math.abs(Number(landed.split(',')[1]) - EDGE_Y) < 0.6,
+      landed,
+    )
+    ok(
+      'the user can read that refusal on the surface — quietly, in the strip',
+      (await vp.locator('[data-testid="pen-snap-note"]').innerText()).includes('comparable edges'),
+      await vp.locator('[data-testid="pen-snap-note"]').innerText(),
+    )
+    await vagueCtx.close()
+  }
+
+  // ── 10c. The pen at 390px ────────────────────────────────────────────────
+  {
+    const narrow = await browser.newContext({ viewport: { width: 390, height: 844 } })
+    await narrow.route('**://fixture.invalid/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/png', body: FAKE_SCAN }),
+    )
+    const np = await narrow.newPage()
+    await np.goto(`${BASE}/card?id=base1-4&v=${variantId}`, { waitUntil: 'networkidle' })
+    await np.waitForSelector('text=Card (full catalog, by era)', { timeout: 20000 })
+    await np.waitForTimeout(1200)
+    await np.getByRole('button', { name: /Pen \(trace\)/ }).click()
+    const nc = np.locator('[data-testid="pen-chrome"]')
+    await nc.waitFor({ timeout: 15000 })
+    await nc.scrollIntoViewIfNeeded()
+    await np.waitForTimeout(300)
+    const nb = await nc.boundingBox()
+    ok('the pen surface fits the 390px card face', nb !== null && nb.width > 200 && nb.width <= 390, JSON.stringify(nb))
+    await np.mouse.click(nb.x + nb.width * 0.25, nb.y + nb.height * 0.25)
+    await np.mouse.click(nb.x + nb.width * 0.7, nb.y + nb.height * 0.3)
+    await np.mouse.move(nb.x + nb.width * 0.5, nb.y + nb.height * 0.6)
+    await np.waitForTimeout(200)
+    ok(
+      'and it draws there — two anchors and a live rubber band at phone width',
+      (await nc.getAttribute('data-pen-anchors')) === '2' &&
+        (await np.locator('[data-testid="pen-rubber-band"]').count()) === 1,
+      `anchors=${await nc.getAttribute('data-pen-anchors')}`,
+    )
+    ok(
+      'the pen surface does not scroll the page sideways at 390px',
+      await np.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
+    )
+    await narrow.close()
+  }
+
+  // ── 10d. The pen's cancel keys, and the mask it opened over ──────────────
+  //
+  // Four behaviours an adversarial review found IN A BROWSER and that only a
+  // browser can keep. Two of them were destructive, and both were invisible to
+  // `pen-engine.test.ts` because the test that "covered" each one drove a
+  // gesture no hand can produce:
+  //
+  //   • Escape (and a window blur) during a marquee rolled back the PREVIOUS,
+  //     COMPLETED gesture — the cancel key deleted an anchor the user had just
+  //     placed. `data-pen-anchors` went 4 -> 3.
+  //   • Alt held BEFORE the press swapped the pen for the Anchor Point tool, so
+  //     the close ladder was unreachable and Alt-click-drag on the first anchor
+  //     converted it instead of closing the path (spec A.7's Alt variant, I.30).
+  //     The unit test drove `down()` and THEN `kd('Alt')`, which no user does.
+  //   • The pen took a committed mask over at the third anchor with nothing on
+  //     screen saying so and nothing labelled as the way back.
+  //   • Ctrl+H / Ctrl+Y have to survive the keyboard handover with
+  //     `ViewTransform`, which is exactly what a unit test cannot see.
+  {
+    const rctx = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    await rctx.route('**://fixture.invalid/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/png', body: FAKE_SCAN }),
+    )
+    const openPen = async () => {
+      const p = await rctx.newPage()
+      await p.goto(`${BASE}/card?id=base1-4&v=${variantId}`, { waitUntil: 'networkidle' })
+      await p.waitForSelector('text=Card (full catalog, by era)', { timeout: 20000 })
+      await p.waitForTimeout(1200)
+      await p.getByRole('button', { name: /Pen \(trace\)/ }).click()
+      const c = p.locator('[data-testid="pen-chrome"]')
+      await c.waitFor({ timeout: 15000 })
+      const b = await c.boundingBox()
+      return { p, c, at: (fx, fy) => [b.x + b.width * fx, b.y + b.height * fy] }
+    }
+
+    // A CANCEL KEY MAY NEVER DELETE COMMITTED WORK. Both routes into `rollback`.
+    for (const ender of ['Escape', 'blur']) {
+      const { p, c, at } = await openPen()
+      for (const q of [[0.2, 0.2], [0.7, 0.22], [0.72, 0.7], [0.22, 0.72]]) await p.mouse.click(...at(...q))
+      await p.waitForTimeout(150)
+      const before = await c.getAttribute('data-pen-anchors')
+      await p.keyboard.press('a') // Direct Selection, so an empty-canvas press is a marquee
+      await p.mouse.move(...at(0.45, 0.45))
+      await p.mouse.down()
+      await p.mouse.move(...at(0.5, 0.5))
+      await p.mouse.move(...at(0.55, 0.52))
+      await p.waitForTimeout(120)
+      if (ender === 'Escape') await p.keyboard.press('Escape')
+      else await p.evaluate(() => window.dispatchEvent(new Event('blur')))
+      await p.waitForTimeout(250)
+      const after = await c.getAttribute('data-pen-anchors')
+      ok(
+        `${ender} during a marquee cancels the marquee and destroys nothing`,
+        before === '4' && after === '4' && (await p.locator('[data-testid="pen-marquee"]').count()) === 0,
+        `anchors ${before} -> ${after}`,
+      )
+      await p.close()
+    }
+
+    // I.30, WITH ALT DOWN FIRST — the only order a hand can produce.
+    {
+      const { p, c, at } = await openPen()
+      for (const q of [[0.25, 0.25], [0.7, 0.27], [0.7, 0.72]]) await p.mouse.click(...at(...q))
+      await p.keyboard.down('Alt')
+      await p.mouse.move(...at(0.25, 0.25))
+      await p.waitForTimeout(250)
+      ok(
+        'Alt does not steal the close: the badge over the first anchor still says close',
+        (await c.getAttribute('data-pen-cursor')) === 'close',
+        String(await c.getAttribute('data-pen-cursor')),
+      )
+      await p.mouse.down()
+      for (let i = 1; i <= 6; i++) await p.mouse.move(...at(0.25 + i * 0.01, 0.25 - i * 0.012))
+      await p.mouse.up()
+      await p.keyboard.up('Alt')
+      await p.waitForTimeout(250)
+      ok(
+        'and Alt-click-dragging it closes the path rather than converting the anchor',
+        (await c.getAttribute('data-pen-closed')) === '1' && (await c.getAttribute('data-pen-anchors')) === '3',
+        `closed=${await c.getAttribute('data-pen-closed')} anchors=${await c.getAttribute('data-pen-anchors')}`,
+      )
+      await p.close()
+    }
+
+    // THE SAVED MASK IS NOT REPLACED SILENTLY, and the way back is labelled.
+    {
+      const { p, c, at } = await openPen()
+      ok(
+        'opening the pen over a committed mask says nothing yet — nothing has changed',
+        (await c.getAttribute('data-pen-backdrop')) === 'raster' && (await c.getAttribute('data-pen-mask')) === 'none',
+        `mask=${await c.getAttribute('data-pen-mask')}`,
+      )
+      await p.mouse.click(...at(0.25, 0.25))
+      await p.waitForTimeout(250)
+      ok(
+        'the FIRST anchor warns that the saved mask is about to be replaced — before it is',
+        (await c.getAttribute('data-pen-mask')) === 'armed' &&
+          (await p.locator('[data-testid="pen-mask-notice"]').count()) === 1,
+        `mask=${await c.getAttribute('data-pen-mask')}`,
+      )
+      await p.mouse.click(...at(0.7, 0.27))
+      await p.mouse.click(...at(0.7, 0.72))
+      await p.mouse.click(...at(0.25, 0.25))
+      await p.waitForTimeout(500)
+      ok(
+        'and once the pen owns the canvas the notice says so',
+        (await c.getAttribute('data-pen-mask')) === 'replaced',
+        `mask=${await c.getAttribute('data-pen-mask')}`,
+      )
+      await p.getByRole('button', { name: 'Restore saved mask' }).click()
+      await p.waitForTimeout(500)
+      ok(
+        'the labelled way back restores it',
+        (await c.getAttribute('data-pen-mask')) === 'none' && (await c.getAttribute('data-pen-anchors')) === '0',
+        `mask=${await c.getAttribute('data-pen-mask')} anchors=${await c.getAttribute('data-pen-anchors')}`,
+      )
+      await p.keyboard.press('Control+z')
+      await p.waitForTimeout(400)
+      ok(
+        // Three anchors, not four: the fourth click landed back on the first one and CLOSED the
+        // path (spec A.7) rather than adding a point — which is what made the triangle enclose
+        // something and take the canvas over in the first place.
+        'and it is one undo step, so Ctrl+Z brings the paths straight back',
+        (await c.getAttribute('data-pen-anchors')) === '3' && (await c.getAttribute('data-pen-closed')) === '1',
+        `anchors=${await c.getAttribute('data-pen-anchors')} closed=${await c.getAttribute('data-pen-closed')}`,
+      )
+      await p.close()
+    }
+
+    // I.116 / I.118 through the real keyboard handover.
+    {
+      const { p, c, at } = await openPen()
+      await p.mouse.click(...at(0.25, 0.25))
+      await p.mouse.click(...at(0.7, 0.27))
+      await p.waitForTimeout(200)
+      const anchorsShown = await p.locator('[data-testid="pen-anchor"]').count()
+      await p.keyboard.press('Control+h')
+      await p.waitForTimeout(300)
+      ok(
+        'Ctrl+H hides the edges while the surface keeps drawing (I.118)',
+        (await c.getAttribute('data-pen-edges')) === 'hidden' && anchorsShown > 0 &&
+          (await c.getAttribute('data-pen-anchors')) === '2',
+        `edges=${await c.getAttribute('data-pen-edges')}`,
+      )
+      await p.keyboard.press('Control+h')
+      await p.keyboard.press('Control+y')
+      await p.waitForTimeout(300)
+      ok(
+        'Ctrl+Y drops the fill and leaves the paths, and neither key moved geometry (I.116)',
+        (await c.getAttribute('data-pen-edges')) === 'shown' &&
+          (await c.getAttribute('data-pen-outline')) === 'true' &&
+          (await c.getAttribute('data-pen-anchors')) === '2',
+        `outline=${await c.getAttribute('data-pen-outline')}`,
+      )
+      await p.close()
+    }
+
+    // I.14 AND I.15, WHICH ARE ONE TEST. A drag that leaves the surface scrolls the view under
+    // it; the same excursion with the button UP must not, or the artwork runs away from anyone
+    // reaching for a menu. I.15 was vacuous until I.14 existed — nothing scrolled, ever.
+    {
+      const { p, c, at } = await openPen()
+      const xform = () =>
+        p.evaluate(() => {
+          const el = [...document.querySelectorAll('div')].find((d) => d.style.transform?.startsWith('translate'))
+          return el ? el.style.transform : 'none'
+        })
+      await p.getByRole('button', { name: 'Zoom in' }).click() // 150%, so there is room to scroll
+      await p.waitForTimeout(400)
+      const box = await c.boundingBox()
+      const parked = await xform()
+      await p.mouse.move(...at(0.5, 0.5))
+      await p.mouse.move(box.x - 300, box.y + box.height * 0.5)
+      await p.waitForTimeout(700)
+      ok('I.15 — the cursor leaving the surface with no button down does NOT scroll', (await xform()) === parked, await xform())
+
+      await p.mouse.move(...at(0.5, 0.5))
+      await p.mouse.down()
+      await p.mouse.move(...at(0.55, 0.5))
+      await p.mouse.move(box.x - 300, box.y + box.height * 0.5)
+      await p.waitForTimeout(900)
+      const scrolled = await xform()
+      await p.mouse.up()
+      ok('I.14 — but a DRAG past the edge auto-scrolls the view under it', scrolled !== parked, `${parked} -> ${scrolled}`)
+      await p.close()
+    }
+    await rctx.close()
+  }
+
+  // ── 10e. THE PEN'S WORK SURVIVES THE SAVE ────────────────────────────────
+  //
+  // THE ASSERTION WHOSE ABSENCE LET THE WHOLE PERSISTENCE SLICE SHIP EMPTY.
+  //
+  // `toMaskVector` — the function that turns the pen's document into the
+  // artifact the repository stores — had no caller anywhere outside its own
+  // unit test. The schema existed, the parser existed, the server-side
+  // agreement check existed, `.paths.json` was documented in
+  // `docs/MASK-PIPELINE.md`, and nothing produced one: `saveMask` sent
+  // `maskCanvas.toDataURL()` and stopped there. Draw a mask with the pen, save
+  // it, reopen the card, and the pen came up with `data-pen-anchors="0"` over a
+  // raster it could only trace again. Every anchor gone, permanently.
+  //
+  // Every piece of that was individually tested and green. What was missing was
+  // the JOURNEY — draw, save, come back, and the geometry is still geometry —
+  // so that is what this does, through the real save button and a real reload.
+  {
+    const penSave = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    await penSave.route('**://fixture.invalid/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/png', body: FAKE_SCAN }),
+    )
+    const p = await penSave.newPage()
+    const errs = []
+    p.on('pageerror', (e) => errs.push(e.message))
+    await p.goto(`${BASE}/card?id=base1-4&v=${variantId}`, { waitUntil: 'networkidle' })
+    await p.waitForSelector('text=Card (full catalog, by era)', { timeout: 20000 })
+    await p.waitForTimeout(1500)
+
+    await p.getByRole('button', { name: /Pen \(trace\)/ }).click()
+    const chrome = p.locator('[data-testid="pen-chrome"]')
+    await chrome.waitFor({ timeout: 15000 })
+    const pbox = await chrome.boundingBox()
+    const at = (fx, fy) => [pbox.x + pbox.width * fx, pbox.y + pbox.height * fy]
+
+    // A closed subpath: three corner anchors, then a click on the first one.
+    await p.mouse.click(...at(0.25, 0.25))
+    await p.mouse.click(...at(0.75, 0.3))
+    await p.mouse.click(...at(0.5, 0.7))
+    await p.mouse.move(...at(0.25, 0.25))
+    await p.waitForTimeout(200)
+    await p.mouse.click(...at(0.25, 0.25))
+    await p.waitForTimeout(500)
+    const drawnAnchors = await chrome.getAttribute('data-pen-anchors')
+    ok(
+      'the pen closes a three-anchor subpath',
+      drawnAnchors === '3' && (await chrome.getAttribute('data-pen-closed')) === '1',
+      `anchors=${drawnAnchors} closed=${await chrome.getAttribute('data-pen-closed')}`,
+    )
+
+    // Save. Signed out, so this is the staging path — the one every contributor
+    // is on, and the one the fixture deployment can actually exercise.
+    await p.getByRole('button', { name: /Save mask/ }).click()
+    let saved = null
+    for (let i = 0; i < 40 && saved === null; i++) {
+      const all = await readSessions(p)
+      if (all.length > 0 && all[0].png) saved = all[0]
+      else await p.waitForTimeout(250)
+    }
+    ok('saving a pen-drawn mask stages a session', saved !== null)
+    ok(
+      'AND THE SESSION CARRIES THE GEOMETRY — the anchors are in the record, not only in the pixels',
+      saved?.vector != null &&
+        saved.vector.version === 1 &&
+        Array.isArray(saved.vector.paths) &&
+        saved.vector.paths.length === 1,
+      JSON.stringify(saved?.vector ?? null).slice(0, 160),
+    )
+    ok(
+      'in the canonical raster it was drawn in — 504x704, never rescaled on the way out',
+      saved?.vector?.space?.width === 504 && saved?.vector?.space?.height === 704,
+      JSON.stringify(saved?.vector?.space ?? null),
+    )
+    const prims = saved?.vector?.paths?.[0]?.prims?.length ?? 0
+    ok('one primitive per segment of the closed subpath', prims === 3, `${prims} primitive(s)`)
+    ok(
+      'and the geometry claims no provenance — a mask does not become truer for carrying its own paths',
+      !JSON.stringify(saved?.vector ?? {}).includes('derivation_method') &&
+        !JSON.stringify(saved?.vector ?? {}).includes('reviewStatus'),
+    )
+
+    // THE RELOAD. Everything above was in memory; this is the part that was
+    // silently losing the work.
+    await p.reload({ waitUntil: 'networkidle' })
+    await p.waitForSelector('text=Card (full catalog, by era)', { timeout: 20000 })
+    // Same settle as the staged-pixels assertion above, and for the same
+    // reason: the upstream fetch lands a beat after the local restore, so give
+    // any clobber every chance to happen before looking.
+    await p.waitForTimeout(2500)
+    await p.getByRole('button', { name: /Pen \(trace\)/ }).click()
+    const back = p.locator('[data-testid="pen-chrome"]')
+    await back.waitFor({ timeout: 15000 })
+    await p.waitForTimeout(400)
+    ok(
+      'THE ANCHORS CAME BACK — the pen reopens on the saved geometry, not on an empty document',
+      (await back.getAttribute('data-pen-anchors')) === drawnAnchors &&
+        (await back.getAttribute('data-pen-closed')) === '1',
+      `anchors=${await back.getAttribute('data-pen-anchors')} closed=${await back.getAttribute('data-pen-closed')}`,
+    )
+    // NOT a re-trace of the raster. `data-pen-backdrop` still says `raster` and
+    // that is correct — the canvas legitimately holds the pen's own pixels — so
+    // the claim worth pinning is that the DOCUMENT came back: saving again
+    // without touching anything writes the same paths, which a document rebuilt
+    // by tracing pixels could not do.
+    const before = JSON.stringify(saved?.vector ?? null)
+    await p.getByRole('button', { name: /Save mask/ }).click()
+    let again = null
+    for (let i = 0; i < 40 && again === null; i++) {
+      const all = await readSessions(p)
+      if (all.length > 0 && JSON.stringify(all[0].vector ?? null) !== 'null') again = all[0]
+      else await p.waitForTimeout(250)
+    }
+    ok(
+      'and it is the SAME geometry, not a fresh trace — a re-save with no edit writes identical paths',
+      again !== null && JSON.stringify(again.vector) === before,
+      `${JSON.stringify(again?.vector ?? null).slice(0, 120)} vs ${before.slice(0, 120)}`,
+    )
+    ok('the reopened pen threw no page errors', errs.length === 0, errs.slice(0, 2).join(' | '))
+    await penSave.close()
+  }
 
   // ── 11. No console errors on the happy path ──────────────────────────────
   const real = consoleErrors.filter(
