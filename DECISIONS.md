@@ -2801,3 +2801,74 @@ derived from the artifact, never taken from what the caller asserted.
 - The frame migration removes vectors rather than rescaling them: 490x674 ->
   504x704 is anisotropic, and an arc under anisotropic scale is an ellipse this
   language cannot express. The archive keeps a verbatim copy, so a revert restores.
+
+## 2026-09-08 -- The pen learns to catch a printed edge, and to say when it cannot
+
+**Decided by:** Chey Rasmussen, implemented by Claude Opus 5
+
+**Decision:** `pen-engine` has always accepted an injected `SnapFn` and policed
+it with `maxSnapMovePx`, and nothing was ever injected -- `DEFAULT_PEN_CONFIG.snap`
+shipped `null`, so the pen could not catch the printed edge a person was visibly
+tracing, and `constructionAngles` was declared, defaulted, asserted in a test and
+read by no code. Three things close that:
+
+- **`forge/pen-snap.ts`**, a pure provider built on the detectors that already
+  exist. It prepares `edge-trace`'s colour structure tensor ONCE per scan in
+  canonical mask space and then answers point queries in microseconds, in the
+  spec's priority order: an existing anchor a human placed, a printed-edge
+  INTERSECTION, then the nearest point on a printed edge.
+- **A refusal channel.** `SnapFn` may now return `{ refused }` as well as a
+  proposal or `null`, and the reason lands in `state.snapRefusal`. Two comparable
+  parallel ridges within `line-snap`'s own `ambiguityRatio` of 0.85 mean the scan
+  says "you are near some edges", not "you meant THAT edge", and the point does
+  not move.
+- **Ctrl+U (I.102) as the master switch**, in the engine's binding table and in
+  `PenState`, with a visible control on the surface that dispatches the same
+  binding rather than a private code path. Edge snapping ships ON;
+  `constructionAngles` -- now actually read, at the two placement sites where
+  Shift is read, with its own screen-px tolerance -- ships OFF, as Illustrator's
+  Construction Guides do.
+
+**Why:** the acceptance criterion for the pen was "trace a rounded-rect foil
+window on a real scan, watch the segments snap to the printed edges, save it as a
+vector mask". Every clause of that was true except the middle one, and the middle
+one is the reason a pen beats a brush on a scan. The guardrail is not
+negotiable in the process: `line-snap`'s test says an ambiguous band may nudge a
+line and never relocate it, and a pen that obeyed an unbounded snap callback
+would have been the hole in that.
+
+**Implications:**
+
+- **TWO INDEPENDENT LAYERS, and the test file says so.** The provider refuses on
+  the EVIDENCE ("two comparable ridges"); the engine refuses on the DISPLACEMENT
+  ("3.5 screen px, over the 2px limit"). The engine is never told whether the
+  provider feels confident, and `pen-snap.test.ts` drives a REAL provider aimed at
+  a real edge too far away to prove the second layer holds without the first.
+- **Measured, with its n** (`tools/measure-pen-snap.mts`, synthetic cards whose
+  edge coordinates are known exactly, because on a real scan the "true" edge is
+  itself an estimate). Edges, n=360 queries per condition: 100% answered, residual
+  mean 0.047px on a crisp step, and unchanged through a 3px Gaussian blur; with
+  +/-6 noise, 0.299px. Corners, n=64: on a crisp step 52 answer `corner` with mean
+  residual 0.435px, and by a 3px blur NONE do -- every one degrades to the edge
+  snap it can still see rather than to a corner it cannot. On a card with no edges
+  at all, n=360: zero proposals, on flat grey and on flat grey with +/-14 noise.
+- **Stated limitation.** Edge snapping is the robust half; corner detection is the
+  fragile half and vanishes as a corner rounds off. The blur sweep is a stand-in
+  for scan quality and nothing more -- it says nothing about halftone rosettes,
+  JPEG ringing, or foil blowing out under a flash.
+- **A degenerate scan gets a refusal, not a guess, and this is now visible in the
+  acceptance run.** The e2e's 64x88 stand-in has to be blown up nearly 8x to reach
+  canonical space, and a bilinear 8x upscale turns a step edge into a 16px ramp
+  with a comparable ridge at each shoulder -- so the snapper refuses on it, out
+  loud, and the run asserts that. Snapping itself is asserted against a 600x825
+  fixture, which is the resolution `images.high` actually serves. A test that
+  asserted snapping against the small one would have been asserting that the
+  snapper guesses.
+- **Preparation is off the interaction path**: ~70ms for the tensor at 504x704,
+  once per card, behind an idle callback, and the pen is fully usable unsnapped
+  until it lands. `data-pen-snap-provider` distinguishes "not wired yet" from
+  "switched off", because a test that cannot tell those apart races the callback.
+- **The refusal is shown, quietly.** One dim line in a strip on the card face that
+  never blocks a click and is gone on the next gesture. A user who cannot tell a
+  deliberate refusal from a snapper that failed to notice learns to distrust the
+  whole feature.

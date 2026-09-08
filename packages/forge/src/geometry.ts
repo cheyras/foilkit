@@ -73,6 +73,11 @@ export * from './pen-geometry.ts';
 // judgement it would otherwise have made locally stays here where `node --test` can drive it.
 export * from './pen-engine.ts';
 
+// The provider the engine was always written to accept, and never had. It reads `edge-trace`'s
+// structure tensor on the card's own scan, so it belongs on the browser side of this seam with
+// the engine it feeds — and the engine still polices whatever it proposes.
+export * from './pen-snap.ts';
+
 // The shared rasteriser and the loop tracer: `rasterizeTemplate` returns coverage from
 // `rasterizePolygons`, so an editor previewing an edit must fill by the same rule or its
 // preview and its export disagree at every hole.

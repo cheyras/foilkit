@@ -180,6 +180,38 @@ const FAKE_SCAN = (() => {
 })()
 
 /**
+ * The same card, at the resolution a real scan actually arrives in — and the
+ * only fixture the SNAPPING section can be run against.
+ *
+ * MEASURED, and it is a fact about scans rather than about this test. The 64x88
+ * stand-in above has to be blown up nearly 8x to reach canonical mask space, and
+ * a bilinear 8x upscale turns a step edge into a 16px linear RAMP. A ramp has no
+ * edge position: its gradient is flat across the whole run, so the structure
+ * tensor finds two comparable ridges at the ramp's shoulders and none in the
+ * middle. Run `pen-snap` on it and it REFUSES — correctly, and for exactly the
+ * reason its guardrail exists. A test that asserted snapping against that
+ * fixture would be asserting that the snapper guesses.
+ *
+ * 600x825 is what `images.high` serves for a real card, so this is the condition
+ * the feature actually ships into: crisp at canonical size, one ridge, one
+ * answer. The split stays at half height, so in mask space its edge is y = 352.
+ */
+const SHARP_W = 600
+const SHARP_H = 825
+const SHARP_SCAN = (() => {
+  const rgba = new Uint8Array(SHARP_W * SHARP_H * 4)
+  for (let y = 0; y < SHARP_H; y++) {
+    const v = y < SHARP_H / 2 ? 255 : 0
+    for (let x = 0; x < SHARP_W; x++) {
+      const o = (y * SHARP_W + x) * 4
+      rgba[o] = rgba[o + 1] = rgba[o + 2] = v
+      rgba[o + 3] = 255
+    }
+  }
+  return encodePng({ width: SHARP_W, height: SHARP_H, rgba })
+})()
+
+/**
  * Press "Provisional diff" and return the numbers it prints, as one string.
  *
  * The numbers are a fingerprint of the CANVAS — the editor rasterizes the era
@@ -1286,6 +1318,263 @@ try {
     )
     ok('the pen journey threw no page errors', penErrors.length === 0, penErrors.slice(0, 2).join(' | '))
     await penCtx.close()
+  }
+
+  // ── 10b-2. THE PEN CATCHES THE PRINTED EDGE ──────────────────────────────
+  //
+  // The acceptance criterion the pen tool was accepted against: trace a window
+  // on a real scan and WATCH THE SEGMENTS SNAP TO THE PRINTED EDGES. Everything
+  // else in that sentence has been true since the pen shipped; snapping was the
+  // hole in it — `DEFAULT_PEN_CONFIG.snap` was null and no provider existed.
+  //
+  // WHY THIS CANNOT BE A UNIT TEST. `pen-snap.test.ts` proves the snapper finds
+  // the edge and `pen-engine.test.ts` proves the engine bounds it, both without
+  // a browser. What neither can see is the WIRING: whether the editor actually
+  // builds a provider from this card's scan, whether it can read pixels back out
+  // of a cross-origin image at all, whether the canonical raster it draws into
+  // is the same 504x704 space the pen's anchors live in, and whether a half
+  // pixel of coordinate confusion puts the "edge" somewhere the edge is not.
+  // Every one of those is invisible to `node --test` and fatal in the product.
+  //
+  // THE FIXTURE HAS EXACTLY ONE PRINTED EDGE and we know where it is:
+  // SHARP_SCAN is white over black, split at half height, so in canonical mask
+  // space its edge is the line y = 352.0. An anchor that lands there landed on
+  // the print. It is the 600x825 fixture rather than the 64x88 one for a
+  // measured reason — see the note on SHARP_SCAN, and the refusal section below,
+  // which drives the small one deliberately.
+  //
+  // THE CORS HEADER IS NOT A CONVENIENCE. Reading pixels back needs the image to
+  // be CORS-clean, and `assets.tcgdex.net` sends `access-control-allow-origin: *`
+  // in production (measured — see the note on `proxied()` in api.ts). A fixture
+  // route that omitted it would test a stricter world than the real one and
+  // would report the feature broken when it is not.
+  {
+    const EDGE_Y = 352 // where FAKE_SCAN's white/black split lands in canonical mask space
+    const snapCtx = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    await snapCtx.route('**://fixture.invalid/**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'image/png',
+        headers: { 'access-control-allow-origin': '*' },
+        body: SHARP_SCAN,
+      }),
+    )
+    const sp = await snapCtx.newPage()
+    const snapErrors = []
+    sp.on('pageerror', (e) => snapErrors.push(e.message))
+    await sp.goto(`${BASE}/card?id=base1-4&v=${variantId}`, { waitUntil: 'networkidle' })
+    await sp.waitForSelector('text=Card (full catalog, by era)', { timeout: 20000 })
+    await sp.waitForTimeout(1500)
+    await sp.getByRole('button', { name: /Pen \(trace\)/ }).click()
+    const sc = sp.locator('[data-testid="pen-chrome"]')
+    await sc.waitFor({ timeout: 15000 })
+    const sbox = await sc.boundingBox()
+    const clip2 = {
+      x: Math.round(sbox.x),
+      y: Math.round(sbox.y),
+      width: Math.round(sbox.width),
+      height: Math.round(sbox.height),
+    }
+    /** Document (mask-space) coordinates -> client pixels. The SVG's viewBox is 504x704. */
+    const doc = (x, y) => [sbox.x + (x / 504) * sbox.width, sbox.y + (y / 704) * sbox.height]
+    /** Screen px per document unit — the same number the engine gets as `input.zoom`. */
+    const scale = sbox.width / 504
+    /** Every anchor's DOCUMENT position, read off the chrome. */
+    const anchors = () =>
+      sp.evaluate(() =>
+        [...document.querySelectorAll('[data-testid="pen-anchor"]')].map((e) =>
+          e.getAttribute('data-anchor').split(',').map(Number),
+        ),
+      )
+
+    // The strip is the whole visible half of this feature: a switch, its state,
+    // and a sentence about what the snapper is doing.
+    const note = sp.locator('[data-testid="pen-snap-note"]')
+    await note.waitFor({ timeout: 15000 })
+    ok(
+      'the pen shows a snap control with its state on it, not a hidden preference',
+      (await sp.locator('[data-testid="pen-snap-toggle"]').innerText()).includes('Snap on') &&
+        (await sc.getAttribute('data-pen-snap')) === 'on',
+      `${await sp.locator('[data-testid="pen-snap-toggle"]').innerText()} / ${await sc.getAttribute('data-pen-snap')}`,
+    )
+    ok('and 45° construction guides ship OFF, as Illustrator does', (await sc.getAttribute('data-pen-guides')) === 'off')
+
+    // Preparing the edge map is deliberately deferred to an idle callback, so the
+    // pen is usable UNSNAPPED first and a provider appears afterwards. Waited on
+    // the attribute rather than on the note's wording: the note says "reading the
+    // printed edges off this scan…" while it is still working, and a substring
+    // match on that is a test that clicks before the snapper exists and then
+    // reports the feature broken. (It did, on the first run of this file.)
+    await sp.waitForFunction(
+      () => document.querySelector('[data-testid="pen-chrome"]')?.getAttribute('data-pen-snap-provider') === 'wired',
+      null,
+      { timeout: 20000 },
+    )
+    const readyNote = await note.innerText()
+    ok('the snapper says what it measured on this card, with a number', /\d/.test(readyNote), readyNote)
+
+    // ── The gesture. A window whose TOP edge is the printed one. ──
+    //
+    // The click sits a fraction over one screen pixel above the print — a hand
+    // that missed, which is the only interesting case: land exactly on it and a
+    // snap that does nothing looks identical to one that works.
+    const missPx = 1.2 / scale // document units that come to 1.2 SCREEN px
+    const topY = EDGE_Y - missPx
+    await sp.mouse.click(...doc(150, topY))
+    await sp.mouse.click(...doc(360, topY))
+    await sp.waitForTimeout(200)
+    const snapped = await anchors()
+    console.log(`    pen-snap: clicked y=${topY.toFixed(3)} (doc), anchors landed at ${JSON.stringify(snapped)}`)
+    ok(
+      'an anchor clicked just off the printed edge LANDS ON IT',
+      snapped.length === 2 && snapped.every((a) => Math.abs(a[1] - EDGE_Y) <= 0.75),
+      `wanted y≈${EDGE_Y}, got ${JSON.stringify(snapped.map((a) => a[1]))}`,
+    )
+    ok(
+      'and it moved to get there — the snap is a displacement, not a label',
+      snapped.every((a) => Math.abs(a[1] - topY) > 0.3),
+      `clicked ${topY.toFixed(3)}, landed ${JSON.stringify(snapped.map((a) => a[1]))}`,
+    )
+    ok(
+      'the along-edge coordinate is left alone: a snap moves ACROSS an edge, never along it',
+      Math.abs(snapped[0][0] - 150) < 1.5 && Math.abs(snapped[1][0] - 360) < 1.5,
+      JSON.stringify(snapped.map((a) => a[0])),
+    )
+    ok(
+      'the surface names what it caught',
+      (await sc.getAttribute('data-pen-snap-kind')) === 'edge',
+      String(await sc.getAttribute('data-pen-snap-kind')),
+    )
+    ok('and draws the capture ring', (await sp.locator('[data-testid="pen-snap"]').count()) === 1)
+
+    // The other two corners are 200px from any printed edge. Nothing is there,
+    // and the snapper must invent nothing: they land where the mouse went.
+    await sp.mouse.click(...doc(360, 560))
+    await sp.mouse.click(...doc(150, 560))
+    await sp.waitForTimeout(200)
+    const four = await anchors()
+    ok(
+      'anchors placed where the scan has no edge are NOT moved',
+      four.length === 4 &&
+        Math.abs(four[2][1] - 560) < 1 &&
+        Math.abs(four[3][1] - 560) < 1 &&
+        Math.abs(four[2][0] - 360) < 1.5 &&
+        Math.abs(four[3][0] - 150) < 1.5,
+      JSON.stringify(four),
+    )
+    // Close it on the first anchor: a finished window, four anchors, two of them
+    // sitting on the print.
+    await sp.mouse.move(...doc(snapped[0][0], snapped[0][1]))
+    await sp.waitForTimeout(200)
+    await sp.mouse.click(...doc(snapped[0][0], snapped[0][1]))
+    await sp.waitForTimeout(400)
+    const closedWindow = await anchors()
+    ok(
+      'the traced window closes with its top edge still on the print',
+      (await sc.getAttribute('data-pen-closed')) === '1' &&
+        closedWindow.filter((a) => Math.abs(a[1] - EDGE_Y) <= 0.75).length === 2,
+      `closed=${await sc.getAttribute('data-pen-closed')} ${JSON.stringify(closedWindow)}`,
+    )
+    const shotDir = process.env.PEN_SHOTS ?? mkdtempSync(path.join(tmpdir(), 'foilkit-pen-'))
+    const tracedShot = path.join(shotDir, 'pen-snap-traced.png')
+    await sp.screenshot({ path: tracedShot, clip: clip2 })
+
+    // ── THE SWITCH. Same click, snapping off, and the anchor obeys the hand. ──
+    //
+    // This is what makes the assertions above mean something: without it, "the
+    // anchor is at y=352" is equally consistent with a click that happened to
+    // land there. Two states of one switch, one screen position, two answers.
+    await sp.keyboard.press('Escape')
+    await sp.keyboard.press('Control+a')
+    await sp.keyboard.press('Delete')
+    await sp.keyboard.press('Control+u')
+    await sp.waitForTimeout(200)
+    ok('Ctrl+U switches snapping off from the keyboard', (await sc.getAttribute('data-pen-snap')) === 'off')
+    ok(
+      'and the strip says what that means for the next click',
+      (await note.innerText()).includes('exactly where you click'),
+      await note.innerText(),
+    )
+    await sp.mouse.click(...doc(150, topY))
+    await sp.waitForTimeout(200)
+    const unsnapped = await anchors()
+    console.log(`    pen-snap: same click with snapping OFF landed at ${JSON.stringify(unsnapped)}`)
+    ok(
+      'the SAME click, unsnapped, lands where the hand put it and not on the edge',
+      unsnapped.length === 1 && Math.abs(unsnapped[0][1] - topY) < 0.6 && Math.abs(unsnapped[0][1] - EDGE_Y) > 0.6,
+      `clicked ${topY.toFixed(3)}, landed ${JSON.stringify(unsnapped[0])}`,
+    )
+    const offShot = path.join(shotDir, 'pen-snap-off.png')
+    await sp.screenshot({ path: offShot, clip: clip2 })
+
+    // Back on, from the BUTTON this time — the affordance and the shortcut are
+    // the same command through the same binding table, or the two can drift.
+    await sp.locator('[data-testid="pen-snap-toggle"]').click()
+    await sp.waitForTimeout(150)
+    ok('the on-screen control drives the same toggle as the shortcut', (await sc.getAttribute('data-pen-snap')) === 'on')
+
+    ok('the snapping journey threw no page errors', snapErrors.length === 0, snapErrors.slice(0, 2).join(' | '))
+    console.log(`    pen-snap screenshots: ${tracedShot} | ${offShot}`)
+    await snapCtx.close()
+
+    // ── 10b-3. AND WHEN IT CANNOT TELL, IT SAYS SO ─────────────────────────
+    //
+    // The other half of the promise, and the half that is easy to ship broken
+    // because nothing looks wrong when it is: a snapper that quietly does
+    // nothing and a snapper that has decided not to guess are the same pixels.
+    //
+    // The 64x88 stand-in is the perfect instrument for it. Blown up to canonical
+    // size it is a 16px ramp with a comparable ridge at each shoulder — the scan
+    // genuinely does not say where the edge is — so this is not a contrived
+    // input, it is the real answer to a real degenerate scan, and the user is
+    // entitled to read it rather than to wonder.
+    const vagueCtx = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    await vagueCtx.route('**://fixture.invalid/**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'image/png',
+        headers: { 'access-control-allow-origin': '*' },
+        body: FAKE_SCAN,
+      }),
+    )
+    const vp = await vagueCtx.newPage()
+    await vp.goto(`${BASE}/card?id=base1-4&v=${variantId}`, { waitUntil: 'networkidle' })
+    await vp.waitForSelector('text=Card (full catalog, by era)', { timeout: 20000 })
+    await vp.waitForTimeout(1500)
+    await vp.getByRole('button', { name: /Pen \(trace\)/ }).click()
+    const vc = vp.locator('[data-testid="pen-chrome"]')
+    await vc.waitFor({ timeout: 15000 })
+    const vbox = await vc.boundingBox()
+    await vp.waitForFunction(
+      () => document.querySelector('[data-testid="pen-chrome"]')?.getAttribute('data-pen-snap-provider') === 'wired',
+      null,
+      { timeout: 20000 },
+    )
+    // Dead centre of the ramp: equidistant from both shoulders, which is exactly
+    // the case the ambiguity rule is written about.
+    await vp.mouse.click(vbox.x + (150 / 504) * vbox.width, vbox.y + (EDGE_Y / 704) * vbox.height)
+    await vp.waitForTimeout(250)
+    const refusal = await vc.getAttribute('data-pen-snap-refusal')
+    const landed = await vp.evaluate(
+      () => document.querySelector('[data-testid="pen-anchor"]')?.getAttribute('data-anchor') ?? '',
+    )
+    console.log(`    pen-snap: on a scan with no locatable edge → refusal "${refusal}" | anchor ${landed}`)
+    ok(
+      'a scan that cannot say where its edge is gets a REFUSAL, not a guess',
+      (refusal ?? '').includes('comparable edges'),
+      String(refusal),
+    )
+    ok(
+      'and the refused anchor stays exactly where the hand put it',
+      Math.abs(Number(landed.split(',')[1]) - EDGE_Y) < 0.6,
+      landed,
+    )
+    ok(
+      'the user can read that refusal on the surface — quietly, in the strip',
+      (await vp.locator('[data-testid="pen-snap-note"]').innerText()).includes('comparable edges'),
+      await vp.locator('[data-testid="pen-snap-note"]').innerText(),
+    )
+    await vagueCtx.close()
   }
 
   // ── 10c. The pen at 390px ────────────────────────────────────────────────

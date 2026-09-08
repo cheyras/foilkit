@@ -117,10 +117,25 @@ export interface SnapContext {
   ref: AnchorRef | null;
 }
 
-export type SnapFn = (
-  p: { x: number; y: number },
-  ctx: SnapContext,
-) => { point: { x: number; y: number }; kind: string; reason?: string } | null;
+/** A hard displacement: `point` IS where the anchor goes, and `kind` is what caught it. */
+export interface SnapProposal {
+  point: { x: number; y: number };
+  kind: string;
+  reason?: string;
+}
+
+/**
+ * "I looked, and I will not answer." A provider that can only return `null` cannot distinguish
+ * a scan with no edges in it from a scan with two equally good ones — and the second is the case
+ * this repository's guardrail is written about, so it has to be able to say so. The point does
+ * not move and `state.snapRefusal` carries the sentence.
+ */
+export interface SnapRefusal {
+  point?: undefined;
+  refused: string;
+}
+
+export type SnapFn = (p: { x: number; y: number }, ctx: SnapContext) => SnapProposal | SnapRefusal | null;
 
 export interface PenConfig {
   /** Screen px the cursor must travel before a click becomes a drag. Spec A.2, [U]. */
@@ -147,8 +162,23 @@ export interface PenConfig {
    * confident heuristic later.
    */
   maxSnapMovePx: number;
-  /** Angular construction snapping. EMPTY = OFF, which is Illustrator's factory default (I.104). */
+  /**
+   * Angular construction snapping. EMPTY = OFF, which is Illustrator's factory default (I.104).
+   *
+   * Degrees, measured from the PREVIOUS anchor: `[0, 45, 90, 135]` gives the four rays Shift
+   * already constrains to, except that the pointer captures them instead of being clamped to
+   * them. Not routed through `snap`, and the distinction is not cosmetic — a construction angle
+   * is not evidence read off a scan, it is a rule the user turned on about geometry they placed
+   * themselves, so it is applied where Shift is applied and it is bounded by its own tolerance
+   * rather than by the guardrail that exists to keep a heuristic from relocating an anchor.
+   */
   constructionAngles: number[];
+  /**
+   * How near a construction ray the cursor must come before it captures, SCREEN px. Illustrator's
+   * Smart Guides have a snapping tolerance for the same reason: a construction guide that
+   * captures from anywhere is not a guide, it is Shift welded down.
+   */
+  constructionSnapPx: number;
   /** Preference F.4. ON: every selected anchor shows handles. OFF: only a lone one does. */
   showHandlesWhenMultipleSelected: boolean;
   /** Preference C.2 `Constrain Path Dragging on Segment Reshape`: hold endpoint handle ANGLES. */
@@ -181,6 +211,7 @@ export const DEFAULT_PEN_CONFIG: PenConfig = {
   rubberBand: true,
   maxSnapMovePx: 2,
   constructionAngles: [],
+  constructionSnapPx: 6,
   showHandlesWhenMultipleSelected: true,
   constrainSegmentReshape: false,
   arrowKeyBreaksActivePath: false,
@@ -673,6 +704,17 @@ export interface PenState {
   snapped: { point: [number, number]; kind: string } | null;
   /** Why the last snap proposal was refused. Never null-and-silent: a refusal states its reason. */
   snapRefusal: string | null;
+  /**
+   * Ctrl+U, Illustrator's Smart Guides (I.102) — the MASTER switch over every snap this engine
+   * performs: the injected provider and the construction angles alike.
+   *
+   * State and not config, for the same reason `outline` and `hideEdges` are: it is a thing the
+   * user flips mid-gesture from the keyboard, so it belongs where the key table can reach it and
+   * where `node --test` can drive the flip. It ships ON, which is only visible when a provider
+   * has actually been wired in — with `cfg.snap` null (the default) an engine with snapping on
+   * and one with it off are the same engine.
+   */
+  snapEnabled: boolean;
   /** Stand-in for Illustrator's locked/hidden layer. A DIFFERENT cursor from continue (I.94). */
   locked: boolean;
   /**
@@ -713,6 +755,7 @@ export function createPenState(doc: PenDoc = { paths: [] }): PenState {
     capsLock: false,
     snapped: null,
     snapRefusal: null,
+    snapEnabled: true,
     locked: false,
     outline: false,
     hideEdges: false,
@@ -775,7 +818,8 @@ export type PenCommand =
   | 'deselect-all'
   | 'join'
   | 'toggle-outline'
-  | 'toggle-edges';
+  | 'toggle-edges'
+  | 'toggle-snap';
 
 export interface KeyBinding {
   /** Matched case-insensitively against `PenInput.key`. */
@@ -850,6 +894,13 @@ export const PEN_KEY_BINDINGS: readonly KeyBinding[] = Object.freeze([
   // step, and cannot change the committed artifact.
   { key: 'y', mods: { alt: false, ctrl: true, shift: false }, command: 'toggle-outline', label: 'Outline / Preview' },
   { key: 'h', mods: { alt: false, ctrl: true, shift: false }, command: 'toggle-edges', label: 'Hide / Show Edges' },
+
+  // I.102, Smart Guides. In Illustrator it governs alignment guides, anchor labels and
+  // construction guides together; here it governs every snap the engine performs, which is the
+  // same promise in a smaller tool. A view/preference toggle like the two above: no geometry
+  // moves when it is pressed, and it takes no undo step — but unlike them it changes what the
+  // NEXT gesture does, so the surface has to show its state rather than leave it invisible.
+  { key: 'u', mods: { alt: false, ctrl: true, shift: false }, command: 'toggle-snap', label: 'Snap to printed edges' },
 ]);
 
 /**
@@ -1235,6 +1286,43 @@ export function constrainToAngle(ref: Vec, p: Vec, constrainAngleDeg: number, st
   return v(ref.x + m * Math.cos(theta), ref.y + m * Math.sin(theta));
 }
 
+/**
+ * Capture `p` onto the nearest CONSTRUCTION ray from `ref` — Illustrator's construction guides
+ * (I.104), which ship OFF and which `cfg.constructionAngles` turns on.
+ *
+ * Three things make this a guide rather than a Shift you cannot release. It only fires when the
+ * cursor is already within `constructionSnapPx` SCREEN px of a ray, so a deliberately off-axis
+ * anchor stays off-axis. Every listed angle is a ray in BOTH directions, because 0 means
+ * "horizontal", not "to the right of the last anchor". And it preserves magnitude, sliding the
+ * point around the circle exactly as `constrainToAngle` does, so a captured segment keeps the
+ * length the hand gave it instead of being shortened onto an axis.
+ *
+ * Shift wins outright when it is held: the explicit constraint is not a suggestion competing
+ * with an automatic one.
+ */
+export function constructionCapture(
+  ref: Vec,
+  p: Vec,
+  cfg: PenConfig,
+  zoom: number,
+): { point: Vec; angleDeg: number } | null {
+  if (cfg.constructionAngles.length === 0) return null;
+  const d = sub(p, ref);
+  const m = len(d);
+  if (m < 1e-12) return null;
+  let best: { point: Vec; angleDeg: number; movePx: number } | null = null;
+  for (const a of cfg.constructionAngles) {
+    const base = (a + cfg.constrainAngle) * DEG;
+    for (const phi of [base, base + Math.PI]) {
+      const q = v(ref.x + m * Math.cos(phi), ref.y + m * Math.sin(phi));
+      const movePx = dist(q, p) * zoom;
+      if (movePx > cfg.constructionSnapPx) continue;
+      if (!best || movePx < best.movePx) best = { point: q, angleDeg: a, movePx };
+    }
+  }
+  return best === null ? null : { point: best.point, angleDeg: best.angleDeg };
+}
+
 // ── Snapping: injected, and bounded by the engine ──────────────────────────
 
 interface SnapOutcome { point: Vec; snapped: { point: [number, number]; kind: string } | null; refusal: string | null }
@@ -1257,10 +1345,15 @@ function applySnap(
   cfg: PenConfig,
   zoom: number,
   ctx: SnapContext,
+  enabled: boolean,
 ): SnapOutcome {
-  if (!cfg.snap) return { point: p, snapped: null, refusal: null };
+  if (!enabled || !cfg.snap) return { point: p, snapped: null, refusal: null };
   const proposal = cfg.snap({ x: p.x, y: p.y }, ctx);
   if (!proposal) return { point: p, snapped: null, refusal: null };
+  // A provider that declines with a REASON is the case the whole guardrail is written about, and
+  // it is not the same as a provider that found nothing. It passes straight through: there is no
+  // displacement to bound, only something the user should be able to see it chose not to do.
+  if (proposal.point === undefined) return { point: p, snapped: null, refusal: proposal.refused };
   const target = v(proposal.point.x, proposal.point.y);
   const movePx = dist(target, p) * zoom;
   if (!(movePx <= cfg.maxSnapMovePx)) {
@@ -1923,12 +2016,19 @@ function penPointerDown(state: PenState, raw: Vec, mods: PenMods, cfg: PenConfig
       // the PREVIOUS anchor (spec A.10). With no previous anchor there is nothing to be
       // relative to, so the first point of a path lands where the cursor is.
       let at = raw;
+      let construction: { angleDeg: number } | null = null;
       if (mods.shift && active && active.points.length > 0) {
         at = constrainToAngle(P(active.points[endIndex(active, end)].anchor), raw, cfg.constrainAngle);
+      } else if (s.snapEnabled && active && active.points.length > 0) {
+        const cap = constructionCapture(P(active.points[endIndex(active, end)].anchor), raw, cfg, zoom);
+        if (cap) {
+          at = cap.point;
+          construction = cap;
+        }
       }
       const snap = applySnap(at, cfg, zoom, {
         doc: s.doc, zoom, phase: 'place', activePathIndex: s.activePathIndex, ref: null,
-      });
+      }, s.snapEnabled);
       at = snap.point;
 
       const doc = cloneDoc(s.doc);
@@ -1954,7 +2054,10 @@ function penPointerDown(state: PenState, raw: Vec, mods: PenMods, cfg: PenConfig
         activeEndpoint: endpoint,
         selection: { ...EMPTY_SELECTION, paths: [pathIndex] },
         drag,
-        snapped: snap.snapped,
+        // A construction capture IS a capture and gets the same ring: the user moved the anchor
+        // off the cursor on purpose, and feedback for one kind of snap but not the other is how
+        // a tool teaches people that it moves things for reasons they cannot see.
+        snapped: snap.snapped ?? (construction ? { point: A(at), kind: `construction ${construction.angleDeg}deg` } : null),
         snapRefusal: snap.refusal,
       }, cfg, zoom, mods);
     }
@@ -2112,7 +2215,7 @@ function onPointerMove(state: PenState, input: PenInput, cfg: PenConfig): PenSta
       const snapTo = applySnap(to, cfg, zoom, {
         doc: s.doc, zoom, phase: 'move-anchor', activePathIndex: s.activePathIndex,
         ref: { path: drag.path, point: drag.point },
-      });
+      }, s.snapEnabled);
       const delta = sub(snapTo.point, P(drag.origin));
       const doc = cloneDoc(drag.docAtStart);
       const refs = s.selection.anchors.length
@@ -2134,7 +2237,7 @@ function onPointerMove(state: PenState, input: PenInput, cfg: PenConfig): PenSta
       const snapTo = applySnap(to, cfg, zoom, {
         doc: s.doc, zoom, phase: 'move-handle', activePathIndex: s.activePathIndex,
         ref: { path: drag.path, point: drag.point },
-      });
+      }, s.snapEnabled);
       to = snapTo.point;
       // Alt breaks the pair. So does the Anchor Point tool, unconditionally — spec D row 3.
       const breakPair = mods.alt || state.activeTool === 'anchor-point';
@@ -2220,13 +2323,27 @@ function concludeDrag(state: PenState, at: Vec, mods: PenMods, cfg: PenConfig, z
         const prev = d.point === 0
           ? (path.points.length > 1 ? path.points[1] : null)
           : path.points[d.point - 1];
+        let construction: { angleDeg: number } | null = null;
         if (mods.shift && prev) at = constrainToAngle(P(prev.anchor), P(d.rawOrigin), cfg.constrainAngle);
+        else if (s.snapEnabled && prev) {
+          const cap = constructionCapture(P(prev.anchor), P(d.rawOrigin), cfg, zoom);
+          if (cap) {
+            at = cap.point;
+            construction = cap;
+          }
+        }
         const snap = applySnap(at, cfg, zoom, {
           doc: s.doc, zoom, phase: 'place', activePathIndex: s.activePathIndex,
           ref: { path: d.path, point: d.point },
-        });
+        }, s.snapEnabled);
         path.points[d.point] = cornerPoint(snap.point);
-        return { ...s, doc, drag: null, snapped: snap.snapped, snapRefusal: snap.refusal };
+        return {
+          ...s,
+          doc,
+          drag: null,
+          snapped: snap.snapped ?? (construction ? { point: A(snap.point), kind: `construction ${construction.angleDeg}deg` } : null),
+          snapRefusal: snap.refusal,
+        };
       }
       return { ...s, doc, drag: null };
     }
@@ -2578,6 +2695,12 @@ function runCommand(state: PenState, cmd: PenCommand, mods: PenMods, cfg: PenCon
 
     case 'toggle-edges':
       return settle({ ...s, hideEdges: !s.hideEdges }, cfg, zoom, mods);
+
+    // Smart Guides (I.102). Also no geometry and no undo step — but it changes what the NEXT
+    // gesture does, so the stale `snapped` ring and refusal are cleared with it. Leaving them up
+    // would have the surface reporting a capture from a snapper that is now switched off.
+    case 'toggle-snap':
+      return settle({ ...s, snapEnabled: !s.snapEnabled, snapped: null, snapRefusal: null }, cfg, zoom, mods);
 
     default: {
       const unhandled: never = cmd;

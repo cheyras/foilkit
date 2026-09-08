@@ -98,7 +98,12 @@ it required.
   (anchors, direction lines, rubber band, marquee) renders to an SVG layer above
   it, so no UI furniture can reach the committed artifact. The brush is not
   deprecated by it; they trace and retouch respectively, and they hand the same
-  canvas back and forth.
+  canvas back and forth. It also carries the one visible control the pen needs
+  that the engine cannot draw for itself: the snap strip — Smart Guides on or off
+  (Ctrl+U, the button dispatching the same binding), 45° construction guides off
+  by default, and one quiet line saying what the last gesture caught or why the
+  snapper declined to move it. The snap PROVIDER is the host's to supply
+  (`config.snap`), because it is evidence read off one card's scan.
 - `pen-surface` — the pen's arithmetic without the React: event normalisation,
   screen-constant chrome sizing, and the document → mask-alpha rasterisation.
   Split out so `node --test` can drive it.

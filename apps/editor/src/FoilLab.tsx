@@ -64,12 +64,15 @@ import {
   type WindowGeom,
 } from '@foilkit/three/react'
 import {
+  DEFAULT_PEN_CONFIG,
   PEN_CLAIMED_HOST_KEYS,
   fromMaskVector,
   toMaskVector,
   type MaskVector,
+  type PenConfig,
   type PenPath,
 } from '@foilkit/forge/geometry'
+import { usePenSnap } from './penSnap.ts'
 import { ActionBtn, Chip, CoreSliders, Section, Select, Slider, SurfaceTabs } from './ui.tsx'
 import { CorpusView, FILTER_LABEL, type ContributionFilter } from './catalog/manifest.ts'
 import { navigate, setParam } from './router.ts'
@@ -1521,6 +1524,24 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   const imageUrl = detail?.card.images.high ? proxied(detail.card.images.high) : null
   const cardRect = cardScreenRect(hostSize.w, hostSize.h)
 
+  /**
+   * THE PEN'S SNAP EVIDENCE — this card's own scan, and only while the pen is up.
+   *
+   * The engine has always accepted an injected `SnapFn` and policed it; until now nothing was
+   * ever injected, so `DEFAULT_PEN_CONFIG.snap` was null and the pen could not catch the printed
+   * edge a person is visibly tracing. This is the injection, and it is deliberately the ONLY
+   * place a provider is wired: the snapper is evidence read off one card's pixels, so it belongs
+   * where the card is chosen, and it is dropped the moment the card changes rather than left to
+   * snap the next card's anchors onto the previous card's furniture.
+   *
+   * Gated on `penMode` because preparing it costs ~70ms of main thread; nobody who is not drawing
+   * should pay that, and `usePenSnap` waits for an idle callback even then. Until it is ready the
+   * config carries `snap: null` and the pen simply draws unsnapped — which is the pen's normal,
+   * fully working behaviour, not a degraded mode.
+   */
+  const penSnap = usePenSnap(imageUrl, penMode)
+  const penConfig = useMemo<PenConfig>(() => ({ ...DEFAULT_PEN_CONFIG, snap: penSnap.snap }), [penSnap.snap])
+
   // A HEAD, not a second GET: `/api/image` answers every header and no body for
   // one, which is exactly the "does this scan exist" question. Only asked of
   // OUR proxy — a cross-origin url's status is not readable, and guessing at one
@@ -1604,6 +1625,8 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
               // trace — every brush mask, and every mask drawn before the pen
               // existed.
               initialPaths={penOpenWith}
+              config={penConfig}
+              snapNote={penSnap.note}
               view={viewCtl}
               onCommit={onPenCommit}
               registerHandle={registerPen}

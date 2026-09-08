@@ -50,7 +50,7 @@
 // what the mask currently IS. If a real vector form ever exists for a card, `loadVPath` on the
 // handle imports it through `fromVPath` and the user edits anchors instead of tracing.
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   DEFAULT_PEN_CONFIG,
   cloneDoc,
@@ -90,6 +90,13 @@ const CHROME = '#3d8bff'
 const CHROME_SOFT = 'rgba(61, 139, 255, 0.75)'
 /** The casing every stroke gets, so a hairline survives a white border and a black one alike. */
 const CASING = 'rgba(0, 0, 0, 0.55)'
+
+/**
+ * The rays the construction guides offer when they are switched on: the same 45-degree family
+ * Shift constrains to, so the guide is the automatic version of a rule the user already knows
+ * rather than a second, differently-shaped one to learn.
+ */
+const CONSTRUCTION_ANGLES = [0, 45, 90, 135]
 
 /**
  * The engine's cursor states, as the closest thing a browser can render.
@@ -162,6 +169,7 @@ export function PenEditor({
   rect,
   allowTouch = false,
   config = DEFAULT_PEN_CONFIG,
+  snapNote = null,
   initialPaths = null,
   view,
   onCommit,
@@ -173,6 +181,14 @@ export function PenEditor({
   rect: { left: number; top: number; width: number; height: number }
   allowTouch?: boolean
   config?: PenConfig
+  /**
+   * What the host's snap evidence has to say for itself — "still reading the scan", "1,204px of
+   * printed edge", "this scan's pixels cannot be read back". The surface shows it verbatim,
+   * because the difference between a snapper that is loading, one that gave up, and one that
+   * found nothing on this card is invisible from the pen's behaviour alone: all three feel like
+   * a pen that simply is not catching anything.
+   */
+  snapNote?: string | null
   /** A vector form to open for EDITING, when one exists. Null means "trace the backdrop". */
   initialPaths?: PenPath[] | null
   /** Pan/zoom controller — gesture arbitration, and the host end of the pen's pan intent. */
@@ -186,6 +202,19 @@ export function PenEditor({
   const backdropRef = useRef<HTMLCanvasElement>(null)
 
   const stateRef = useRef<PenState>(createPenState({ paths: initialPaths ?? [] }))
+  /**
+   * Construction guides, the one PREFERENCE this surface owns rather than the host.
+   *
+   * Illustrator ships them OFF (I.104) and so do we — an angular capture nobody asked for reads
+   * as the tool arguing with the hand. It lives here rather than in the host's config because it
+   * is a view preference the user flips while drawing, exactly like Outline mode; the host still
+   * owns the `snap` provider, which is evidence rather than preference.
+   */
+  const [guides, setGuides] = useState(false)
+  const cfg = useMemo(
+    () => (guides ? { ...config, constructionAngles: CONSTRUCTION_ANGLES } : config),
+    [config, guides],
+  )
   /** Whether the spacebar is HELD. No event property carries this; the surface must track it. */
   const spaceRef = useRef(false)
   /** The document as of the last rasterisation, so hover moves do not re-rasterise. */
@@ -336,10 +365,10 @@ export function PenEditor({
     stateRef.current = reduce(
       stateRef.current,
       pointerInput('pointermove', { ...p, getModifierState: () => p.capsLock }, dispRect(), MASK_W, MASK_H, spaceRef.current),
-      config,
+      cfg,
     )
     return true
-  }, [config, dispRect, view])
+  }, [cfg, dispRect, view])
 
   const schedule = useCallback(() => {
     if (rafRef.current !== null) return
@@ -383,12 +412,12 @@ export function PenEditor({
    */
   const apply = useCallback(
     (input: PenInput) => {
-      const next = reduce(stateRef.current, input, config)
+      const next = reduce(stateRef.current, input, cfg)
       stateRef.current = next
       if (next.intent?.kind === 'pan') view?.setSpacePan(true)
       schedule()
     },
-    [config, schedule, view],
+    [cfg, schedule, view],
   )
 
   // The measured scale, kept fresh across zoom (the controller notifies on every zoom change)
@@ -604,7 +633,7 @@ export function PenEditor({
   const state = stateRef.current
   const m = chromeMetrics(scale)
   const cursor = cursorFor(state)
-  const stubs = withDragStubs(state, visibleHandles(state, config))
+  const stubs = withDragStubs(state, visibleHandles(state, cfg))
   const selected = new Set(state.selection.anchors.map((a) => `${a.path}:${a.point}`))
   const hovered = state.hover?.target?.kind === 'anchor' ? `${state.hover.target.path}:${state.hover.target.point}` : null
   const rb = state.rubberBand
@@ -653,6 +682,19 @@ export function PenEditor({
         data-pen-mask={maskStage}
         data-pen-outline={state.outline ? 'true' : 'false'}
         data-pen-edges={state.hideEdges ? 'hidden' : 'shown'}
+        // Snapping, as three separate facts, because they fail separately: whether the user has
+        // it on, what the last gesture actually caught, and what it declined to do. The e2e run
+        // reads all three — a snap that quietly does nothing and a snap that refuses out loud are
+        // the same pixels on screen and very different tools.
+        data-pen-snap={state.snapEnabled ? 'on' : 'off'}
+        // Whether a provider is WIRED, which is a different fact from whether the user has
+        // snapping on: preparing the evidence is asynchronous, and until it lands the pen draws
+        // unsnapped with the switch still showing "on". A test that cannot tell those apart is a
+        // test that races the idle callback and passes or fails by machine speed.
+        data-pen-snap-provider={cfg.snap ? 'wired' : 'none'}
+        data-pen-snap-kind={state.snapped?.kind ?? ''}
+        data-pen-snap-refusal={state.snapRefusal ?? ''}
+        data-pen-guides={guides ? 'on' : 'off'}
         viewBox={`0 0 ${MASK_W} ${MASK_H}`}
         preserveAspectRatio="none"
         onPointerDown={onPointerDown}
@@ -752,6 +794,11 @@ export function PenEditor({
                 key={`a${k}`}
                 data-testid="pen-anchor"
                 data-selected={on ? 'true' : 'false'}
+                // The anchor's DOCUMENT position, verbatim. The rect's own x/y carry the chrome's
+                // half-size offset and change with hover, so reading a placement back off them
+                // means re-deriving `chromeMetrics` in the reader — which is how an acceptance
+                // test ends up asserting against its own arithmetic instead of the geometry.
+                data-anchor={`${pt.anchor[0]},${pt.anchor[1]}`}
                 x={pt.anchor[0] - half}
                 y={pt.anchor[1] - half}
                 width={half * 2}
@@ -793,6 +840,78 @@ export function PenEditor({
         )}
         </g>
       </svg>
+
+      {/*
+        THE SNAP STRIP — the switch, and what the switch is currently doing.
+
+        Snapping is the one feature here that MOVES SOMETHING THE USER PLACED. Everything else the
+        pen does lands where the hand went, so a silent snapper is the only part of this tool that
+        can leave a person wondering whether they mis-clicked. Hence: the state is on screen, the
+        toggle is on screen next to it (Ctrl+U, spec I.102 — and the button dispatches the same
+        binding rather than a private code path, so the two can never disagree), and the last
+        thing it did is written out in words.
+
+        THE REFUSAL IS SHOWN, QUIETLY. When the evidence is ambiguous the pen deliberately does
+        not move the point, and a user who cannot tell that apart from a snapper that failed to
+        notice the edge learns to distrust the whole feature. It is one dim line, it never blocks
+        a click, and it is gone on the next gesture — not a dialog, not a toast, not a nag.
+      */}
+      <div
+        data-testid="pen-snap-strip"
+        className="absolute flex items-center px-2 text-[11px] leading-none"
+        style={{
+          left: rect.left,
+          top: rect.top + rect.height - 26,
+          width: rect.width,
+          height: 26,
+          // Inline, and `gap` specifically: the mask notice above spells out why a utility class
+          // in this package is a bet on the HOST app's Tailwind content globs, and the strip's
+          // three items ran together with no space between them the first time this shipped.
+          gap: 8,
+          // Inline for the same reason the mask notice is: this renders into the viewer's
+          // pointer-events-none overlay, and a Tailwind class here would depend on the HOST app's
+          // content globs reaching a file inside `packages/three`.
+          pointerEvents: 'none',
+          background: 'rgba(10, 12, 18, 0.66)',
+          color: '#e7ecf5',
+          zIndex: 5,
+          display: state.hideEdges ? 'none' : undefined,
+        }}
+      >
+        <button
+          type="button"
+          data-testid="pen-snap-toggle"
+          onClick={() => key('u', { ctrl: true })}
+          title="Snap to printed edges (Ctrl+U)"
+          className="shrink-0 rounded-full border px-2 py-[3px]"
+          style={{
+            pointerEvents: 'auto',
+            borderColor: state.snapEnabled ? CHROME : 'rgba(255,255,255,0.3)',
+            color: state.snapEnabled ? CHROME : 'inherit',
+          }}
+        >
+          Snap {state.snapEnabled ? 'on' : 'off'} ⌃U
+        </button>
+        <button
+          type="button"
+          data-testid="pen-guides-toggle"
+          onClick={() => setGuides((g) => !g)}
+          title="Capture onto 45° rays from the previous anchor"
+          className="shrink-0 rounded-full border px-2 py-[3px]"
+          style={{
+            pointerEvents: 'auto',
+            borderColor: guides ? CHROME : 'rgba(255,255,255,0.3)',
+            color: guides ? CHROME : 'inherit',
+          }}
+        >
+          45° guides {guides ? 'on' : 'off'}
+        </button>
+        <span data-testid="pen-snap-note" className="truncate" style={{ opacity: 0.75 }}>
+          {!state.snapEnabled
+            ? 'anchors land exactly where you click'
+            : (state.snapRefusal ?? (state.snapped ? `caught: ${state.snapped.kind}` : (snapNote ?? '')))}
+        </span>
+      </div>
 
       {/* THE MASK NOTICE — see the block comment above `restoreSavedMask` for the reasoning.
           Pinned to the very top of the card face and only ~26px tall so it clears every part of
