@@ -67,6 +67,19 @@ jobs:
       - name: Renderer independence
         run: node tools/check-independence.mjs
 
+      # `@foilkit/forge/geometry` must stay importable from a browser. The forge
+      # barrel pulls node:fs, node:zlib and node:child_process, which is why the
+      # editor once HAND-PORTED forge functions into
+      # apps/editor/src/staging/provisionalDiff.ts rather than import the
+      # package — and the pen tool would have been the second copy. This walks
+      # the import graph from the subpath transitively and fails on any value
+      # import of a node builtin, because the regression is never in
+      # geometry.ts: it is three modules down, added by someone with no reason
+      # to know a browser reads their code, and it surfaces as a broken bundle
+      # or a runtime error in a user's browser rather than as a failing test.
+      - name: Geometry subpath is browser-safe
+        run: node tools/check-geometry-browser-safe.mjs
+
       # The corpus reads: canon files load and validate against the stamped
       # contract, sidecars normalise, mask rasters are canonical.
       - name: Data receipt

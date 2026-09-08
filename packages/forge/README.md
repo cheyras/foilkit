@@ -6,6 +6,19 @@ and how a generator learns from human corrections without learning from itself.
 **Every import is a `node:` builtin.** The PNG codec is hand-rolled over
 `node:zlib`. No sharp, no canvas, no database, no HTTP framework.
 
+…which is why there is a second entry point. `@foilkit/forge` pulls `node:fs`,
+`node:zlib` and `node:child_process`, so a browser cannot import it — and the
+editor, needing forge geometry, hand-ported the functions into
+`apps/editor/src/staging/provisionalDiff.ts` with a byte-parity test holding the
+copy in step. **`@foilkit/forge/geometry`** exists so that stays the only one: it
+re-exports the vector language, `pen-geometry`, the shared rasteriser and the
+contour tracer, and nothing that reaches a builtin.
+`tools/check-geometry-browser-safe.mjs` walks that subpath's import graph
+transitively on every CI run, because the regression is never in `geometry.ts` —
+it is a `node:` import added three modules down by someone with no reason to know
+a browser reads their code. A statement-level `import type` is allowed and is
+load-bearing: `line-snap` and `edge-trace` reach `png.ts` that way, and it erases.
+
 ## Why it is not optional
 
 A hand mask is a **teaching event**, not a deliverable. Every mask a human draws
@@ -27,7 +40,9 @@ them and the loop that makes the next generative pass smarter breaks.
 | `edge-trace` | Lands a wobbly hand line on the printed edge it was tracing. |
 | `line-snap` | Reads a hand mask's *intent*: an ambiguous band may nudge an edge but never relocate it, and with no scan at all it degrades to self-straightening and says so. |
 | `region-learn` | Fits an era rule from human exemplars. Takes the window edge on the foil side of the bevel, and refuses a detected edge beyond `windowMaxMovePx` as a different feature. |
-| `vector-template` | Fits a finished raster mask to lines and arcs, measures `vectorness`, discovers optional elements across a corpus, and probes the artwork to decide whether one is present. |
+| `vector-template` | The stored vector language — lines, arcs and cubics — plus the fitter that turns a finished raster mask into it, `vectorness`, optional-element discovery across a corpus, and the artwork probe that decides whether one is present. The FITTER emits only lines and arcs; cubics exist because the pen tool draws them. Every consumer switches on the primitive kind exhaustively, with a `never`-typed default, so a fourth kind is a compile error rather than a silent misrender. |
+| `pen-geometry` | The arithmetic under a pen tool, and no DOM: evaluate, project (Newton-refined for cubics), de Casteljau split, hit-test with anchor > handle > segment priority, nonzero-winding point test, and a bounding box tight to the curve rather than to the control hull. |
+| `pen-engine` | The pen tool's BEHAVIOUR on the same terms: a pure `reduce(state, input, cfg)` state machine with no DOM, no framework and no `node:` builtin, so "feels like Illustrator" is driven by synthetic events in `node --test` rather than only by hand in a browser. Mirrors Illustrator's DOM exactly — absolute handle points, `pointType` as a stored flag — implements the click-precedence ladder as one ordered resolver that `cursorFor` also reads, and enforces its own `maxSnapMovePx` on an injected snap callback rather than trusting it. |
 | `template-raster` | Rasterises a vector template back out — at whatever size the card is, so a vector mask never goes stale when the canonical raster changes. |
 | `generator` | The generator registry. |
 | `analysis-source` | Fetches the scan a mask is authored over. The asset manifest is injected (`registerAssetPool`); without one, lookups fall back to the cache layout on disk. |
@@ -39,7 +54,7 @@ re-exported from the index because importing them runs them: `backfill`,
 
 ## The invariants, as tests
 
-99 tests on `node:test`, no dependencies, no build step. They encode what the
+207 tests on `node:test`, no dependencies, no build step. They encode what the
 teaching loop runs on:
 
 - derived provenance is recomputed on read, so a stale file cannot lie; a

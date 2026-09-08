@@ -19,8 +19,8 @@ import { alphaOf, EXEMPLAR_WEIGHT } from '../provenance.ts';
 import { readCorpus, selectExemplars } from '../mask-corpus.ts';
 import {
   vectorizeLoop, vectorness, rasterizeTemplate, flattenPath, subpixelLoops,
-  discoverOptionalElement, fitTemplate, probeOptional, toBin01,
-  DEFAULT_VECTOR_FIT_PARAMS, type VectorTemplate, type Prim, type VPath,
+  discoverOptionalElement, fitTemplate, probeOptional, toBin01, mapPathCoords,
+  DEFAULT_VECTOR_FIT_PARAMS, type VectorTemplate, type VPath,
 } from '../vector-template.ts';
 import { traceLoops } from '../line-snap.ts';
 import { iou } from '../region-learn.ts';
@@ -133,13 +133,10 @@ test('vector -> raster round trip is faithful on a shape that IS lines and arcs'
   const tpl: VectorTemplate = {
     id: 't', version: 1, eraId: 'x', scope: 'sheet',
     space: { width: 220, height: 180 },
-    outer: {
-      start: [fit!.path.start[0] / 220, fit!.path.start[1] / 180],
-      prims: fit!.path.prims.map((p): Prim =>
-        p.k === 'line'
-          ? { k: 'line', to: [p.to[0] / 220, p.to[1] / 180] }
-          : { k: 'arc', to: [p.to[0] / 220, p.to[1] / 180], r: p.r / 220, sweep: p.sweep }),
-    },
+    // Through the shipped converter, not a hand-rolled ternary. The ternary this replaces
+    // read "line or arc" and MEANT "line or not-a-line", so it silently mis-scaled the day
+    // a third primitive existed; `mapPathCoords` switches exhaustively instead.
+    outer: mapPathCoords(fit!.path, ([x, y]) => [x / 220, y / 180], (r) => r / 220),
     holes: [],
     provenance: {
       generator: { name: 'test', version: 1, modelId: null, runId: 'test' },

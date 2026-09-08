@@ -2633,3 +2633,81 @@ predicted period and every real scan returned peaks at the high-pass adjacency
 length instead — but the per-scan SNR figures are a property of scan and encoding
 as much as of the printing, and should not be read as "how much design each scan
 carries".
+
+
+## 2026-09-07 -- The path language gains a cubic, because a pen tool is cubics
+
+**Decided by:** Chey Rasmussen, implemented by Claude Opus 4.6
+
+**Decision:** `Prim` becomes `LinePrim | ArcPrim | CubicPrim`. The stored vector
+language keeps lines and arcs exactly as they were and adds
+`{ k: 'cubic', c1, c2, to }`, with control points in the same fractional,
+y-down space as every other coordinate.
+
+**Why:** #17 asks for a pen tool that authors vector masks, and specifies both
+"bezier handles are a click-drag gesture" and "store as `VPath` primitives" --
+which the language could not do, because it had no bezier. The entry that
+established the two-primitive language argued a bezier is "more general and less
+checkable -- an arc has a radius you can read and argue with". That argument was
+about a FITTER's output, where a curve nobody chose is harder to audit than a
+radius somebody can measure. It does not carry to a curve a human placed on
+purpose: the reason #17 wants vector at all is that "a vector diff is readable
+text in a pull request", and six numbers in a diff satisfy that as well as three
+do. The alternative -- beziers while editing, arcs on save -- reintroduces
+exactly the lossy round trip the task exists to remove.
+
+**Implications:**
+- The pen emits a plain `LinePrim` whenever both adjacent handles are retracted,
+  so straight segments stay in the old language and the committed corpus is not
+  churned into curves that merely look straight. `data/vector-templates.json` is
+  untouched and still fits and rasterises bit-identically.
+- **The trap this created, and how it is now closed.** Every consumer that
+  branched on primitive kind did so with a ternary -- `pr.k === 'line' ? .. : ..`
+  -- whose else-branch silently means "arc". A third kind makes each of those a
+  wrong answer that TypeScript cannot see, because a ternary's else-branch was
+  never asked to be exhaustive. All four sites are now `switch` statements with a
+  `never`-typed default, so a FOURTH primitive is a compile error rather than a
+  silent misrender. `toPx` and `norm` were doing the same job and were collapsed
+  into one exported `mapPathCoords`, because "scaled `to`, forgot `c1`/`c2`" had
+  two places to hide; a test rasterises the bug's own output alongside the right
+  one and asserts they disagree.
+- Cubic flattening uses the convex-hull bound rather than the textbook
+  `3/4 x max(d1,d2)` flatness test. The 3/4 factor is only valid when both
+  handles project onto the chord, and a pen produces the other case constantly --
+  drag a handle back past its anchor and the cheap test calls a cusp flat.
+- `pointType` (smooth vs corner) is deliberately NOT stored yet. It is Illustrator's
+  stored flag, not a derived property, and a corner may legitimately carry two
+  collinear handles; the plan is an optional one-character field per primitive
+  when the editor persists pen masks, so that a corner does not silently become a
+  smooth point the first time someone drags its handle.
+
+## 2026-09-07 -- The editor stops hand-porting forge, via a guarded browser subpath
+
+**Decided by:** Chey Rasmussen, implemented by Claude Opus 4.6
+
+**Decision:** `@foilkit/forge` gains a `./geometry` subpath exporting only the
+modules that are free of node builtins -- the vector language, the pen geometry
+and engine, the shared rasteriser, the contour tracer. `tools/check-geometry-browser-safe.mjs`
+walks the import graph from it on every push and fails if any reachable module
+gains a *value* import of a `node:` builtin. A statement-level `import type` stays
+legal, which is what keeps `edge-trace` -> `png.ts` allowed.
+
+**Why:** the barrel pulls `node:fs`, `node:zlib` and `node:child_process`, so the
+editor could not import forge at all. The existing answer was to hand-port the
+functions it needed into `apps/editor/src/staging/provisionalDiff.ts` and keep a
+byte-parity test in step. That is a reasonable answer for two functions and a
+terrible one for a pen tool, which needs the snapping and the rasteriser to be
+*the same code* -- a second implementation of a rasteriser is a second answer to
+"where exactly is this mask's edge", and the whole point of the corpus is that
+there is one.
+
+**Implications:**
+- The pen's live preview rasterises through `rasterizePolygons`, the same
+  function templates and masks already go through, so what the shader shows while
+  drawing is what gets committed.
+- The guard is proven non-vacuous rather than assumed: injecting a `node:fs`
+  import three modules down fails it, and narrowing that same import to
+  `import type` passes it.
+- `README.md`'s line saying every forge import is a node builtin was the exact
+  sentence that would send the next person back to hand-porting. It now names the
+  subpath and the guard.

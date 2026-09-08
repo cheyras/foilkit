@@ -36,7 +36,25 @@ import { contourSegments } from './edge-trace.ts';
 // Deliberately tiny. A card frame is axis-aligned rectangles with filleted corners and a
 // few rounded cut-outs; lines + circular arcs express all of it exactly. Bezier curves
 // would be more general and less checkable — an arc has a radius you can read and argue
-// with, which is the point of a reviewable artifact.
+// with, which is the point of a reviewable artifact. That argument still holds and the
+// FITTER still emits only lines and arcs: nothing that comes out of `vectorizeLoop` is a
+// cubic, so a fitted template stays as readable as it ever was.
+//
+// The third primitive arrived from the other end of the pipe. A human correcting geometry
+// by hand needs a pen tool, and a pen tool that is not Illustrator's pen tool is a pen tool
+// people fight; Illustrator's model IS the cubic Bezier with two control handles per anchor,
+// and there is no honest way to offer that and store something else. Approximating a drawn
+// cubic as a chain of arcs would put the artifact and the thing the human drew out of step,
+// which is precisely the failure `edge-trace` was replaced for.
+//
+// What the arc argument bought us is kept anyway: a cubic here is SIX NUMBERS on one line of
+// a committed JSON diff — two handles and an endpoint — not a sampled polyline, so a review
+// still reads geometry rather than a point cloud. And the pen emits a plain `line` whenever
+// both adjacent handles are retracted, so a straight edge stays a `LinePrim` with two
+// numbers and never becomes a cubic that merely looks straight.
+//
+// ADDING A FOURTH KIND: every consumer below switches exhaustively with a `never`-typed
+// default, on purpose. See the note over `flattenPath`.
 
 export interface LinePrim {
   k: 'line';
@@ -51,7 +69,15 @@ export interface ArcPrim {
   /** 1 = clockwise in image coords (y down), 0 = counter-clockwise. */
   sweep: 0 | 1;
 }
-export type Prim = LinePrim | ArcPrim;
+export interface CubicPrim {
+  k: 'cubic';
+  /** Handle leaving the start point (the previous primitive's end, or the path's `start`). */
+  c1: [number, number];
+  /** Handle arriving at `to`. */
+  c2: [number, number];
+  to: [number, number];
+}
+export type Prim = LinePrim | ArcPrim | CubicPrim;
 
 /** A closed path. `prims` returns to `start`; the closing primitive is explicit. */
 export interface VPath {
@@ -465,38 +491,194 @@ export function resampleLoop(loop: Vec[], step: number): Vec[] {
 
 // ── Rasterising the analytic geometry ──────────────────────────────────────
 
-/** Flatten a path to a polygon fine enough that the arc error is invisible at 8-bit AA. */
+/** The circle an `ArcPrim` rides, recovered from its implicit start point. */
+export interface ArcGeometry {
+  cx: number;
+  cy: number;
+  r: number;
+  /** Angle of the start point about the centre. */
+  a0: number;
+  /** Signed angle swept to reach `to`; its sign is the direction `sweep` asked for. */
+  sweepAng: number;
+}
+
+/**
+ * Exported because two things must ride the SAME circle: the rasteriser walks it, and the
+ * pen tool's hit-testing clamps a cursor angle into it. A second copy of this derivation
+ * would agree everywhere except the degenerate cases — a zero-length chord, or a chord the
+ * radius cannot span — and there the editor would report a hit on a point the rasteriser
+ * never drew, which is the kind of disagreement nobody debugs because nobody suspects it.
+ *
+ * `null` means the primitive is not a circle at all; every caller degrades it to the
+ * straight chord, and they must all do so identically.
+ */
+export function arcGeometry(from: Vec, pr: ArcPrim): ArcGeometry | null {
+  const to = v(pr.to[0], pr.to[1]);
+  const r = Math.abs(pr.r);
+  const d = dist(from, to);
+  if (!(r > 0) || d < 1e-9 || d > 2 * r + 1e-6) return null;
+  // Centre of the circle through `from` and `to` with radius r, on the side `sweep` says.
+  const mx = (from.x + to.x) / 2, my = (from.y + to.y) / 2;
+  const h = Math.sqrt(Math.max(0, r * r - (d / 2) * (d / 2)));
+  const ux = (to.x - from.x) / d, uy = (to.y - from.y) / d;
+  const sign = pr.sweep === 1 ? 1 : -1;
+  const cx = mx + sign * h * -uy, cy = my + sign * h * ux;
+  const a0 = Math.atan2(from.y - cy, from.x - cx);
+  const a1 = Math.atan2(to.y - cy, to.x - cx);
+  let sweepAng = a1 - a0;
+  if (pr.sweep === 1) { while (sweepAng <= 0) sweepAng += 2 * Math.PI; }
+  else { while (sweepAng >= 0) sweepAng -= 2 * Math.PI; }
+  return { cx, cy, r, a0, sweepAng };
+}
+
+/**
+ * The cubic from `from` through its two handles to `to`, at parameter t.
+ *
+ * One definition, exported, for the same reason `arcGeometry` is: the flattener, the
+ * splitter and the hit-tester must all agree about where the curve IS, or "add an anchor
+ * here" moves the shape by a hair nobody can see and every later diff carries.
+ */
+export function cubicAt(from: Vec, pr: CubicPrim, t: number): Vec {
+  const mt = 1 - t;
+  const b0 = mt * mt * mt, b1 = 3 * mt * mt * t, b2 = 3 * mt * t * t, b3 = t * t * t;
+  return v(
+    b0 * from.x + b1 * pr.c1[0] + b2 * pr.c2[0] + b3 * pr.to[0],
+    b0 * from.y + b1 * pr.c1[1] + b2 * pr.c2[1] + b3 * pr.to[1],
+  );
+}
+
+/**
+ * A cap, not a budget. Subdivision halves the hull's diameter every level, so 24 levels is
+ * 16 million chords — unreachable for any real sagitta. It exists so a curve with a cusp,
+ * or a NaN handle, cannot spin the flattener forever inside a rasterise call.
+ */
+const CUBIC_MAX_DEPTH = 24;
+
+/** Distance from `p` to the SEGMENT ab (not the infinite line through it). */
+function distToSegment(p: Vec, a: Vec, b: Vec): number {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const len2 = dx * dx + dy * dy;
+  if (len2 < 1e-24) return dist(p, a);
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2));
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+}
+
+/**
+ * Adaptive de Casteljau subdivision, to the SAME error the arc case promises: no point of
+ * the true curve ends up further than `sagitta` from the emitted polyline.
+ *
+ * The bound is the convex-hull property. A Bezier lies inside the hull of its four points,
+ * and distance-to-a-convex-set is convex, so its maximum over the hull is attained at a
+ * vertex — which makes `max(dist(c1, chord), dist(c2, chord))` an upper bound on how far
+ * the curve can stray from the chord, with the endpoints contributing zero by construction.
+ *
+ * The textbook test multiplies that by 3/4, from the Bernstein basis. THAT FACTOR IS ONLY
+ * VALID WHEN THE HANDLES PROJECT ONTO THE CHORD, and a pen tool hands you the other case
+ * constantly: drag a handle back past its own anchor and the curve doubles over, the
+ * projection leaves the segment, and the 3/4 test reports a cusp as flat. Measuring to the
+ * segment and dropping the factor costs a few extra chords on ordinary curves and is
+ * unconditionally correct on the ugly ones, which is the right trade for a rasteriser whose
+ * output is a committed artifact.
+ */
+function flattenCubicInto(out: Vec[], p0: Vec, p1: Vec, p2: Vec, p3: Vec, sagitta: number, depth: number): void {
+  const bound = Math.max(distToSegment(p1, p0, p3), distToSegment(p2, p0, p3));
+  if (depth >= CUBIC_MAX_DEPTH || !(bound > sagitta)) { out.push(p3); return; }
+  const m = (a: Vec, b: Vec): Vec => v((a.x + b.x) / 2, (a.y + b.y) / 2);
+  const a1 = m(p0, p1), a2 = m(p1, p2), a3 = m(p2, p3);
+  const b1 = m(a1, a2), b2 = m(a2, a3);
+  const mid = m(b1, b2);
+  flattenCubicInto(out, p0, a1, b1, mid, sagitta, depth + 1);
+  flattenCubicInto(out, mid, b2, a3, p3, sagitta, depth + 1);
+}
+
+/**
+ * Flatten a path to a polygon fine enough that the curve error is invisible at 8-bit AA.
+ *
+ * THE TRAP THIS SWITCH EXISTS TO CLOSE, and it is the reason every consumer of `Prim` in
+ * this file is written the same way. Until the pen tool arrived the language had exactly
+ * two kinds, so every site branched with `pr.k === 'line' ? … : …` — a ternary that reads
+ * as a choice and is really an ASSUMPTION that everything not a line is an arc. Adding
+ * `cubic` turned each of those into a silent misrender: a cubic would have been fed to the
+ * arc branch, read a `pr.r` that does not exist, come out `undefined`, and been drawn as a
+ * straight chord. TypeScript flags none of it, because `undefined` flowing into arithmetic
+ * is not a type error and the ternary's else-branch was never asked to be exhaustive.
+ *
+ * So: `switch` with a `never`-typed default everywhere, which makes a FOURTH primitive a
+ * compile error at every site that has to know about it, rather than a bug that ships.
+ */
 export function flattenPath(path: VPath, sagitta: number): Vec[] {
   const out: Vec[] = [];
   let cur = v(path.start[0], path.start[1]);
   out.push(cur);
   for (const pr of path.prims) {
     const to = v(pr.to[0], pr.to[1]);
-    if (pr.k === 'line') { out.push(to); cur = to; continue; }
-    const r = Math.abs(pr.r);
-    const d = dist(cur, to);
-    if (!(r > 0) || d < 1e-9 || d > 2 * r + 1e-6) { out.push(to); cur = to; continue; }
-    // Centre of the circle through cur and to with radius r, on the side `sweep` says.
-    const mx = (cur.x + to.x) / 2, my = (cur.y + to.y) / 2;
-    const h = Math.sqrt(Math.max(0, r * r - (d / 2) * (d / 2)));
-    const ux = (to.x - cur.x) / d, uy = (to.y - cur.y) / d;
-    const sign = pr.sweep === 1 ? 1 : -1;
-    const cx = mx + sign * h * -uy, cy = my + sign * h * ux;
-    let a0 = Math.atan2(cur.y - cy, cur.x - cx);
-    let a1 = Math.atan2(to.y - cy, to.x - cx);
-    let sweepAng = a1 - a0;
-    if (pr.sweep === 1) { while (sweepAng <= 0) sweepAng += 2 * Math.PI; }
-    else { while (sweepAng >= 0) sweepAng -= 2 * Math.PI; }
-    // Steps so the sagitta of each chord stays under `sagitta`.
-    const maxStep = 2 * Math.acos(Math.max(-1, Math.min(1, 1 - sagitta / r)));
-    const steps = Math.max(2, Math.ceil(Math.abs(sweepAng) / Math.max(1e-4, maxStep)));
-    for (let s = 1; s <= steps; s++) {
-      const a = a0 + (sweepAng * s) / steps;
-      out.push(v(cx + r * Math.cos(a), cy + r * Math.sin(a)));
+    switch (pr.k) {
+      case 'line': {
+        out.push(to);
+        break;
+      }
+      case 'arc': {
+        const g = arcGeometry(cur, pr);
+        if (!g) { out.push(to); break; }
+        // Steps so the sagitta of each chord stays under `sagitta`.
+        const maxStep = 2 * Math.acos(Math.max(-1, Math.min(1, 1 - sagitta / g.r)));
+        const steps = Math.max(2, Math.ceil(Math.abs(g.sweepAng) / Math.max(1e-4, maxStep)));
+        for (let s = 1; s <= steps; s++) {
+          const a = g.a0 + (g.sweepAng * s) / steps;
+          out.push(v(g.cx + g.r * Math.cos(a), g.cy + g.r * Math.sin(a)));
+        }
+        break;
+      }
+      case 'cubic': {
+        flattenCubicInto(out, cur, v(pr.c1[0], pr.c1[1]), v(pr.c2[0], pr.c2[1]), to, sagitta, 0);
+        break;
+      }
+      default: {
+        const unhandled: never = pr;
+        throw new Error(`flattenPath: unknown primitive ${JSON.stringify(unhandled)}`);
+      }
     }
     cur = to;
   }
   return out;
+}
+
+/**
+ * Rewrite every coordinate in a path through `pt`, and every arc radius through `radius`.
+ *
+ * ONE function rather than the two near-identical `map` bodies that used to sit inside
+ * `rasterizeTemplate` and `fitTemplate`, because the failure they invite is specific: a
+ * cubic carries THREE points, and a converter that scales `to` and forgets `c1`/`c2`
+ * leaves the handles in the other coordinate space. Fractions are ~1 and pixels are ~500,
+ * so the handles collapse toward the origin and the curve turns inside out — visibly wrong,
+ * but only once it has been rasterised, and only for cubics, which is exactly the bug that
+ * survives a review of a diff that "just adds the new case".
+ *
+ * `radius` is separate from `pt` because a radius is a length, not a position: it scales by
+ * the x factor alone, which is why the template's space is not allowed to be anisotropic.
+ */
+export function mapPathCoords(
+  path: VPath,
+  pt: (p: [number, number]) => [number, number],
+  radius: (r: number) => number,
+): VPath {
+  return {
+    start: pt(path.start),
+    prims: path.prims.map((pr): Prim => {
+      switch (pr.k) {
+        case 'line':
+          return { k: 'line', to: pt(pr.to) };
+        case 'arc':
+          return { k: 'arc', to: pt(pr.to), r: radius(pr.r), sweep: pr.sweep };
+        case 'cubic':
+          return { k: 'cubic', c1: pt(pr.c1), c2: pt(pr.c2), to: pt(pr.to) };
+        default: {
+          const unhandled: never = pr;
+          throw new Error(`mapPathCoords: unknown primitive ${JSON.stringify(unhandled)}`);
+        }
+      }
+    }),
+  };
 }
 
 /**
@@ -511,14 +693,8 @@ export function rasterizeTemplate(
 ): Uint8Array {
   const ss = opts.supersample ?? 4;
   const sag = opts.sagittaPx ?? DEFAULT_VECTOR_FIT_PARAMS.flattenSagittaPx;
-  const toPx = (path: VPath): VPath => ({
-    start: [path.start[0] * width, path.start[1] * height],
-    prims: path.prims.map((pr) =>
-      pr.k === 'line'
-        ? { k: 'line', to: [pr.to[0] * width, pr.to[1] * height] }
-        : { k: 'arc', to: [pr.to[0] * width, pr.to[1] * height], r: pr.r * width, sweep: pr.sweep },
-    ),
-  });
+  const toPx = (path: VPath): VPath =>
+    mapPathCoords(path, ([x, y]) => [x * width, y * height], (r) => r * width);
   const loops: Vec[][] = [flattenPath(toPx(tpl.outer), sag)];
   for (const h of tpl.holes) {
     if (h.when === 'evolves' && !opts.evolves) continue;
@@ -863,14 +1039,11 @@ export function fitTemplate(input: TemplateFitInput): TemplateFitResult {
     }
   }
 
-  const norm = (path: VPath): VPath => ({
-    start: [path.start[0] / w, path.start[1] / h],
-    prims: path.prims.map((pr) =>
-      pr.k === 'line'
-        ? { k: 'line', to: [pr.to[0] / w, pr.to[1] / h] }
-        : { k: 'arc', to: [pr.to[0] / w, pr.to[1] / h], r: pr.r / w, sweep: pr.sweep },
-    ),
-  });
+  // The exact inverse of `rasterizeTemplate`'s `toPx`, through the one converter that
+  // knows a cubic has handles. Written as a division rather than a multiply by 1/w so the
+  // committed fractions are bit-for-bit what they always were.
+  const norm = (path: VPath): VPath =>
+    mapPathCoords(path, ([x, y]) => [x / w, y / h], (r) => r / w);
 
   // Outer boundary + holes, straight off the Basic consensus. traceLoops winds holes
   // opposite to the outer loop, so nonzero winding reproduces the topology for free.
@@ -942,7 +1115,17 @@ export function fitTemplate(input: TemplateFitInput): TemplateFitResult {
   };
 }
 
-/** Reverse a closed path's direction (turns a fill into a cut under nonzero winding). */
+/**
+ * Reverse a closed path's direction (turns a fill into a cut under nonzero winding).
+ *
+ * Each primitive keeps its shape and swaps its ends: the walk runs backwards, so what a
+ * primitive now aims AT is the point the one before it used to end on. An arc reverses by
+ * flipping `sweep` — same circle, same radius, other way round. A cubic reverses by
+ * SWAPPING ITS HANDLES: `c1` belongs to whichever end the curve leaves, so travelling the
+ * other way makes the old arrival handle the new departure handle. Leaving them in place
+ * would reverse the direction and reflect the curve's bulge across its own chord, which
+ * still closes, still rasterises, and cuts the wrong hole.
+ */
 export function reversePath(path: VPath): VPath {
   const ptsAll: [number, number][] = [path.start, ...path.prims.map((p) => p.to)];
   const last = ptsAll[ptsAll.length - 1]!;
@@ -950,7 +1133,21 @@ export function reversePath(path: VPath): VPath {
   for (let i = path.prims.length - 1; i >= 0; i--) {
     const pr = path.prims[i]!;
     const target = i === 0 ? path.start : path.prims[i - 1]!.to;
-    prims.push(pr.k === 'line' ? { k: 'line', to: target } : { k: 'arc', to: target, r: pr.r, sweep: pr.sweep === 1 ? 0 : 1 });
+    switch (pr.k) {
+      case 'line':
+        prims.push({ k: 'line', to: target });
+        break;
+      case 'arc':
+        prims.push({ k: 'arc', to: target, r: pr.r, sweep: pr.sweep === 1 ? 0 : 1 });
+        break;
+      case 'cubic':
+        prims.push({ k: 'cubic', c1: pr.c2, c2: pr.c1, to: target });
+        break;
+      default: {
+        const unhandled: never = pr;
+        throw new Error(`reversePath: unknown primitive ${JSON.stringify(unhandled)}`);
+      }
+    }
   }
   return { start: last, prims };
 }
