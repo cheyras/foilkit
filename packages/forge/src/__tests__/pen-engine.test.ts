@@ -497,16 +497,71 @@ test('I.29 — click-dragging the first anchor closes AND reshapes the first seg
   assert.ok(nearPt(P(pt.leftDirection), V(-40, 30)), 'and the incoming one mirrors it through the anchor');
 });
 
+test('I.9 on the CLOSE gesture — a hand tremor is a click, and never an illegal smooth point', () => {
+  // `case 'place'` has the dead zone; `case 'close'` did not, and three pixels is enough. The
+  // pointer leaves the two-pixel threshold, `placementFrame` runs once, and coming back to the
+  // origin writes `rightDirection = C = Q` and `leftDirection = 2Q - C = Q` — BOTH retracted —
+  // having stamped `pointType: 'smooth'` on the way past. Spec C.3: a smooth point cannot have a
+  // retracted side, because collinearity is undefined for one.
+  for (const jiggle of [0, 1.5, 3, 40]) {
+    const s = drive(threeInARow(), [down(0, 0), move(jiggle, 0), up(0, 0)]);
+    const pt = s.doc.paths[0].points[0];
+    assert.equal(s.doc.paths[0].closed, true, `${jiggle}px: it is still a close`);
+    assert.deepEqual(pt.leftDirection, pt.anchor, `${jiggle}px: the closing segment arrives retracted`);
+    assert.deepEqual(pt.rightDirection, pt.anchor, `${jiggle}px: and the first segment is unchanged`);
+    assert.equal(pt.pointType, 'corner', `${jiggle}px: a handle-less point is a CORNER, never smooth`);
+  }
+
+  // And it does not stop at the editing model: `toVPath` writes the flag out and `fromVPath`
+  // believes it, because a stored type outranks inference. An illegal point round-trips as one.
+  const tremored = drive(threeInARow(), [down(0, 0), move(3, 0), up(0, 0)]);
+  const vp = toVPath(tremored.doc.paths[0]);
+  assert.equal(vp.startType, 'c', 'the artifact must not claim a handle-less anchor is smooth');
+  assert.equal(fromVPath(vp).points[0].pointType, 'corner', 'and it must not read back as one');
+});
+
 test('I.30 — Alt-click-dragging the first anchor closes and sets ONLY the incoming handle [U]', () => {
   // [U] — the professional close-without-wrecking-the-start move, per the spec's model.
+  //
+  // ALT GOES DOWN BEFORE THE BUTTON, because that is the only order a hand can produce: nobody
+  // presses the mouse on the first anchor and then reaches for Alt. Driving it the other way round
+  // — which this test used to do — skips the momentary switch to the Anchor Point tool entirely,
+  // so it exercised a code path no user reaches and reported I.30 as conformant while the real
+  // gesture converted the first anchor instead of closing the path.
   const before = threeInARow();
   const rightBefore = [...before.doc.paths[0].points[0].rightDirection];
-  const s = drive(before, [down(0, 0), kd('Alt', { alt: true }), move(40, -30, { alt: true }), up(40, -30, { alt: true })]);
+
+  const armed = drive(before, [kd('Alt', { alt: true }), move(0, 0, { alt: true })]);
+  assert.equal(armed.activeTool, 'anchor-point', 'Alt did borrow the Anchor Point tool (I.61)');
+  assert.equal(cursorFor(armed), 'close',
+    'but it does NOT borrow the click: over the close target the badge still promises a close');
+
+  const s = drive(armed, [down(0, 0, { alt: true }), move(40, -30, { alt: true }), up(40, -30, { alt: true })]);
   const pt = s.doc.paths[0].points[0];
   assert.equal(s.doc.paths[0].closed, true);
   assert.ok(nearPt(P(pt.leftDirection), V(40, -30)), 'the closing segment gets a handle');
   assert.deepEqual(pt.rightDirection, rightBefore, 'and the first segment is left alone');
   assert.equal(pt.pointType, 'corner');
+  assert.equal(s.doc.paths[0].points.length, 3, 'and no anchor was added or converted on the way');
+});
+
+test('I.30b — the Alt borrow is scoped: it yields the close ladder and keeps everything else', () => {
+  // The exception has to be SMALL or it becomes its own bug. Alt over the far endpoint of the
+  // ACTIVE path is a close; Alt over the anchor the pen is drawing FROM is still a conversion
+  // (spec A.5's after-placement table is a real gesture on that exact anchor); and with no path
+  // active Alt owns every click, which is what makes `Shift+C` and Alt the same engine (I.90).
+  const active = drive(threeInARow(), [kd('Alt', { alt: true })]);
+  assert.equal(cursorFor(drive(active, [move(100, 100, { alt: true })])), 'convert',
+    'the active endpoint keeps the caret — Alt-dragging it pulls a fresh direction line');
+
+  const idle: PenPath = { closed: false, points: [
+    { anchor: [0, 0], leftDirection: [0, 0], rightDirection: [0, 0], pointType: 'corner' },
+    { anchor: [100, 0], leftDirection: [100, 0], rightDirection: [100, 0], pointType: 'corner' },
+  ] };
+  const hovered = drive(createPenState({ paths: [idle] }), [kd('Alt', { alt: true }), move(100, 0, { alt: true })]);
+  assert.equal(hovered.activePathIndex, null);
+  assert.equal(cursorFor(hovered), 'convert',
+    'with nothing active there is nothing to close or join to, so Alt keeps the whole click');
 });
 
 test('I.31, I.32, I.33 — the continue badge appears on an OPEN path\'s endpoint and never on a closed one', () => {
@@ -596,23 +651,41 @@ test('I.36 — the click precedence of A.8 holds end to end, and a higher rung S
 
 test('I.37, I.38 — clicking a segment of a SELECTED path inserts an anchor and the shape is IDENTICAL', () => {
   // A curved segment with real handles, so the split is a genuine de Casteljau split.
+  //
+  // DELIBERATELY ASYMMETRIC, AND CLICKED OFF-CENTRE. The fixture this replaced was
+  // (0,0),(30,-90),(170,90),(200,0) clicked at (100,0): symmetric about its midpoint, so the
+  // click resolved to t = 0.5 exactly, and at t = 0.5 on THAT curve the de Casteljau split point
+  // and the chord midpoint are the SAME POINT. An implementation that put the new anchor on the
+  // chord instead of on the curve passed it. Both properties had to go: the curve is now lopsided
+  // and the click is nowhere near the middle of it.
   const curve: PenPath = { closed: false, points: [
-    { anchor: [0, 0], leftDirection: [0, 0], rightDirection: [30, -90], pointType: 'corner' },
-    { anchor: [200, 0], leftDirection: [170, 90], rightDirection: [200, 0], pointType: 'corner' },
+    { anchor: [0, 0], leftDirection: [0, 0], rightDirection: [10, -140], pointType: 'corner' },
+    { anchor: [200, 0], leftDirection: [260, 40], rightDirection: [200, 0], pointType: 'corner' },
   ] };
   const base = createPenState({ paths: [curve] });
   const selected: PenState = { ...base, selection: { ...base.selection, paths: [0] } };
 
-  const hovered = drive(selected, [move(100, 0)]);
+  // A point genuinely ON the curve, computed here by repeated lerp — never asked of the engine.
+  const at = bez(V(0, 0), V(10, -140), V(260, 40), V(200, 0), 0.28);
+
+  const hovered = drive(selected, [move(at.x, at.y)]);
   assert.equal(cursorFor(hovered), 'add', 'I.37');
 
   const before = segPoints(selected.doc.paths[0], 0);
-  const action = resolvePenClick(selected, V(100, 0), M(), DEFAULT_PEN_CONFIG, 1);
+  const action = resolvePenClick(selected, at, M(), DEFAULT_PEN_CONFIG, 1);
   assert.equal(action.kind, 'add-anchor');
   const t = action.kind === 'add-anchor' ? action.t : 0;
+  assert.ok(Math.abs(t - 0.5) > 0.1, `the click must NOT land at t = 0.5, where the split point and the chord midpoint coincide; t = ${t}`);
 
-  const s = drive(selected, [down(100, 0), up(100, 0)]);
+  const s = drive(selected, [down(at.x, at.y), up(at.x, at.y)]);
   assert.equal(s.doc.paths[0].points.length, 3);
+
+  // The new anchor sits on the CURVE at t, not on the chord between its neighbours. Both are
+  // computed here from the original control points.
+  const onCurve = bez(before[0], before[1], before[2], before[3], t);
+  const onChord = V(before[0].x + (before[3].x - before[0].x) * t, before[0].y + (before[3].y - before[0].y) * t);
+  assert.ok(nearPt(P(s.doc.paths[0].points[1].anchor), onCurve, 1e-9), 'the new anchor is B(t)');
+  assert.ok(D(onCurve, onChord) > 10, 'and this fixture can tell B(t) from the chord at all');
 
   // I.38, numerically: the two halves must retrace the original curve exactly. de Casteljau
   // reparametrises, so the original at u corresponds to half 1 at u/t and half 2 at (u-t)/(1-t).
@@ -821,6 +894,72 @@ test('I.54, I.55 — no termination route closes the path, deletes an anchor, or
     'switching tools leaves the path selected, unlike Escape');
 });
 
+test('I.54b — a termination route with a DRAG IN PROGRESS commits it and stops it dead', () => {
+  // Spec A.11: switching tools COMMITS the in-progress drag. The route used to end the drawing
+  // session and leave `state.drag` set, so `onPointerMove` kept running the placement frame for
+  // the old gesture under the NEW tool — one more mouse move and the handle the user was pulling
+  // flew to the cursor with the pen no longer active and nothing on screen to explain it.
+  //
+  // I.54/I.55 above cannot catch this: every one of its routes starts from a state with no drag.
+  const routes: Record<string, PenInput[]> = {
+    'switch tools': [kd('a')],
+    'switch to the pen itself': [kd('p')],
+    enter: [kd('Enter')],
+    'ctrl+shift+A': [kd('a', { ctrl: true, shift: true })],
+  };
+  for (const [name, keys] of Object.entries(routes)) {
+    const mid = drive(createPenState(), [...click(0, 0), down(100, 0), move(140, 40)]);
+    assert.ok(mid.drag, `${name}: precondition — a placement drag really is in progress`);
+    const ended = drive(mid, keys);
+    assert.equal(ended.drag, null, `${name}: the drag is concluded, not abandoned mid-flight`);
+    assert.deepEqual(pointAt(ended, 0, 1).rightDirection, [140, 40],
+      `${name}: and it commits where the hand left it`);
+
+    const wandered = drive(ended, [move(300, 300), move(500, 20)]);
+    assert.deepEqual(pointAt(wandered, 0, 1).rightDirection, [140, 40],
+      `${name}: a mouse move AFTER the route must not still be yanking that handle`);
+    assert.deepEqual(wandered.doc, ended.doc, `${name}: nothing in the document moved at all`);
+  }
+
+  // Escape is the deliberate exception — it ABORTS where the others commit (spec A.11's table).
+  const aborted = drive(createPenState(), [...click(0, 0), down(100, 0), move(140, 40), kd('Escape')]);
+  assert.equal(aborted.drag, null);
+  assert.equal(aborted.doc.paths[0].points.length, 1, 'Escape discards the anchor the others keep');
+});
+
+test('a rollback undoes THE GESTURE IN THE HAND, never a completed one — Escape and blur on a marquee', () => {
+  // THE ONE THAT DELETED A USER'S WORK. `rollback` popped whatever sat on top of `state.undo`,
+  // which is right only while every drag pushes a snapshot on pointerdown — and the marquee does
+  // not, because a rubber-band selection changes no geometry. So Escape mid-marquee restored the
+  // snapshot belonging to the PREVIOUS, COMPLETED gesture and destroyed the anchor placed by it.
+  // Reproduced in the built app as `data-pen-anchors` going 4 -> 3 on the key that cancels.
+  const drawn = drive(createPenState(), [...click(0, 0), ...click(100, 0), ...click(100, 100), ...click(0, 100)]);
+  assert.equal(drawn.doc.paths[0].points.length, 4);
+
+  for (const [name, ender] of Object.entries({
+    escape: kd('Escape'),
+    blur: { type: 'blur', mods: M(), zoom: 1 } as PenInput,
+  })) {
+    const marqueeing = drive(drawn, [kd('a'), down(400, 400), move(500, 500)]);
+    assert.equal(marqueeing.drag!.kind, 'marquee', `${name}: precondition — a marquee is in progress`);
+    const after = reduce(marqueeing, ender);
+    assert.equal(after.doc.paths[0].points.length, 4,
+      `${name} during a marquee must not delete an anchor the user placed`);
+    assert.deepEqual(after.doc, drawn.doc, `${name}: the geometry is byte-identical`);
+    assert.equal(after.marquee, null, `${name}: and the marquee itself is gone`);
+    assert.equal(after.drag, null);
+  }
+
+  // The other half of the rule: a gesture that DOES own a snapshot still rolls all the way back,
+  // and takes any snapshot taken during it (a nudge with the button down) with it.
+  const undoBefore = drawn.undo.length;
+  const mid = drive(drawn, [down(300, 300), move(360, 340), kd('ArrowRight')]);
+  assert.ok(mid.undo.length > undoBefore + 1, 'precondition — the nudge stacked a second snapshot');
+  const escaped = reduce(mid, kd('Escape'));
+  assert.deepEqual(escaped.doc, drawn.doc, 'Escape restores the state the gesture opened in');
+  assert.equal(escaped.undo.length, undoBefore, 'and nothing the gesture pushed is left on the stack');
+});
+
 // ══ Modifier tool-switching — spec B, items 56-64 ═════════════════════════
 
 test('I.56 — Ctrl gives whichever of Selection / Direct Selection was used LAST', () => {
@@ -907,6 +1046,14 @@ test('I.62, I.63 — spacebar with the mouse DOWN translates the anchor and both
   const after = pointAt(s, 0, 1);
   assert.ok(nearPt(P(after.rightDirection), V(210, 130)), 'and the drag resumes from there');
   assert.ok(nearPt(P(after.anchor), V(140, 130)), 'without dragging the anchor along');
+  // THE ASSERTION THAT MAKES THE OTHER TWO MEAN ANYTHING. The translate has to move the drag's
+  // GEOMETRIC ORIGIN — the Q the mirror reflects through — along with the anchor. Freeze `origin`
+  // and `rightDirection == cursor` and `anchor` both still hold, because neither of them is
+  // computed from Q; only the far side is, and the point silently stops being smooth in the one
+  // way a smooth point is defined: its handles opposite THROUGH ITS OWN ANCHOR.
+  assert.ok(nearPt(P(after.leftDirection), V(2 * 140 - 210, 2 * 130 - 130)),
+    'and the incoming handle still mirrors through the anchor where it now stands');
+  assert.equal(after.pointType, 'smooth');
 });
 
 test('I.64 — spacebar with the mouse UP is a pan REQUEST; the engine does not pan', () => {
@@ -936,6 +1083,59 @@ test('the keyboard table names which host bindings the pen claims, and when', ()
   for (const b of PEN_KEY_BINDINGS) {
     assert.ok(lookupBinding(b.key, { ...b.mods }), `${b.label} is unreachable`);
   }
+
+  // …AND REACHABLE FROM A KEYBOARD, which is a different question and the one that caught a real
+  // defect. The check above asks the table about itself: feed it `{ key: '+', shift: false }` and
+  // it happily agrees that `+` without Shift finds that entry — but `KeyboardEvent.key` is the
+  // CHARACTER, and no US-layout keystroke ever produces `+` with `shift: false`. Both `+` and `_`
+  // were declared that way, so `lookupBinding` returned null for them at runtime and a shortcut
+  // sheet generated from this table would have listed two chords nobody can type.
+  //
+  // Modelled on the US main row only, and only for punctuation: letters arrive lowercased by
+  // `lookupBinding`, so `Shift+C` and `c` are the same key with a different flag, which is legal.
+  const US_SHIFTED = '~!@#$%^&*()_+{}|:"<>?';
+  const US_UNSHIFTED = '`1234567890-=[]\\;\',./';
+  for (const b of PEN_KEY_BINDINGS) {
+    if (b.key.length !== 1) continue;
+    const shifted = US_SHIFTED.includes(b.key);
+    const unshifted = US_UNSHIFTED.includes(b.key);
+    if (!shifted && !unshifted) continue;              // a letter — either flag is producible
+    assert.equal(b.mods.shift, shifted,
+      `${b.label}: '${b.key}' is only typeable with shift ${shifted}, so the binding must say so`);
+  }
+  // The two that were wrong, spelled out, because a table-driven loop passes vacuously if the
+  // entries ever disappear.
+  assert.equal(lookupBinding('+', { alt: false, ctrl: false, shift: true })!.command, 'add-anchor-at-selection');
+  assert.equal(lookupBinding('_', { alt: false, ctrl: false, shift: true })!.command, 'delete-anchor-at-selection');
+  assert.equal(lookupBinding('=', { alt: false, ctrl: false, shift: false })!.command, 'add-anchor-at-selection');
+  assert.equal(lookupBinding('-', { alt: false, ctrl: false, shift: false })!.command, 'delete-anchor-at-selection');
+});
+
+test('I.116, I.118 — Outline and Hide Edges are VIEW state: no geometry, no undo step', () => {
+  // [U] on both bindings — `Ctrl+Y` is documented by Adobe, `Ctrl+H` is not and is universally
+  // reported. What matters here is that neither can reach the artifact: gotcha 27 is that people
+  // toggle these MID-DRAW to see what they are tracing, so a toggle that cost an undo step would
+  // make I.123's "one anchor placement is exactly ONE undo step" depend on how often they looked.
+  const drawn = threeInARow();
+  const depth = drawn.undo.length;
+
+  const outlined = drive(drawn, [kd('y', { ctrl: true })]);
+  assert.equal(outlined.outline, true);
+  assert.equal(outlined.hideEdges, false, 'the two are independent');
+  assert.equal(drive(outlined, [kd('y', { ctrl: true })]).outline, false, 'and it toggles back');
+
+  const hidden = drive(drawn, [kd('h', { ctrl: true })]);
+  assert.equal(hidden.hideEdges, true);
+  assert.equal(hidden.outline, false);
+
+  for (const [name, s] of Object.entries({ outline: outlined, hideEdges: hidden })) {
+    assert.deepEqual(s.doc, drawn.doc, `${name}: no geometry moved`);
+    assert.equal(s.undo.length, depth, `${name}: no undo step`);
+    assert.equal(s.activePathIndex, 0, `${name}: and the pen keeps drawing (I.116)`);
+    assert.equal(s.activeTool, 'pen');
+  }
+  assert.equal(createPenState().outline, false, 'both start off');
+  assert.equal(createPenState().hideEdges, false);
 });
 
 test('I.93, I.94 — Caps Lock outranks every badge, and "cannot draw here" is its own symbol', () => {
@@ -1296,6 +1496,42 @@ test('I.100 — hit radii are SCREEN pixels and stay constant under zoom', () =>
   // screen px at 1x (a hit) and 20 at 4x (a miss).
   assert.equal(hitTest(doc, V(100, 105), cfg, 1)!.kind, 'anchor');
   assert.equal(hitTest(doc, V(100, 105), cfg, 4), null, 'store a screen radius in document units and this passes');
+});
+
+test('a SHORT handle is still grabbable — the anchor tier must not swallow the handle tier', () => {
+  // `anchorHitRadiusPx` (6) is LARGER than `handleHitRadiusPx` (5), so a handle pulled four
+  // document px out of its anchor lies entirely inside the anchor's disc. Return on the first
+  // non-empty tier and it can never be reached: click exactly on the dot and you get the anchor
+  // behind it. Illustrator lets you grab a short handle.
+  const cfg = DEFAULT_PEN_CONFIG;
+  const shortHandle: PenDoc = { paths: [{ closed: false, points: [
+    { anchor: [100, 100], leftDirection: [100, 100], rightDirection: [104, 100], pointType: 'corner' },
+    { anchor: [300, 100], leftDirection: [300, 100], rightDirection: [300, 100], pointType: 'corner' },
+  ] }] };
+  assert.deepEqual(hitTest(shortHandle, V(104, 100), cfg, 1), { kind: 'handle', path: 0, point: 0, side: 'right' },
+    'a click ON the handle dot reaches the handle');
+  assert.deepEqual(hitTest(shortHandle, V(100, 100), cfg, 1), { kind: 'anchor', path: 0, point: 0 },
+    'and a click ON the anchor still reaches the anchor');
+  assert.deepEqual(hitTest(shortHandle, V(102, 100), cfg, 1), { kind: 'anchor', path: 0, point: 0 },
+    'the tie at the midpoint goes to the anchor — the handle has to be strictly closer');
+
+  // The NEAR TIE, which is what a tier order alone gets wrong and what a gross inversion never
+  // reaches: a hair on the handle's side of the midpoint, and a hair on the anchor's.
+  assert.equal(hitTest(shortHandle, V(102.01, 100), cfg, 1)!.kind, 'handle');
+  assert.equal(hitTest(shortHandle, V(101.99, 100), cfg, 1)!.kind, 'anchor');
+
+  // AND THE RANK THAT MUST NOT MOVE. An anchor SITS ON the segments that meet it, so by raw
+  // distance a segment is tied with its anchor and often a floating-point hair closer. That tier
+  // stays strictly ranked, or clicking an anchor starts inserting a new one beside it (I.99).
+  const line: PenDoc = { paths: [{ closed: false, points: [
+    { anchor: [0, 0], leftDirection: [0, 0], rightDirection: [0, 0], pointType: 'corner' },
+    { anchor: [200, 0], leftDirection: [200, 0], rightDirection: [200, 0], pointType: 'corner' },
+  ] }] };
+  assert.deepEqual(hitTest(line, V(0, 0), cfg, 1), { kind: 'anchor', path: 0, point: 0 },
+    'exactly on an endpoint: the anchor wins over the segment it lies on');
+  assert.deepEqual(hitTest(line, V(1, 0), cfg, 1), { kind: 'anchor', path: 0, point: 0 },
+    'and inside the anchor radius the segment never gets a look in, however close it is');
+  assert.equal(hitTest(line, V(100, 1), cfg, 1)!.kind, 'segment', 'well clear of both anchors, the segment answers');
 });
 
 // ══ Undo — items 123, 124 ════════════════════════════════════════════════

@@ -101,6 +101,20 @@ anchor is two numbers changing on one line instead of "Binary files differ". Tha
 its entire purpose: a mask review that reads geometry is review, and one that
 compares two thumbnails is assent.
 
+**Who writes one.** The editor's save path, both halves of it: `FoilLab.saveMask`
+sends the pen's document as `vector` on the direct PUT, and `stageMask` puts the
+same value in the staged session, from where the contribution route commits it
+beside the PNG. The pen's document is converted once, by `toMaskVector`, and there
+is no second serialiser — `apps/editor/e2e/run.mjs` drives the whole journey
+(draw → save → reload → the anchors are still anchors), because every piece of
+this was individually green while the slice as a whole had no producer at all and
+every anchor died with the tab.
+
+**What reopens one.** A staged session brings its geometry back with its pixels, so
+the pen reopens on the anchors that drew them. A mask read back from `data/` opens
+as a BACKDROP to trace: `getMask` answers from the corpus manifest and the PNG, and
+nothing reads the committed `.paths.json` back into the editor yet.
+
 Three rules keep it honest, all enforced in code rather than by convention:
 
 * **It is an AUTHORING artifact, never evidence.** `derivation_method`, the
@@ -110,9 +124,16 @@ Three rules keep it honest, all enforced in code rather than by convention:
   and once without, and comparing the records.
 * **The pair must agree.** `functions/_lib/validate.ts` rasterises the submitted
   paths through the same rasteriser the editor previews with, and REFUSES the
-  submission when they do not make the submitted pixels (IoU ≥ 0.98 and boundary
-  p95 ≤ 2px — calibrated in `validate.test.ts`). A legible diff that misdescribes
-  the mask beside it is worse than no diff, because a reviewer would believe it.
+  submission when they do not make the submitted pixels. Three numbers, all
+  calibrated in `validate.test.ts`: IoU ≥ 0.98 (same region), boundary p95 ≤ 2px
+  (how much of the boundary moved), boundary max ≤ 5px (whether the two disagree
+  *anywhere*). The boundary distance is measured in BOTH directions — one-way it
+  reported `0.00px` for a mask whose paths omitted 3,600px of it, because a region
+  missing from the paths never touches the paths' own boundary. The work is bounded
+  as well as the input: a submitted vector that flattens past 60,000 points is
+  refused by name rather than rasterised, because the flattener's cost answers to
+  the geometry and not to the byte count. A legible diff that misdescribes the mask
+  beside it is worse than no diff, because a reviewer would believe it.
 * **A save with no vector REMOVES it.** A brush save over a pen-authored mask, and
   a frame migration, both leave paths that no longer describe the pixels beside
   them; both delete the file rather than leave it. The supersede archive keeps a

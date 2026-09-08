@@ -580,11 +580,31 @@ export function cubicAt(from: Vec, pr: CubicPrim, t: number): Vec {
 }
 
 /**
- * A cap, not a budget. Subdivision halves the hull's diameter every level, so 24 levels is
- * 16 million chords — unreachable for any real sagitta. It exists so a curve with a cusp,
- * or a NaN handle, cannot spin the flattener forever inside a rasterise call.
+ * A DEPTH cap, and — this is the sentence that was wrong for a while — not a work bound.
+ *
+ * Subdivision halves the hull's diameter every level, so reaching 24 levels needs a hull
+ * about 16 million times the sagitta. This comment used to call that "unreachable for any
+ * real sagitta". IT IS REACHABLE, with finite coordinates a JSON body may legally carry:
+ * `c1: [1e11, 0], c2: [0, 1e11]` on a 504x704 card is a hull 1e11 across, and because those
+ * handles are ORTHOGONAL rather than collinear nothing cancels in floating point the way a
+ * naive "the numbers are huge, they will subtract out" reading assumes. Measured through
+ * `validateMask`: 3.67M emitted points, 85.9 s, 1,065 MB of RSS, from 185 bytes of body.
+ *
+ * So the depth cap stays — it is what stops a cusp or a NaN handle spinning forever — and
+ * the COUNT is bounded separately, by `flattenPath`'s `maxPoints`, because 2^24 chords is a
+ * denial of service long before it is an infinite loop.
  */
 const CUBIC_MAX_DEPTH = 24;
+
+/**
+ * A flattener asked for more points than the caller budgeted for.
+ *
+ * Its own class, not a plain `Error`, because a caller has to be able to tell "this geometry
+ * is too expensive to check" apart from "this geometry is malformed" (`BadMaskVector`).
+ * They are different sentences to a contributor and only one of them means the file is
+ * broken.
+ */
+export class PathTooComplex extends Error {}
 
 /** Distance from `p` to the SEGMENT ab (not the infinite line through it). */
 function distToSegment(p: Vec, a: Vec, b: Vec): number {
@@ -612,15 +632,30 @@ function distToSegment(p: Vec, a: Vec, b: Vec): number {
  * unconditionally correct on the ugly ones, which is the right trade for a rasteriser whose
  * output is a committed artifact.
  */
-function flattenCubicInto(out: Vec[], p0: Vec, p1: Vec, p2: Vec, p3: Vec, sagitta: number, depth: number): void {
+function flattenCubicInto(
+  out: Vec[],
+  p0: Vec,
+  p1: Vec,
+  p2: Vec,
+  p3: Vec,
+  sagitta: number,
+  depth: number,
+  maxPoints: number,
+): void {
+  // Checked on the way DOWN, before any more work is done, so the refusal costs the depth of
+  // the recursion rather than the rest of the tree. `>=` because the point about to be
+  // pushed is the one that would break the budget.
+  if (out.length >= maxPoints) {
+    throw new PathTooComplex(`flattening this path passed the ${maxPoints}-point budget`);
+  }
   const bound = Math.max(distToSegment(p1, p0, p3), distToSegment(p2, p0, p3));
   if (depth >= CUBIC_MAX_DEPTH || !(bound > sagitta)) { out.push(p3); return; }
   const m = (a: Vec, b: Vec): Vec => v((a.x + b.x) / 2, (a.y + b.y) / 2);
   const a1 = m(p0, p1), a2 = m(p1, p2), a3 = m(p2, p3);
   const b1 = m(a1, a2), b2 = m(a2, a3);
   const mid = m(b1, b2);
-  flattenCubicInto(out, p0, a1, b1, mid, sagitta, depth + 1);
-  flattenCubicInto(out, mid, b2, a3, p3, sagitta, depth + 1);
+  flattenCubicInto(out, p0, a1, b1, mid, sagitta, depth + 1, maxPoints);
+  flattenCubicInto(out, mid, b2, a3, p3, sagitta, depth + 1, maxPoints);
 }
 
 /**
@@ -637,8 +672,21 @@ function flattenCubicInto(out: Vec[], p0: Vec, p1: Vec, p2: Vec, p3: Vec, sagitt
  *
  * So: `switch` with a `never`-typed default everywhere, which makes a FOURTH primitive a
  * compile error at every site that has to know about it, rather than a bug that ships.
+ *
+ * ── `maxPoints`, AND WHY IT DEFAULTS TO INFINITY ───────────────────────────────────────
+ *
+ * The work this function does is set by the GEOMETRY, not by the size of the input: one
+ * cubic with orthogonal handles at 1e11, or one arc with `r: 1e13`, is a handful of bytes
+ * and millions of points. Bounding the input therefore bounds nothing, which is what let a
+ * 185-byte JSON field burn 86 seconds and a gigabyte inside a validation call.
+ *
+ * The bound is OPT-IN because this function serves two kinds of caller and only one of them
+ * has an adversary: the template fitter and the editor's own preview flatten geometry this
+ * process authored, and a budget there could only ever turn a legitimate render into an
+ * exception. `functions/_lib/validate.ts` flattens what a stranger POSTed, and passes one.
+ * Default absent, so every existing caller is byte-for-byte unaffected.
  */
-export function flattenPath(path: VPath, sagitta: number): Vec[] {
+export function flattenPath(path: VPath, sagitta: number, maxPoints = Infinity): Vec[] {
   const out: Vec[] = [];
   let cur = v(path.start[0], path.start[1]);
   out.push(cur);
@@ -655,6 +703,15 @@ export function flattenPath(path: VPath, sagitta: number): Vec[] {
         // Steps so the sagitta of each chord stays under `sagitta`.
         const maxStep = 2 * Math.acos(Math.max(-1, Math.min(1, 1 - sagitta / g.r)));
         const steps = Math.max(2, Math.ceil(Math.abs(g.sweepAng) / Math.max(1e-4, maxStep)));
+        // The arc branch is bounded more gently than the cubic one and is still bounded here.
+        // The `Math.max(1e-4, …)` floor above caps ONE arc at 2*pi/1e-4 ~ 62,832 points
+        // (measured: `r: 1e13` on a 1e13 chord asks for 10,472), so no single arc runs away —
+        // but the ceiling on primitives is 20,000, and 20,000 arcs at that cap is not a bound
+        // anybody wants to discover in production. Checked BEFORE the loop rather than inside
+        // it, because a step count that large is not something to walk and then regret.
+        if (out.length + steps > maxPoints) {
+          throw new PathTooComplex(`one arc alone wants ${steps} points, past the ${maxPoints}-point budget`);
+        }
         for (let s = 1; s <= steps; s++) {
           const a = g.a0 + (g.sweepAng * s) / steps;
           out.push(v(g.cx + g.r * Math.cos(a), g.cy + g.r * Math.sin(a)));
@@ -662,13 +719,18 @@ export function flattenPath(path: VPath, sagitta: number): Vec[] {
         break;
       }
       case 'cubic': {
-        flattenCubicInto(out, cur, v(pr.c1[0], pr.c1[1]), v(pr.c2[0], pr.c2[1]), to, sagitta, 0);
+        flattenCubicInto(out, cur, v(pr.c1[0], pr.c1[1]), v(pr.c2[0], pr.c2[1]), to, sagitta, 0, maxPoints);
         break;
       }
       default: {
         const unhandled: never = pr;
         throw new Error(`flattenPath: unknown primitive ${JSON.stringify(unhandled)}`);
       }
+    }
+    // The line case has no inner loop to check, and the cubic case's last push happens below
+    // its own guard, so the budget is re-asserted once per primitive as well.
+    if (out.length > maxPoints) {
+      throw new PathTooComplex(`flattening this path passed the ${maxPoints}-point budget`);
     }
     cur = to;
   }
@@ -1334,6 +1396,24 @@ export function serializeMaskVector(v: MaskVector): string {
 
 export class BadMaskVector extends Error {}
 
+/**
+ * How far outside its own raster a coordinate may sit, in multiples of the raster.
+ *
+ * NOT zero, and not one: a handle legitimately lives outside the card. Pull an anchor's
+ * direction point off the top edge to flatten a curve and the number in the file is
+ * negative; a long sweeping segment can put one several card-widths away. Sixteen is chosen
+ * to be far past anything a hand produces (8,064 px of handle on a 504 px card) and far
+ * short of anything that costs real time to flatten.
+ *
+ * The reason it exists at all is that the flattener's work is set by the SPAN of the hull
+ * rather than by the byte count: `c1: [1e13, 0]` parses, is finite, and is not a mask by any
+ * reading of the word. Refusing it here means the expensive question is never asked. It is a
+ * second line of defence rather than the only one — `flattenPath`'s point budget is what
+ * bounds the ordinary-numbers case — and both are needed, because 20,000 perfectly
+ * reasonable cubics are also millions of points.
+ */
+export const MASK_VECTOR_MAX_COORD_SPANS = 16;
+
 const isPair = (x: unknown): x is [number, number] =>
   Array.isArray(x) && x.length === 2 && Number.isFinite(x[0]) && Number.isFinite(x[1]);
 
@@ -1372,12 +1452,26 @@ export function parseMaskVector(raw: unknown, maxPrims = 20000): MaskVector {
   }
   if (!Array.isArray(v.paths) || v.paths.length === 0) throw new BadMaskVector('paths must be a non-empty array');
 
+  // The magnitude ceiling, in the raster this file declares. See MASK_VECTOR_MAX_COORD_SPANS.
+  const limX = (space.width as number) * MASK_VECTOR_MAX_COORD_SPANS;
+  const limY = (space.height as number) * MASK_VECTOR_MAX_COORD_SPANS;
+  const inRange = (p: [number, number], where: string, what: string): [number, number] => {
+    if (Math.abs(p[0]) > limX || Math.abs(p[1]) > limY) {
+      throw new BadMaskVector(
+        `${where}: ${what} is at [${p[0]}, ${p[1]}], further than ${MASK_VECTOR_MAX_COORD_SPANS}x outside a ` +
+          `${space.width as number}x${space.height as number} raster — that is not a point on a card`,
+      );
+    }
+    return p;
+  };
+
   let total = 0;
   const paths: VPath[] = v.paths.map((p, i): VPath => {
     const where = `paths[${i}]`;
     if (typeof p !== 'object' || p === null) throw new BadMaskVector(`${where} is not an object`);
     const o = p as Record<string, unknown>;
     if (!isPair(o.start)) throw new BadMaskVector(`${where}: start must be two finite numbers`);
+    inRange(o.start, where, 'start');
     if (!Array.isArray(o.prims) || o.prims.length === 0) throw new BadMaskVector(`${where}: prims must be a non-empty array`);
     total += o.prims.length;
     if (total > maxPrims) throw new BadMaskVector(`over the ${maxPrims}-primitive ceiling`);
@@ -1389,16 +1483,30 @@ export function parseMaskVector(raw: unknown, maxPrims = 20000): MaskVector {
       const t = anchorType(pr.t, `${w2}.t`);
       const tt = t ? { t } : {};
       if (!isPair(pr.to)) throw new BadMaskVector(`${w2}: to must be two finite numbers`);
+      inRange(pr.to, w2, 'to');
       switch (pr.k) {
         case 'line':
           return { k: 'line', to: pr.to, ...tt };
         case 'arc': {
           if (!Number.isFinite(pr.r)) throw new BadMaskVector(`${w2}: arc r must be a finite number`);
           if (pr.sweep !== 0 && pr.sweep !== 1) throw new BadMaskVector(`${w2}: arc sweep must be 0 or 1`);
+          // A radius is a LENGTH, so it is bounded against the raster the same way a position
+          // is. Not for cost — the flattener's own step floor already caps one arc at ~62,832
+          // points however large `r` gets — but because an arc of radius 8,064px across a
+          // 504px card is a straight line that a reviewer would have to take on trust, and
+          // because the committed artifact is supposed to hold numbers somebody chose.
+          if (Math.abs(pr.r as number) > limX) {
+            throw new BadMaskVector(
+              `${w2}: arc r is ${pr.r as number}, further than ${MASK_VECTOR_MAX_COORD_SPANS}x the ` +
+                `${space.width as number}px raster — an arc that flat is a line`,
+            );
+          }
           return { k: 'arc', to: pr.to, r: pr.r as number, sweep: pr.sweep, ...tt };
         }
         case 'cubic': {
           if (!isPair(pr.c1) || !isPair(pr.c2)) throw new BadMaskVector(`${w2}: a cubic needs both handles`);
+          inRange(pr.c1, w2, 'c1');
+          inRange(pr.c2, w2, 'c2');
           return { k: 'cubic', c1: pr.c1, c2: pr.c2, to: pr.to, ...tt };
         }
         default:
@@ -1428,19 +1536,29 @@ export function parseMaskVector(raw: unknown, maxPrims = 20000): MaskVector {
  * Scaled when the caller's raster is not the vector's own `space`, through `mapPathCoords`, for
  * the reason that function's own comment gives: a cubic carries three points, and a converter
  * that scales `to` and forgets the handles turns the curve inside out.
+ *
+ * `maxPoints` bounds the TOTAL across every subpath, not each one — a per-path budget times
+ * however many paths a body cares to carry is not a bound at all. It is spent as it goes, so
+ * the first path to exhaust it is the one that names itself in the refusal.
  */
 export function rasterizeMaskVector(
   v: MaskVector,
   width: number,
   height: number,
-  opts: { supersample?: number; sagittaPx?: number } = {},
+  opts: { supersample?: number; sagittaPx?: number; maxPoints?: number } = {},
 ): Uint8Array {
   const ss = opts.supersample ?? 4;
   const sag = opts.sagittaPx ?? DEFAULT_VECTOR_FIT_PARAMS.flattenSagittaPx;
+  let budget = opts.maxPoints ?? Infinity;
   const sx = width / v.space.width;
   const sy = height / v.space.height;
   const scale = sx === 1 && sy === 1
     ? (p: VPath): VPath => p
     : (p: VPath): VPath => mapPathCoords(p, ([x, y]) => [x * sx, y * sy], (r) => r * sx);
-  return rasterizePolygons(v.paths.map((p) => flattenPath(scale(p), sag)), width, height, ss);
+  const loops = v.paths.map((p) => {
+    const poly = flattenPath(scale(p), sag, budget);
+    budget -= poly.length;
+    return poly;
+  });
+  return rasterizePolygons(loops, width, height, ss);
 }

@@ -27,6 +27,7 @@ import {
 import {
   PEN_CHROME_PX,
   chromeMetrics,
+  consumesKey,
   docPoint,
   keyInput,
   paintAlpha,
@@ -216,6 +217,43 @@ test('a curved segment draws as a cubic through the stored direction points', ()
 test('an open path is drawn open — no Z, or every path in progress would look closed', () => {
   const path: PenPath = { closed: false, points: [cornerPoint({ x: 0, y: 0 }), cornerPoint({ x: 5, y: 5 })] }
   assert.equal(penPathD({ paths: [path] })[0], 'M 0 0 L 5 5')
+})
+
+test('the surface swallows the chords the pen BINDS, and nothing else on the page', () => {
+  // The keydown listener is at WINDOW level, so anything this returns true for is dead for the
+  // entire document. It used to be a regex over bare characters — and `c` and `v` are the Anchor
+  // Point and Selection tool letters, so `Ctrl+C` and `Ctrl+V` matched it: with the pen open, no
+  // `copy` or `paste` event fired anywhere on the page, and `Ctrl+P` never reached print.
+  const k = (key: string, m: { alt?: boolean; ctrl?: boolean; shift?: boolean } = {}) =>
+    ({ key, altKey: m.alt ?? false, ctrlKey: m.ctrl ?? false, shiftKey: m.shift ?? false })
+
+  // THE BUG, as four assertions. None of these is a pen binding and none may be swallowed.
+  for (const key of ['c', 'v', 'p', 'x']) {
+    assert.equal(consumesKey(k(key, { ctrl: true })), false, `Ctrl+${key.toUpperCase()} belongs to the page`)
+  }
+
+  // …while the bare letters still are the pen's tools, and the real Ctrl chords still are its.
+  for (const key of ['p', 'a', 'v', '=', '-', 'Escape', 'Enter', 'Delete', 'Backspace', 'ArrowLeft']) {
+    assert.equal(consumesKey(k(key)), true, `bare ${key} is a pen binding`)
+  }
+  assert.equal(consumesKey(k('z', { ctrl: true })), true, 'Ctrl+Z is the pen\'s undo, not the browser\'s')
+  assert.equal(consumesKey(k('z', { ctrl: true, shift: true })), true, 'and Ctrl+Shift+Z its redo')
+  assert.equal(consumesKey(k('j', { ctrl: true })), true, 'Ctrl+J really is Join — the pen implements it')
+  assert.equal(consumesKey(k('a', { ctrl: true })), true, 'Ctrl+A is Select All')
+  assert.equal(consumesKey(k('y', { ctrl: true })), true, 'Ctrl+Y is Outline')
+  assert.equal(consumesKey(k('h', { ctrl: true })), true, 'Ctrl+H is Hide Edges')
+  assert.equal(consumesKey(k('C', { shift: true })), true, 'Shift+C is the Anchor Point tool')
+
+  // The host's zoom chords survive, which is the distinction the old pair of regexes existed to
+  // draw and could not: the pen claims BARE `+`/`=`/`-`, never the Ctrl versions.
+  for (const key of ['=', '-', '0', '1']) {
+    assert.equal(consumesKey(k(key, { ctrl: true })), false, `Ctrl+${key} is the host's zoom, not the pen's`)
+  }
+
+  // And the keys a surface must never take, however tempting the regex.
+  for (const key of ['Tab', 'F5', 'F12', 'Home', 'PageDown']) {
+    assert.equal(consumesKey(k(key)), false, `${key} must reach whatever implements it`)
+  }
 })
 
 // ── helpers ─────────────────────────────────────────────────────────────────

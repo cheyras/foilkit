@@ -72,6 +72,7 @@ import {
 import { MASK_H, MASK_W } from './MaskEditor.tsx'
 import {
   chromeMetrics,
+  consumesKey,
   keyInput,
   paintAlpha,
   penPathD,
@@ -110,26 +111,6 @@ const CSS_CURSOR: Record<PenCursor, string> = {
   blocked: 'not-allowed',
   crosshair: 'crosshair',
 }
-
-/**
- * Keys the surface swallows on keydown.
- *
- * Narrow on purpose: `Tab` must still move focus and `F5` must still reload, so a key this
- * surface does not implement reaches whatever does. Everything listed is either a
- * `PEN_KEY_BINDINGS` entry or a key the browser would otherwise act on itself — `+`/`-` are the
- * host's zoom keys, Backspace navigates back in some configurations, and an unprevented Ctrl+Z
- * reaches the browser's own undo for the whole page.
- */
-const CONSUMED = /^([pavczj+=\-_]|Arrow(Left|Right|Up|Down)|Delete|Backspace|Escape|Enter)$/i
-
-/**
- * …except when Ctrl is holding them, because then they are the HOST's zoom chords.
- *
- * `+` bare is Illustrator's Add Anchor Point tool and belongs here; `Ctrl+=` has always meant
- * Zoom In and the pen implements no such command, so swallowing it would just delete a shortcut.
- * `ViewTransform` makes the same distinction on its side, above its `suspendKeys` gate.
- */
-const HOST_ZOOM_CHORD = /^[+=\-_01]$/
 
 /**
  * `visibleHandles` plus the anchor currently under the hand.
@@ -229,6 +210,16 @@ export function PenEditor({
    */
   const backdropData = useRef<ImageData | null>(null)
   const hasInk = useRef(false)
+  /**
+   * Has the pen's own document taken the mask canvas over yet?
+   *
+   * Written by `rasterise` from the pixels it just produced, not guessed from the path count: a
+   * three-anchor path only owns the canvas once it actually encloses something, and "encloses
+   * something" is a question only the rasteriser can answer.
+   */
+  const penOwnsMask = useRef(false)
+  /** The last pointer position in CLIENT space, for auto-scroll — see `autoScroll`. */
+  const lastPointer = useRef<{ clientX: number; clientY: number; altKey: boolean; ctrlKey: boolean; shiftKey: boolean; capsLock: boolean } | null>(null)
   if (backdropData.current === null && typeof document !== 'undefined') {
     const c = canvas.getContext('2d')
     if (c) {
@@ -242,6 +233,17 @@ export function PenEditor({
       }
     }
   }
+
+  /**
+   * The overlay's on-screen box. Declared up here because the auto-scroll loop below needs it and
+   * a `useCallback` dependency array cannot name an identifier that is still in its own TDZ.
+   */
+  const dispRect = useCallback((): { left: number; top: number; width: number; height: number } => {
+    const el = svgRef.current
+    if (!el) return { left: 0, top: 0, width: 0, height: 0 }
+    const r = el.getBoundingClientRect()
+    return { left: r.left, top: r.top, width: r.width, height: r.height }
+  }, [])
 
   /** Paint the captured backdrop into its own display canvas, once it exists. */
   useEffect(() => {
@@ -271,6 +273,8 @@ export function PenEditor({
         break
       }
     }
+    // The one bit that makes the replacement legible instead of silent — see `MASK NOTICE` below.
+    penOwnsMask.current = any
     if (!any && backdropData.current) {
       ctx.putImageData(backdropData.current, 0, 0)
     } else {
@@ -299,14 +303,58 @@ export function PenEditor({
    * a new `doc` only when the geometry actually changed, so hovering re-renders the chrome and
    * touches neither the raster nor the shader.
    */
+  /**
+   * Conformance I.14 — a drag that leaves the surface keeps going, by scrolling the view under it.
+   *
+   * AND I.15, WHICH IS THE HALF THAT MAKES IT SAFE: only while a drag is in progress. Waving the
+   * cursor off the card with nothing but the rubber band showing must not scroll, or the view
+   * runs away from a user who was merely reaching for a menu. `stateRef.current.drag` is that
+   * test, and it is the engine's own state rather than a second notion of "am I drawing".
+   *
+   * The engine deliberately owns no viewport (spec B.3), so the pan is the host's `panBy` — and
+   * the clamped view means this is a no-op at 1x, where the card is fully framed and there is
+   * nowhere to go. Speed rises with the overshoot and caps, so a cursor parked just outside the
+   * edge creeps and one flung across the room does not teleport.
+   *
+   * The synthetic pointermove afterwards is not optional: panning changes the client -> document
+   * map, so a stationary cursor is now over a DIFFERENT document point, and without re-feeding it
+   * the handle would stay behind while the artwork slid out from under it. It reduces directly
+   * rather than through `apply` to keep `schedule` -> `autoScroll` -> `apply` -> `schedule` from
+   * becoming a dependency cycle.
+   */
+  const autoScroll = useCallback((): boolean => {
+    const p = lastPointer.current
+    if (!view || !p || !stateRef.current.drag) return false
+    const r = dispRect()
+    if (r.width <= 0 || r.height <= 0) return false
+    const past = (lo: number, hi: number, x: number): number => (x < lo ? x - lo : x > hi ? x - hi : 0)
+    const overX = past(r.left, r.left + r.width, p.clientX)
+    const overY = past(r.top, r.top + r.height, p.clientY)
+    if (overX === 0 && overY === 0) return false
+    const step = (d: number): number => (d === 0 ? 0 : Math.sign(d) * Math.min(28, 2 + Math.abs(d) * 0.3))
+    view.panBy(step(overX), step(overY))
+    stateRef.current = reduce(
+      stateRef.current,
+      pointerInput('pointermove', { ...p, getModifierState: () => p.capsLock }, dispRect(), MASK_W, MASK_H, spaceRef.current),
+      config,
+    )
+    return true
+  }, [config, dispRect, view])
+
   const schedule = useCallback(() => {
     if (rafRef.current !== null) return
     rafRef.current = requestAnimationFrame(() => {
       rafRef.current = null
+      // Auto-scroll first: it may move the geometry, and the raster below should show where the
+      // drag ended up this frame rather than a frame behind it.
+      const scrolling = autoScroll()
       if (stateRef.current.doc !== rasterisedRef.current) rasterise()
+      // A cursor held outside the edge produces no further events, so the loop has to keep its
+      // own frame alive — and stop the moment it comes back inside or the button comes up.
+      if (scrolling) schedule()
       bump((n) => n + 1)
     })
-  }, [rasterise])
+  }, [autoScroll, rasterise])
 
   useEffect(
     () => () => {
@@ -342,13 +390,6 @@ export function PenEditor({
     },
     [config, schedule, view],
   )
-
-  const dispRect = useCallback((): { left: number; top: number; width: number; height: number } => {
-    const el = svgRef.current
-    if (!el) return { left: 0, top: 0, width: 0, height: 0 }
-    const r = el.getBoundingClientRect()
-    return { left: r.left, top: r.top, width: r.width, height: r.height }
-  }, [])
 
   // The measured scale, kept fresh across zoom (the controller notifies on every zoom change)
   // and across layout. Only written when it moved by more than a fifth of a percent.
@@ -391,9 +432,7 @@ export function PenEditor({
         }
       }
       const input = keyInput(e.type === 'keydown' ? 'keydown' : 'keyup', e, dispRect(), MASK_W, spaceRef.current)
-      if (!space && e.type === 'keydown' && CONSUMED.test(e.key) && !(e.ctrlKey && HOST_ZOOM_CHORD.test(e.key))) {
-        e.preventDefault()
-      }
+      if (!space && e.type === 'keydown' && consumesKey(e)) e.preventDefault()
       apply(input)
     }
     const onBlur = () => {
@@ -416,21 +455,29 @@ export function PenEditor({
   // Undo, redo and clear go through `reduce` with a synthetic key event rather than through a
   // private code path, so the button and the keystroke are the same operation by construction —
   // `PEN_KEY_BINDINGS` stays the only binding table, and a rebind moves both.
-  useEffect(() => {
-    if (!registerHandle) return
-    const key = (k: string, mods: { alt?: boolean; ctrl?: boolean; shift?: boolean }): void => {
+  const key = useCallback(
+    (k: string, mods: { alt?: boolean; ctrl?: boolean; shift?: boolean }): void => {
       apply({
         type: 'keydown',
         key: k,
         mods: { alt: false, ctrl: false, shift: false, space: false, capsLock: false, ...mods },
         zoom: scale,
       })
-    }
-    const load = (paths: PenPath[]): void => {
+    },
+    [apply, scale],
+  )
+
+  const load = useCallback(
+    (paths: PenPath[]): void => {
       stateRef.current = createPenState({ paths })
       rasterisedRef.current = null
       schedule()
-    }
+    },
+    [schedule],
+  )
+
+  useEffect(() => {
+    if (!registerHandle) return
     registerHandle({
       state: () => stateRef.current,
       doc: () => cloneDoc(stateRef.current.doc),
@@ -440,7 +487,47 @@ export function PenEditor({
       loadVPath: (paths) => load(paths.map((p) => fromVPath(p))),
       loadPaths: load,
     })
-  }, [apply, registerHandle, scale, schedule])
+  }, [key, load, registerHandle])
+
+  // ── The saved mask, and the moment the pen takes it over ──────────────────
+  //
+  // MASK NOTICE. The pen opens over whatever mask was already committed and shows it as something
+  // to trace. While the pen document rasterises to nothing the canvas keeps holding that
+  // backdrop, so the preview is telling the truth. From the FIRST ENCLOSED SUBPATH the pen owns
+  // the canvas outright and the saved mask is gone from it — and `onCommit` has already marked the
+  // mask dirty. Open the pen to REFINE a good mask, drop three anchors by accident, hit Save, and
+  // the mask is now that triangle. Nothing on screen said so, and `Clear paths` — the only way
+  // back — is not labelled as one.
+  //
+  // WHY THIS AFFORDANCE AND NOT ANOTHER. Three were on the table:
+  //
+  //   • Merge the pen's output into the existing raster. Rejected outright: it would make the
+  //     preview a lie about what a save writes, and it would make an accidental three-anchor
+  //     triangle un-erasable rather than merely destructive. The pen's document IS the mask it
+  //     saves; a compositing step would give the surface a second opinion about that.
+  //   • A modal confirmation at the third anchor. Rejected: the destructive moment is a normal
+  //     part of drawing, and a dialog in the middle of a bezier gesture is worse than the bug.
+  //   • What is here: say it, before it is true, and label the way back. The notice arms at the
+  //     FIRST anchor — while the saved mask is still intact and the transition is still only
+  //     coming — and changes wording once the pen actually owns the canvas.
+  //
+  // The way back is `Ctrl+A` then `Delete` through the engine's own binding table, NOT a private
+  // reset: that keeps it one undo step, so the restore is itself reversible and a user who
+  // panicked can Ctrl+Z their paths straight back. `rasterise` then finds an empty document and
+  // puts the backdrop back byte for byte.
+  const restoreSavedMask = useCallback(() => {
+    key('a', { ctrl: true })
+    key('Delete', {})
+  }, [key])
+
+  const anchorCount = stateRef.current.doc.paths.reduce((n, p) => n + p.points.length, 0)
+  const maskStage: 'none' | 'armed' | 'replaced' = !hasInk.current
+    ? 'none'                                    // nothing committed here yet — nothing to destroy
+    : penOwnsMask.current
+      ? 'replaced'
+      : anchorCount > 0
+        ? 'armed'
+        : 'none'
 
   // ── Pointer ───────────────────────────────────────────────────────────────
 
@@ -462,6 +549,19 @@ export function PenEditor({
     return () => view.setStrokeAbort(null)
   }, [apply, scale, view])
 
+  /** Remember where the hand is in CLIENT space — the only coordinate auto-scroll can use, since
+   *  the document mapping is exactly what it is about to change. */
+  const remember = (e: React.PointerEvent): void => {
+    lastPointer.current = {
+      clientX: e.clientX,
+      clientY: e.clientY,
+      altKey: e.altKey,
+      ctrlKey: e.ctrlKey,
+      shiftKey: e.shiftKey,
+      capsLock: e.getModifierState?.('CapsLock') ?? false,
+    }
+  }
+
   const accepts = (e: React.PointerEvent): boolean =>
     !view?.gesturing() &&
     (e.pointerType === 'pen' || e.pointerType === 'mouse' || (allowTouch && e.pointerType === 'touch'))
@@ -481,13 +581,16 @@ export function PenEditor({
     } catch {
       /* synthetic events (tests) have no active pointer — capture is best-effort */
     }
+    remember(e)
     apply(pointerInput('pointerdown', e, dispRect(), MASK_W, MASK_H, spaceRef.current))
   }
   const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!accepts(e)) return
+    remember(e)
     apply(pointerInput('pointermove', e, dispRect(), MASK_W, MASK_H, spaceRef.current))
   }
   const onPointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
+    lastPointer.current = null      // the drag is over; nothing left for auto-scroll to chase
     try {
       e.currentTarget.releasePointerCapture(e.pointerId)
     } catch {
@@ -518,14 +621,25 @@ export function PenEditor({
         style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
       />
       {/* The live fill — a blit of the real mask canvas, so what is on screen is what the
-          shader is sampling rather than a second drawing of the same intent. */}
+          shader is sampling rather than a second drawing of the same intent.
+
+          OUTLINE MODE (Ctrl+Y, I.116) hides THIS and nothing else. The rasteriser keeps writing
+          the same bytes into the mask canvas and the shader keeps reading them — an outline mode
+          that stopped rasterising would let someone save a mask they had never looked at. It is a
+          way of looking, never a way of storing. */}
       <canvas
         ref={fillRef}
         data-testid="pen-fill"
         width={MASK_W}
         height={MASK_H}
         className="pointer-events-none absolute rounded-[4.7%/3.4%] opacity-45"
-        style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
+        style={{
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height,
+          display: state.outline ? 'none' : undefined,
+        }}
       />
       {/* The chrome. Its own layer, above the fill, and the only one that takes input. */}
       <svg
@@ -536,6 +650,9 @@ export function PenEditor({
         data-pen-paths={state.doc.paths.length}
         data-pen-closed={state.doc.paths.filter((p) => p.closed).length}
         data-pen-backdrop={hasInk.current ? 'raster' : 'empty'}
+        data-pen-mask={maskStage}
+        data-pen-outline={state.outline ? 'true' : 'false'}
+        data-pen-edges={state.hideEdges ? 'hidden' : 'shown'}
         viewBox={`0 0 ${MASK_W} ${MASK_H}`}
         preserveAspectRatio="none"
         onPointerDown={onPointerDown}
@@ -559,6 +676,13 @@ export function PenEditor({
           WebkitTouchCallout: 'none',
         } as React.CSSProperties}
       >
+        {/* HIDE EDGES (Ctrl+H, I.118). The whole chrome layer goes; the artwork and the fill
+            stay. Gotcha 27 calls it the most-used key for "let me see the artwork without my
+            anchors all over it", so it is one `<g>` and not a per-element opinion — a hide that
+            left the rubber band behind would be the one thing people press it to get rid of.
+            The surface itself stays mounted and still takes input: this hides the edges, it does
+            not put the pen down. */}
+        <g style={{ display: state.hideEdges ? 'none' : undefined }}>
         {/* EVERY STROKE IS CASED. The chrome sits over a card scan whose local value is
             unknowable — Charizard's flames and Base Set's black border are the same overlay —
             and a single-colour hairline disappears into one of them wherever it happens to
@@ -667,7 +791,51 @@ export function PenEditor({
             strokeWidth={m.directionLine}
           />
         )}
+        </g>
       </svg>
+
+      {/* THE MASK NOTICE — see the block comment above `restoreSavedMask` for the reasoning.
+          Pinned to the very top of the card face and only ~26px tall so it clears every part of
+          the artwork a trace actually starts on, and `pointer-events: none` on the strip with
+          `auto` on the button alone, so the notice can never eat an anchor. */}
+      {maskStage !== 'none' && (
+        <div
+          data-testid="pen-mask-notice"
+          data-stage={maskStage}
+          className="absolute flex items-center gap-2 rounded-t-[4.7%] px-2 text-[11px] leading-none"
+          style={{
+            left: rect.left,
+            top: rect.top,
+            width: rect.width,
+            height: 26,
+            // INLINE, not a utility class. The overlay layer this renders into is itself
+            // `pointer-events: none` and the chrome SVG re-enables its own the same way; a
+            // Tailwind class here would depend on the HOST app's content globs reaching a file in
+            // `packages/three`, and a button you can see and cannot press is worse than no button.
+            pointerEvents: 'none',
+            background: maskStage === 'replaced' ? 'rgba(120, 20, 40, 0.86)' : 'rgba(90, 60, 0, 0.82)',
+            color: '#fff',
+            // Explicit, because the chrome SVG is a sibling that covers the same box and takes
+            // pointer events: without a stacking order the "Restore saved mask" button is a
+            // button you can see and cannot press, which is worse than not offering it.
+            zIndex: 5,
+          }}
+        >
+          <span className="truncate">
+            {maskStage === 'replaced'
+              ? 'These paths have REPLACED the saved mask. Saving keeps them.'
+              : 'The saved mask will be replaced by these paths once one encloses an area.'}
+          </span>
+          <button
+            type="button"
+            onClick={restoreSavedMask}
+            className="ml-auto shrink-0 rounded-full border border-white/40 px-2 py-[3px] hover:bg-white/15"
+            style={{ pointerEvents: 'auto' }}
+          >
+            Restore saved mask
+          </button>
+        </div>
+      )}
     </>
   )
 }

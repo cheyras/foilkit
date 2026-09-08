@@ -660,6 +660,15 @@ export function iou(a: Uint8Array, b: Uint8Array): number {
  * Mean and p95 distance from each boundary pixel of `a` to the nearest boundary pixel
  * of `b`, px. Secondary to IoU on purpose: the previous lane proved that a boundary
  * metric alone will happily approve a mask that is in the wrong PLACE.
+ *
+ * ONE-DIRECTIONAL, AND THE DIRECTION IS THE TRAP. It walks `a`'s boundary and asks how far
+ * each of its pixels is from `b`'s — so anything present in `b` and ABSENT from `a` never
+ * touches a pixel this function looks at, and scores 0. That is the right measurement when
+ * `a` is the thing being judged against a reference `b`, which is what both callers here
+ * want: `generate-masks.ts` asks "how far did the generator's boundary land from the human
+ * one", and `fit-template.ts` asks the same of a fitted template. It is the WRONG
+ * measurement for "do these two describe each other", where a region missing from one side
+ * is exactly the forgery being looked for — use `symmetricBoundaryDistance` for that.
  */
 export function boundaryDistance(a: Uint8Array, b: Uint8Array, w: number, h: number): { mean: number; p95: number; max: number } {
   const edge = (m: Uint8Array): Uint8Array => {
@@ -713,5 +722,39 @@ export function boundaryDistance(a: Uint8Array, b: Uint8Array, w: number, h: num
     mean: Number(mean.toFixed(3)),
     p95: Number(ds[Math.min(ds.length - 1, Math.floor(ds.length * 0.95))]!.toFixed(2)),
     max: Number(ds[ds.length - 1]!.toFixed(2)),
+  };
+}
+
+/**
+ * The same measurement in BOTH directions, reporting the worse of the two — the Hausdorff
+ * shape of the question "do these two masks describe each other".
+ *
+ * WHY IT EXISTS BESIDE THE ONE-DIRECTIONAL ONE rather than replacing it. `boundaryDistance`
+ * is a judgement of `a` against a reference `b` and its two callers want exactly that; this
+ * one is a comparison of a PAIR, where neither side is the reference and a region missing
+ * from either side is the failure being looked for. Same arithmetic, different question, and
+ * collapsing them would silently change what the generator receipts and the template fitter
+ * report.
+ *
+ * The number this catches, measured: a 3,600px block present in a mask PNG and absent from
+ * the paths committed beside it scores `p95 0.00px, max 0.00px` one-directionally — the
+ * paths' own boundary never goes near it — and `p95 74.00px, max 120.00px` here. An 8x8
+ * block, which costs 0.0003 of IoU and nothing at all at the 95th percentile, still scores
+ * `max 98.67px`. That is why `functions/_lib/validate.ts` gates on the max as well as the
+ * p95: the percentile is a measure of how MUCH of the boundary moved, and a forgery small
+ * enough to hide under it is still a lie in the committed diff.
+ */
+export function symmetricBoundaryDistance(
+  a: Uint8Array,
+  b: Uint8Array,
+  w: number,
+  h: number,
+): { mean: number; p95: number; max: number } {
+  const ab = boundaryDistance(a, b, w, h);
+  const ba = boundaryDistance(b, a, w, h);
+  return {
+    mean: Math.max(ab.mean, ba.mean),
+    p95: Math.max(ab.p95, ba.p95),
+    max: Math.max(ab.max, ba.max),
   };
 }

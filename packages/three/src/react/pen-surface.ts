@@ -34,6 +34,7 @@
 
 import {
   flattenPath,
+  lookupBinding,
   rasterizePolygons,
   toVPath,
   type PenDoc,
@@ -131,6 +132,29 @@ export function penMods(
     space,
     capsLock: e.getModifierState?.('CapsLock') ?? false,
   }
+}
+
+/**
+ * Does the pen actually BIND this keystroke? If not, the surface must not swallow it.
+ *
+ * IT LIVES HERE BECAUSE IT IS ARITHMETIC AND IT WAS WRONG. The surface's keydown listener is at
+ * WINDOW level and `preventDefault`s whatever this returns true for, so a predicate that is a
+ * shade too wide disables a shortcut for the entire page. It used to be a regex over bare
+ * characters plus a second regex exempting the host's zoom chords — and regexes match CHARACTERS
+ * while bindings are CHORDS, so `c` and `v` (the Anchor Point and Selection tool letters) matched
+ * with Ctrl held too: with the pen open, `Ctrl+C` and `Ctrl+V` fired no `copy` or `paste` event
+ * anywhere on the page, and `Ctrl+P` never reached print.
+ *
+ * `lookupBinding` is the engine's own lookup and matches modifiers EXACTLY, which is the whole
+ * distinction the regexes could not draw: `Ctrl+J` is Join and really is the pen's, `Ctrl+C` is
+ * not the pen's at all, and `Ctrl+=` still reaches the host's Zoom In because the pen's `=`
+ * binding requires Ctrl to be up. There is no second table, which is the point.
+ *
+ * Space is NOT here: it is resolved against pointer-button state rather than by the table
+ * (`PEN_CONDITIONAL_HOST_KEYS`), so the surface handles it before asking this.
+ */
+export function consumesKey(e: KeyLike): boolean {
+  return lookupBinding(e.key, { alt: e.altKey, ctrl: e.ctrlKey, shift: e.shiftKey }) !== null
 }
 
 /** A pointer event as the engine's input. `zoom` is screen px per document unit — see above. */

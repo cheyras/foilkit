@@ -39,6 +39,8 @@ import { Catalog, type CatalogCard, type CatalogSetShard } from './catalog/shard
 import { CorpusView, type CorpusManifest } from './catalog/manifest.ts'
 import { SearchIndex } from './catalog/search.ts'
 import { sha256Bytes } from './staging/sha.ts'
+// TYPE-ONLY, through the browser-safe seam — see the note in `staging/types.ts`.
+import type { MaskVector } from '@foilkit/forge/geometry'
 import type { SubmissionCheck, SubmissionRefusal, SubmissionResult } from './staging/submit.ts'
 
 // ── Types (only the fields the workbench reads) ────────────────
@@ -686,7 +688,27 @@ export const foilApi = {
     height: number,
     prior: FoilMaskPrior,
     derivation: FoilMaskDerivation,
-    extra?: { artworkUrl?: string | null; card?: { setId: string | null; seriesSlug: string | null; name: string | null; number: string | null }; comment?: string },
+    extra?: {
+      artworkUrl?: string | null
+      card?: { setId: string | null; seriesSlug: string | null; name: string | null; number: string | null }
+      comment?: string
+      /**
+       * The pen geometry these pixels were drawn from, committed beside them as
+       * `<variantId>.paths.json` so the diff a reviewer reads is TEXT.
+       *
+       * OPTIONAL, AND NULL MEANS SOMETHING. Absent or null is the brush case
+       * and is also the instruction that REMOVES a stale `.paths.json` — a
+       * brush stroke over a pen-authored mask has produced pixels the old paths
+       * no longer describe, and `functions/mask.ts` deletes the file rather
+       * than committing a legible wrong description of the mask beside it.
+       *
+       * It carries no provenance claim and cannot: the server rasterises these
+       * paths, proves they make these pixels, and refuses the pair when they do
+       * not (`functions/_lib/validate.ts`). The client says what it drew; the
+       * server decides what it is.
+       */
+      vector?: MaskVector | null
+    },
   ): Promise<FoilMaskSidecar> => {
     const res = await fetch('/api/mask', {
       method: 'PUT',

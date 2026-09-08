@@ -582,6 +582,22 @@ export interface PenDrag {
   docAtStart: PenDoc;
   /** False when the drag resumed an EXISTING endpoint rather than creating an anchor (A.8). */
   fresh: boolean;
+  /**
+   * THE GESTURE'S OWN OPENING SNAPSHOT — the only state Escape or a blur is allowed to restore,
+   * and `null` for a gesture that snapshotted nothing.
+   *
+   * `rollback` used to pop whatever was on top of `state.undo`, which is correct exactly as long
+   * as every drag pushes a snapshot on pointerdown. `marquee` does not — a rubber-band selection
+   * changes no geometry, so committing one would put an empty step in the undo stack — and the
+   * result was that Escape (or alt-tabbing) mid-marquee restored the PREVIOUS gesture's snapshot
+   * and silently destroyed the anchor the user had just placed. A cancel that deletes work is the
+   * worst failure mode a cancel key has.
+   *
+   * Carrying the snapshot on the drag makes that structurally impossible rather than merely
+   * fixed: a drag that has none cannot roll back to somebody else's, and `newDrag` takes this
+   * POSITIONALLY AND REQUIRED so a future gesture cannot forget to say which it is.
+   */
+  snapshot: PenSnapshot | null;
 }
 
 export type PenTarget =
@@ -659,6 +675,22 @@ export interface PenState {
   snapRefusal: string | null;
   /** Stand-in for Illustrator's locked/hidden layer. A DIFFERENT cursor from continue (I.94). */
   locked: boolean;
+  /**
+   * `Ctrl+Y`, Outline mode (I.116). The FILL preview goes away and the paths stay — the pen must
+   * remain fully functional in it, which gotcha 27 is emphatic about: people toggle it mid-draw
+   * to see the artwork they are tracing under their own ink.
+   *
+   * A view flag, never an artifact flag. The rasteriser keeps writing the same bytes; only the
+   * surface's opacity changes. An outline mode that stopped rasterising would let a user save a
+   * mask they had not looked at.
+   */
+  outline: boolean;
+  /**
+   * `Ctrl+H`, Hide Edges (I.118) — the chrome disappears and the artwork stays. [U] — absent from
+   * Adobe's own shortcut page, and gotcha 27 calls it the most-used key for "let me see what I am
+   * tracing without my anchors all over it".
+   */
+  hideEdges: boolean;
   intent: PenIntent | null;
   undo: PenSnapshot[];
   redo: PenSnapshot[];
@@ -682,6 +714,8 @@ export function createPenState(doc: PenDoc = { paths: [] }): PenState {
     snapped: null,
     snapRefusal: null,
     locked: false,
+    outline: false,
+    hideEdges: false,
     intent: null,
     undo: [],
     redo: [],
@@ -739,7 +773,9 @@ export type PenCommand =
   | 'redo'
   | 'select-all'
   | 'deselect-all'
-  | 'join';
+  | 'join'
+  | 'toggle-outline'
+  | 'toggle-edges';
 
 export interface KeyBinding {
   /** Matched case-insensitively against `PenInput.key`. */
@@ -777,10 +813,16 @@ export const PEN_KEY_BINDINGS: readonly KeyBinding[] = Object.freeze([
   // they act immediately on the current selection instead: `+` splits each selected segment at
   // its midpoint, `-` removes each selected anchor and rejoins its neighbours. A deliberate
   // deviation, written down so it is not mistaken for an oversight.
-  { key: '+', mods: { alt: false, ctrl: false, shift: false }, command: 'add-anchor-at-selection', label: 'Add Anchor Point', claimsFromHost: true },
-  { key: '=', mods: { alt: false, ctrl: false, shift: false }, command: 'add-anchor-at-selection', label: 'Add Anchor Point (unshifted key)', claimsFromHost: true },
+  //
+  // THE SHIFT FLAGS ON `+` AND `_` ARE NOT DECORATION. `KeyboardEvent.key` is the CHARACTER, and
+  // on a US layout `+` and `_` only exist with Shift down — so declaring them `shift: false` made
+  // `lookupBinding` return null for both and the two entries were unreachable from any real
+  // keyboard. `=` and `-` cover the same physical keys, so nothing was broken functionally; what
+  // was broken is the table, and the table is what a shortcut sheet or a conflict check reads.
+  { key: '=', mods: { alt: false, ctrl: false, shift: false }, command: 'add-anchor-at-selection', label: 'Add Anchor Point', claimsFromHost: true },
+  { key: '+', mods: { alt: false, ctrl: false, shift: true }, command: 'add-anchor-at-selection', label: 'Add Anchor Point (Shift+=)', claimsFromHost: true },
   { key: '-', mods: { alt: false, ctrl: false, shift: false }, command: 'delete-anchor-at-selection', label: 'Delete Anchor Point', claimsFromHost: true },
-  { key: '_', mods: { alt: false, ctrl: false, shift: false }, command: 'delete-anchor-at-selection', label: 'Delete Anchor Point (shifted key)', claimsFromHost: true },
+  { key: '_', mods: { alt: false, ctrl: false, shift: true }, command: 'delete-anchor-at-selection', label: 'Delete Anchor Point (Shift+-)', claimsFromHost: true },
 
   { key: 'ArrowLeft', mods: { alt: false, ctrl: false, shift: false }, command: 'nudge-left', label: 'Nudge left' },
   { key: 'ArrowRight', mods: { alt: false, ctrl: false, shift: false }, command: 'nudge-right', label: 'Nudge right' },
@@ -801,6 +843,13 @@ export const PEN_KEY_BINDINGS: readonly KeyBinding[] = Object.freeze([
   { key: 'a', mods: { alt: false, ctrl: true, shift: false }, command: 'select-all', label: 'Select All' },
   { key: 'a', mods: { alt: false, ctrl: true, shift: true }, command: 'deselect-all', label: 'Deselect' },
   { key: 'j', mods: { alt: false, ctrl: true, shift: false }, command: 'join', label: 'Join' },
+
+  // The two VIEW keys an Illustrator user reaches for while tracing, and the only two of spec
+  // E's view set that mean anything on a single card face (see `ViewTransform.tsx` for what was
+  // deliberately not cloned). Both are pure view state: they touch no geometry, take no undo
+  // step, and cannot change the committed artifact.
+  { key: 'y', mods: { alt: false, ctrl: true, shift: false }, command: 'toggle-outline', label: 'Outline / Preview' },
+  { key: 'h', mods: { alt: false, ctrl: true, shift: false }, command: 'toggle-edges', label: 'Hide / Show Edges' },
 ]);
 
 /**
@@ -855,15 +904,18 @@ export function hitTest(doc: PenDoc, p: Vec, cfg: PenConfig, zoom: number): PenT
   let best: PenTarget | null = null;
   let bestD = Infinity;
 
+  let anchor: PenTarget | null = null;
+  let anchorD = Infinity;
   for (let pi = 0; pi < doc.paths.length; pi++) {
     const path = doc.paths[pi];
     for (let i = 0; i < path.points.length; i++) {
       const d = dist(P(path.points[i].anchor), p);
-      if (d <= ar && d < bestD) { bestD = d; best = { kind: 'anchor', path: pi, point: i }; }
+      if (d <= ar && d < anchorD) { anchorD = d; anchor = { kind: 'anchor', path: pi, point: i }; }
     }
   }
-  if (best) return best;
 
+  let handle: PenTarget | null = null;
+  let handleD = Infinity;
   for (let pi = 0; pi < doc.paths.length; pi++) {
     const path = doc.paths[pi];
     for (let i = 0; i < path.points.length; i++) {
@@ -874,11 +926,25 @@ export function hitTest(doc: PenDoc, p: Vec, cfg: PenConfig, zoom: number): PenT
         // handle you cannot see is not a handle you can grab.
         if (isRetracted(h, pt.anchor, cfg.retractEpsilon)) continue;
         const d = dist(P(h), p);
-        if (d <= hr && d < bestD) { bestD = d; best = { kind: 'handle', path: pi, point: i, side }; }
+        if (d <= hr && d < handleD) { handleD = d; handle = { kind: 'handle', path: pi, point: i, side }; }
       }
     }
   }
-  if (best) return best;
+
+  // THE ONE PAIR OF TIERS WHERE RANK ALONE IS WRONG, and it is wrong because of the radii:
+  // `anchorHitRadiusPx` (6) is LARGER than `handleHitRadiusPx` (5), so a handle pulled less than
+  // six screen px out of its anchor sits entirely inside the anchor's disc. Return on the first
+  // non-empty tier and that handle can never be grabbed at all — click exactly on the dot and you
+  // select the anchor behind it. Illustrator lets you grab a short handle, so between these two
+  // the CLOSER one wins, with the tie going to the anchor.
+  //
+  // Deliberately NOT extended to the segment tier: an anchor SITS ON the segments that meet it,
+  // so by raw distance a segment is tied with its anchor and a floating-point hair closer about
+  // half the time. Ranking those by distance is how clicking an anchor starts inserting a new one
+  // beside it (I.99 covers exactly that, and it is correct as it stands).
+  if (anchor && handle) return handleD < anchorD ? handle : anchor;
+  if (anchor) return anchor;
+  if (handle) return handle;
 
   for (let pi = 0; pi < doc.paths.length; pi++) {
     const path = doc.paths[pi];
@@ -991,6 +1057,48 @@ export function resolvePenClick(
   return { kind: 'new-anchor' };
 }
 
+/**
+ * The rungs Alt is NOT allowed to take away from the pen. Spec A.7, I.30.
+ *
+ * Alt borrows the Anchor Point tool while the Pen is up (spec B.2, I.61) — but it must borrow the
+ * TOOL, not the CLICK. Hold Alt, hover the first anchor of a three-point active path, and the
+ * whole close ladder was unreachable: the momentary switch had already happened on the Alt
+ * KEYDOWN, so the press routed to the converter, the badge read `convert` instead of `close`, and
+ * an Alt-click-drag pulled two mirrored handles out of the first anchor — the exact edit spec
+ * A.7's Alt variant exists to avoid, on the exact gesture it exists for.
+ *
+ * So Alt yields on the three TOPOLOGY rungs, where the converter has no honest answer anyway:
+ * there is no such thing as converting a path into being closed, joined or continued.
+ *
+ * Rung 1, `retract-outgoing`, deliberately stays with the converter. Alt-dragging the anchor you
+ * just placed to pull a fresh direction line out of it is a real Illustrator gesture (spec A.5's
+ * after-placement table), and it is the same anchor, so handing it to the pen would trade one
+ * unreachable gesture for another.
+ */
+const ALT_YIELDS_TO_PEN: ReadonlySet<PenAction['kind']> = new Set<PenAction['kind']>(['close', 'join']);
+
+/**
+ * Is the converter under the cursor only because ALT borrowed it, on a rung the pen must keep?
+ *
+ * SCOPED TO A LIVE DRAWING SESSION, and that is what keeps the exception small. With no active
+ * path there is nothing to close or join to, the ladder can only offer `continue`, and Alt over an
+ * endpoint is an unambiguous request to convert it — which is also what I.86-I.90 pin down: the
+ * `Shift+C` route and the Alt route must produce IDENTICAL documents for every converter gesture,
+ * and they only can if the borrow is total whenever the pen is not mid-path.
+ *
+ * `toolBeforeModifier === 'pen'` separates the borrow from a deliberate `Shift+C`: the Anchor
+ * Point tool chosen on purpose keeps every click, including these. Both `onPointerDown` and
+ * `cursorFor` ask this, over the same resolution, so the badge cannot promise a conversion the
+ * press will not perform.
+ */
+function altHoldsAPenClick(state: PenState, action: PenAction | null | undefined): boolean {
+  return state.activeTool === 'anchor-point'
+    && state.toolBeforeModifier === 'pen'
+    && state.activePathIndex !== null
+    && !!action
+    && ALT_YIELDS_TO_PEN.has(action.kind);
+}
+
 // ── The cursor, derived — the UI renders what this returns and decides nothing ─
 
 export type PenCursor =
@@ -1015,12 +1123,16 @@ export function cursorFor(state: PenState): PenCursor {
   if (state.locked) return 'blocked';
   if (state.activeTool === 'select' || state.activeTool === 'direct-select') return 'crosshair';
 
-  if (state.activeTool === 'anchor-point') {
+  const action = state.hover?.action;
+
+  // The Alt borrow is scoped, and the badge reads the SAME scope the press does — see
+  // `altHoldsAPenClick`. Over a close/join/continue target this falls through to the pen's own
+  // badges below rather than promising a conversion that will not happen.
+  if (state.activeTool === 'anchor-point' && !altHoldsAPenClick(state, action)) {
     const t = state.hover?.target;
     return t && (t.kind === 'anchor' || t.kind === 'handle') ? 'convert' : 'crosshair';
   }
 
-  const action = state.hover?.action;
   if (!action) return state.activePathIndex === null ? 'start' : 'drawing';
   switch (action.kind) {
     // The active endpoint gets the caret. Spec A.6 note (5) special-cases it away from the
@@ -1164,6 +1276,26 @@ function applySnap(
 }
 
 // ── Editing primitives on the model ────────────────────────────────────────
+
+/**
+ * Demote a SMOOTH point that has just lost a side. Spec C.3, applied in place.
+ *
+ * A smooth point cannot have a retracted handle, because collinearity is undefined against a
+ * zero-length vector — there is no direction for the other side to stay in line with. `dragHandle`
+ * has always known this; the gestures that retract a handle DIRECTLY did not, and the flag reaches
+ * the artifact: `toVPath` writes `t:'s'` on a handle-less anchor and `fromVPath` believes it (the
+ * stored flag outranks inference, deliberately), so the point comes back smooth and the next tug
+ * on its one live handle rotates a handle that is not there.
+ *
+ * Cheaper as a heal than as a rule every call site remembers: retracting a side is three or four
+ * lines apart in three or four places, and each of them is one line away from being wrong again.
+ */
+export function healRetractedSmooth(pt: PathPoint, eps: number): void {
+  if (pt.pointType !== 'smooth') return;
+  if (isRetracted(pt.leftDirection, pt.anchor, eps) || isRetracted(pt.rightDirection, pt.anchor, eps)) {
+    pt.pointType = 'corner';
+  }
+}
 
 /**
  * Move one handle of a point, applying the LATER-EDIT smooth rule.
@@ -1475,11 +1607,29 @@ function commit(s: PenState, cfg: PenConfig): PenState {
   return { ...s, undo, redo: [] };
 }
 
-/** Discard the gesture in progress by restoring its own opening snapshot — Escape, blur. */
+/**
+ * The snapshot `commit` has just pushed — the gesture's own, and the only one it may hand to
+ * `newDrag`. Read it immediately after committing and nowhere else: read it without committing
+ * and you get a PREVIOUS gesture's snapshot, which is the whole bug this shape exists to close.
+ */
+const openingSnapshot = (s: PenState): PenSnapshot | null => s.undo[s.undo.length - 1] ?? null;
+
+/**
+ * Discard the gesture in progress by restoring ITS OWN opening snapshot — Escape, blur.
+ *
+ * A rollback may only ever undo the gesture in the hand, so the snapshot comes off `state.drag`
+ * rather than off the top of the undo stack. A drag that carries none (the marquee) rolls back to
+ * nothing at all, which is right: it changed no geometry, so there is nothing to restore, and
+ * popping the stack would delete a completed edit that has nothing to do with it.
+ *
+ * Snapshots taken DURING the gesture — a nudge with the button still down — go with it: the
+ * stack is cut at the gesture's own entry, by identity, so nothing above it survives an abort.
+ */
 function rollback(s: PenState): PenState {
-  if (s.undo.length === 0) return s;
-  const undo = s.undo.slice(0, -1);
-  const snap = s.undo[s.undo.length - 1];
+  const snap = s.drag?.snapshot;
+  if (!snap) return s;
+  const at = s.undo.lastIndexOf(snap);
+  const undo = at >= 0 ? s.undo.slice(0, at) : s.undo;
   return { ...s, ...snap, doc: cloneDoc(snap.doc), selection: cloneSelection(snap.selection), undo };
 }
 
@@ -1612,7 +1762,18 @@ function placementFrame(state: PenState, cfg: PenConfig, cursor: Vec, shift: boo
 
 // ── pointerdown ────────────────────────────────────────────────────────────
 
-const newDrag = (kind: DragKind, at: Vec, doc: PenDoc, over: Partial<PenDrag> = {}): PenDrag => ({
+/**
+ * `snapshot` is positional and required on purpose — see `PenDrag.snapshot`. Pass
+ * `openingSnapshot(s)` right after committing, or `null` for a gesture that commits nothing;
+ * there is no default, because the default is what got a user's anchor deleted by Escape.
+ */
+const newDrag = (
+  kind: DragKind,
+  at: Vec,
+  doc: PenDoc,
+  snapshot: PenSnapshot | null,
+  over: Partial<PenDrag> = {},
+): PenDrag => ({
   kind,
   origin: A(at),
   rawOrigin: A(at),
@@ -1628,6 +1789,7 @@ const newDrag = (kind: DragKind, at: Vec, doc: PenDoc, over: Partial<PenDrag> = 
   spaceFrom: null,
   docAtStart: cloneDoc(doc),
   fresh: true,
+  snapshot,
   ...over,
 });
 
@@ -1641,7 +1803,15 @@ function onPointerDown(state: PenState, input: PenInput, cfg: PenConfig): PenSta
   if (s.locked) return settle(s, cfg, zoom, mods);           // spec F.1: cannot draw here
 
   if (s.activeTool === 'pen') return penPointerDown(s, raw, mods, cfg, zoom);
-  if (s.activeTool === 'anchor-point') return convertPointerDown(s, raw, mods, cfg, zoom);
+  if (s.activeTool === 'anchor-point') {
+    // Resolve FIRST, route second. Alt hands the converter the tool but not the close ladder
+    // (`altHoldsAPenClick`), and this is the one place that decision can be made — by the time
+    // `convertPointerDown` has run a `hitTest` there is no rung left to consult.
+    if (altHoldsAPenClick(s, resolvePenClick(s, raw, mods, cfg, zoom))) {
+      return penPointerDown(s, raw, mods, cfg, zoom);
+    }
+    return convertPointerDown(s, raw, mods, cfg, zoom);
+  }
   return selectPointerDown(s, raw, mods, cfg, zoom);
 }
 
@@ -1676,7 +1846,20 @@ function penPointerDown(state: PenState, raw: Vec, mods: PenMods, cfg: PenConfig
       // home unless the user drags (spec A.7).
       const facing: HandleSide = (s.activeEndpoint ?? 'last') === 'last' ? 'left' : 'right';
       if (facing === 'left') target.leftDirection = [...target.anchor]; else target.rightDirection = [...target.anchor];
-      const drag = newDrag('close', P(target.anchor), s.doc, { path: action.path, point: action.point, fresh: false, rawOrigin: A(raw) });
+      healRetractedSmooth(target, cfg.retractEpsilon);
+      const drag = newDrag('close', P(target.anchor), s.doc, openingSnapshot(s), {
+        path: action.path,
+        point: action.point,
+        fresh: false,
+        rawOrigin: A(raw),
+        // ALT WAS ALREADY DOWN. Spec A.7's Alt variant (I.30) is a gesture whose modifier is held
+        // BEFORE the press — nobody presses the button and then reaches for Alt — so there is no
+        // Alt keydown mid-drag to set `broken`, and without seeding it here the close pulls
+        // MIRRORED handles and reshapes the first segment, which is precisely what the Alt
+        // variant exists to prevent. `frozen` is unused by the close branch of `placementFrame`;
+        // `broken` is the whole switch.
+        broken: mods.alt,
+      });
       return settle({ ...s, doc, drag }, cfg, zoom, mods);
     }
 
@@ -1696,7 +1879,7 @@ function penPointerDown(state: PenState, raw: Vec, mods: PenMods, cfg: PenConfig
       s = commit(s, cfg);
       const path = s.doc.paths[action.path];
       const i = endIndex(path, action.end);
-      const drag = newDrag('place', P(path.points[i].anchor), s.doc, { path: action.path, point: i, fresh: false, rawOrigin: A(raw) });
+      const drag = newDrag('place', P(path.points[i].anchor), s.doc, openingSnapshot(s), { path: action.path, point: i, fresh: false, rawOrigin: A(raw) });
       return settle({
         ...s,
         activePathIndex: action.path,
@@ -1763,7 +1946,7 @@ function penPointerDown(state: PenState, raw: Vec, mods: PenMods, cfg: PenConfig
         if (end === 'last') { path.points.push(cornerPoint(at)); pointIndex = path.points.length - 1; }
         else { path.points.unshift(cornerPoint(at)); pointIndex = 0; }
       }
-      const drag = newDrag('place', at, s.doc, { path: pathIndex, point: pointIndex, fresh: true, rawOrigin: A(raw) });
+      const drag = newDrag('place', at, s.doc, openingSnapshot(s), { path: pathIndex, point: pointIndex, fresh: true, rawOrigin: A(raw) });
       return settle({
         ...s,
         doc,
@@ -1795,12 +1978,12 @@ function convertPointerDown(state: PenState, raw: Vec, mods: PenMods, cfg: PenCo
   if (target.kind === 'handle') {
     // Dragging one handle of a smooth point BREAKS THE PAIR: it moves alone, the opposite is
     // untouched, the point becomes a CORNER.
-    const drag = newDrag('move-handle', raw, s.doc, {
+    const drag = newDrag('move-handle', raw, s.doc, openingSnapshot(s), {
       path: target.path, point: target.point, side: target.side, fresh: false,
     });
     return settle({ ...s, drag }, cfg, zoom, mods);
   }
-  const drag = newDrag('convert-anchor', P(s.doc.paths[target.path].points[target.point].anchor), s.doc, {
+  const drag = newDrag('convert-anchor', P(s.doc.paths[target.path].points[target.point].anchor), s.doc, openingSnapshot(s), {
     path: target.path, point: target.point, fresh: false, rawOrigin: A(raw),
   });
   return settle({ ...s, drag, selection: { ...EMPTY_SELECTION, anchors: [{ path: target.path, point: target.point }] } }, cfg, zoom, mods);
@@ -1825,7 +2008,10 @@ function selectPointerDown(state: PenState, raw: Vec, mods: PenMods, cfg: PenCon
       // active path. Ctrl+click "to finish" is not a special command; it is literally this
       // (spec A.11, gotcha 15).
       const selection = mods.shift ? cloneSelection(state.selection) : { ...EMPTY_SELECTION };
-      const drag = newDrag('marquee', raw, state.doc);
+      // NO SNAPSHOT, and no `commit` above it: a rubber-band selection changes no geometry, so an
+      // undo step for it would be an empty step, and — until `PenDrag.snapshot` existed — an
+      // Escape that rolled back to somebody else's.
+      const drag = newDrag('marquee', raw, state.doc, null);
       return settle({
         ...state,
         selection,
@@ -1844,18 +2030,18 @@ function selectPointerDown(state: PenState, raw: Vec, mods: PenMods, cfg: PenCon
     const paths = mods.shift && !s.selection.paths.includes(target.path)
       ? [...s.selection.paths, target.path]
       : [target.path];
-    const drag = newDrag('move-path', raw, s.doc, { path: target.path, fresh: false });
+    const drag = newDrag('move-path', raw, s.doc, openingSnapshot(s), { path: target.path, fresh: false });
     return settle({ ...s, selection: { ...EMPTY_SELECTION, paths }, drag }, cfg, zoom, mods);
   }
 
   switch (target.kind) {
     case 'anchor': {
       const selection = toggleAnchor(s.selection, { path: target.path, point: target.point }, mods.shift);
-      const drag = newDrag('move-anchor', raw, s.doc, { path: target.path, point: target.point, fresh: false });
+      const drag = newDrag('move-anchor', raw, s.doc, openingSnapshot(s), { path: target.path, point: target.point, fresh: false });
       return settle({ ...s, selection, drag }, cfg, zoom, mods);
     }
     case 'handle': {
-      const drag = newDrag('move-handle', raw, s.doc, {
+      const drag = newDrag('move-handle', raw, s.doc, openingSnapshot(s), {
         path: target.path, point: target.point, side: target.side, fresh: false,
       });
       return settle({
@@ -1867,7 +2053,7 @@ function selectPointerDown(state: PenState, raw: Vec, mods: PenMods, cfg: PenCon
     case 'segment': {
       // Selecting a segment reveals its endpoints' handles WITHOUT making the anchors movable,
       // and dragging it reshapes it with no anchor selection required (spec C.1/C.2, I.75).
-      const drag = newDrag('reshape-segment', raw, s.doc, {
+      const drag = newDrag('reshape-segment', raw, s.doc, openingSnapshot(s), {
         path: target.path, segment: target.segment, t: target.t, fresh: false,
       });
       return settle({
@@ -1992,13 +2178,25 @@ function onPointerMove(state: PenState, input: PenInput, cfg: PenConfig): PenSta
 
 // ── pointerup ──────────────────────────────────────────────────────────────
 
-function onPointerUp(state: PenState, input: PenInput, cfg: PenConfig): PenState {
+/**
+ * Finish the gesture in the hand as if the button had come up where it stands.
+ *
+ * Extracted from `onPointerUp` because a pointerup is not the only way a drag ends. Spec A.11:
+ * switching tools COMMITS the in-progress drag — and `runCommand`'s tool cases used to call
+ * `endPath` and leave `state.drag` set, so the next `onPointerMove` kept running `placementFrame`
+ * for the OLD gesture under the NEW tool. The handle the user was pulling then flew to wherever
+ * they moved the mouse next, with the pen no longer active and nothing on screen to explain it.
+ *
+ * Escape is the exception and takes `rollback` instead — it aborts rather than commits, which is
+ * spec A.11's table and the one place the two differ.
+ *
+ * Returns UNSETTLED state: every caller settles once, with its own final mods.
+ */
+function concludeDrag(state: PenState, at: Vec, mods: PenMods, cfg: PenConfig, zoom: number): PenState {
   const d = state.drag;
-  const mods = input.mods;
-  const zoom = input.zoom;
-  if (!d) return settle(state, cfg, zoom, mods);
-  const raw = input.point ? v(input.point.x, input.point.y) : P(d.current);
-  let s: PenState = { ...state, pointer: A(raw) };
+  if (!d) return state;
+  const raw = at;
+  const s: PenState = { ...state, pointer: A(raw) };
 
   // I.9: a drag that RETURNS TO ITS ORIGIN is a click. Measured on the final position, not on
   // whether the pointer ever left the dead zone, so the tool never stores a zero-length-but-
@@ -2028,9 +2226,9 @@ function onPointerUp(state: PenState, input: PenInput, cfg: PenConfig): PenState
           ref: { path: d.path, point: d.point },
         });
         path.points[d.point] = cornerPoint(snap.point);
-        return settle({ ...s, doc, drag: null, snapped: snap.snapped, snapRefusal: snap.refusal }, cfg, zoom, mods);
+        return { ...s, doc, drag: null, snapped: snap.snapped, snapRefusal: snap.refusal };
       }
-      return settle({ ...s, doc, drag: null }, cfg, zoom, mods);
+      return { ...s, doc, drag: null };
     }
     case 'convert-anchor': {
       const doc = cloneDoc(s.doc);
@@ -2042,18 +2240,48 @@ function onPointerUp(state: PenState, input: PenInput, cfg: PenConfig): PenState
         const pt = path.points[d.point];
         path.points[d.point] = cornerPoint(P(pt.anchor));
       }
-      return settle({ ...s, doc, drag: null }, cfg, zoom, mods);
+      return { ...s, doc, drag: null };
     }
     case 'close': {
+      const doc = cloneDoc(s.doc);
+      const path = doc.paths[d.path];
+      const before = d.docAtStart.paths[d.path]?.points[d.point];
+      const pt = path?.points[d.point];
+      if (pt && before && !moved) {
+        // THE SAME DEAD ZONE `case 'place'` HAS, AND THIS CASE DID NOT (I.9). A three-pixel hand
+        // tremor on the close click is entirely ordinary, and it is enough: the pointer leaves the
+        // two-pixel threshold, `placementFrame` runs once, and when the hand comes back to where
+        // it started the mirror writes `rightDirection = C = Q` and `leftDirection = 2Q - C = Q`
+        // — both handles retracted — while stamping `pointType: 'smooth'` on the way past. That
+        // point is ILLEGAL (spec C.3: collinearity is undefined for a retracted side) and it does
+        // not stay in memory: `toVPath` emits `startType:'s'` for a handle-less anchor and
+        // `fromVPath` reads it straight back as smooth, because the stored flag outranks
+        // inference. So a click the user saw as a click writes a broken point into the artifact.
+        //
+        // Restored RIGIDLY off the drag's opening snapshot rather than by zeroing, because the
+        // spacebar detour (B.3) may legitimately have moved the anchor mid-gesture and re-seating
+        // the handles at their old absolute coordinates would tear the curve.
+        const dx = pt.anchor[0] - before.anchor[0];
+        const dy = pt.anchor[1] - before.anchor[1];
+        pt.leftDirection = [before.leftDirection[0] + dx, before.leftDirection[1] + dy];
+        pt.rightDirection = [before.rightDirection[0] + dx, before.rightDirection[1] + dy];
+        pt.pointType = before.pointType;
+        // …and then the click-close's own edit, which is all a click was ever supposed to do:
+        // the handle the CLOSING segment arrives through retracts, the first segment is untouched.
+        const facing: HandleSide = (s.activeEndpoint ?? 'last') === 'last' ? 'left' : 'right';
+        if (facing === 'left') pt.leftDirection = [...pt.anchor]; else pt.rightDirection = [...pt.anchor];
+        healRetractedSmooth(pt, cfg.retractEpsilon);
+      }
       // The path is committed and stays selected; the pen returns to start-new-path. A closed
       // path cannot be resumed (gotcha 22).
-      return settle({
+      return {
         ...s,
+        doc,
         drag: null,
         activePathIndex: null,
         activeEndpoint: null,
         selection: { ...EMPTY_SELECTION, paths: [d.path] },
-      }, cfg, zoom, mods);
+      };
     }
     case 'marquee': {
       const m = s.marquee;
@@ -2082,11 +2310,22 @@ function onPointerUp(state: PenState, input: PenInput, cfg: PenConfig): PenState
           selection = { ...EMPTY_SELECTION, anchors, paths: [...new Set(anchors.map((a) => a.path))] };
         }
       }
-      return settle({ ...s, drag: null, marquee: null, selection }, cfg, zoom, mods);
+      return { ...s, drag: null, marquee: null, selection };
     }
     default:
-      return settle({ ...s, drag: null }, cfg, zoom, mods);
+      return { ...s, drag: null };
   }
+}
+
+function onPointerUp(state: PenState, input: PenInput, cfg: PenConfig): PenState {
+  const d = state.drag;
+  const mods = input.mods;
+  const zoom = input.zoom;
+  if (!d) return settle(state, cfg, zoom, mods);
+  // A pointerup that carries no position — pointercancel, a synthetic event — ends the gesture
+  // where the last move left it rather than at the origin, which would read as a click.
+  const raw = input.point ? v(input.point.x, input.point.y) : P(d.current);
+  return settle(concludeDrag(state, raw, mods, cfg, zoom), cfg, zoom, mods);
 }
 
 // ── Keyboard ───────────────────────────────────────────────────────────────
@@ -2121,6 +2360,17 @@ function selectedAnchorRefs(s: PenState): AnchorRef[] {
 /** End the active path without closing it and without deleting anything. Spec A.11. */
 const endPath = (s: PenState): PenState => ({ ...s, activePathIndex: null, activeEndpoint: null });
 
+/**
+ * The termination routes' shared preamble. Spec A.11: ending a drawing session COMMITS whatever
+ * drag is in the hand — it does not abandon it and, above all, does not leave it running.
+ *
+ * Only Escape differs, and it differs on purpose: it aborts. Everything else — a tool key, Enter,
+ * Ctrl+Shift+A — goes through here first, so `state.drag` is null by the time the tool changes and
+ * `onPointerMove` has nothing left to keep dragging.
+ */
+const commitDrag = (s: PenState, mods: PenMods, cfg: PenConfig, zoom: number): PenState =>
+  s.drag ? concludeDrag(s, P(s.drag.current), mods, cfg, zoom) : s;
+
 function runCommand(state: PenState, cmd: PenCommand, mods: PenMods, cfg: PenConfig, zoom: number): PenState {
   let s = state;
   switch (cmd) {
@@ -2136,6 +2386,7 @@ function runCommand(state: PenState, cmd: PenCommand, mods: PenMods, cfg: PenCon
         cmd === 'tool-pen' ? 'pen'
           : cmd === 'tool-anchor-point' ? 'anchor-point'
             : cmd === 'tool-select' ? 'select' : 'direct-select';
+      s = commitDrag(s, mods, cfg, zoom);
       const keep = s.activePathIndex;
       const selection = keep === null ? cloneSelection(s.selection) : { ...EMPTY_SELECTION, paths: [keep] };
       // Spec B.1: the Ctrl momentary switch gives whichever selection tool was used LAST, so
@@ -2228,7 +2479,8 @@ function runCommand(state: PenState, cmd: PenCommand, mods: PenMods, cfg: PenCon
       // Ends the path, leaves it OPEN, leaves it SELECTED. [U] — whether Enter keeps the
       // selection where Escape drops it is the spec's highest-value manual check against real
       // Illustrator. One line to correct if it turns out otherwise.
-      if (s.activePathIndex === null) return s;
+      s = commitDrag(s, mods, cfg, zoom);
+      if (s.activePathIndex === null) return settle(s, cfg, zoom, mods);
       const i = s.activePathIndex;
       return settle({ ...endPath(s), selection: { ...EMPTY_SELECTION, paths: [i] } }, cfg, zoom, mods);
     }
@@ -2271,6 +2523,7 @@ function runCommand(state: PenState, cmd: PenCommand, mods: PenMods, cfg: PenCon
 
     case 'deselect-all':
       // Ends the path and deselects WITHOUT leaving the Pen tool (I.53).
+      s = commitDrag(s, mods, cfg, zoom);
       return settle({ ...endPath(s), selection: { ...EMPTY_SELECTION } }, cfg, zoom, mods);
 
     case 'join': {
@@ -2288,8 +2541,13 @@ function runCommand(state: PenState, cmd: PenCommand, mods: PenMods, cfg: PenCon
         const path = doc.paths[x.path];
         path.closed = true;
         // A straight closing segment: retract the two handles that would otherwise shape it.
-        path.points[path.points.length - 1].rightDirection = [...path.points[path.points.length - 1].anchor];
+        // Both points are then healed, because retracting a side of a SMOOTH endpoint leaves a
+        // flag collinearity cannot be measured for (spec C.3) — the same trap the close click had.
+        const last = path.points[path.points.length - 1];
+        last.rightDirection = [...last.anchor];
         path.points[0].leftDirection = [...path.points[0].anchor];
+        healRetractedSmooth(last, cfg.retractEpsilon);
+        healRetractedSmooth(path.points[0], cfg.retractEpsilon);
         return settle({ ...s, doc, selection: { ...EMPTY_SELECTION, paths: [x.path] } }, cfg, zoom, mods);
       }
       const xEnd: PathEnd = x.point === 0 ? 'first' : 'last';
@@ -2303,9 +2561,23 @@ function runCommand(state: PenState, cmd: PenCommand, mods: PenMods, cfg: PenCon
       if (merged.points[seam] && merged.points[seam + 1]) {
         merged.points[seam].rightDirection = [...merged.points[seam].anchor];
         merged.points[seam + 1].leftDirection = [...merged.points[seam + 1].anchor];
+        healRetractedSmooth(merged.points[seam], cfg.retractEpsilon);
+        healRetractedSmooth(merged.points[seam + 1], cfg.retractEpsilon);
       }
       return settle({ ...s, doc, selection: { ...EMPTY_SELECTION, paths: [j.activePathIndex] } }, cfg, zoom, mods);
     }
+
+    // ── View state. No geometry, no undo step, no effect on the artifact ────
+    //
+    // Both toggle a way of LOOKING at what is already there, so committing an undo snapshot for
+    // them would put a step in the stack that Ctrl+Z cannot visibly perform — the geometry either
+    // side of it is identical — and I.123's "one anchor placement is exactly ONE undo step" would
+    // start depending on how often the user glanced at their artwork.
+    case 'toggle-outline':
+      return settle({ ...s, outline: !s.outline }, cfg, zoom, mods);
+
+    case 'toggle-edges':
+      return settle({ ...s, hideEdges: !s.hideEdges }, cfg, zoom, mods);
 
     default: {
       const unhandled: never = cmd;
