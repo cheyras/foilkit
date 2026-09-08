@@ -49,6 +49,7 @@ import {
   MASK_H,
   MASK_TINT,
   MASK_W,
+  PenEditor,
   WindowEditor,
   ZoomHud,
   cardScreenRect,
@@ -58,9 +59,11 @@ import {
   useViewTransform,
   type BrushMode,
   type MaskEditorHandle,
+  type PenEditorHandle,
   type ViewerSettings,
   type WindowGeom,
 } from '@foilkit/three/react'
+import { PEN_CLAIMED_HOST_KEYS } from '@foilkit/forge/geometry'
 import { ActionBtn, Chip, CoreSliders, Section, Select, Slider, SurfaceTabs } from './ui.tsx'
 import { CorpusView, FILTER_LABEL, type ContributionFilter } from './catalog/manifest.ts'
 import { navigate, setParam } from './router.ts'
@@ -85,6 +88,19 @@ const LS_KEY = 'foil-lab:selection'
  * answered from the corpus manifest rather than from a query parameter.
  */
 const LS_FILTER_KEY = 'foilkit:contribution-filter'
+
+/**
+ * The keys the pen takes off the view controller, frozen at module scope.
+ *
+ * `PEN_CLAIMED_HOST_KEYS` is the engine's own list — `+ = - _`, Illustrator's
+ * anchor-tool keys, which `ViewTransform` otherwise binds to zoom — plus Space,
+ * which the pen must route through `reduce` because it means two different
+ * things depending on whether a button is down (spec B.3). Module constants
+ * rather than inline literals so the `useViewTransform` opts object does not
+ * get a fresh array identity on every render.
+ */
+const PEN_HOST_KEYS: readonly string[] = Object.freeze([...PEN_CLAIMED_HOST_KEYS, ' '])
+const NO_KEYS: readonly string[] = Object.freeze([])
 
 interface Selection {
   seriesSlug?: string
@@ -210,6 +226,19 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   const [brushMode, setBrushMode] = useState<BrushMode>('brush')
   const [brushSize, setBrushSize] = useState(28)
   const [allowTouch, setAllowTouch] = useState(false)
+  /**
+   * The pen surface (packages/three/src/react/PenEditor.tsx), a third editing
+   * mode alongside the brush and the window adjuster and mutually exclusive
+   * with both — they all own the same mask canvas, and two owners is a race.
+   *
+   * THE BRUSH IS NOT DEPRECATED. A pen traces an edge you can see; a brush
+   * fixes the twelve pixels where the scan is ambiguous, and the mask corpus
+   * has plenty of both. Nothing on the brush path changed to make room for
+   * this — the pen is an addition, and the e2e run still drives the brush
+   * journey it always did.
+   */
+  const [penMode, setPenMode] = useState(false)
+  const penRef = useRef<PenEditorHandle | null>(null)
   const [maskDirty, setMaskDirty] = useState(false)
   const [savedMask, setSavedMask] = useState(false)
   /** Sidecar meta of the hand mask on screen (null = none / layout tier). */
@@ -298,9 +327,15 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   // Pan/pinch-zoom while editing (foil/ViewTransform.tsx). Live only on the
   // editing surfaces — normal viewing keeps the tilt interaction untouched.
   const viewCtl = useViewTransform({
-    enabled: editMode || adjustMode,
+    enabled: editMode || adjustMode || penMode,
     editing: editMode,
     fingerDraws: allowTouch,
+    // The pen claims Illustrator's Add / Delete Anchor Point keys outright, and
+    // Space conditionally — with a button down it translates the anchor being
+    // placed, with the button up the engine emits a pan intent and calls back
+    // into `setSpacePan`. Empty while the pen is closed, so the brush and the
+    // window adjuster keep exactly the bindings they have always had.
+    suspendKeys: penMode ? PEN_HOST_KEYS : NO_KEYS,
   })
 
   // ── Data: series → sets → cards. The full catalog, always. ──
@@ -713,7 +748,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
     }
   }, [staged])
 
-  const handActive = maskSource === 'hand' || editMode
+  const handActive = maskSource === 'hand' || editMode || penMode
   const settingsRef = useRef<ViewerSettings>({
     uniforms,
     maskRect: mask.rect,
@@ -735,9 +770,9 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
       maskView,
       maskTexOn: handActive,
       maskTexVersion,
-      maxTiltDeg: editMode || adjustMode ? 0 : maxTiltDeg,
+      maxTiltDeg: editMode || adjustMode || penMode ? 0 : maxTiltDeg,
     }
-  }, [uniforms, mask, maskFeather, maskView, maxTiltDeg, handActive, maskTexVersion, editMode, adjustMode])
+  }, [uniforms, mask, maskFeather, maskView, maxTiltDeg, handActive, maskTexVersion, editMode, adjustMode, penMode])
 
   const setU = (k: string, v: number) => setUniforms((u) => ({ ...u, [k]: v }))
 
@@ -763,7 +798,51 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
     editorRef.current = h
   }, [])
 
+  const registerPen = useCallback((h: PenEditorHandle) => {
+    penRef.current = h
+  }, [])
+
+  /**
+   * The pen rewrote the mask canvas.
+   *
+   * Identical bookkeeping to a brush stroke — dirty, hand-sourced, texture
+   * version bumped, session marked painted — because it IS the same act: a
+   * human put those pixels there. The one difference is that the pen writes on
+   * every committed frame rather than once per stroke, which is why it goes
+   * through the rAF-coalesced path in `PenEditor` rather than firing per event.
+   */
+  const onPenCommit = useCallback(() => {
+    setMaskDirty(true)
+    setMaskSource('hand')
+    setMaskTexVersion((v) => v + 1)
+    setSession((s) => (s.painted ? s : { ...s, painted: true }))
+    setProvisionalStale(true)
+  }, [])
+
+  /**
+   * Open the pen over whatever is on the canvas.
+   *
+   * The existing mask is a BACKDROP, not a starting document: `PenEditor`
+   * captures it and shows it faintly to trace over, and the pen document starts
+   * empty. Auto-vectorising it would be a machine guess dressed as a human
+   * decision (AGENTS.md F3/F4), and it is also just wrong about what the user
+   * asked for — "trace this" and "convert this" are different requests.
+   *
+   * `initialPaths` is the other branch: when a per-card VECTOR form exists it
+   * loads for real editing via the handle's `loadVPath`. Nothing in this
+   * surface carries one today — the corpus stores masks as PNG rasters and
+   * `data/vector-templates.json` holds era TEMPLATES rather than a card's own
+   * mask — so in practice every card opens as a trace. Said out loud because a
+   * reader will otherwise assume the branch is dead code.
+   */
+  const startPen = () => {
+    if (adjustMode) endAdjust()
+    setEditMode(false)
+    setPenMode(true)
+  }
+
   const startEdit = () => {
+    setPenMode(false)
     setEditMode(true)
     // Editing starts from the current mask: saved hand mask if loaded,
     // otherwise rasterize the current window (adjusted geometry if present,
@@ -1048,6 +1127,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   // ── Adjusted-window actions (handles → save/flatten) ──
 
   const startAdjust = () => {
+    setPenMode(false)
     setAdjustMode(true)
     // Start from the saved/live geometry if any, else the era rule.
     if (!winGeom) setWinGeom({ rect: layoutMask.rect, radius: layoutMask.radius })
@@ -1243,6 +1323,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
     era: resolved.eraId,
     maskSource,
     maskEditActive: editMode,
+    penActive: penMode,
     maskDirty,
     savedMask,
     // Adjusted-window linkage (foil/mask-refine): the geometry state this
@@ -1379,12 +1460,12 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
           imageUrl={imageUrl}
           pattern={pattern}
           settingsRef={settingsRef}
-          tiltTarget={editMode || adjustMode ? zeroTilt : tilt.target}
+          tiltTarget={editMode || adjustMode || penMode ? zeroTilt : tilt.target}
           maskCanvas={handActive ? maskCanvas : null}
           ink={inkForViewer}
           view={viewCtl}
-          onPointerMove={editMode || adjustMode ? undefined : tilt.onPointerMove}
-          onPointerLeave={editMode || adjustMode ? undefined : tilt.onPointerLeave}
+          onPointerMove={editMode || adjustMode || penMode ? undefined : tilt.onPointerMove}
+          onPointerLeave={editMode || adjustMode || penMode ? undefined : tilt.onPointerLeave}
           className="h-full w-full"
         >
           {editMode && cardRect.width > 0 && (
@@ -1400,6 +1481,16 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
               registerHandle={registerEditor}
             />
           )}
+          {penMode && !editMode && !adjustMode && cardRect.width > 0 && (
+            <PenEditor
+              canvas={maskCanvas}
+              rect={cardRect}
+              allowTouch={allowTouch}
+              view={viewCtl}
+              onCommit={onPenCommit}
+              registerHandle={registerPen}
+            />
+          )}
           {adjustMode && !editMode && cardRect.width > 0 && winGeom && (
             <WindowEditor
               rect={cardRect}
@@ -1412,7 +1503,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
             />
           )}
         </CardViewer>
-        {(editMode || adjustMode) && (
+        {(editMode || adjustMode || penMode) && (
           <ZoomHud ctl={viewCtl} className="absolute bottom-[52px] right-[12px]" />
         )}
         <div className="pointer-events-none absolute left-[12px] top-[10px] text-[12px]">
@@ -1433,7 +1524,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
           </div>
         )}
         <div className="pointer-events-none absolute right-[12px] top-[10px] rounded-full bg-surface-secondary/70 px-[8px] py-[2px] text-[11px] text-text-muted">
-          {editMode ? 'mask edit' : adjustMode ? 'window adjust' : tilt.mode}
+          {editMode ? 'mask edit' : penMode ? 'pen' : adjustMode ? 'window adjust' : tilt.mode}
           {handActive && !editMode ? ' · hand mask' : ''}
           {!handActive && !adjustMode && windowScoped && winDiffers ? ' · window adjusted' : ''}
         </div>
@@ -1454,6 +1545,12 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
               Erase
             </ActionBtn>
             <ActionBtn onClick={() => editorRef.current?.undo()}>Undo</ActionBtn>
+          </div>
+        )}
+        {penMode && (
+          <div className="absolute bottom-[12px] right-[12px] flex gap-[6px]">
+            <ActionBtn onClick={() => penRef.current?.undo()}>Undo</ActionBtn>
+            <ActionBtn onClick={() => penRef.current?.redo()}>Redo</ActionBtn>
           </div>
         )}
       </div>
@@ -1829,6 +1926,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
                   setScopeOverride(s)
                   setMaskSource('layout')
                   setEditMode(false)
+                  setPenMode(false)
                   if (adjustMode) endAdjust()
                 }}
               >
@@ -1837,7 +1935,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
             ))}
             <Chip
               active={handActive}
-              disabled={!savedMask && !maskDirty && !editMode}
+              disabled={!savedMask && !maskDirty && !editMode && !penMode}
               onClick={() => {
                 setMaskSource('hand')
                 if (adjustMode) endAdjust()
@@ -1897,9 +1995,49 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
                   </p>
                 )}
               </div>
+            ) : penMode ? (
+              <div className="space-y-[8px]">
+                <p className="text-[11px] leading-[15px] text-text-muted">
+                  Click to place a corner anchor; click-and-drag to pull a curve out of one — the cursor holds the
+                  OUTGOING handle, so dragging toward where you are going bulges the segment behind you away from the
+                  drag. Alt breaks the handle pair, Shift constrains to 45°, Space while the button is down moves the
+                  anchor you are placing (and pans while it is up). Click the first anchor to close. Draw as many
+                  subpaths as the mask needs: wound the same way they union, wound the other way they cut a hole.
+                </p>
+                <p className="text-[11px] leading-[15px] text-text-muted">
+                  The saved mask underneath is a <em>backdrop to trace</em>, shown faintly — it is not converted to
+                  paths, and it stays on the card until your first closed subpath replaces it.
+                </p>
+                <div className="flex flex-wrap gap-[6px]">
+                  <ActionBtn onClick={() => penRef.current?.undo()}>Undo (Ctrl+Z)</ActionBtn>
+                  <ActionBtn onClick={() => penRef.current?.redo()}>Redo (Ctrl+Shift+Z)</ActionBtn>
+                  <ActionBtn onClick={() => penRef.current?.clear()}>Clear paths</ActionBtn>
+                  <ActionBtn onClick={() => setPenMode(false)}>Done</ActionBtn>
+                </div>
+                <div className="flex flex-wrap gap-[6px]">
+                  <ActionBtn onClick={() => void saveMask()}>
+                    {maskSaveStatus === 'saving'
+                      ? 'Saving…'
+                      : maskSaveStatus === 'saved'
+                        ? 'Saved ✓'
+                        : maskDirty
+                          ? 'Save mask ●'
+                          : 'Save mask'}
+                  </ActionBtn>
+                  <ActionBtn
+                    onClick={() => {
+                      setPenMode(false)
+                      setEditMode(true)
+                    }}
+                  >
+                    ✏️ Refine with the brush
+                  </ActionBtn>
+                </div>
+              </div>
             ) : !editMode ? (
               <div className="mb-[6px] flex flex-wrap gap-[6px]">
                 <ActionBtn onClick={startEdit}>✏️ Edit mask (Pencil)</ActionBtn>
+                <ActionBtn onClick={startPen}>✒️ Pen (trace)</ActionBtn>
                 {maskSource === 'layout' && windowScoped && (
                   <ActionBtn onClick={startAdjust}>⤡ Adjust window</ActionBtn>
                 )}

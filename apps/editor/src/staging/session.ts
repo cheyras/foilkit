@@ -10,6 +10,8 @@
 // labels a mask) be asserted by a test rather than hoped for.
 
 import type { FoilMaskDerivation, FoilMaskPrior } from '../api.ts'
+// Type-only — see the note in `types.ts` about the browser-safe seam.
+import type { MaskVector } from '@foilkit/forge/geometry'
 import {
   SESSION_VERSION,
   canonSessionId,
@@ -38,6 +40,12 @@ export interface SeedMaskInput {
   width: number
   height: number
   png: string | null
+  /**
+   * Pen geometry the seed already carries — a mask being reopened for editing
+   * brings its committed `.paths.json` back with it. Absent for a brush seed and
+   * for every mask that predates the pen, which is the normal case.
+   */
+  vector?: MaskVector | null
   patternId: string | null
   now: string
 }
@@ -60,6 +68,11 @@ export function seedMaskSession(input: SeedMaskInput): MaskSession {
       seededAt: input.now,
     },
     png: input.png,
+    // SET ONLY WHEN THERE IS ONE. `vector: undefined` would be a key whose value
+    // JSON drops on export and `assert.deepStrictEqual` does not, so a brush
+    // session would stop round-tripping through a bundle — and, more to the
+    // point, a session that never touched the pen should not mention it.
+    ...(input.vector !== undefined ? { vector: input.vector } : {}),
     width: input.width,
     height: input.height,
     window: null,
@@ -74,6 +87,17 @@ export function seedMaskSession(input: SeedMaskInput): MaskSession {
 
 export interface MaskSessionPatch {
   png?: string | null
+  /**
+   * The pen's geometry, updated alongside the pixels it rasterises to.
+   *
+   * `null` CLEARS it, and that is a real move rather than a tidy-up: a brush
+   * stroke over a pen-authored mask has produced pixels the paths no longer
+   * describe, and the editor says so by patching `{ png, vector: null }`. The
+   * server does the same thing one layer down — a save with no vector removes
+   * the committed `.paths.json` — for the same reason, which is that a legible
+   * diff of the wrong geometry is worse than no diff at all.
+   */
+  vector?: MaskVector | null
   window?: SessionWindow | null
   uniforms?: Record<string, number>
   patternOverride?: string | null
@@ -89,9 +113,13 @@ export interface MaskSessionPatch {
  * structural rather than a discipline somebody has to keep.
  */
 export function updateMaskSession(session: MaskSession, patch: MaskSessionPatch, now: string): MaskSession {
+  // Spread-if-present, not `vector: patch.vector ?? session.vector`. The key must
+  // stay ABSENT on a session that has never had one — see `seedMaskSession`.
+  const vector = patch.vector !== undefined ? patch.vector : session.vector
   return {
     ...session,
     png: patch.png !== undefined ? patch.png : session.png,
+    ...(vector !== undefined ? { vector } : {}),
     window: patch.window !== undefined ? patch.window : session.window,
     uniforms: patch.uniforms !== undefined ? { ...patch.uniforms } : session.uniforms,
     patternOverride: patch.patternOverride !== undefined ? patch.patternOverride : session.patternOverride,
@@ -196,6 +224,12 @@ export interface MaskSubmission {
   cardId: string
   variantId: number
   png: string
+  /**
+   * The paths, when the mask has any. Committed beside the pixels so the pull
+   * request diff is text — and checked against them server-side before it is,
+   * because the server never takes a client's word for what its pixels contain.
+   */
+  vector?: MaskVector | null
   width: number
   height: number
   prior: FoilMaskPrior
@@ -229,6 +263,7 @@ export function buildMaskSubmission(session: MaskSession): MaskSubmission {
     cardId: session.cardId,
     variantId: session.variantId,
     png: session.png,
+    ...(session.vector !== undefined ? { vector: session.vector } : {}),
     width: session.width,
     height: session.height,
     prior: session.seed.prior,

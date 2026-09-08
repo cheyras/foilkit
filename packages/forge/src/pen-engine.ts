@@ -57,7 +57,17 @@
 // whole thing be logged when a user reports a gesture that went wrong.
 
 import type { Vec } from './line-snap.ts';
-import { arcGeometry, cubicAt, type ArcPrim, type CubicPrim, type Prim, type VPath } from './vector-template.ts';
+import {
+  arcGeometry,
+  cubicAt,
+  MASK_VECTOR_VERSION,
+  type AnchorType,
+  type ArcPrim,
+  type CubicPrim,
+  type MaskVector,
+  type Prim,
+  type VPath,
+} from './vector-template.ts';
 import { projectToPrim, splitCubic } from './pen-geometry.ts';
 
 // ── The document model — Illustrator's DOM, mirrored ───────────────────────
@@ -267,27 +277,45 @@ export function segmentCubic(path: PenPath, i: number): { from: Vec; prim: Cubic
  * An OPEN pen path emits no closing primitive, so the resulting `VPath` is a chain rather than
  * a loop; `VPath` has no `closed` flag and never needed one, because everything the fitter
  * produced was closed. `fromVPath` reads the closure back off the geometry — see there.
+ *
+ * `pointType` IS EMITTED, as `t` on the primitive that lands on the anchor and as `startType`
+ * for the first one. That is the second thing the stored form used not to carry, and until it
+ * did, this function was lossy in a way no round trip of the GEOMETRY could reveal: a corner
+ * whose two handles happen to be collinear — an ordinary shape, and exactly what an Alt-drag
+ * leaves behind on a symmetric curve — came back out of `fromVPath` as a SMOOTH point, and the
+ * next tug on either handle rotated its partner. Same anchors, same handles, same pixels;
+ * different editing behaviour from then on, with nothing in the artifact to explain it.
  */
 export function toVPath(path: PenPath, eps: number = DEFAULT_PEN_CONFIG.retractEpsilon): VPath {
   if (path.points.length === 0) return { start: [0, 0], prims: [] };
   const prims: Prim[] = [];
   const n = path.points.length;
   const segs = segmentCount(path);
+  const flag = (pt: PathPoint): AnchorType => (pt.pointType === 'smooth' ? 's' : 'c');
   for (let i = 0; i < segs; i++) {
     const a = path.points[i];
     const b = path.points[(i + 1) % n];
+    // The flag belongs to the anchor the primitive LANDS ON, which is `b`. On a closed path the
+    // final primitive lands back on point 0, so its `t` and the path's `startType` describe the
+    // same anchor and are written from the same value — they cannot drift apart.
+    const t = flag(b);
     if (isRetracted(a.rightDirection, a.anchor, eps) && isRetracted(b.leftDirection, b.anchor, eps)) {
-      prims.push({ k: 'line', to: [b.anchor[0], b.anchor[1]] });
+      prims.push({ k: 'line', to: [b.anchor[0], b.anchor[1]], t });
     } else {
       prims.push({
         k: 'cubic',
         c1: [a.rightDirection[0], a.rightDirection[1]],
         c2: [b.leftDirection[0], b.leftDirection[1]],
         to: [b.anchor[0], b.anchor[1]],
+        t,
       });
     }
   }
-  return { start: [path.points[0].anchor[0], path.points[0].anchor[1]], prims };
+  return {
+    start: [path.points[0].anchor[0], path.points[0].anchor[1]],
+    prims,
+    startType: flag(path.points[0]),
+  };
 }
 
 /**
@@ -330,41 +358,58 @@ export function arcToCubics(from: Vec, pr: ArcPrim): CubicPrim[] {
 /**
  * Stored language -> editing model, so an existing mask loads back for editing.
  *
- * TWO THINGS ARE RECONSTRUCTED HERE THAT THE STORED FORM DOES NOT CARRY, and both are legal
+ * TWO THINGS ARE RECONSTRUCTED HERE THAT THE STORED FORM MAY NOT CARRY, and both are legal
  * exactly once, at import:
  *
  *   * `closed` — a `VPath` from the fitter always returns to `start`, so closure is read off
  *     the geometry: last primitive landing on `start` means closed, and its duplicate final
  *     anchor is dropped rather than kept as a coincident point.
- *   * `pointType` — the stored form has no flag. A point with two non-retracted collinear
- *     handles loads as SMOOTH, everything else as CORNER. This is the ONLY place inference is
- *     allowed; once the point is in the editing model the flag is authoritative and is never
- *     recomputed, or a CORNER whose handles happen to line up would silently heal into a
- *     smooth point the next time anything touched it.
+ *   * `pointType` — inferred ONLY where the path does not state it. A point with two
+ *     non-retracted collinear handles infers as SMOOTH, everything else as CORNER.
+ *
+ * THE STORED FLAG WINS, EVERY TIME, and that ordering is the whole reason `t`/`startType`
+ * exist. Inference is a MEASUREMENT of the handles, and Illustrator's model — see this file's
+ * header — is explicit that the type is a thing the user SAID, not a thing the geometry shows:
+ * a corner is allowed to carry two collinear handles and must keep breaking them
+ * independently. So a path that names its types is believed, and inference is left to do the
+ * only job it can still do honestly, which is answer for a path that never said.
+ *
+ * That path is not hypothetical and never will be: `data/vector-templates.json` is fitted
+ * geometry, the fitter emits lines and arcs and no types at all, and every one of those files
+ * must keep loading exactly as it did. An absent `t` is therefore NOT a defect to be repaired
+ * — it is a path whose author had no opinion, and inference is the honest answer for it.
+ *
+ * Anchors the fitter's ARCS expand into are a third case and get inference for the same reason:
+ * `arcToCubics` invents them, so the human never typed them, and they lie on a circle where
+ * smooth is both inferable and correct. Only the arc's own endpoint carries the arc's `t`.
  */
 export function fromVPath(p: VPath, eps: number = DEFAULT_PEN_CONFIG.retractEpsilon, collinearEps = 1e-6): PenPath {
   // Flatten the primitive list into cubics-or-lines first, so arcs become editable anchors and
-  // everything downstream sees one shape of segment.
-  interface Seg { c1: Vec; c2: Vec; to: Vec }
+  // everything downstream sees one shape of segment. `t` rides along per SEGMENT rather than
+  // per primitive, because an arc becomes several segments and only its last one lands on the
+  // anchor the arc's own flag describes.
+  interface Seg { c1: Vec; c2: Vec; to: Vec; t?: AnchorType }
   const segs: Seg[] = [];
   let cur = P(p.start);
   for (const pr of p.prims) {
     switch (pr.k) {
       case 'line': {
         const to = P(pr.to);
-        segs.push({ c1: cur, c2: to, to });
+        segs.push({ c1: cur, c2: to, to, t: pr.t });
         cur = to;
         break;
       }
       case 'arc': {
-        for (const c of arcToCubics(cur, pr)) {
-          segs.push({ c1: P(c.c1), c2: P(c.c2), to: P(c.to) });
+        const cubics = arcToCubics(cur, pr);
+        for (let i = 0; i < cubics.length; i++) {
+          const c = cubics[i];
+          segs.push({ c1: P(c.c1), c2: P(c.c2), to: P(c.to), t: i === cubics.length - 1 ? pr.t : undefined });
           cur = P(c.to);
         }
         break;
       }
       case 'cubic': {
-        segs.push({ c1: P(pr.c1), c2: P(pr.c2), to: P(pr.to) });
+        segs.push({ c1: P(pr.c1), c2: P(pr.c2), to: P(pr.to), t: pr.t });
         cur = P(pr.to);
         break;
       }
@@ -405,7 +450,54 @@ export function fromVPath(p: VPath, eps: number = DEFAULT_PEN_CONFIG.retractEpsi
       pt.pointType = 'smooth';
     }
   }
+
+  // ── …and now the STORED flags overwrite the guesses, wherever there are any ──
+  //
+  // Applied after the inference loop rather than instead of it, so a path that states SOME of
+  // its types — which is exactly what a fitted template looks like after a human has edited a
+  // few of its anchors with the pen — gets the stated ones stated and the rest inferred.
+  //
+  // Segment order first, `startType` second, and that order is deliberate: on a CLOSED path the
+  // last segment lands back on anchor 0, so both would answer for it, and `startType` is the
+  // field that names the anchor directly rather than by walking to it.
+  const setType = (i: number, t: AnchorType | undefined): void => {
+    if (t) points[i].pointType = t === 's' ? 'smooth' : 'corner';
+  };
+  for (let i = 0; i < segs.length; i++) setType((i + 1) % n, segs[i].t);
+  setType(0, p.startType);
+
   return { closed, points };
+}
+
+/**
+ * The whole document as the artifact a mask commits beside its pixels.
+ *
+ * The two-line function is the point: `MaskVector` is `VPath[]` plus the raster they are drawn
+ * in, so "what the pen holds" and "what the repository stores" differ by a wrapper and not by a
+ * translation. There is no second geometry format and no lossy step — which is what makes the
+ * committed `.paths.json` reloadable into the exact editing state it was saved from.
+ *
+ * `null` when there is nothing to store. A path of fewer than two points has no primitives, and
+ * a document of only those is a click on an empty canvas, not geometry: writing an empty
+ * `paths` array would commit a file that says a human drew something when they did not.
+ */
+export function toMaskVector(
+  doc: PenDoc,
+  space: { width: number; height: number },
+  eps: number = DEFAULT_PEN_CONFIG.retractEpsilon,
+): MaskVector | null {
+  const paths = doc.paths.filter((p) => p.points.length >= 2).map((p) => toVPath(p, eps));
+  if (paths.length === 0) return null;
+  return { version: MASK_VECTOR_VERSION, space: { ...space }, paths };
+}
+
+/** The other direction: a committed mask vector, back to something the pen can edit. */
+export function fromMaskVector(
+  v: MaskVector,
+  eps: number = DEFAULT_PEN_CONFIG.retractEpsilon,
+  collinearEps = 1e-6,
+): PenDoc {
+  return { paths: v.paths.map((p) => fromVPath(p, eps, collinearEps)) };
 }
 
 // ── Selection ──────────────────────────────────────────────────────────────

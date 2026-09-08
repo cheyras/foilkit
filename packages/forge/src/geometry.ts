@@ -35,13 +35,25 @@ export {
   arcGeometry,
   cubicAt,
   DEFAULT_VECTOR_FIT_PARAMS,
+  // The mask's own vector artifact: what the pen holds, what the repository stores, and the
+  // rasteriser that proves the two agree. The editor needs all four — it previews through
+  // `rasterizeMaskVector`, stages the parsed value, and must never grow a second serialiser,
+  // because a byte-identical re-save is the only thing that keeps the committed diff readable.
+  BadMaskVector,
+  MASK_VECTOR_VERSION,
+  VECTOR_COORD_DP,
+  parseMaskVector,
+  rasterizeMaskVector,
+  serializeMaskVector,
 } from './vector-template.ts';
 
 export type {
+  AnchorType,
   ArcGeometry,
   ArcPrim,
   CubicPrim,
   LinePrim,
+  MaskVector,
   Prim,
   TemplateHole,
   TemplateProvenance,

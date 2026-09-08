@@ -56,10 +56,32 @@ import { contourSegments } from './edge-trace.ts';
 // ADDING A FOURTH KIND: every consumer below switches exhaustively with a `never`-typed
 // default, on purpose. See the note over `flattenPath`.
 
+/**
+ * THE ANCHOR TYPE, STORED — `'s'`mooth or `'c'`orner, on the anchor a primitive LANDS on.
+ *
+ * Illustrator's model, which `pen-engine.ts` mirrors, treats `pointType` as a REMEMBERED FLAG
+ * and not a measurement: a CORNER is allowed to carry two perfectly collinear handles, and
+ * Illustrator will still break them independently, because it remembers what you said rather
+ * than measuring what you drew. Until this field existed the stored language carried no such
+ * flag, so `fromVPath` had to INFER the type from geometry — and inference cannot tell those
+ * two apart. A collinear corner loaded back as a smooth point, and the first handle tug after
+ * that silently rotated its partner: the artifact quietly healed a cusp the human had put
+ * there on purpose.
+ *
+ * OPTIONAL, and a single character, for two separate reasons. Optional because
+ * `data/vector-templates.json` and every fitted path predate it — the FITTER emits no types,
+ * a missing `t` still falls back to inference, and not one committed byte moves. One character
+ * because this rides on every primitive of every path in a diff a human is meant to READ, and
+ * `"pointType": "corner"` would cost more of that line than the geometry it annotates.
+ */
+export type AnchorType = 's' | 'c';
+
 export interface LinePrim {
   k: 'line';
   /** End point. The start is the previous primitive's end (or the path's `start`). */
   to: [number, number];
+  /** The type of the anchor at `to`. Absent ⇒ infer it. See `AnchorType`. */
+  t?: AnchorType;
 }
 export interface ArcPrim {
   k: 'arc';
@@ -68,6 +90,8 @@ export interface ArcPrim {
   r: number;
   /** 1 = clockwise in image coords (y down), 0 = counter-clockwise. */
   sweep: 0 | 1;
+  /** The type of the anchor at `to`. Absent ⇒ infer it. See `AnchorType`. */
+  t?: AnchorType;
 }
 export interface CubicPrim {
   k: 'cubic';
@@ -76,6 +100,8 @@ export interface CubicPrim {
   /** Handle arriving at `to`. */
   c2: [number, number];
   to: [number, number];
+  /** The type of the anchor at `to`. Absent ⇒ infer it. See `AnchorType`. */
+  t?: AnchorType;
 }
 export type Prim = LinePrim | ArcPrim | CubicPrim;
 
@@ -83,6 +109,12 @@ export type Prim = LinePrim | ArcPrim | CubicPrim;
 export interface VPath {
   start: [number, number];
   prims: Prim[];
+  /**
+   * The type of the anchor at `start`, which is the one anchor no primitive's `t` describes on
+   * an OPEN path. On a closed path the final primitive lands on it too; `fromVPath` lets this
+   * win, because it is the field that names the anchor directly.
+   */
+  startType?: AnchorType;
 }
 
 export interface TemplateHole {
@@ -656,6 +688,13 @@ export function flattenPath(path: VPath, sagitta: number): Vec[] {
  *
  * `radius` is separate from `pt` because a radius is a length, not a position: it scales by
  * the x factor alone, which is why the template's space is not allowed to be anisotropic.
+ *
+ * `t` and `startType` ride through UNTOUCHED, which is the whole reason they are handled here
+ * at all rather than left to fall off: a coordinate transform is a change of units, and a
+ * corner does not become a smooth point because somebody rescaled the card. Drop them here and
+ * the px <-> fraction conversion — which the editor performs on every load and every save —
+ * would launder the stored flag back into an inference, restoring exactly the bug the flag
+ * exists to close, in the one function nobody would think to look in.
  */
 export function mapPathCoords(
   path: VPath,
@@ -664,14 +703,15 @@ export function mapPathCoords(
 ): VPath {
   return {
     start: pt(path.start),
+    ...(path.startType ? { startType: path.startType } : {}),
     prims: path.prims.map((pr): Prim => {
       switch (pr.k) {
         case 'line':
-          return { k: 'line', to: pt(pr.to) };
+          return { k: 'line', to: pt(pr.to), ...(pr.t ? { t: pr.t } : {}) };
         case 'arc':
-          return { k: 'arc', to: pt(pr.to), r: radius(pr.r), sweep: pr.sweep };
+          return { k: 'arc', to: pt(pr.to), r: radius(pr.r), sweep: pr.sweep, ...(pr.t ? { t: pr.t } : {}) };
         case 'cubic':
-          return { k: 'cubic', c1: pt(pr.c1), c2: pt(pr.c2), to: pt(pr.to) };
+          return { k: 'cubic', c1: pt(pr.c1), c2: pt(pr.c2), to: pt(pr.to), ...(pr.t ? { t: pr.t } : {}) };
         default: {
           const unhandled: never = pr;
           throw new Error(`mapPathCoords: unknown primitive ${JSON.stringify(unhandled)}`);
@@ -1125,23 +1165,37 @@ export function fitTemplate(input: TemplateFitInput): TemplateFitResult {
  * other way makes the old arrival handle the new departure handle. Leaving them in place
  * would reverse the direction and reflect the curve's bulge across its own chord, which
  * still closes, still rasterises, and cuts the wrong hole.
+ *
+ * THE ANCHOR TYPES MOVE ONE SLOT, and this is the part a careless reversal gets wrong. `t`
+ * names the anchor the primitive LANDS ON, not the primitive — so a primitive that used to
+ * arrive at anchor `i+1` now arrives at anchor `i`, and must carry ANCHOR `i`'s type, which
+ * is the PRECEDING primitive's `t` (or `startType` at the head). Copy `t` across with the
+ * primitive and every smooth/corner flag on the path slides by one anchor: the shape is
+ * identical, the cusps are in the wrong places, and nothing rasterises differently — so it
+ * would only be discovered by a human dragging a handle and watching the wrong side move.
  */
 export function reversePath(path: VPath): VPath {
   const ptsAll: [number, number][] = [path.start, ...path.prims.map((p) => p.to)];
   const last = ptsAll[ptsAll.length - 1]!;
+  /** The type of anchor `i`, where anchor 0 is `start` and anchor `i+1` is `prims[i].to`. */
+  const typeAt = (i: number): AnchorType | undefined =>
+    i === 0 ? path.startType : path.prims[i - 1]!.t;
   const prims: Prim[] = [];
   for (let i = path.prims.length - 1; i >= 0; i--) {
     const pr = path.prims[i]!;
     const target = i === 0 ? path.start : path.prims[i - 1]!.to;
+    // Reversed, this primitive lands on anchor `i` — so it carries anchor `i`'s type.
+    const t = typeAt(i);
+    const tt = t ? { t } : {};
     switch (pr.k) {
       case 'line':
-        prims.push({ k: 'line', to: target });
+        prims.push({ k: 'line', to: target, ...tt });
         break;
       case 'arc':
-        prims.push({ k: 'arc', to: target, r: pr.r, sweep: pr.sweep === 1 ? 0 : 1 });
+        prims.push({ k: 'arc', to: target, r: pr.r, sweep: pr.sweep === 1 ? 0 : 1, ...tt });
         break;
       case 'cubic':
-        prims.push({ k: 'cubic', c1: pr.c2, c2: pr.c1, to: target });
+        prims.push({ k: 'cubic', c1: pr.c2, c2: pr.c1, to: target, ...tt });
         break;
       default: {
         const unhandled: never = pr;
@@ -1149,5 +1203,244 @@ export function reversePath(path: VPath): VPath {
       }
     }
   }
-  return { start: last, prims };
+  // The reversed path STARTS on what was the last anchor, so it takes that anchor's type.
+  const startType = typeAt(path.prims.length);
+  return { start: last, prims, ...(startType ? { startType } : {}) };
+}
+
+// ── One MASK, as vectors: the artifact that makes a contribution readable ──
+//
+// THE PROBLEM THIS IS THE ANSWER TO. A mask contribution is a PNG. A reviewer opening the pull
+// request sees `data/foil-masks/<card>/<variant>.png` — 7.7 KB of base64 that git renders as
+// "Binary files differ", or at best as two thumbnails side by side. There is nothing in that
+// diff to argue with. "The window edge should be 3px further in" is a sentence about geometry,
+// and the geometry was nowhere in the artifact, so review could only ever be "does this look
+// right", which is not review, it is assent.
+//
+// So a pen-authored mask commits its PATHS beside its pixels, and a moved anchor becomes two
+// numbers changing on one line. That is the entire justification for this type, and every
+// decision below follows from it:
+//
+//   * PIXELS, NOT FRACTIONS. `VectorTemplate` is normalised because ONE template serves every
+//     raster; a mask is a stencil cut for exactly one raster (canonical 504 x 704 since 4b),
+//     and the numbers a reviewer argues about are the ones the mask is actually drawn in.
+//     `space` is recorded so the claim is checkable rather than assumed.
+//   * A LIST OF PATHS, wound the way `rasterizePolygons` reads them — nonzero winding, so a
+//     hole is a path wound against its container and there is no separate `holes` array to get
+//     out of step with the geometry.
+//   * IT IS NOT EVIDENCE. This is an AUTHORING artifact: what the human drew, kept so it can
+//     be edited again and read in a diff. `derivation_method` and every other provenance value
+//     stays derived from PIXELS exactly as before (AGENTS.md F3) — a mask does not become more
+//     trustworthy for carrying its own paths, and `provenance.ts` never reads this file.
+//
+// The pair is only worth anything if it is HONEST, which is why writing one is not enough:
+// `functions/_lib/validate.ts` rasterises the submitted vector and refuses the submission when
+// the pixels it produces are not the pixels being committed. A path diff that does not describe
+// the committed mask is worse than no path diff, because a reviewer would believe it.
+
+export const MASK_VECTOR_VERSION = 1 as const;
+
+export interface MaskVector {
+  version: typeof MASK_VECTOR_VERSION;
+  /** The raster these coordinates are in. Pixels — see the note above. */
+  space: { width: number; height: number };
+  /**
+   * Every subpath, in the order the rasteriser fills them. Winding decides fill vs. cut; a
+   * path wound against its container cuts a hole out of it, exactly as `rasterizeTemplate`
+   * already relies on for `TemplateHole`.
+   */
+  paths: VPath[];
+}
+
+/**
+ * Decimal places committed coordinates are rounded to.
+ *
+ * FOUR, and the number is doing two jobs. The first is legibility: a reviewer reading
+ * `[36.0625, 40.5]` is reading geometry, and `[36.062500000000004, 40.5]` — which is what a
+ * float that has been through a scale and an inverse scale actually holds — is reading noise.
+ * The second is the one that makes the feature work at all: `serialize(parse(serialize(x)))`
+ * must be byte-identical to `serialize(x)`, or a re-save with no edit in it produces a diff,
+ * and a file that changes when nothing changed teaches reviewers to skip it. Rounding at the
+ * serialiser is what closes that loop, because the value that comes back from `parse` is then
+ * already at the precision the next `serialize` would produce.
+ *
+ * 1e-4 px on a 504 px card is 1/40th of the antialiasing ramp of a single pixel — far below
+ * anything the rasteriser, the shader or an eye can resolve, and orders of magnitude below the
+ * agreement tolerance the server checks the pair against.
+ */
+export const VECTOR_COORD_DP = 4;
+
+const round = (n: number): number => Number(n.toFixed(VECTOR_COORD_DP));
+const pair = (p: [number, number]): string => `[${round(p[0])}, ${round(p[1])}]`;
+
+/**
+ * The committed text of a mask vector: stable key order, one PRIMITIVE PER LINE, newline
+ * terminated.
+ *
+ * `JSON.stringify(v, null, 2)` was tried first and is wrong here for a specific reason: it
+ * breaks every array onto its own lines, so one cubic becomes fourteen lines of single numbers
+ * and a two-number edit shows up as a fourteen-line hunk. The whole argument for storing cubics
+ * — from this file's own header, "SIX NUMBERS on one line of a committed JSON diff" — dies in
+ * the formatter. So the layout is hand-written: nesting is indented for reading, and a
+ * primitive is atomic, because a primitive is the unit a human edits and therefore the unit a
+ * diff should show.
+ *
+ * Key order is fixed rather than insertion-ordered for the same reason the rounding exists: two
+ * saves of the same geometry must produce the same bytes, whatever order the object that
+ * reached here happened to be built in.
+ */
+export function serializeMaskVector(v: MaskVector): string {
+  const prim = (pr: Prim): string => {
+    const t = pr.t ? `, "t": ${JSON.stringify(pr.t)}` : '';
+    switch (pr.k) {
+      case 'line':
+        return `{ "k": "line", "to": ${pair(pr.to)}${t} }`;
+      case 'arc':
+        return `{ "k": "arc", "to": ${pair(pr.to)}, "r": ${round(pr.r)}, "sweep": ${pr.sweep}${t} }`;
+      case 'cubic':
+        return `{ "k": "cubic", "c1": ${pair(pr.c1)}, "c2": ${pair(pr.c2)}, "to": ${pair(pr.to)}${t} }`;
+      default: {
+        const unhandled: never = pr;
+        throw new Error(`serializeMaskVector: unknown primitive ${JSON.stringify(unhandled)}`);
+      }
+    }
+  };
+  const path = (p: VPath): string => {
+    const head = [
+      `      "start": ${pair(p.start)}`,
+      ...(p.startType ? [`      "startType": ${JSON.stringify(p.startType)}`] : []),
+    ];
+    const prims = p.prims.map((pr) => `        ${prim(pr)}`);
+    return [
+      '    {',
+      `${head.join(',\n')},`,
+      '      "prims": [',
+      prims.join(',\n'),
+      '      ]',
+      '    }',
+    ].join('\n');
+  };
+  return [
+    '{',
+    `  "version": ${MASK_VECTOR_VERSION},`,
+    `  "space": { "width": ${v.space.width}, "height": ${v.space.height} },`,
+    '  "paths": [',
+    v.paths.map(path).join(',\n'),
+    '  ]',
+    '}',
+    '',
+  ].join('\n');
+}
+
+export class BadMaskVector extends Error {}
+
+const isPair = (x: unknown): x is [number, number] =>
+  Array.isArray(x) && x.length === 2 && Number.isFinite(x[0]) && Number.isFinite(x[1]);
+
+const anchorType = (x: unknown, where: string): AnchorType | undefined => {
+  if (x === undefined || x === null) return undefined;
+  if (x !== 's' && x !== 'c') throw new BadMaskVector(`${where}: t must be "s" or "c", got ${JSON.stringify(x)}`);
+  return x;
+};
+
+/**
+ * Parse a mask vector from untrusted JSON, refusing anything it cannot vouch for.
+ *
+ * STRICT ON PURPOSE, and the reason is the same one `apps/editor/src/staging/portable.ts` gives
+ * for its own bundle parser: this is the boundary where data the server did not create becomes
+ * a file committed into `data/`. A half-understood primitive that survived parsing would be
+ * rasterised as something else — a `cubic` missing `c2` reads as `undefined` and lands as NaN
+ * in the flattener, which produces an empty polygon rather than an error, and an empty polygon
+ * compared against real pixels fails the agreement check with a message about IoU instead of a
+ * message about the malformed primitive the contributor actually sent.
+ *
+ * Bounded, too: a body may be large, and this runs before anything has been committed.
+ */
+export function parseMaskVector(raw: unknown, maxPrims = 20000): MaskVector {
+  if (typeof raw !== 'object' || raw === null) throw new BadMaskVector('not an object');
+  const v = raw as Record<string, unknown>;
+  if (v.version !== MASK_VECTOR_VERSION) {
+    throw new BadMaskVector(`vector version ${String(v.version)} — this build writes and reads version ${MASK_VECTOR_VERSION}`);
+  }
+  const space = v.space as Record<string, unknown> | undefined;
+  if (
+    typeof space !== 'object' || space === null ||
+    !Number.isInteger(space.width) || !Number.isInteger(space.height) ||
+    (space.width as number) <= 0 || (space.height as number) <= 0
+  ) {
+    throw new BadMaskVector('space must be { width, height } in whole pixels');
+  }
+  if (!Array.isArray(v.paths) || v.paths.length === 0) throw new BadMaskVector('paths must be a non-empty array');
+
+  let total = 0;
+  const paths: VPath[] = v.paths.map((p, i): VPath => {
+    const where = `paths[${i}]`;
+    if (typeof p !== 'object' || p === null) throw new BadMaskVector(`${where} is not an object`);
+    const o = p as Record<string, unknown>;
+    if (!isPair(o.start)) throw new BadMaskVector(`${where}: start must be two finite numbers`);
+    if (!Array.isArray(o.prims) || o.prims.length === 0) throw new BadMaskVector(`${where}: prims must be a non-empty array`);
+    total += o.prims.length;
+    if (total > maxPrims) throw new BadMaskVector(`over the ${maxPrims}-primitive ceiling`);
+    const startType = anchorType(o.startType, `${where}.startType`);
+    const prims = o.prims.map((raw2, j): Prim => {
+      const w2 = `${where}.prims[${j}]`;
+      if (typeof raw2 !== 'object' || raw2 === null) throw new BadMaskVector(`${w2} is not an object`);
+      const pr = raw2 as Record<string, unknown>;
+      const t = anchorType(pr.t, `${w2}.t`);
+      const tt = t ? { t } : {};
+      if (!isPair(pr.to)) throw new BadMaskVector(`${w2}: to must be two finite numbers`);
+      switch (pr.k) {
+        case 'line':
+          return { k: 'line', to: pr.to, ...tt };
+        case 'arc': {
+          if (!Number.isFinite(pr.r)) throw new BadMaskVector(`${w2}: arc r must be a finite number`);
+          if (pr.sweep !== 0 && pr.sweep !== 1) throw new BadMaskVector(`${w2}: arc sweep must be 0 or 1`);
+          return { k: 'arc', to: pr.to, r: pr.r as number, sweep: pr.sweep, ...tt };
+        }
+        case 'cubic': {
+          if (!isPair(pr.c1) || !isPair(pr.c2)) throw new BadMaskVector(`${w2}: a cubic needs both handles`);
+          return { k: 'cubic', c1: pr.c1, c2: pr.c2, to: pr.to, ...tt };
+        }
+        default:
+          throw new BadMaskVector(`${w2}: unknown primitive kind ${JSON.stringify(pr.k)}`);
+      }
+    });
+    return { start: o.start, prims, ...(startType ? { startType } : {}) };
+  });
+
+  return {
+    version: MASK_VECTOR_VERSION,
+    space: { width: space.width as number, height: space.height as number },
+    paths,
+  };
+}
+
+/**
+ * Rasterise a mask vector to a coverage plane, THROUGH THE SAME CODE THE EDITOR PREVIEWS WITH.
+ *
+ * `flattenPath` + `rasterizePolygons` is not an implementation detail here, it is the point:
+ * the server's "do these paths describe these pixels" question is only meaningful if the answer
+ * comes from the same rasteriser the human was looking at while they drew. A second rasteriser
+ * — even a correct one — would put the two sides of the comparison a fraction of a pixel apart
+ * everywhere along every boundary, and the tolerance would then have to be widened to cover the
+ * disagreement between the two rasterisers rather than the disagreement that matters.
+ *
+ * Scaled when the caller's raster is not the vector's own `space`, through `mapPathCoords`, for
+ * the reason that function's own comment gives: a cubic carries three points, and a converter
+ * that scales `to` and forgets the handles turns the curve inside out.
+ */
+export function rasterizeMaskVector(
+  v: MaskVector,
+  width: number,
+  height: number,
+  opts: { supersample?: number; sagittaPx?: number } = {},
+): Uint8Array {
+  const ss = opts.supersample ?? 4;
+  const sag = opts.sagittaPx ?? DEFAULT_VECTOR_FIT_PARAMS.flattenSagittaPx;
+  const sx = width / v.space.width;
+  const sy = height / v.space.height;
+  const scale = sx === 1 && sy === 1
+    ? (p: VPath): VPath => p
+    : (p: VPath): VPath => mapPathCoords(p, ([x, y]) => [x * sx, y * sy], (r) => r * sx);
+  return rasterizePolygons(v.paths.map((p) => flattenPath(scale(p), sag)), width, height, ss);
 }

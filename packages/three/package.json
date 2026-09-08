@@ -24,6 +24,7 @@
   "sideEffects": false,
   "dependencies": {
     "@foilkit/core": "workspace:*",
+    "@foilkit/forge": "workspace:*",
     "@foilkit/patterns": "workspace:*",
     "@foilkit/stage": "workspace:*"
   },

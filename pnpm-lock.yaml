@@ -53,6 +53,9 @@ importers:
       '@foilkit/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@foilkit/forge':
+        specifier: workspace:*
+        version: link:../../packages/forge
       '@foilkit/patterns':
         specifier: workspace:*
         version: link:../../packages/patterns
@@ -130,6 +133,9 @@ importers:
       '@foilkit/core':
         specifier: workspace:*
         version: link:../core
+      '@foilkit/forge':
+        specifier: workspace:*
+        version: link:../forge
       '@foilkit/patterns':
         specifier: workspace:*
         version: link:../patterns

@@ -20,11 +20,13 @@ import {
   reduce, createPenState, cursorFor, visibleHandles, resolvePenClick, hitTest,
   toVPath, fromVPath, arcToCubics, isPathSelected, lookupBinding, dragHandle,
   insertAnchor, reversePenPath, constrainToAngle, segmentCubic, segmentCount,
+  toMaskVector, fromMaskVector,
   DEFAULT_PEN_CONFIG, PEN_KEY_BINDINGS, PEN_CLAIMED_HOST_KEYS, PEN_CONDITIONAL_HOST_KEYS,
   type PenState, type PenInput, type PenMods, type PenConfig, type PenDoc, type PenPath,
   type PathPoint, type SnapFn,
 } from '../pen-engine.ts';
-import type { VPath } from '../vector-template.ts';
+import { parseMaskVector, serializeMaskVector } from '../vector-template.ts';
+import type { Prim, VPath } from '../vector-template.ts';
 import type { Vec } from '../line-snap.ts';
 
 // ── an independent cubic, and the input builders ───────────────────────────
@@ -318,7 +320,77 @@ test('toVPath(fromVPath(x)) is shape-stable — a stored mask survives a load-an
   ] };
   const back = toVPath(fromVPath(stored));
   assert.deepEqual(back.start, stored.start);
-  assert.deepEqual(back.prims, stored.prims, 'nothing may drift, and no line may become a cubic');
+  // The GEOMETRY is what may not drift. Compared with `t` stripped, because a save now also
+  // WRITES DOWN what the load inferred, and that is an addition rather than a drift.
+  const geometry = (p: VPath): Prim[] => p.prims.map(({ t: _t, ...rest }) => rest as Prim);
+  assert.deepEqual(geometry(back), stored.prims, 'nothing may drift, and no line may become a cubic');
+
+  // The addition, stated: every anchor comes back with its type RECORDED, so the inference that
+  // was legal once at import never has to run on this path again. That is the difference
+  // between a format that keeps re-guessing and one that remembers.
+  assert.deepEqual(back.prims.map((p) => p.t), ['c', 'c', 'c', 'c']);
+  assert.equal(back.startType, 'c');
+
+  // …and a second trip is a FIXED POINT, types included. If it were not, every open-and-save
+  // would produce a diff, and a file that changes when nothing changed is a file reviewers stop
+  // reading.
+  assert.deepEqual(toVPath(fromVPath(back)), back);
+});
+
+test('a CORNER with collinear handles survives the round trip as a corner — the flag beats the geometry', () => {
+  // THE CASE THE STORED FLAG EXISTS FOR, and the one inference cannot get right by construction.
+  // (100,0) carries handles at (60,0) and (140,0): exactly collinear, exactly opposed. Every
+  // measurement of that anchor says "smooth". It is a CORNER, because that is what the human
+  // said — an Alt-drag broke the pair and then left the two halves in line — and Illustrator
+  // keeps breaking them independently forever after.
+  const corner: PenPath = { closed: false, points: [
+    { anchor: [0, 0], leftDirection: [0, 0], rightDirection: [20, 0], pointType: 'corner' },
+    { anchor: [100, 0], leftDirection: [60, 0], rightDirection: [140, 0], pointType: 'corner' },
+    { anchor: [200, 0], leftDirection: [180, 0], rightDirection: [200, 0], pointType: 'smooth' },
+  ] };
+
+  const stored = toVPath(corner);
+  assert.equal(stored.prims[0].t, 'c', 'the flag is written on the primitive that lands on the anchor');
+  const back = fromVPath(stored);
+  assert.equal(back.points[1].pointType, 'corner',
+    'a collinear corner that loads as smooth is a cusp the artifact silently healed');
+  assert.equal(back.points[2].pointType, 'smooth', 'and a smooth point is still smooth');
+  assert.equal(back.points[0].pointType, 'corner');
+
+  // Proof that it is the FLAG doing the work and not luck: strip the flags off the same
+  // geometry and inference gets it wrong, which is what the corpus did before this field.
+  const untyped: VPath = {
+    start: stored.start,
+    prims: stored.prims.map(({ t: _t, ...rest }) => rest as Prim),
+  };
+  assert.equal(fromVPath(untyped).points[1].pointType, 'smooth',
+    'if inference already agreed, this field would be buying nothing');
+
+  // And the whole document round-trips through the committed form the same way.
+  const doc: PenDoc = { paths: [corner] };
+  const v = toMaskVector(doc, { width: 504, height: 704 })!;
+  assert.equal(fromMaskVector(v).paths[0].points[1].pointType, 'corner');
+  assert.equal(fromMaskVector(parseMaskVector(JSON.parse(serializeMaskVector(v)))).paths[0].points[1].pointType, 'corner');
+});
+
+test('an UNTYPED path still infers — the fitter names no types, and its templates must keep loading', () => {
+  // `data/vector-templates.json` is fitted geometry: `vectorizeLoop` emits lines and arcs and
+  // no `t` anywhere. An absent flag is not a defect to repair, it is an author with no opinion,
+  // and inference is the honest answer for one.
+  const fitted: VPath = { start: [0, 0], prims: [
+    { k: 'cubic', c1: [40, 0], c2: [60, -40], to: [100, -40] },
+    { k: 'cubic', c1: [140, -40], c2: [180, 0], to: [180, 40] },
+    { k: 'line', to: [0, 0] },
+  ] };
+  const pen = fromVPath(fitted);
+  assert.equal(pen.points[1].pointType, 'smooth', 'collinear and opposed, with nothing stated: infer');
+  assert.equal(pen.points[0].pointType, 'corner');
+
+  // A PARTIALLY typed path — a fitted template after a human has edited one anchor with the pen
+  // — takes the stated one and infers the rest.
+  const partly: VPath = { ...fitted, prims: [{ ...fitted.prims[0], t: 'c' } as Prim, fitted.prims[1], fitted.prims[2]] };
+  assert.equal(fromVPath(partly).points[1].pointType, 'corner', 'the stated anchor is stated');
+  assert.equal(fromVPath(partly).points[2].pointType, fromVPath(fitted).points[2].pointType, 'the rest are unaffected');
 });
 
 test('fromVPath converts an ArcPrim to cubics accurate to the circle it rides', () => {

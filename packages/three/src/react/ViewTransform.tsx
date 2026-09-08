@@ -29,8 +29,15 @@
 //                 or it grabbed a window handle — Procreate's model
 //   pen           always draws; while a pen is down, touches are ignored (palm)
 //   mouse         wheel/trackpad-pinch zooms at the cursor; middle-drag or
-//                 Space+drag pans; +/−/0 keys
+//                 Space+drag pans; +/−/0 keys, and Illustrator's Ctrl+= / Ctrl+-
+//                 / Ctrl+0 / Ctrl+1 where the browser lets them through (see the
+//                 caveat at the binding — Chrome owns those and can keep them)
 //   a second finger landing mid-stroke ABORTS and rolls back that stroke.
+//
+// An overlay may take individual keys off this controller by passing
+// `suspendKeys` — opt-in, key-by-key, and inert when nobody asks. That is how
+// the pen surface claims `+ = - _` (Illustrator's anchor-tool keys) and routes
+// Space through its own reducer without this file learning what a pen is.
 //
 // Pan is clamped to the virtual render, so the card can never be lost off-screen
 // and "fit" is always one tap away anyway (⤢ in the HUD).
@@ -54,6 +61,19 @@ export interface ViewOpts {
   editing: boolean
   /** "Allow finger drawing" — when on, one finger paints so pan needs two. */
   fingerDraws: boolean
+  /**
+   * `KeyboardEvent.key` values this controller must NOT act on while an overlay owns them.
+   *
+   * The handover is opt-in and it is a LIST OF KEYS rather than a mode, because the alternative
+   * — teaching the view controller which surfaces exist and what each one wants — puts knowledge
+   * of the pen in a file that has no other reason to know the pen exists. The pen surface passes
+   * `PEN_CLAIMED_HOST_KEYS` plus `' '`: `+`/`-`/`=`/`_` are Illustrator's Add / Delete Anchor
+   * Point tool keys, and Space is routed through the pen's reducer instead (with a button down
+   * it translates the anchor being placed; with the button up the engine emits a pan intent and
+   * calls `setSpacePan` right back here). Pass nothing and every binding below is exactly what
+   * it was — this changes no behaviour for the brush or the window-adjust surface.
+   */
+  suspendKeys?: readonly string[]
 }
 
 export interface ViewController {
@@ -73,6 +93,15 @@ export interface ViewController {
   gesturing: () => boolean
   /** MaskEditor registers a rollback for a stroke a gesture interrupts. */
   setStrokeAbort: (fn: (() => void) | null) => void
+  /**
+   * Arm/disarm Space-drag panning from outside.
+   *
+   * The other half of `suspendKeys`. A surface that has taken Space off this controller still
+   * needs to be able to say "now pan" — the pen's engine decides that, per spec B.3, and the
+   * host does it. Identical to what the controller's own Space handler does, so the two routes
+   * cannot drift.
+   */
+  setSpacePan: (on: boolean) => void
   zoomBy: (factor: number) => void
   reset: () => void
   subscribe: (fn: () => void) => () => void
@@ -293,25 +322,45 @@ function makeController(optsRef: { current: ViewOpts }): ViewController {
   const onSelectStart = (e: Event) => e.preventDefault()
   const onDragStart = (e: Event) => e.preventDefault()
 
+  const setSpacePan = (on: boolean) => {
+    if (space === on) return
+    space = on
+    if (mode !== 'pan') cursor(on ? 'grab' : null)
+  }
+
   const onKey = (e: KeyboardEvent) => {
     const o = optsRef.current
     if (!o.enabled) return
     const t = e.target as HTMLElement | null
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+    // Illustrator's own zoom bindings, added alongside the bare keys rather than replacing them.
+    // ABOVE the handover on purpose: what an overlay claims is the BARE key — `+` is the Add
+    // Anchor Point TOOL — and `Ctrl+=` is a different chord that has always meant zoom. Putting
+    // this below the gate would make the pen swallow a shortcut it does not implement.
+    //
+    // HONEST CAVEAT: Ctrl+= / Ctrl+- / Ctrl+0 are ALSO Chrome's page-zoom shortcuts, and a web
+    // page cannot reliably veto those — `preventDefault` is ignored for browser zoom in current
+    // Chrome. So these are best-effort: where the browser lets them through the view zooms, and
+    // where it does not the page zooms instead and nothing here breaks. The bindings you can
+    // count on remain the wheel, the pinch, the bare keys and the ZoomHud, which is why none of
+    // those moved to make room for these.
+    if (e.type === 'keydown' && e.ctrlKey && !e.altKey) {
+      if (e.key === '=' || e.key === '+') return void ctl.zoomBy(1.5)
+      if (e.key === '-' || e.key === '_') return void ctl.zoomBy(1 / 1.5)
+      // Fit and 100% are the same view here: MIN_ZOOM is 1 and the fit framing IS 1x, so both
+      // reset. Bound separately anyway because an Illustrator user presses whichever they mean.
+      if (e.key === '0' || e.key === '1') return void ctl.reset()
+    }
+    // The opt-in handover. An overlay that claimed a key gets it whole — this controller does
+    // not act on it and does not preventDefault it either, or both would be handling it.
+    const claimed = o.suspendKeys
+    if (claimed && claimed.length > 0 && (claimed.includes(e.key) || (e.code === 'Space' && claimed.includes(' ')))) return
     if (e.code === 'Space') {
       // Both halves are prevented: Space is the pan modifier here, and a
       // <button> in the HUD activates on keyUP — an unprevented keyup would
       // re-fire whichever zoom button was last clicked.
       e.preventDefault()
-      if (e.type === 'keydown') {
-        if (!space) {
-          space = true
-          if (mode !== 'pan') cursor('grab')
-        }
-      } else {
-        space = false
-        if (mode !== 'pan') cursor(null)
-      }
+      setSpacePan(e.type === 'keydown')
       return
     }
     if (e.type !== 'keydown') return
@@ -320,10 +369,7 @@ function makeController(optsRef: { current: ViewOpts }): ViewController {
     else if (e.key === '-' || e.key === '_') ctl.zoomBy(1 / 1.5)
   }
 
-  const onBlur = () => {
-    space = false
-    if (mode !== 'pan') cursor(null)
-  }
+  const onBlur = () => setSpacePan(false)
 
   const HOST_EVENTS: [string, EventListener, AddEventListenerOptions?][] = [
     ['pointerdown', onDown as EventListener],
@@ -386,6 +432,7 @@ function makeController(optsRef: { current: ViewOpts }): ViewController {
     setStrokeAbort: (fn) => {
       abortStroke = fn
     },
+    setSpacePan,
     zoomBy: (factor) => {
       const W = hostEl?.clientWidth ?? 0
       const H = hostEl?.clientHeight ?? 0

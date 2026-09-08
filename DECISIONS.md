@@ -2711,3 +2711,93 @@ there is one.
 - `README.md`'s line saying every forge import is a node builtin was the exact
   sentence that would send the next person back to hand-porting. It now names the
   subpath and the guard.
+
+
+## 2026-09-07 -- The pen tool: an Illustrator clone, and what "clone" was allowed to mean
+
+**Decided by:** Chey Rasmussen, implemented by Claude Opus 4.6
+
+**Decision:** #17's pen tool is built to Adobe Illustrator's interaction model
+deliberately and specifically -- same gestures, same modifier semantics, same
+keyboard bindings -- rather than to a reasonable-looking approximation. The
+behaviour was researched into a 126-item conformance checklist first, and the
+checklist is the acceptance criteria: engine tests are named after the items they
+prove.
+
+**Why:** the person who has to use this tool lives in Illustrator. A pen that is
+90% right is worse than one that is obviously different, because the missing 10%
+is discovered one muscle-memory failure at a time, mid-task, forever. Deciding
+fidelity by argument was not an option either -- most of what makes the tool feel
+right is undocumented folklore -- so it was verified against Adobe's own
+reference material, with the parts that could not be verified flagged rather than
+guessed.
+
+**Implications:**
+- **The engine is headless.** `pen-engine.ts` has no DOM, no React, no canvas: it
+  is `reduce(state, input, cfg)` over a plain serialisable state, driven in tests
+  by synthetic events. "Feels like Illustrator" is a claim about behaviour, and
+  behaviour that can only be exercised through a browser barely gets exercised.
+  The React surface is deliberately dumb -- the cursor comes from `cursorFor`,
+  the handle stubs from `visibleHandles`, the bindings from one exported table.
+- **The two smooth-point rules are kept apart**, because collapsing them is the
+  single most common way a bezier editor feels wrong: handles are created
+  MIRRORED at placement, but on a later edit dragging one handle rotates the
+  opposite to stay collinear while KEEPING ITS OWN LENGTH.
+- **`pointType` is stored, never inferred.** A corner may legitimately carry two
+  collinear handles. The stored language had no room for the flag, so each
+  primitive gained an optional `t`. It names the anchor a primitive LANDS ON,
+  which means under `reversePath` every flag moves one slot -- copying them across
+  with their primitives yields identical shape, identical pixels, and permanently
+  wrong editing behaviour. Both that and the `mapPathCoords` equivalent are tested.
+- **Deliberate deviations, all of them flagged rather than silent:** Illustrator's
+  arrow-key nudge breaks the pen's connection to the active path, which its own
+  users call a bug -- ours does not, and the flag to restore it is tested in both
+  positions. Illustrator's `+`/`-` select separate tools; we have no tool slot for
+  them, so they act on the selection. And the host editor bound bare `+`/`-`/`0`
+  to zoom, so the pen claims `+`/`-` while it is active and hands them straight
+  back when it is not.
+- **We do not own Ctrl+0 / Ctrl+= / Ctrl+-.** They are Illustrator's zoom bindings
+  and also Chrome's, and a page cannot reliably take them. They are wired
+  best-effort; the wheel and the ZoomHud remain the reliable path, and the comment
+  says so rather than implying we won that fight.
+- **No Adobe cursor art.** F2 forbids tracing their glyphs, so `cursorFor`'s ten
+  states render as the nearest standard CSS cursor plus a `data-pen-cursor`
+  attribute that the acceptance run asserts on. The states are semantically
+  distinct and not yet visually distinct; adding art later is one table.
+
+## 2026-09-07 -- A path diff that does not describe its pixels is worse than a binary one
+
+**Decided by:** Chey Rasmussen, implemented by Claude Opus 4.6
+
+**Decision:** a submission carrying both a mask PNG and pen-authored paths is
+refused unless the server rasterises the paths and finds they agree with the
+pixels: **IoU >= 0.98 and boundary p95 <= 2px**, checked in
+`functions/_lib/validate.ts` and called from both the contribution route and the
+direct-write route. A raster-only save REMOVES any existing `.paths.json` rather
+than leaving it.
+
+**Why:** the entire justification for storing vector is that a reviewer can read
+the change. A `.paths.json` that no longer describes the mask beside it is a
+confident, legible, wrong description -- and it is worse than the binary blob it
+replaced, because a reviewer would believe it. This is F3 in its usual form:
+derived from the artifact, never taken from what the caller asserted.
+
+**Implications:**
+- The two thresholds do different jobs and both are needed. **IoU** is the area
+  backstop and must tolerate two honest rasterisers disagreeing along the
+  antialiased rim, so its floor sits just outside a full pixel of systematic
+  boundary offset. **Boundary p95** is the locality measure, and it exists because
+  IoU dilutes: dragging one anchor of a 2000px boundary costs a fraction of a
+  percent of area, which a floor loose enough for antialiasing would never catch.
+  Measured, not guessed: a 0.9px whole-boundary offset passes on IoU, one handle
+  moved 10px is refused on p95.
+- Stated limitation: a displacement confined to under ~5% of the boundary passes
+  p95 by definition. The check proves the paths are *a* way to reach these pixels
+  to within a pixel or two everywhere, not the *only* way.
+- The check rasterises through the same `rasterizePolygons` the editor previews
+  with. A second rasteriser would put the two sides of the comparison a fraction
+  of a pixel apart everywhere, and the tolerance would then be covering the
+  disagreement between rasterisers rather than the one that matters.
+- The frame migration removes vectors rather than rescaling them: 490x674 ->
+  504x704 is anisotropic, and an arc under anisotropic scale is an ellipse this
+  language cannot express. The archive keeps a verbatim copy, so a revert restores.

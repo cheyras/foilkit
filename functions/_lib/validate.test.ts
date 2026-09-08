@@ -16,16 +16,19 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { CANONICAL_H, CANONICAL_W, GLOBAL_DEFAULTS } from '@foilkit/core'
-import { encodePng } from '@foilkit/forge'
+import { decodePng, encodePng, rasterizeMaskVector, type MaskVector } from '@foilkit/forge'
 import { PATTERNS, patternById } from '@foilkit/patterns'
 
 const {
   validateMask,
   validateCanon,
   checkAssembledGlsl,
+  checkVectorAgreesWithPixels,
   claimedProvenanceKeys,
   CLIENT_MAY_NOT_CLAIM,
   MAX_COVERAGE,
+  VECTOR_AGREEMENT_MIN_IOU,
+  VECTOR_AGREEMENT_MAX_BOUNDARY_P95_PX,
 } = await import('./validate.ts')
 
 /** A mask PNG at the given size with `coverage` of the pixels drawn. */
@@ -383,6 +386,184 @@ test('every derived label is in the forbidden list, and the paths are reported',
     ['a.verification', 'b[0].author'],
   )
   assert.deepEqual(claimedProvenanceKeys({ cardId: 'x', prior: { eraId: 'wotc' } }), [])
+})
+
+// ── The vector must describe the pixels ────────────────────────────────────
+//
+// THE CHECK THAT MAKES A READABLE DIFF HONEST. A pen contribution commits paths beside its
+// pixels so a reviewer can argue with the geometry instead of squinting at two thumbnails — and
+// the instant a reviewer can read a diff, they believe it. So the server rasterises the
+// submitted paths and looks, rather than taking the pair on the client's word (AGENTS.md F3).
+//
+// Every test below is a submission somebody could actually send. The last one is the
+// CALIBRATION RECORD: the tolerance is a pair of numbers, and numbers chosen without measuring
+// either reject honest work or accept a lie, so what was measured is written down here where it
+// fails if it stops being true.
+
+/** A mask-shaped vector in canonical space, with one handle movable. */
+function maskVector(handleDx = 0, offset = 0): MaskVector {
+  const p = (x: number, y: number): [number, number] => [x + offset, y + offset]
+  return {
+    version: 1,
+    space: { width: CANONICAL_W, height: CANONICAL_H },
+    paths: [
+      {
+        start: p(36, 40),
+        startType: 'c',
+        prims: [
+          { k: 'line', to: p(468, 40), t: 'c' },
+          { k: 'cubic', c1: p(468 + handleDx, 300), c2: p(468, 420), to: p(468, 560), t: 's' },
+          { k: 'line', to: p(36, 560), t: 'c' },
+          { k: 'line', to: p(36, 40), t: 'c' },
+        ],
+      },
+      {
+        // A hole, wound the other way, so this exercises nonzero winding too.
+        start: p(120, 150),
+        prims: [
+          { k: 'line', to: p(120, 320) },
+          { k: 'line', to: p(380, 320) },
+          { k: 'line', to: p(380, 150) },
+          { k: 'line', to: p(120, 150) },
+        ],
+      },
+    ],
+  }
+}
+
+/** The PNG a contributor's canvas would produce for that geometry. */
+function pngOf(v: MaskVector): Buffer {
+  const alpha = rasterizeMaskVector(v, CANONICAL_W, CANONICAL_H)
+  const rgba = new Uint8Array(CANONICAL_W * CANONICAL_H * 4)
+  for (let i = 0; i < alpha.length; i++) {
+    rgba[i * 4] = 255
+    rgba[i * 4 + 1] = 45
+    rgba[i * 4 + 2] = 100
+    rgba[i * 4 + 3] = alpha[i]!
+  }
+  return Buffer.from(encodePng({ width: CANONICAL_W, height: CANONICAL_H, rgba }))
+}
+
+test('a submission with NO vector behaves exactly as it did before the field existed', () => {
+  // The brush is not going anywhere and must not pay for the pen. A contribution with no paths
+  // gets a passing, honest check and an otherwise untouched result.
+  const r = validateMask(maskInput())
+  assert.equal(r.ok, true, r.failures.join(' / '))
+  assert.equal(r.vectorAgreement, null)
+  const c = check(r, 'vector-agrees-with-pixels')
+  assert.equal(c.ok, true)
+  assert.match(c.detail, /no vector paths were submitted/)
+  // …and explicit nulls are the same thing as absent, because that is what the editor sends
+  // when a brush stroke has just invalidated a pen-authored mask's paths.
+  assert.equal(validateMask(maskInput({ vector: null })).ok, true)
+})
+
+test('paths that DO make the submitted pixels pass, and the measurement is reported', () => {
+  const v = maskVector()
+  const r = validateMask(maskInput({ png: pngOf(v), vector: v }))
+  assert.equal(r.ok, true, r.failures.join(' / '))
+  const c = check(r, 'vector-agrees-with-pixels')
+  assert.equal(c.ok, true)
+  assert.match(c.detail, /rasterise to the submitted pixels/)
+  assert.ok(r.vectorAgreement !== null)
+  assert.equal(r.vectorAgreement!.iou, 1, 'the same geometry through the same rasteriser is exact')
+  assert.equal(r.vectorAgreement!.boundaryP95, 0)
+})
+
+test('paths that DO NOT make the submitted pixels are REFUSED — one anchor is enough', () => {
+  // THE ONE THAT MATTERS. The pixels are the honest mask; the paths have had one handle dragged
+  // 40px. Every other check passes — it is a perfectly good PNG at the canonical raster with a
+  // valid prior — so this refusal is the only thing standing between a reviewer and a path diff
+  // that does not describe the mask being committed.
+  const honest = maskVector()
+  const lying = maskVector(40)
+  const r = validateMask(maskInput({ png: pngOf(honest), vector: lying }))
+
+  assert.equal(r.ok, false, 'a vector that disagrees with its own pixels must not open a pull request')
+  const c = check(r, 'vector-agrees-with-pixels')
+  assert.equal(c.ok, false)
+  assert.match(c.detail, /do not describe the submitted pixels/)
+  assert.match(c.detail, /IoU 0\./, 'the message carries the measurement, not just a verdict')
+  assert.match(c.detail, /reviewer could read/, 'and says what the consequence would have been')
+  assert.ok(r.failures.includes(c.detail))
+
+  // Both halves of the tolerance fire on this one, which is what makes the test robust rather
+  // than a lucky brush against one threshold.
+  assert.ok(r.vectorAgreement!.iou < VECTOR_AGREEMENT_MIN_IOU, `IoU was ${r.vectorAgreement!.iou}`)
+  assert.ok(
+    r.vectorAgreement!.boundaryP95 > VECTOR_AGREEMENT_MAX_BOUNDARY_P95_PX,
+    `boundary p95 was ${r.vectorAgreement!.boundaryP95}px`,
+  )
+
+  // And nothing else in the submission was blamed for it.
+  assert.equal(check(r, 'png-decodes').ok, true)
+  assert.equal(check(r, 'canonical-raster').ok, true)
+  assert.equal(check(r, 'alpha-has-content').ok, true)
+})
+
+test('a vector drawn in a different raster is refused rather than silently rescaled', () => {
+  const v = maskVector()
+  const r = validateMask(maskInput({ png: pngOf(v), vector: { ...v, space: { width: 490, height: 674 } } }))
+  assert.equal(r.ok, false)
+  const c = check(r, 'vector-agrees-with-pixels')
+  assert.match(c.detail, /490×674/)
+  assert.match(c.detail, /not rescaled into it/, 'the committed numbers must be the ones somebody chose')
+})
+
+test('a malformed vector is named as malformed, not as a disagreement', () => {
+  // A cubic with one handle rasterises to nothing rather than throwing, so without the parse
+  // this would be refused for "IoU 0" — a true statement that tells the contributor nothing.
+  const v = maskVector()
+  const broken = { ...v, paths: [{ start: [0, 0], prims: [{ k: 'cubic', c1: [1, 1], to: [2, 2] }] }] }
+  const r = validateMask(maskInput({ png: pngOf(v), vector: broken }))
+  assert.equal(r.ok, false)
+  assert.match(check(r, 'vector-agrees-with-pixels').detail, /not a readable path list/)
+  assert.match(check(r, 'vector-agrees-with-pixels').detail, /both handles/)
+})
+
+test('a vector cannot be checked against pixels that did not decode, and fails closed', () => {
+  const r = validateMask(maskInput({ png: Buffer.from('not a png'), vector: maskVector() }))
+  assert.equal(r.ok, false)
+  const c = check(r, 'vector-agrees-with-pixels')
+  assert.equal(c.ok, false, 'an "ok" beside an undecodable mask would be an answer to no question')
+  assert.match(c.detail, /did not decode/)
+})
+
+test('THE CALIBRATION RECORD — where the tolerance sits, measured on both sides of it', () => {
+  // Two numbers, and each is doing a job the other cannot.
+  //
+  // IoU is the AREA measure, and what it has to tolerate is two honest rasterisers disagreeing
+  // along the antialiasing band. A whole-boundary sub-pixel offset — the shape a pixel-centre
+  // vs pixel-corner convention difference takes — is the worst realistic version of that, so
+  // the floor is placed just outside it.
+  //
+  // Boundary p95 is the LOCALITY measure, and it is there because IoU dilutes: dragging one
+  // anchor of a ~2000px boundary costs a fraction of a percent of area, which a floor loose
+  // enough for antialiasing would never see.
+  const base = decodePng(pngOf(maskVector()))
+  const measure = (v: MaskVector): { iou: number; p95: number } => {
+    const { agreement } = checkVectorAgreesWithPixels(base, v)
+    return { iou: agreement!.iou, p95: agreement!.boundaryP95 }
+  }
+
+  // A whole boundary offset of 0.9px — a full pixel of rasteriser disagreement everywhere —
+  // still PASSES. Anything tighter would refuse honest submissions from a browser canvas.
+  const nearMiss = measure(maskVector(0, 0.9))
+  assert.ok(nearMiss.iou >= VECTOR_AGREEMENT_MIN_IOU, `0.9px offset measured IoU ${nearMiss.iou}`)
+  assert.ok(nearMiss.p95 <= VECTOR_AGREEMENT_MAX_BOUNDARY_P95_PX, `0.9px offset measured p95 ${nearMiss.p95}px`)
+
+  // At 2.5px it is refused: that is no longer antialiasing, it is different geometry.
+  const tooFar = measure(maskVector(0, 2.5))
+  assert.ok(
+    tooFar.iou < VECTOR_AGREEMENT_MIN_IOU || tooFar.p95 > VECTOR_AGREEMENT_MAX_BOUNDARY_P95_PX,
+    `2.5px offset measured IoU ${tooFar.iou}, p95 ${tooFar.p95}px — the tolerance has drifted`,
+  )
+
+  // A LOCAL edit crosses the boundary ceiling long before it costs enough area to move IoU,
+  // which is the whole reason there are two numbers rather than one.
+  const local = measure(maskVector(20))
+  assert.ok(local.p95 > VECTOR_AGREEMENT_MAX_BOUNDARY_P95_PX, `a 20px handle move measured p95 ${local.p95}px`)
+  assert.ok(local.iou > 0.98 - 0.01, `and cost only ${(1 - local.iou).toFixed(4)} of IoU — hence the second measure`)
 })
 
 test('a canon submission is gated the same way — the rule is about the pipeline, not about masks', () => {
