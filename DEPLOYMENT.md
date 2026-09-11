@@ -24,6 +24,7 @@ setting its environment variables**, and **running the catalog bake**
 |---|---|
 | **Domain** | `foilkit.deckpal.app` — a DNS record on DeckPal's domain pointing at a **new Vercel project sourced from the foilkit repo**. Two projects, one apex domain. |
 | **Source** | `cheyras/foilkit`, branch `main` |
+| **Trigger** | **Git integration — a push to `main` deploys to production on its own** (connected 2026-09-11). Other branches get a preview. |
 | **Build** | `pnpm run build:vercel` (in `vercel.json`) |
 | **Output** | `.vercel/output` — the **Build Output API**, produced by `tools/build-functions.mts` |
 | **Functions** | `functions/**/*.ts`, esbuild-bundled one file per route, `nodejs22.x` |
@@ -31,6 +32,28 @@ setting its environment variables**, and **running the catalog bake**
 
 The deploy carries no shared backend and no shared env with DeckPal. The editor
 never calls DeckPal's API.
+
+### The Git integration, and the one thing that blocks reconnecting it
+
+Until 2026-09-11 this project had no Git connection: every production deploy was
+a `vercel deploy --prod` from a maintainer's working copy, which meant the
+artifact shipped was whatever happened to be in that directory rather than what
+was on `main`. It is now connected, so `main` is the thing that ships.
+
+If it ever needs reconnecting, `vercel git connect` will fail with *"Failed to
+connect cheyras/foilkit to project"* while the **Vercel GitHub App lacks access
+to the repository** — and the message says nothing about that, which is the whole
+reason this paragraph exists. Neither repo uses webhooks, so there is nothing in
+`repos/cheyras/foilkit/hooks` to inspect; the grant lives at
+**github.com/settings/installations → Vercel → Configure → Repository access**.
+Add `foilkit` there first, then:
+
+```
+vercel git connect --yes --scope deck-pal      # from the repo root
+```
+
+`--scope` is required non-interactively: the account belongs to several teams and
+the CLI refuses to guess.
 
 ### Why the build emits `.vercel/output` itself
 
