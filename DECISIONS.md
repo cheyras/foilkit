@@ -2872,3 +2872,13 @@ would have been the hole in that.
   never blocks a click and is gone on the next gesture. A user who cannot tell a
   deliberate refusal from a snapper that failed to notice learns to distrust the
   whole feature.
+
+## 2026-09-22 — Opt-in tangent-space view direction
+
+**Decided by:** Chey Rasmussen, implemented by Codex
+
+**Decision:** Add a library-only opt-in that supplies surface-to-camera view direction in card-local tangent space while preserving the recipe ABI `vec3 foilPattern(vec2 uv, vec2 tilt)`. The convention is +x along increasing UV x, +y along increasing UV y, and +z along the front normal. `buildFoilShader(pattern)` remains byte-for-byte unchanged; `{viewDirection: true}` adds `uViewDirection` and maps x/y through a bounded perspective divide before the existing recipes see it. `FoilStage` opts in per card through `CardSettings.viewDirection` and caches legacy and opted materials separately.
+
+**Why:** Tangent-space view direction is established public prior art for stylized holofoil response (Cyanilux, “Holofoil Card Shader Breakdown”), and Three's documented matrix/normal conventions support deriving it from current transforms. This is an original implementation and a better geometric input than synthetic pointer tilt when a surface explicitly requests it.
+
+**Implications:** The Three adapter computes a planar-center approximation after camera and mesh transforms are current. Perspective uses center-to-camera; orthographic uses its parallel view ray. The orthonormal frame preserves transformed UV x and the inverse-transpose front normal, including reflections; under hierarchy-induced shear, Gram-Schmidt chooses the bitangent sign that agrees with transformed UV y. Singular or non-finite frames use +z. Direct uniform writers remain responsible for finite normalized input. This does not provide per-fragment perspective parallax, does not retune any recipe or default, and makes no claim of physical or foil fidelity. The shader's bounded mapping covers zero, grazing, and backfacing finite vectors. Conceptual sources: https://www.cyanilux.com/tutorials/holofoil-card-shader-breakdown/ and https://threejs.org/docs/pages/Matrix3.html.

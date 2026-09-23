@@ -865,6 +865,28 @@ export const STRUCTURAL_DEFAULTS = {
   uP5: 0,
 } as const
 
+/** Optional shader assembly features. Omitted means the historical program byte-for-byte. */
+export interface FoilShaderOptions {
+  /**
+   * Drive the existing recipe `tilt` argument from `uViewDirection` instead of
+   * synthetic `uTilt`. The vector is surface-to-camera in card-local tangent
+   * space: +x follows increasing UV x, +y increasing UV y, +z the front normal.
+   * Direct uniform writers must supply a finite, normalized vector; core cannot
+   * sanitize values assigned by a renderer after shader assembly.
+   */
+  viewDirection?: boolean
+}
+
+/** Opt-in fragment prelude; kept outside PREAMBLE so default assembly is frozen. */
+export const VIEW_DIRECTION_PRELUDE = /* glsl */ `
+uniform vec3 uViewDirection;
+vec2 foilViewTilt() {
+  float divisor = max(abs(uViewDirection.z), 0.05);
+  return clamp(uViewDirection.xy / divisor, vec2(-1.0), vec2(1.0));
+}
+#define uTilt foilViewTilt()
+`
+
 export interface FoilShaderSource {
   /** Self-contained (declares three's injected attributes). */
   vertexShader: string
@@ -890,14 +912,14 @@ export interface FoilShaderSource {
  * The one documented exception is `detective-pikachu`, which samples `uFace`
  * inside `foilPattern()` — see @foilkit/patterns.
  */
-export function buildFoilShader(pattern: FoilPattern): FoilShaderSource {
+export function buildFoilShader(pattern: FoilPattern, options: FoilShaderOptions = {}): FoilShaderSource {
   const uniforms: Record<string, number> = { ...GLOBAL_DEFAULTS }
   for (const [k, v] of Object.entries(pattern.defaults)) uniforms[k] = v as number
   for (const p of pattern.params) uniforms[p.key] = p.default
   return {
     vertexShader: VERTEX_SHADER,
     vertexShaderThree: VERTEX_SHADER_THREE,
-    fragmentShader: PREAMBLE + pattern.glsl + MAIN,
+    fragmentShader: PREAMBLE + (options.viewDirection ? VIEW_DIRECTION_PRELUDE : '') + pattern.glsl + MAIN,
     uniforms,
     structural: STRUCTURAL_DEFAULTS,
   }

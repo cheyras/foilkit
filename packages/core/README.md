@@ -29,6 +29,10 @@ const { vertexShader, fragmentShader, uniforms } = buildFoilShader(patternById('
   defaults, then the canon snapshot, then a sparse per-card override.
 - **The stored-form types.** `FoilPattern`, `FoilCanonEntry`, `FoilOverrideEntry`.
 
+## Optional view-direction input
+
+`buildFoilShader(pattern, { viewDirection: true })` adds a tangent-space surface-to-camera vector while keeping every recipe's existing `vec2 tilt` ABI. Omitting the option returns the prior shader text, uniforms, and structural seeds exactly. Direct uniform users must write `uViewDirection` as a finite, normalized surface-to-camera vector; shader assembly cannot sanitize later renderer writes.
+
 ## Two vertex shaders, on purpose
 
 three.js injects `projectionMatrix`, `modelViewMatrix`, `position` and `uv` into
