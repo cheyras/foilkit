@@ -53,6 +53,7 @@ import {
   type TiltSourceId,
 } from '@foilkit/stage'
 import { buildFoilMaterial, transparentTexture } from './material.ts'
+import { tangentViewDirection } from './view-direction.ts'
 
 /** The live per-card uniform state the stage reads every frame. */
 export interface CardSettings {
@@ -75,6 +76,11 @@ export interface CardSettings {
    * bit-identical canon renders)?
    */
   scanBase?: boolean
+  /**
+   * Opt into actual planar-center surface-to-camera direction. Recipes keep
+   * their vec2 tilt ABI; the shader perspective-divides this tangent vector.
+   */
+  viewDirection?: boolean
 }
 
 /**
@@ -504,11 +510,12 @@ export class FoilStage {
   // ── caches ───────────────────────────────────────────────────────────────
 
   /** The material for a pattern — created once, shared by every card using it. */
-  private materialFor(pattern: FoilPattern): THREE.ShaderMaterial {
-    let mat = this.materials.get(pattern.id)
+  private materialFor(pattern: FoilPattern, viewDirection: boolean): THREE.ShaderMaterial {
+    const key = `${pattern.id}|view:${viewDirection ? 1 : 0}`
+    let mat = this.materials.get(key)
     if (!mat) {
-      mat = buildFoilMaterial(pattern)
-      this.materials.set(pattern.id, mat)
+      mat = buildFoilMaterial(pattern, { viewDirection })
+      this.materials.set(key, mat)
     }
     return mat
   }
@@ -830,7 +837,7 @@ export class FoilStage {
     time: number,
   ): void {
     const settings = card.config.settings?.() ?? FALLBACK_SETTINGS
-    const material = this.materialFor(card.config.pattern)
+    const material = this.materialFor(card.config.pattern, settings.viewDirection === true)
     this.mesh.material = material
     const u = material.uniforms
 
@@ -968,6 +975,11 @@ export class FoilStage {
       this.camera.clearViewOffset()
     }
     this.camera.updateProjectionMatrix()
+    // Camera placement and mesh rotation are now current. The helper is a
+    // planar-center approximation, not per-fragment perspective parallax.
+    if (u.uViewDirection) {
+      tangentViewDirection(this.camera, this.mesh, u.uViewDirection.value as THREE.Vector3)
+    }
     this.renderer.render(this.scene, this.camera)
   }
 
