@@ -22,10 +22,39 @@ await mkdir(out, { recursive: true })
 const pwRoot = process.env.PW_ROOT
 if (!pwRoot) throw new Error('PW_ROOT must name a package.json with Playwright available')
 const require = createRequire(pwRoot)
-const { chromium } = require('playwright') as typeof import('playwright')
+
+type RecipePayload = {
+  id: string
+  legacy: string
+  opted: string
+  uniforms: Record<string, number>
+  legacyIdentity: boolean
+}
+
+type EvaluateResult<T> = T | Promise<T>
+
+interface Page {
+  goto(url: string): Promise<unknown>
+  addScriptTag(options: { content: string }): Promise<unknown>
+  evaluate<Result>(pageFunction: () => EvaluateResult<Result>): Promise<Awaited<Result>>
+  evaluate<Arg, Result>(pageFunction: (arg: Arg) => EvaluateResult<Result>, arg: Arg): Promise<Awaited<Result>>
+  screenshot(options: { path: string }): Promise<unknown>
+  setViewportSize(viewport: { width: number; height: number }): Promise<void>
+}
+
+interface Browser {
+  newPage(options: { viewport: { width: number; height: number } }): Promise<Page>
+  close(): Promise<void>
+}
+
+interface Chromium {
+  launch(options: { headless: boolean }): Promise<Browser>
+}
+
+const { chromium } = require('playwright') as { chromium: Chromium }
 
 const baseline = JSON.parse(await readFile(baselinePath, 'utf8')) as Record<string, unknown>
-const payload = PATTERNS.map((pattern) => {
+const payload: RecipePayload[] = PATTERNS.map((pattern) => {
   const legacy = buildFoilShader(pattern)
   const opted = buildFoilShader(pattern, { viewDirection: true })
   const expected = baseline[pattern.id]
@@ -146,7 +175,7 @@ await new Promise<void>((resolve, reject) => { server.once('error', reject); ser
 const address = server.address()
 if (!address || typeof address === 'string') throw new Error('loopback server did not bind')
 
-let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+let browser: Browser | undefined
 try {
   browser = await chromium.launch({ headless: true })
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } })
