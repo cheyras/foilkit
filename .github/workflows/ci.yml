@@ -101,6 +101,12 @@ jobs:
       - name: Contribution queue is current
         run: node --conditions source tools/build-task-queue.mts --check
 
+      # The generated-mask index (bytes in object storage, rows in git): every
+      # shard well-formed and in canonical serialization, so a regeneration
+      # diffs one line per printing. See tools/generated-masks/index.ts.
+      - name: Generated-mask index is valid
+        run: node --conditions source tools/generated-masks/stage.mts --check
+
       # The reference citations, a third gate of the same kind — with one
       # difference worth knowing: `packages/patterns/src/reference-clips.json`
       # is a SOURCE FILE bundled into the editor, not a baked artifact, so no

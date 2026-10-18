@@ -2951,3 +2951,36 @@ are round numbers exposed as sliders.
   renders differently until the resolver is told to use them.
 - `ex-starfoil` and `horizontal-sheen` stay as they are (their verdicts and canons are untouched); retiring or
   re-pointing them is a separate decision.
+
+## 2026-10-18 — Generated masks live in object storage; git keeps an index. Mask diffs gain a graded score.
+
+**Decided by:** @cheyras ("Masks should probably not live in git … Deckpal's supabase?", "Supabase is fine"; the
+graded score and the etch record type were proposed by the agent and accepted)
+
+**Decision:**
+1. **Generated masks and etch plates are not committed.** Their bytes go to a public, content-addressed bucket
+   (`foilkit-masks`, `<layer>/<sha256>.png`, immutable). Git keeps `data/generated-masks/sets/<setId>.json`: one
+   row per (card, variant, layer) with scope, hash, size, run and confidence, plus each run's identity.
+   `data/generated-masks/store.json` names the bucket; `publicBase` stays `null` until the maintainer provisions it
+   (F6), and while it is null nothing renders differently.
+2. **Two layers:** `foil` (504 × 704, alpha = graded strength) and `etch` (1008 × 1408, red = height).
+3. **They are guesses.** A row answers only where `data/foil-masks/` has no record, never becomes an exemplar (F3),
+   and is freely rewritten by the next run. A human edit seeded from one is saved through `writeMaskRecord` after
+   the route first records the generated mask as the machine parent (bytes fetched from the store and checked
+   against the indexed hash), so the save derives `ai-corrected`, not `hand`. Only edited printings enter git.
+4. **`DiffStats.strength`** (optional): weighted Jaccard `Σmin/Σmax` and mean |Δ| over graded alpha. The binary
+   stats at `FOIL_THRESHOLD` are unchanged; they still answer "is this pixel foil at all".
+
+**Why:** a full generated pass is about 4,000 printings, which would be about 16,000 files written through
+`writeMaskRecord`, all copied into the editor build. And with graded foil strength (R9-PLATES), the binary stats
+count every region below half strength as no foil.
+
+**Measured:** tests 756/756. `tools/generated-masks/stage.mts --check` runs in CI. No shards are committed yet:
+this change adds the path and nothing else.
+
+**Implications:**
+- Provisioning is pending. The agent could not create the bucket: reading DeckPal's service credentials was blocked.
+  The maintainer creates `foilkit-masks` (public read) and sets `publicBase`. Uploads use
+  `FOILKIT_MASKS_URL` / `FOILKIT_MASKS_KEY` from the environment only.
+- The bucket sits in DeckPal's Supabase project, outside DeckPal's image store and its `image_asset` choke
+  point, the way `dev-captures` does.

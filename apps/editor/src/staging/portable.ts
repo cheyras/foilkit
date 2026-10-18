@@ -102,6 +102,12 @@ function validateSession(raw: unknown, where: string): StagedSession {
       throw new BadBundle(`${where}: seed.startedFrom is ${String(seed.startedFrom)}`)
     }
     if (typeof seed.prior !== 'object' || seed.prior === null) throw new BadBundle(`${where}: seed has no prior`)
+    if (seed.generated !== undefined && seed.generated !== null) {
+      const g = seed.generated as Record<string, unknown>
+      if (typeof g !== 'object' || typeof g.sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(g.sha256)) {
+        throw new BadBundle(`${where}: seed.generated must be { sha256: <64 hex> }`)
+      }
+    }
     if (s.png !== null && typeof s.png !== 'string') throw new BadBundle(`${where}: png is neither null nor a data URL`)
     if (typeof s.png === 'string' && !s.png.startsWith('data:image/png;base64,')) {
       // A remote URL here would make an import fetch something on submit, which

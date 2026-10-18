@@ -36,6 +36,8 @@ export interface SeedMaskInput {
   /** Which record actually answered (X-Foil-Mask-Alias-Of), and its sha. */
   resolvedFrom: { cardId: string; variantId: number } | null
   parentSha256: string | null
+  /** See SessionSeed.generated. */
+  generated?: { sha256: string } | null
   prior: FoilMaskPrior
   width: number
   height: number
@@ -64,6 +66,7 @@ export function seedMaskSession(input: SeedMaskInput): MaskSession {
       parent: input.parent,
       resolvedFrom: input.resolvedFrom,
       parentSha256: input.parentSha256,
+      ...(input.generated ? { generated: input.generated } : {}),
       prior: input.prior,
       seededAt: input.now,
     },
@@ -267,7 +270,11 @@ export function buildMaskSubmission(session: MaskSession): MaskSubmission {
     width: session.width,
     height: session.height,
     prior: session.seed.prior,
-    derivation: { startedFrom: session.seed.startedFrom, parent: session.seed.parent },
+    derivation: {
+      startedFrom: session.seed.startedFrom,
+      parent: session.seed.parent,
+      ...(session.seed.generated ? { generated: session.seed.generated } : {}),
+    },
     artworkUrl: session.artworkUrl,
     card: session.card,
     comment: session.comment,

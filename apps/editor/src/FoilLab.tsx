@@ -25,6 +25,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import {
   foilApi,
+  generatedEtchUrl,
   proxied,
   type FoilDerivationMethod,
   type FoilMaskMeta,
@@ -297,6 +298,8 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   const [session, setSession] = useState<{
     startedFrom: 'layout' | 'window-bake' | 'mask'
     parent: { cardId: string; variantId: number } | null
+    /** Seeded from a generated mask (no committed record): its hash. See api.ts generatedMask. */
+    generated?: { sha256: string } | null
     painted: boolean
   }>({ startedFrom: 'layout', parent: null, painted: false })
   const [maskTexVersion, setMaskTexVersion] = useState(0)
@@ -511,6 +514,19 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   }, [detailQ.data, sel.variantId])
 
   const detail = detailQ.data
+  // The generated etch plate for this printing, when the store has one.
+  const [etchUrl, setEtchUrl] = useState<string | null>(null)
+  useEffect(() => {
+    setEtchUrl(null)
+    if (!detail || sel.variantId == null) return
+    let cancelled = false
+    void generatedEtchUrl(detail.card.cardId, sel.variantId).then((u) => {
+      if (!cancelled) setEtchUrl(u)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [detail, sel.variantId])
   const variant = detail?.variants.find((v) => v.variantId === sel.variantId) ?? null
 
   // ── Resolve pattern + mask ──
@@ -672,11 +688,13 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
         setPenGeometry(null)
         // The mask that answered IS the parent of whatever gets saved next —
         // an aliased answer means the sibling variant's file, not this one.
-        setSession({
-          startedFrom: 'mask',
-          parent: { cardId, variantId: r.meta.aliasOf ?? variantId },
-          painted: false,
-        })
+        // A GENERATED answer has no committed record to name as parent; the
+        // server records it as the machine parent from its hash at save time.
+        setSession(
+          r.meta.generated && r.meta.sha256
+            ? { startedFrom: 'mask', parent: null, generated: { sha256: r.meta.sha256 }, painted: false }
+            : { startedFrom: 'mask', parent: { cardId, variantId: r.meta.aliasOf ?? variantId }, painted: false },
+        )
         void foilApi.maskMeta(cardId, variantId, resolved.scope).then((m) => {
           if (!cancelled) setMaskSidecar(m?.sidecar ?? null)
         })
@@ -771,7 +789,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
       setSavedMask(false)
       setMaskDirty(false)
       setMaskTexVersion((v) => v + 1)
-      setSession({ startedFrom: staged.seed.startedFrom, parent: staged.seed.parent, painted: true })
+      setSession({ startedFrom: staged.seed.startedFrom, parent: staged.seed.parent, generated: staged.seed.generated ?? null, painted: true })
       // The paths come back with the pixels they drew, or are absent together
       // with them. `staged.vector` is undefined on a brush session and on every
       // session stored before the field existed — both mean "these pixels have
@@ -1017,6 +1035,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
                 ? { cardId: session.parent.cardId, variantId: maskMeta?.aliasOf ?? session.parent.variantId }
                 : null,
               parentSha256: maskMeta?.sha256 ?? null,
+              generated: session.generated ?? null,
               prior: currentPrior(),
               width: MASK_W,
               height: MASK_H,
@@ -1126,7 +1145,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
         MASK_W,
         MASK_H,
         currentPrior(),
-        { startedFrom: s.startedFrom, parent: s.parent },
+        { startedFrom: s.startedFrom, parent: s.parent, ...(s.generated ? { generated: s.generated } : {}) },
         {
           artworkUrl: detail.card.images.high,
           card: {
@@ -1385,7 +1404,11 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
         cardId: staged.cardId,
         variantId: staged.variantId,
         startedFrom: fresh === null ? 'layout' : 'mask',
-        parent: fresh === null ? null : { cardId: staged.cardId, variantId: fresh.meta.aliasOf ?? staged.variantId },
+        parent:
+          fresh === null || fresh.meta.generated
+            ? null
+            : { cardId: staged.cardId, variantId: fresh.meta.aliasOf ?? staged.variantId },
+        generated: fresh?.meta.generated && fresh.meta.sha256 ? { sha256: fresh.meta.sha256 } : null,
         resolvedFrom:
           fresh === null ? null : { cardId: staged.cardId, variantId: fresh.meta.aliasOf ?? staged.variantId },
         parentSha256: fresh?.meta.sha256 ?? null,
@@ -1596,6 +1619,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
           settingsRef={settingsRef}
           tiltTarget={editMode || adjustMode || penMode ? zeroTilt : tilt.target}
           maskCanvas={handActive ? maskCanvas : null}
+          etchUrl={etchUrl}
           ink={inkForViewer}
           view={viewCtl}
           onPointerMove={editMode || adjustMode || penMode ? undefined : tilt.onPointerMove}

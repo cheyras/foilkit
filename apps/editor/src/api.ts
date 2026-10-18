@@ -210,6 +210,8 @@ export interface FoilMaskSidecar {
 export interface FoilMaskDerivation {
   startedFrom: 'layout' | 'window-bake' | 'mask'
   parent?: { cardId: string; variantId: number } | null
+  /** The generated mask the canvas started from, by hash. See staging/types.ts SessionSeed.generated. */
+  generated?: { sha256: string } | null
 }
 
 /**
@@ -334,6 +336,8 @@ export interface FoilMaskMeta {
   reviewStatus: FoilReviewStatus | null
   /** sha256 of the answering PNG. The staging layer's staleness pin. */
   sha256: string | null
+  /** True when no committed record answers and this is a GENERATED mask from the object store. */
+  generated?: boolean
 }
 
 export interface FoilCardPage {
@@ -435,6 +439,69 @@ export function proxied(url: string): string {
   }
 }
 
+// ── Generated masks (data/generated-masks/, bytes in object storage) ──
+//
+// The answer when NO committed record exists: a machine guess, shown as such
+// (method `ai`, unreviewed). A committed record always wins over it, because
+// getMask only reaches here when the manifest has nothing (AGENTS.md F4).
+
+interface GeneratedStore { publicBase: string | null }
+interface GeneratedShard {
+  runs: Record<string, { generatedAt: string }>
+  rows: [string, number, string, string, string, number, string, number | null][]
+}
+let generatedStorePromise: Promise<GeneratedStore | null> | null = null
+const generatedShards = new Map<string, Promise<GeneratedShard | null>>()
+
+async function generatedRow(cardId: string, variantId: number, layer: 'foil' | 'etch', signal?: AbortSignal) {
+  generatedStorePromise ??= getJson<GeneratedStore>('/generated-masks/store.json').catch(() => null)
+  const store = await generatedStorePromise
+  if (!store?.publicBase) return null
+  const setId = cardId.slice(0, cardId.lastIndexOf('-'))
+  if (!generatedShards.has(setId)) {
+    generatedShards.set(setId, getJson<GeneratedShard>(`/generated-masks/sets/${setId}.json`).catch(() => null))
+  }
+  const shard = await generatedShards.get(setId)!
+  const row = shard?.rows.find((r) => r[0] === cardId && r[1] === variantId && r[2] === layer)
+  if (!row) return null
+  return {
+    url: `${store.publicBase.replace(/\/$/, '')}/${layer}/${row[4]}.png`,
+    sha256: row[4],
+    generatedAt: shard!.runs[row[6]]?.generatedAt ?? null,
+  }
+}
+
+async function generatedMask(cardId: string, variantId: number, signal?: AbortSignal): Promise<{ bitmap: ImageBitmap; meta: FoilMaskMeta } | null> {
+  const g = await generatedRow(cardId, variantId, 'foil', signal)
+  if (g === null) return null
+  try {
+    const res = await fetch(g.url, { signal })
+    if (!res.ok) return null
+    const bitmap = await createImageBitmap(await res.blob())
+    return {
+      bitmap,
+      meta: {
+        file: g.url,
+        savedAt: g.generatedAt,
+        aliasOf: null,
+        hasPrior: false,
+        hasDiff: false,
+        method: 'ai',
+        reviewStatus: 'unreviewed',
+        sha256: g.sha256,
+        generated: true,
+      },
+    }
+  } catch {
+    return null
+  }
+}
+
+/** The generated etch plate for a printing, when one exists: an image URL for CardConfig.etch. */
+export async function generatedEtchUrl(cardId: string, variantId: number, signal?: AbortSignal): Promise<string | null> {
+  return (await generatedRow(cardId, variantId, 'etch', signal))?.url ?? null
+}
+
 // ── Fetchers ───────────────────────────────────────────────────
 
 export const foilApi = {
@@ -521,7 +588,7 @@ export const foilApi = {
   ): Promise<{ bitmap: ImageBitmap; meta: FoilMaskMeta } | null> => {
     const view = await corpusView(signal)
     const record = scope ? view.maskFor(cardId, scope) : (view.manifest?.masks[cardId]?.[String(variantId)] ?? null)
-    if (record === null) return null
+    if (record === null) return generatedMask(cardId, variantId, signal)
     const got = await getBytes(artifactUrl.maskPng(cardId, record.variantId), signal)
     if (got === null) return null
     try {

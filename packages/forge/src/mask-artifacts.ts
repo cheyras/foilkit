@@ -83,6 +83,15 @@ export interface DiffStats {
   unchangedPx: number;
   /** Jaccard agreement: unchanged / (unchanged + added + removed). 1 = rule already perfect. */
   agreement: number;
+  /**
+   * GRADED comparison (2026-10-18). Everything above thresholds alpha at
+   * FOIL_THRESHOLD, so a mask holding real foil STRENGTH (R9-PLATES: typical
+   * levels 0.35-0.85) loses every region below half strength. These two read
+   * the alpha as a level. Optional so pre-existing sidecars stay valid.
+   *   agreement  — weighted Jaccard, sum(min) / sum(max) over 0..1 levels
+   *   meanAbs    — mean |hand - prior| over pixels where either is non-zero
+   */
+  strength?: { agreement: number; meanAbs: number };
 }
 
 // Display tint for rendered masks — matches MaskEditor.tsx TINT (alpha is the
@@ -154,9 +163,21 @@ export function diffMask(
   let addedPx = 0;
   let removedPx = 0;
   let unchangedPx = 0;
+  let sMin = 0;
+  let sMax = 0;
+  let sAbs = 0;
+  let sN = 0;
   for (let i = 0; i < priorAlpha.length; i++) {
-    const inHand = rgba[i * 4 + 3]! >= FOIL_THRESHOLD;
-    const inPrior = priorAlpha[i]! >= FOIL_THRESHOLD;
+    const h = rgba[i * 4 + 3]!;
+    const p = priorAlpha[i]!;
+    if (h > 0 || p > 0) {
+      sMin += Math.min(h, p);
+      sMax += Math.max(h, p);
+      sAbs += Math.abs(h - p);
+      sN++;
+    }
+    const inHand = h >= FOIL_THRESHOLD;
+    const inPrior = p >= FOIL_THRESHOLD;
     const o = i * 4;
     if (inHand && inPrior) {
       unchangedPx++;
@@ -178,6 +199,10 @@ export function diffMask(
     removedPx,
     unchangedPx,
     agreement: union === 0 ? 1 : Number((unchangedPx / union).toFixed(4)),
+    strength: {
+      agreement: sMax === 0 ? 1 : Number((sMin / sMax).toFixed(4)),
+      meanAbs: sN === 0 ? 0 : Number((sAbs / sN / 255).toFixed(4)),
+    },
   };
   return { png: encodePng({ width, height, rgba: out }), stats };
 }

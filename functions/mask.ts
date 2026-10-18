@@ -57,6 +57,7 @@ import {
   MASKS_PREFIX,
   pngFromDataUrl,
 } from './_lib/corpus.ts'
+import { GeneratedSeedError, recordGeneratedParent } from './_lib/generated.ts'
 import { commitChanges, noreplyAuthor, repoRef, type CommitChange } from './_lib/github.ts'
 import { NotAWriter, decodePng, parseMaskVector, verifyMaskRecord, writeMaskRecord } from '@foilkit/forge'
 import { parsePrior } from '@foilkit/forge'
@@ -125,6 +126,7 @@ async function put(req: FnRequest, res: FnResponse): Promise<void> {
   let startedFrom: 'layout' | 'window-bake' | 'mask'
   let parentRef: { cardId: string; variantId: number } | null
   let vector: ReturnType<typeof parseMaskVector> | null
+  let generatedSha: string | null
   try {
     cardId = assertCardId(body.cardId)
     variantId = assertVariantId(body.variantId)
@@ -138,7 +140,9 @@ async function put(req: FnRequest, res: FnResponse): Promise<void> {
     // 'layout' whatever the caller said: the REAL source is decided from the
     // pixels and the parent on disk. Never let a client name its own source.
     prior = parsePrior(body.prior)
-    const derivation = (body.derivation ?? {}) as { startedFrom?: unknown; parent?: unknown }
+    const derivation = (body.derivation ?? {}) as { startedFrom?: unknown; parent?: unknown; generated?: unknown }
+    const g = derivation.generated as { sha256?: unknown } | null | undefined
+    generatedSha = g === null || g === undefined ? null : String(g.sha256)
     if (
       derivation.startedFrom !== 'layout' &&
       derivation.startedFrom !== 'window-bake' &&
@@ -185,6 +189,16 @@ async function put(req: FnRequest, res: FnResponse): Promise<void> {
     if (parentRef !== null && parentRef.cardId !== cardId) dirs.push(`${MASKS_PREFIX}/${parentRef.cardId}`)
     const ws = await materialise(ref, dirs)
     workspaceRoot = ws.root
+
+    // Seeded from a generated mask (bytes in object storage, row in
+    // data/generated-masks/): record it as the machine parent first, so this
+    // save derives as a correction of it. See _lib/generated.ts.
+    if (generatedSha !== null) {
+      if (await recordGeneratedParent({ ref, masksDir: ws.masksDir, cardId, variantId, sha256: generatedSha, prior })) {
+        startedFrom = 'mask'
+        parentRef = { cardId, variantId }
+      }
+    }
 
     const sidecar = await writeMaskRecord({
       masksDir: ws.masksDir,
@@ -241,7 +255,7 @@ async function put(req: FnRequest, res: FnResponse): Promise<void> {
     // human mask, and on a png whose dimensions disagree with the declared
     // ones. All of those are the caller's problem and all deserve a 400 with
     // the real reason — the alternative is a 500 and a mystery.
-    const status = /frame|dimensions|supersede|prior/i.test(message) ? 400 : 502
+    const status = err instanceof GeneratedSeedError || /frame|dimensions|supersede|prior/i.test(message) ? 400 : 502
     sendPrivateError(res, status, status === 400 ? 'refused' : 'write_failed', message)
   } finally {
     if (workspaceRoot !== null) await rm(workspaceRoot, { recursive: true, force: true }).catch(() => undefined)
