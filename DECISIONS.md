@@ -2872,3 +2872,43 @@ would have been the hole in that.
   never blocks a click and is gone on the next gesture. A user who cannot tell a
   deliberate refusal from a snapper that failed to notice learns to distrust the
   whole feature.
+
+## 2026-10-17 — R9-PLATES: a card-space view vector and an etch plate, both structural no-ops
+
+**Decided by:** @cheyras
+
+**Decision:** The shader contract gains two layers, added the way the ink layer
+was (R8-INK): surface-owned, structural, and off until a card supplies data.
+
+1. **Card-space view.** New uniforms `uTiltMax` (radians) and `uCamDist` (card
+   widths) let `cardViewTS(uv)` rebuild the real eye direction per fragment from
+   the mesh rotation the three stage already applies. MAIN writes it to the
+   global `gViewTS` before `foilPattern()` runs, so a recipe can read it. The
+   stage sets both uniforms every frame.
+2. **Etch plate.** `uEtchTex` (red channel, linear, white = etched, y-down like
+   the hand mask), `uEtchOn`, `uEtchTexel`, `uEtchRelief`, `uEtchBump`. When on,
+   MAIN fills `gEtch` / `gEtchSlope` and applies a relief term to the foil: the
+   glint the bumped surface adds over the flat one, under a key light above the
+   camera. `CardConfig.etch` (an `EtchPlate`) carries it into the stage.
+3. **Graded foil strength needs no new contract.** The hand-mask tier already
+   multiplies the foil by mask alpha, so a mask whose alpha holds graded, linear
+   foil strength (not 0/255 coverage) renders correctly today. Generated masks
+   should use that: real foil is rarely full strength.
+
+**Why:** Measured against a local reference set of real per-card foil plates
+(never committed): foil strength on real cards is graded per region (typical
+linear levels 0.35-0.85), and etched cards carry a separate per-card texture
+plate whose line field (0.3 mm pitch, direction drawn per region) is what makes
+etched foil glint as it tilts. A recipe that only sees an abstract 2-vector tilt
+cannot produce parallax layers or relief glints; one that sees the eye
+direction can.
+
+**Implications:**
+- Parity: 45/45 byte-identical against main, after a 45/45 control pair. The
+  structural reasons are pinned in `packages/core/src/__tests__/view-etch-layer.test.ts`.
+- The etch relief term is a starting default; it has not yet been tuned against
+  a render. Recipes that want family-specific etch behaviour read `gEtch` /
+  `gEtchSlope` / `gViewTS` directly.
+- Mask *generation* is now the project's priority: masks and etches are generated
+  for every printing and refined by agent and by hand. Existing masks carry no
+  special weight; a generated mask that scores better replaces them.

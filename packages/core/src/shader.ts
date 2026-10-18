@@ -349,12 +349,52 @@ uniform float uInkJitter;
 uniform float uInkStagger;
 uniform float uInkStrength;
 uniform float uInkTone;
+// Card-space view (R9-PLATES). Surface-owned: the renderer reports how far the
+// card can rotate and where the camera sits, so the shader can rebuild the real
+// eye direction per fragment instead of reading tilt as an abstract 2-vector.
+uniform float uTiltMax;
+uniform float uCamDist;
+// Etch plate (R9-PLATES). A raster separate from the foil mask: the printed
+// texture (SV fingerprint lines, Scodix shapes), white = etched, linear. It is
+// structural and off by default, exactly like the ink layer, so every recipe
+// renders bit-for-bit what it rendered before until a plate is supplied.
+uniform sampler2D uEtchTex;
+uniform float uEtchOn;
+uniform vec2 uEtchTexel;
+uniform float uEtchRelief;
+uniform float uEtchBump;
 uniform float uP0;
 uniform float uP1;
 uniform float uP2;
 uniform float uP3;
 uniform float uP4;
 uniform float uP5;
+
+// Per-fragment card-space context. MAIN fills these before foilPattern() runs,
+// so a recipe may read them; recipes written before R9 simply never do.
+//   gViewTS     unit vector from the fragment to the eye, in card tangent space
+//               (x right, y up, z out of the face). (0,0,1) is head-on.
+//   gEtch       etch plate value, 0 where there is no plate.
+//   gEtchSlope  etch height gradient per texel step, (d/du, d/dv), y up.
+vec3 gViewTS;
+float gEtch;
+vec2 gEtchSlope;
+
+// The eye in card space. The card is a 1 x CARD_ASPECT plane rotated by
+// rotation.y = tilt.x * uTiltMax and rotation.x = -tilt.y * uTiltMax (three's
+// XYZ order, so world = Rx * Ry * object) with the camera on +z at uCamDist.
+// The eye in object space is therefore Ry^T * Rx^T * (0, 0, uCamDist).
+vec3 cardViewTS(vec2 uv) {
+  float pitch = -uTilt.y * uTiltMax;
+  float yaw = uTilt.x * uTiltMax;
+  vec3 c = vec3(0.0, 0.0, uCamDist);
+  float cp = cos(pitch); float sp = sin(pitch);
+  c = vec3(c.x, cp * c.y + sp * c.z, -sp * c.y + cp * c.z);
+  float cy = cos(yaw); float sy = sin(yaw);
+  c = vec3(cy * c.x - sy * c.z, c.y, sy * c.x + cy * c.z);
+  vec3 p = vec3(uv.x - 0.5, (uv.y - 0.5) * CARD_ASPECT, 0.0);
+  return normalize(c - p);
+}
 
 float hash21(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
@@ -565,7 +605,34 @@ void main() {
   // Foil flash: dark ink blocks it — screen-blending a bright flash over dark
   // text lifts it toward illegibility (Chey 7rtnzx: mirror "blows out the
   // darks/text"). Colored ink transmits it, tinted below.
+  // ── CARD-SPACE CONTEXT + ETCH PLATE (R9-PLATES 2026-10-17) ───────────────
+  // Filled before the recipe runs so a recipe can read the real eye direction
+  // and the etch relief. Both are pure additions: gViewTS is computed for every
+  // card but no pre-R9 recipe reads it, and the etch block executes nothing
+  // while uEtchOn is 0, which is every card until a plate is supplied.
+  gViewTS = cardViewTS(uv);
+  gEtch = 0.0;
+  gEtchSlope = vec2(0.0);
+  if (uEtchOn > 0.5) {
+    // Image space (y down), the same one-flip convention as the hand mask.
+    vec2 ev = vec2(uv.x, 1.0 - uv.y);
+    gEtch = texture2D(uEtchTex, ev).r;
+    float ex = texture2D(uEtchTex, ev + vec2(uEtchTexel.x, 0.0)).r;
+    float ey = texture2D(uEtchTex, ev - vec2(0.0, uEtchTexel.y)).r;
+    gEtchSlope = vec2(ex - gEtch, ey - gEtch);
+  }
   vec3 foil = foilPattern(uv, uTilt) * uIntensity * m * gate * (1.0 - inkDark);
+  // Etch relief. The etched lines are raised texture: each facet turns the foil
+  // toward or away from a key light above the camera, so the glint the relief
+  // adds is the difference between the bumped and the flat face. Gated to the
+  // plate, so a card without one is untouched.
+  if (uEtchOn > 0.5 && uEtchRelief > 0.0) {
+    vec3 keyH = normalize(gViewTS + vec3(0.0, 0.45, 0.89));
+    vec3 nE = normalize(vec3(-gEtchSlope * uEtchBump, 1.0));
+    float bumped = pow(max(dot(nE, keyH), 0.0), 32.0);
+    float flatG = pow(max(keyH.z, 0.0), 32.0);
+    foil *= max(0.0, 1.0 + uEtchRelief * 3.0 * (bumped - flatG));
+  }
   // Metallic ink tint (uTint, default 0 = exact legacy render): a mirror
   // foil's flash crosses the printed ink twice, so over colored art it takes
   // the ink's OWN color — screen-blending achromatic light instead compresses
@@ -826,7 +893,7 @@ void main() {
 // ── Assembly ───────────────────────────────────────────────────────────────
 
 /** Every non-pattern uniform the contract declares, in declaration order. */
-export const SAMPLER_UNIFORMS = ['uFace', 'uMaskTex', 'uGlyphTex', 'uInkTex'] as const
+export const SAMPLER_UNIFORMS = ['uFace', 'uMaskTex', 'uGlyphTex', 'uInkTex', 'uEtchTex'] as const
 
 /**
  * Non-scalar uniforms and their initial values, kept here rather than in the
@@ -857,6 +924,17 @@ export const STRUCTURAL_DEFAULTS = {
   uInkStagger: 0,
   uInkStrength: 1,
   uInkTone: 0,
+  // Card-space view + etch plate (R9-PLATES). SURFACE-OWNED and structural.
+  // uTiltMax / uCamDist describe the renderer's geometry (the three stage
+  // overwrites them every frame); the defaults match STAGE_DEFAULTS.maxTiltDeg
+  // (16 deg) and a typical single-card framing. uEtchOn 0 is load-bearing in
+  // the same way uInkOn 0 is: it keeps every recipe without a plate unchanged.
+  uTiltMax: (16 * Math.PI) / 180,
+  uCamDist: 2.8,
+  uEtchOn: 0,
+  uEtchTexel: [1 / 1008, 1 / 1408] as [number, number],
+  uEtchRelief: 1,
+  uEtchBump: 6,
   uP0: 0,
   uP1: 0,
   uP2: 0,

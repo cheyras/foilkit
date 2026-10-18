@@ -109,6 +109,13 @@ export interface CardViewOffset {
   y: number
 }
 
+/** An etch plate texture plus its pixel size, so the shader can step one texel. */
+export interface EtchPlate {
+  texture: THREE.Texture
+  width: number
+  height: number
+}
+
 export interface CardConfig {
   pattern: FoilPattern
   imageUrl?: string | null
@@ -150,6 +157,13 @@ export interface CardConfig {
    * stop guessing AND we must not draw ours on top of it.
    */
   ink?: InkLayer | null
+  /**
+   * The ETCH plate (R9-PLATES): the printed texture layer, separate from the
+   * foil mask. Red channel, linear, white = etched, y-DOWN like every other
+   * plate (the shader flips V). Absent (every card today) leaves uEtchOn 0 and
+   * the render bit-identical.
+   */
+  etch?: EtchPlate | null
   /** Per-card presentation override; defaults to the stage's mode. */
   mode?: PresentationMode
   /** Per-card tilt source override, by id or as an object. */
@@ -856,6 +870,9 @@ export class FoilStage {
 
     ;(u.uTilt!.value as THREE.Vector2).set(card.tilt.x, card.tilt.y)
     u.uTime!.value = time
+    // R9-PLATES: the geometry the shader needs to rebuild the eye direction.
+    if (u.uTiltMax) u.uTiltMax.value = maxRad
+    if (u.uCamDist) u.uCamDist.value = this.camera.position.z
     for (const [k, v] of Object.entries(settings.uniforms)) {
       if (u[k]) u[k]!.value = v
     }
@@ -939,6 +956,14 @@ export class FoilStage {
         u.uInkStrength!.value = ink.strength
         u.uInkTone!.value = ink.tone
       }
+    }
+
+    // The etch plate (R9-PLATES). Absent pushes the structural default, off.
+    if (u.uEtchTex) {
+      const etch = card.config.etch ?? null
+      u.uEtchTex.value = etch?.texture ?? transparentTexture()
+      u.uEtchOn!.value = etch ? 1 : 0
+      if (etch) (u.uEtchTexel!.value as THREE.Vector2).set(1 / etch.width, 1 / etch.height)
     }
 
     // Geometry. In blit the card may be rendered smaller than its box and

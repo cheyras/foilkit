@@ -83,6 +83,15 @@ export function buildFoilMaterial(pattern: FoilPattern): THREE.ShaderMaterial {
     uInkStagger: { value: STRUCTURAL_DEFAULTS.uInkStagger },
     uInkStrength: { value: STRUCTURAL_DEFAULTS.uInkStrength },
     uInkTone: { value: STRUCTURAL_DEFAULTS.uInkTone },
+    // Card-space view + etch plate (R9-PLATES). The stage overwrites uTiltMax and
+    // uCamDist every frame; uEtchOn stays 0 until a card supplies a plate.
+    uTiltMax: { value: STRUCTURAL_DEFAULTS.uTiltMax },
+    uCamDist: { value: STRUCTURAL_DEFAULTS.uCamDist },
+    uEtchTex: { value: transparentTexture() },
+    uEtchOn: { value: STRUCTURAL_DEFAULTS.uEtchOn },
+    uEtchTexel: { value: new THREE.Vector2(...STRUCTURAL_DEFAULTS.uEtchTexel) },
+    uEtchRelief: { value: STRUCTURAL_DEFAULTS.uEtchRelief },
+    uEtchBump: { value: STRUCTURAL_DEFAULTS.uEtchBump },
     uP0: { value: 0 },
     uP1: { value: 0 },
     uP2: { value: 0 },
