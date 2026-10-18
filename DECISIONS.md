@@ -2984,3 +2984,35 @@ this change adds the path and nothing else.
   `FOILKIT_MASKS_URL` / `FOILKIT_MASKS_KEY` from the environment only.
 - The bucket sits in DeckPal's Supabase project, outside DeckPal's image store and its `image_asset` choke
   point, the way `dev-captures` does.
+
+## 2026-10-18 — R10: SV/ME reverses render as a mirror sheet with the design in the mask (`mirror-sv`)
+
+**Decided by:** @cheyras ("I thought mirror was flat silver"; "I don't think the reverse holos use rainbow mirror,
+just mirror"; "The energy symbol patterns we made are just the svi mirror/reverse holo patterns")
+
+**Decision:** Plain Scarlet & Violet and Mega Evolution reverse holos resolve to `mirror-sv`: the `mirror` recipe with
+a new highlight-shape uniform (`uP4`: 0 round spot as before, 1 a wide slanted vertical bar) and SV/ME settings. The
+printed reverse design (the type-symbol tiles) comes from the card's generated mask as graded foil strength, never
+from the recipe. Six assignment rows that named energy-symbols-ii for SV reverses now name `mirror-sv`, as does the
+ME reverse row (previously `mirror`); every one of those rows already described "a tile design over a flat mirror
+foil base". `energy-symbols-ii` remains the EX FireRed & LeafGreen scattered-glyph foil (TAXONOMY #8).
+
+**Why:** rendered at four tilts against a local reference of the modern reverse, on three cards
+(sv06-128, me02-011, me02.5-039):
+- the reference has one wide vertical light bar that sweeps sideways, and no round spotlight or dark lobe;
+- it is silver, not ink-coloured;
+- it leaves the art window untouched;
+- energy-symbols-ii drew coloured glyph shapes across the art window, where a reverse has no foil.
+
+**Measured:** foil change (render minus no-foil), mean |ΔL| and chroma per tilt:
+- reference: |ΔL| 0.012–0.029, chroma 0.006–0.015;
+- `mirror-sv`: |ΔL| 0.009–0.027, chroma 0.007–0.015.
+
+On light ME bodies it is about 60% as bright as the reference, where the additive headroom budget caps it. Per-pixel
+correlation is not used: the reference places its bar at a per-card random phase. `mirror` canon renders are
+byte-identical before and after (8/8 frames). Resolver over the catalog: 2,617 SV/ME `reverse` variants plus
+140 `reverse-foil-energy` resolve to `mirror-sv`. Ball reverses keep `pokeball-masterball` pending their own
+comparison.
+
+**Implications:** `data/foil-pattern-cards.json` (which needs the database walk) is stale for these rows until the
+next bake.

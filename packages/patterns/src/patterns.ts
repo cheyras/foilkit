@@ -1460,7 +1460,17 @@ vec3 foilPattern(vec2 uv, vec2 tilt) {
   // broad specular blob traveling WITH tilt
   vec2 lc = vec2(0.5, 0.55) + tilt * (0.45 * uP1);
   vec2 d = (uv - lc) * vec2(1.0, CARD_ASPECT * 0.85);
-  float lobe = exp(-dot(d, d) * uP0) * (0.7 + 0.3 * w1);
+  float lobe = exp(-dot(d, d) * uP0);
+  // uP4 > 0 (R10, 2026-10-18): the highlight is a wide, slightly slanted
+  // VERTICAL BAR that sweeps sideways as the card turns (yaw and pitch both
+  // move it), not a round spotlight. Measured on SV/ME reverse holos against a
+  // local reference. 0 (the default, and every saved canon) is the round lobe,
+  // exactly as before.
+  if (uP4 > 0.0) {
+    float bx = uv.x + 0.18 * (uv.y - 0.5) - 0.5 - (tilt.x + 0.6 * tilt.y) * 0.45 * uP1;
+    lobe = mix(lobe, exp(-bx * bx * uP0), clamp(uP4, 0.0, 1.0));
+  }
+  lobe *= 0.7 + 0.3 * w1;
   // dim, faintly warm environment reflection — never fully black
   float env = 0.07 + 0.20 * w1 * w2;
   return vec3(1.03, 1.0, 0.95) * env + vec3(1.0, 0.99, 0.97) * lobe * uP3;
@@ -2790,6 +2800,43 @@ export const PATTERNS: FoilPattern[] = [
       { key: 'uP1', label: 'Flash travel', min: 0, max: 1.5, step: 0.05, default: 0.55 },
       { key: 'uP2', label: 'Sheet waviness', min: 0, max: 4, step: 0.05, default: 1.5 },
       { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
+    ],
+    implemented: true,
+  },
+  // R10 (2026-10-18): the SV / Mega Evolution reverse holo. The same plain
+  // mirror sheet (the printed reverse pattern comes from the card's MASK, as
+  // graded foil strength), tuned against a local reference of how the modern
+  // reverse actually renders:
+  //   - a wide vertical bar of light that sweeps across with tilt (uP4 1),
+  //     not a round spotlight;
+  //   - an even, mild change everywhere else, with no dark lobe (uDarken and
+  //     uDepth low);
+  //   - silver, not ink-coloured (uTint 0, uSheenTint 0);
+  //   - nothing outside the mask (uSpecular low: the shared gloss is the only
+  //     light that reaches the unfoiled art window).
+  // mirror's own canon is untouched.
+  {
+    id: 'mirror-sv',
+    label: 'Mirror (SV/ME reverse)',
+    taxonomy: 'Plain aluminum mirror foil — no pattern, no hue shift',
+    usedOn: 'Scarlet & Violet and Mega Evolution reverse holos; the printed reverse pattern is in the mask.',
+    glsl: MIRROR_GLSL,
+    family: 'metal',
+    defaults: {
+      // Tuned on three reverses (sv06-128, me02-011, me02.5-039) at four tilts
+      // against the reference: the colour change matches (chroma 0.008-0.015
+      // vs 0.006-0.015); brightness is about 60% of the reference on light
+      // ME bodies, where the additive headroom budget caps it.
+      uIntensity: 2.0, uScale: 1.0, uHueShift: 0.5, uHueSpread: 0.0, uSat: 0.0,
+      uArtGate: 0.0, uSpecular: 0.0, uDarken: 0.3, uTint: 0.0, uInkPop: 2.0,
+      uMetal: 0.9, uSheen: 0.8, uSheenTint: 0.0, uDepth: 0.3, uGrain: 1.0,
+    },
+    params: [
+      { key: 'uP0', label: 'Bar tightness', min: 2, max: 60, step: 0.5, default: 18 },
+      { key: 'uP1', label: 'Bar travel', min: 0, max: 3, step: 0.05, default: 1.2 },
+      { key: 'uP2', label: 'Sheet waviness', min: 0, max: 4, step: 0.05, default: 0 },
+      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP4', label: 'Bar (0 = round spot)', min: 0, max: 1, step: 0.05, default: 1 },
     ],
     implemented: true,
   },

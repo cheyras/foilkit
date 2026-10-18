@@ -635,9 +635,9 @@ test('the composition snapshot — change this deliberately, never to make a tes
   // the one you meant, then update the numbers. Do not relax the assertion.
   assert.deepEqual(queue.counts.byType, {
     approximation: 1,
-    // R10-MODERN 2026-10-18: +3, the three new SV/ME recipes (crossed-rainbow,
+    // R10 2026-10-18: +4, the new SV/ME recipes (crossed-rainbow, mirror-sv,
     // etched-ultra, sv-holo-bands) ship with code defaults and no saved canon.
-    canon: 15,
+    canon: 16,
     verdict: 5,
     mask: 5,
     'window-mask': 34,
@@ -651,7 +651,7 @@ test('the composition snapshot — change this deliberately, never to make a tes
   })
   assert.deepEqual(queue.counts.bySkill, {
     glsl: 2,
-    slider: 15, // R10-MODERN: the three canon tasks above are slider work
+    slider: 16, // R10: the new recipes' canon tasks are slider work
     'live-tilt': 4,
     mask: 39,
     research: 51,

@@ -372,7 +372,7 @@
   "r2b-vocab-wiring",
   "r7-ex-sheen-energies"
  ],
- "row_count": 125,
+ "row_count": 126,
  "facet_rows": [
   {
    "facet": "cosmos",
@@ -1455,7 +1455,7 @@
    "lane": "me-era"
   },
   {
-   "pattern": "mirror",
+   "pattern": "mirror-sv",
    "sel": {
     "setIds": [
      "me01",
@@ -1463,7 +1463,8 @@
      "me02.5",
      "me03",
      "me04",
-     "me05"
+     "me05",
+     "mee"
     ],
     "cls": "reverse",
     "rarities": null,
@@ -1482,11 +1483,11 @@
      "quote": "Paraphrase (Bulbapedia, 'Holofoil') — The set's reverse 'holofoil' cards sit on a mirror foil base, so the name is a misnomer — none of the colour scattering a holofoil produces is there."
     }
    ],
-   "conflicts": "Bulbapedia does not name the underlying ME reverse sheet; the mirror mapping infers it from (a) SV reverse = mirror-foil base and (b) ME dropping the tile motif. The research-corpus known-gap warns that 'mirror' reverse rows are often ink-design evidence and the true sheet may be a sheen (the video interlude says the vertical/diagonal sheen sheet underlies many visually-different reverse designs). 'plain holographic background' may imply a colour-scattering holo rather than a pure silver mirror; the exact sheet is unconfirmed. TCGdex cardCount.reverse=0 for me04 yet the cluster claims n=76, so me04 reverse variants exist in the catalog but are not enumerable from TCGdex alone.",
+   "conflicts": "Bulbapedia does not name the underlying ME reverse sheet; the mirror mapping infers it from (a) SV reverse = mirror-foil base and (b) ME dropping the tile motif. The research-corpus known-gap warns that 'mirror' reverse rows are often ink-design evidence and the true sheet may be a sheen (the video interlude says the vertical/diagonal sheen sheet underlies many visually-different reverse designs). 'plain holographic background' may imply a colour-scattering holo rather than a pure silver mirror; the exact sheet is unconfirmed. TCGdex cardCount.reverse=0 for me04 yet the cluster claims n=76, so me04 reverse variants exist in the catalog but are not enumerable from TCGdex alone. RESOLVED 2026-10-18 (R10): rendered against a local reference of the modern reverse at four tilts, the sheet is a plain silver mirror whose highlight is one wide vertical bar sweeping with tilt (not a round spotlight), untinted, with the printed design carried by the card's mask. Re-pointed to mirror-sv (the mirror recipe at those settings); mirror's own canon is unchanged.",
    "lane": "me-era"
   },
   {
-   "pattern": "mirror",
+   "pattern": "mirror-sv",
    "sel": {
     "setIds": [
      "mee"
@@ -2260,7 +2261,7 @@
    "lane": "sv-bolt-flare"
   },
   {
-   "pattern": "energy-symbols-ii",
+   "pattern": "mirror-sv",
    "sel": {
     "setIds": [
      "sv10.5b",
@@ -2285,7 +2286,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Holofoil') — The set's reverse 'holofoil' cards sit on a mirror foil base, so the name is a misnomer — none of the colour scattering a holofoil produces is there."
     }
    ],
-   "conflicts": "The base sheet is the 'mirror' foil (separately cataloged); the visible character is the type-symbol tile. The slug 'energy-symbols-ii' follows the foil video's vocabulary, but the pattern library's usedOn label pins energy-symbols-ii to EX FireRed & LeafGreen, so this is a vocabulary-mapping inference, not a library-confirmed SV label.",
+   "conflicts": "The base sheet is the 'mirror' foil (separately cataloged); the visible character is the type-symbol tile. The slug 'energy-symbols-ii' follows the foil video's vocabulary, but the pattern library's usedOn label pins energy-symbols-ii to EX FireRed & LeafGreen, so this is a vocabulary-mapping inference, not a library-confirmed SV label. RESOLVED 2026-10-18 (R10): the claim itself names the sheet - a flat mirror foil base - and the tile is printed design, now carried by the card's mask. Re-pointed from energy-symbols-ii (the EX FireRed & LeafGreen scattered-glyph foil) to mirror-sv.",
    "lane": "sv-bolt-flare"
   },
   {
@@ -2439,7 +2440,7 @@
    "lane": "sv-era"
   },
   {
-   "pattern": "energy-symbols-ii",
+   "pattern": "mirror-sv",
    "sel": {
     "setIds": [
      "sv02"
@@ -2459,7 +2460,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Scarlet & Violet to Black Bolt & White Flare use the mixed-size type-symbol tile, with the set symbol reversed to black on white; the reverse sits on a mirror foil base, so calling it holofoil is inaccurate — the colour scattering is absent."
     }
    ],
-   "conflicts": "Bulbapedia is the sole source describing the SV reverse tile+mirror base; no independent second source (Collexy has no SV-era holofoil article; the video's reverse rows target BBWF pokeball stamps). Capped at medium per the 2-source rule.",
+   "conflicts": "Bulbapedia is the sole source describing the SV reverse tile+mirror base; no independent second source (Collexy has no SV-era holofoil article; the video's reverse rows target BBWF pokeball stamps). Capped at medium per the 2-source rule. RESOLVED 2026-10-18 (R10): the claim itself names the sheet - a flat mirror foil base - and the tile is printed design, now carried by the card's mask. Re-pointed from energy-symbols-ii (the EX FireRed & LeafGreen scattered-glyph foil) to mirror-sv.",
    "lane": "sv-era"
   },
   {
@@ -2607,7 +2608,7 @@
    "lane": "sv-era"
   },
   {
-   "pattern": "energy-symbols-ii",
+   "pattern": "mirror-sv",
    "sel": {
     "setIds": [
      "sv09"
@@ -2627,7 +2628,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Holofoil') — From Scarlet & Violet to Black Bolt & White Flare the reverse is a mixed-size type-symbol tile laid over a mirror foil base."
     }
    ],
-   "conflicts": "Bulbapedia is the sole source for the SV reverse tile+mirror base (no independent second source). Journey Together is a Scarlet & Violet Series set within the SV-to-BBWF tile-reverse span, so the tile reverse applies (the 'Mega Evolution onward returns to plain holographic background' begins after Black Bolt & White Flare).",
+   "conflicts": "Bulbapedia is the sole source for the SV reverse tile+mirror base (no independent second source). Journey Together is a Scarlet & Violet Series set within the SV-to-BBWF tile-reverse span, so the tile reverse applies (the 'Mega Evolution onward returns to plain holographic background' begins after Black Bolt & White Flare). RESOLVED 2026-10-18 (R10): the claim itself names the sheet - a flat mirror foil base - and the tile is printed design, now carried by the card's mask. Re-pointed from energy-symbols-ii (the EX FireRed & LeafGreen scattered-glyph foil) to mirror-sv.",
    "lane": "sv-era"
   },
   {
@@ -2775,7 +2776,7 @@
    "lane": "sv-era"
   },
   {
-   "pattern": "energy-symbols-ii",
+   "pattern": "mirror-sv",
    "sel": {
     "setIds": [
      "sv10"
@@ -2795,7 +2796,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Holofoil') — From Scarlet & Violet to Black Bolt & White Flare the reverse is a mixed-size type-symbol tile laid over a mirror foil base."
     }
    ],
-   "conflicts": "Bulbapedia is the sole source for the SV reverse tile+mirror base. Destined Rivals is the tenth and final Scarlet & Violet Series main expansion, within the SV-to-BBWF tile-reverse span (the 'Mega Evolution onward plain holographic background' begins after Black Bolt & White Flare).",
+   "conflicts": "Bulbapedia is the sole source for the SV reverse tile+mirror base. Destined Rivals is the tenth and final Scarlet & Violet Series main expansion, within the SV-to-BBWF tile-reverse span (the 'Mega Evolution onward plain holographic background' begins after Black Bolt & White Flare). RESOLVED 2026-10-18 (R10): the claim itself names the sheet - a flat mirror foil base - and the tile is printed design, now carried by the card's mask. Re-pointed from energy-symbols-ii (the EX FireRed & LeafGreen scattered-glyph foil) to mirror-sv.",
    "lane": "sv-era"
   },
   {
@@ -3003,7 +3004,7 @@
    "lane": "sv-era"
   },
   {
-   "pattern": "energy-symbols-ii",
+   "pattern": "mirror-sv",
    "sel": {
     "setIds": [
      "sve"
@@ -3023,7 +3024,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Holofoil') — From Scarlet & Violet to Black Bolt & White Flare the reverse is a mixed-size type-symbol tile laid over a mirror foil base."
     }
    ],
-   "conflicts": "SVE is a curated basic-energy promo set; whether its plain 'reverse' variants use the standard SV tile reverse or a plain mirror is not separately documented. energy-symbols-ii (tile over mirror) is the SV-default inference.",
+   "conflicts": "SVE is a curated basic-energy promo set; whether its plain 'reverse' variants use the standard SV tile reverse or a plain mirror is not separately documented. energy-symbols-ii (tile over mirror) is the SV-default inference. RESOLVED 2026-10-18 (R10): the claim itself names the sheet - a flat mirror foil base - and the tile is printed design, now carried by the card's mask. Re-pointed from energy-symbols-ii (the EX FireRed & LeafGreen scattered-glyph foil) to mirror-sv.",
    "lane": "sv-era"
   },
   {
@@ -4673,6 +4674,44 @@
     }
    ],
    "lane": "r7-ex-sheen-energies"
+  },
+  {
+   "pattern": "mirror-sv",
+   "sel": {
+    "setIds": [
+     "sv01",
+     "sv02",
+     "sv03",
+     "sv03.5",
+     "sv04",
+     "sv04.5",
+     "sv05",
+     "sv06",
+     "sv06.5",
+     "sv07",
+     "sv08",
+     "sv08.5",
+     "sv09",
+     "sv10",
+     "sv10.5b",
+     "sv10.5w",
+     "sve"
+    ],
+    "cls": "reverse",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": null
+   },
+   "claim": "Plain reverse-holo variants of the Scarlet & Violet sets use a plain silver mirror sheet; the type-symbol tile design the sources describe is printed ink, carried here by each card's mask as graded foil strength, so the foil recipe is the mirror. Poke Ball, Master Ball and other stamped reverse kinds keep their own variantKinds rows, which outrank this one.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Holofoil",
+     "quote": "Paraphrase (Bulbapedia, 'Holofoil') - The set's reverse 'holofoil' cards sit on a mirror foil base; the tile motif is the printed design over it."
+    }
+   ],
+   "conflicts": "The usage table maps SV reverses to energy-symbols-ii because the sources describe the tile DESIGN; energy-symbols-ii is the EX FireRed & LeafGreen scattered-glyph foil (docs/TAXONOMY.md #8). This row separates the sheet (mirror) from the design (mask). RESOLVED 2026-10-18 (R10): rendered against a local reference of the modern reverse at four tilts, the sheet is a plain silver mirror whose highlight is one wide vertical bar sweeping with tilt (not a round spotlight), untinted, with the printed design carried by the card's mask. Re-pointed to mirror-sv (the mirror recipe at those settings); mirror's own canon is unchanged.",
+   "lane": "sv-era"
   }
  ]
 }
