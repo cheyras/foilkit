@@ -577,6 +577,52 @@ const SHEEN_DR = sheenGlsl({ nx: 0.7071, ny: 0.7071, sharp: 3.0, beam: 0.55 }) /
 const SHEEN_DL = sheenGlsl({ nx: 0.7071, ny: -0.7071, sharp: 3.0, beam: 0.55 }) // band rises "/" (left/frame-04, -06)
 const SHEEN_V_STRIPED = sheenGlsl({ nx: 1, ny: 0, stripes: true })
 
+// R10 (2026-10-18): the SV / Mega Evolution standard holo, rebuilt from a
+// reference render of the modern holo rare. Replaces the R3 streak field for
+// horizontal-sheen only. What the reference does:
+//   - one continuous, saturated rainbow (magenta, red, orange, yellow, green,
+//     cyan, blue, violet) laid on a slant, about two cycles up the card; tilt
+//     does not move it;
+//   - two light-band systems (dark indigo, blue, white, tan, dark red; about
+//     three bands per card height) slanted opposite ways, rolling opposite
+//     ways with yaw and together with pitch;
+//   - the bands multiply into the rainbow, so colour is strongest where a band
+//     is bright, and they carry a fine grain;
+//   - a broad vertical highlight (0.73x-1.54x) that the pitch moves across.
+// Over dark ink the additive composite has the most headroom, which is where
+// the reference's rainbow is strongest too.
+const SV_HOLO_GLSL = `
+vec3 svhStrip(float t) {
+  t = fract(t) * 6.0;
+  vec3 c = mix(vec3(0.16, 0.05, 0.35), vec3(0.16, 0.12, 0.67), smoothstep(0.0, 1.0, t));
+  c = mix(c, vec3(0.30, 0.48, 0.79), smoothstep(1.0, 2.0, t));
+  c = mix(c, vec3(0.86, 0.84, 0.87), smoothstep(2.0, 3.0, t));
+  c = mix(c, vec3(0.60, 0.40, 0.29), smoothstep(3.0, 4.0, t));
+  c = mix(c, vec3(0.45, 0.13, 0.23), smoothstep(4.0, 5.0, t));
+  c = mix(c, vec3(0.16, 0.05, 0.35), smoothstep(5.0, 6.0, t));
+  return c;
+}
+float svhOverlay(float b, float l) { return b < 0.5 ? 2.0 * b * l : 1.0 - 2.0 * (1.0 - b) * (1.0 - l); }
+vec3 foilPattern(vec2 uv, vec2 tilt) {
+  float k = 0.28 * uP1;                       // card-normal shift at full tilt
+  float tx = tilt.x * k, ty = tilt.y * k;
+  float s1 = (2.9 * uv.y - 0.36 * uv.x) * uP0 * uScale + ty - 0.98 * tx;
+  float s2 = (3.0 * uv.y + 0.47 * uv.x) * uP0 * uScale + ty + 0.5 * tx + 0.33;
+  float grain = 1.0 - uP2 * hash21(floor(uv * vec2(1.0, CARD_ASPECT) * 420.0));
+  vec3 SG = (svhStrip(s1) + svhStrip(s2)) * grain;
+  vec3 rb = hueRamp(uHueShift + uHueSpread * (1.9 * uv.y - 0.62 * uv.x));
+  vec3 foil = SG * vec3(svhOverlay(rb.r, SG.r), svhOverlay(rb.g, SG.g), svhOverlay(rb.b, SG.b));
+  float w = uv.x + 2.0 * fract(0.75 * ty / 0.28 + 0.25) - 1.0;
+  foil *= 0.73 + 0.81 * clamp(w * (1.0 - w) * 4.0, 0.0, 1.0);
+  // The reference changes dark and light ink about equally; the additive
+  // composite has the most headroom over dark ink, so without this the same
+  // pattern lands 2x stronger on a dark art window. uP4 is the dark-ink factor.
+  // Samples uFace, the documented contract exception (see detective-pikachu).
+  float faceL = dot(texture2D(uFace, uv).rgb, vec3(0.299, 0.587, 0.114));
+  foil *= mix(uP4, 1.0, smoothstep(0.05, 0.75, faceL));
+  return foil * uP3;
+}`
+
 const SHEEN_DEFAULTS: CoreDefaults = {
   ...LINE_FOIL,
   uIntensity: 0.9,
@@ -2638,7 +2684,10 @@ export const PATTERNS: FoilPattern[] = [
     label: 'Horizontal sheen (SV default)',
     taxonomy: 'Sheen — horizontal rotation (Bulbapedia "Mirage")',
     usedOn: 'The default holo of Scarlet & Violet AND the Mega-era standard holos.',
-    glsl: SHEEN_H,
+    glsl: SV_HOLO_GLSL,
+    // R10 2026-10-18: SV_HOLO_GLSL replaces the R3 streak field (SHEEN_H stays
+    // defined for history; nothing else used it). The uniforms below are code
+    // defaults; the canon in data/foil-canon/horizontal-sheen.json wins.
     // uDarken 0.22 (R3 round 3): the SV "Mirage" streaks are saturated over a
     // BRIGHT silver body — screen-only blending erased the streak field on the
     // Kyogre exemplar (judge: "uniform smooth gradient"). Chey's canon
@@ -2646,8 +2695,14 @@ export const PATTERNS: FoilPattern[] = [
     // R5b eyeball: the SV Mirage band is broad and low-contrast; at the SHEET
     // default it barely registered on the me04 exemplar.
     family: 'line',
-    defaults: { ...SHEEN_DEFAULTS, uDarken: 0.32 },
-    params: tuneParams(SHEEN_PARAMS, { uP0: 2, uP1: 2.2 }),
+    defaults: { ...SHEEN_DEFAULTS, uDarken: 0.32, uSat: 1.0, uHueShift: 0.0, uHueSpread: 1.0 },
+    params: [
+      { key: 'uP0', label: 'Band scale', min: 0.3, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP1', label: 'Tilt response', min: 0, max: 4, step: 0.05, default: 1.0 },
+      { key: 'uP2', label: 'Grain', min: 0, max: 0.6, step: 0.01, default: 0.08 },
+      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP4', label: 'Dark-ink factor', min: 0, max: 1, step: 0.05, default: 0.45 },
+    ],
     implemented: true,
   },
 

@@ -243,3 +243,11 @@ PW_ROOT=<somewhere>/package.json \
 node ../../tools/parity/run.mjs \
      --out <dir> --only confetti,fireworks,detective-pikachu,cosmos,mirror,horizontal-sheen
 ```
+
+## 2026-10-18 — horizontal-sheen retuned under contract 2
+
+`horizontal-sheen` (the SV/ME standard holo) was rebuilt (R10: a continuous slanted rainbow field replaces the R3
+streak field) and its canon re-tuned under contract 2, so it now carries `tunedUnderContract: 2`. It leaves the
+contract-1 retune queue above. Its rows in the tables above describe the previous recipe and canon. The prior canon
+is in git history (the commit before R10's horizontal-sheen change), and its values are listed in DECISIONS.md.
+

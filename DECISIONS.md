@@ -3016,3 +3016,37 @@ comparison.
 
 **Implications:** `data/foil-pattern-cards.json` (which needs the database walk) is stale for these rows until the
 next bake.
+
+## 2026-10-18 — R10: horizontal-sheen rebuilt as the SV/ME holo rare, canon retuned
+
+**Decided by:** @cheyras ("Yeah the whole point is to improve the canons.")
+
+**Decision:** `horizontal-sheen` (used only on SV/ME standard holo rares) gets a new shader, `SV_HOLO_GLSL`,
+replacing the R3 streak field. Its canon is retuned under contract 2.
+- One continuous saturated rainbow on a slant, about two cycles up the card, fixed under tilt.
+- Two light-band systems (indigo, blue, white, tan, dark red; about three per card height) slanted and rolling
+  opposite ways, multiplied into the rainbow, with a fine grain.
+- A broad vertical highlight that pitch moves.
+- A dark-ink factor (`uP4`; samples `uFace`, the documented exception). The reference changes dark and light
+  ink about equally, but the additive composite has the most headroom over dark ink.
+
+**Why:** against a local reference of the SV/ME holo rare, the streak field added a fifth to a third of the
+reference's colour and almost no structure match.
+
+**Measured:** foil change per tilt on three holo rares (sv10-078, sv06.5-020, me04-013), each rendered with the
+reference's own plate as the mask so the comparison isolates the shader.
+
+| | Brightness change (\|ΔL\|) | Colour change | Structure correlation |
+|---|---|---|---|
+| Reference | 0.016–0.023 | 0.023–0.033 | — |
+| Old recipe | — | 0.003–0.019 | −0.18 to +0.36 |
+| New canon | 0.017–0.030 | 0.019–0.026 | +0.26 to +0.59 |
+
+The saved canon reproduces the tuned frames exactly (8/8). Correlation is meaningful here: the reference uses no
+per-card random phase on this family.
+
+**Previous canon** (savedAt 2026-08-07T22:05:29.426Z, in git history): `{"uIntensity":0.9,"uScale":1,"uHueShift":0.42,"uHueSpread":0.6,"uSat":0.65,"uArtGate":0.35,"uSpecular":0.5,"uDarken":0.32,"uTint":0,"uInkGuard":1,"uInkPop":0.5,"uMetal":0,"uSheen":4.2,"uSheenTint":0,"uDepth":0.45,"uGrain":1,"uP0":2,"uP1":2.2,"uP2":0,"uP3":1}`
+
+**Also:** holo-window plate generation fits its levels from 21 references (0.958 − 0.597·lum) and caps an oversized
+subject by depth. Measured on the 19 cards with both versions: foil/no-foil agreement 0.904 → 0.932, level MAE
+0.087 → 0.072.
