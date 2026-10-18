@@ -165,6 +165,7 @@ export function CardViewer({
       (t) => {
         // Linear data, not colour: a decoded sRGB sample would bend the height field.
         t.colorSpace = THREE.NoColorSpace
+        t.flipY = false // the shader owns the one V flip, as for the mask
         t.generateMipmaps = false
         t.minFilter = THREE.LinearFilter
         if (cancelled) { t.dispose(); return }
