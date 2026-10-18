@@ -48,6 +48,9 @@
 //   rebuild, cosmos-ii pixel edges, crosshatch thinned, gold-secret origin +
 //   sparkle; dedicated recipes for the four no-exemplar types (sequin,
 //   tcg-classic, acid-wash, disco); the uTint ink-metallic blend term
+//   R10-MODERN wave (2026-10-18) — crossed-rainbow, etched-ultra, sv-holo-bands:
+//   the Scarlet & Violet / Mega era foils, the first recipes to read the R9
+//   etch plate
 
 import type { CoreDefaults, FoilFamily, FoilPattern, PatternParam } from '@foilkit/core'
 
@@ -2418,6 +2421,114 @@ vec3 foilPattern(vec2 uv, vec2 tilt) {
   return disc * vis * hueRamp(hue) * uP3;
 }`
 
+// ── R10-MODERN wave (2026-10-18) — the Scarlet & Violet / Mega era foils ────
+// Three recipes for the foils on most modern rares, written from behaviour
+// notes measured on real cards (what moves, which way, how far, the colour
+// order), never from anyone's shader source. The constants are round numbers
+// chosen to match those notes, and the ones worth tuning are sliders. Each
+// reads the R9 etch plate when a card has one and is unchanged otherwise.
+
+// crossed-rainbow: two rainbow band systems at different angles and
+// frequencies. Yaw slides them in OPPOSITE directions, so their crossings (the
+// bright colour "pillars") race along the card while each system only drifts.
+// The strip is one smooth cycle, purple -> red -> yellow -> pale cyan -> blue
+// -> indigo -> purple, desaturated by uSat like hueRamp.
+const CROSSED_RAINBOW_GLSL = `
+vec3 crStrip(float t) {
+  t = fract(t) * 6.0;
+  vec3 c = mix(vec3(0.55, 0.22, 0.78), vec3(0.96, 0.28, 0.32), smoothstep(0.0, 1.0, t));
+  c = mix(c, vec3(1.0, 0.90, 0.38), smoothstep(1.0, 2.0, t));
+  c = mix(c, vec3(0.72, 0.98, 0.95), smoothstep(2.0, 3.0, t));
+  c = mix(c, vec3(0.28, 0.48, 1.0), smoothstep(3.0, 4.0, t));
+  c = mix(c, vec3(0.30, 0.16, 0.62), smoothstep(4.0, 5.0, t));
+  c = mix(c, vec3(0.55, 0.22, 0.78), smoothstep(5.0, 6.0, t));
+  float l = dot(c, vec3(0.299, 0.587, 0.114));
+  return mix(vec3(l), c, uSat);
+}
+vec3 foilPattern(vec2 uv, vec2 tilt) {
+  vec2 p = (uv - 0.5) * vec2(1.0, CARD_ASPECT);
+  float drift = tilt.x * uP1;
+  float a = dot(p, vec2(0.848, 0.530)) * uP0 * uScale + drift + 0.3 * tilt.y;
+  float b = dot(p, vec2(-0.454, 0.891)) * uP0 * 0.78 * uScale - drift + 0.3 * tilt.y + 0.37;
+  vec3 sA = crStrip(uHueShift + uHueSpread * a);
+  vec3 sB = crStrip(uHueShift + uHueSpread * b);
+  // summed and squared, they interfere into a contrasty moire; uP2 sharpens it
+  vec3 light = pow(clamp((sA + sB) * (sA + sB) * 0.25, 0.0, 1.0), vec3(uP2));
+  // a gentle horizontal brightness band that rides pitch
+  float by = clamp((uv.y - 0.5 - 0.6 * tilt.y) * 1.4, -1.0, 1.0);
+  light *= 0.75 + 0.27 * pow(0.5 + 0.5 * cos(PI * by), 2.0);
+  if (uEtchOn > 0.5) {
+    // etched lines dim the film, and the faint ones glint under a broad,
+    // slightly leaning spectral band that sweeps with yaw
+    light *= mix(1.0, gEtch, 0.85);
+    float sweep = pow(0.5 + 0.5 * cos(TAU * (uv.y - 0.4 * uv.x + 0.5 * tilt.x * uP1)), 3.0);
+    float faint = step(0.01, gEtch) * pow(clamp(1.36 - gEtch, 0.0, 1.36), 4.0) * 0.2;
+    light += crStrip(uHueShift + 0.5 * uv.y + 0.3 * tilt.x) * clamp(faint, 0.0, 1.0)
+           * (1.0 - gEtch) * sweep * uP4 * 4.0;
+  }
+  return light * uP3;
+}`
+
+// etched-ultra: a mostly-silver rainbow film (uSat low), two sets of soft
+// vertical light pillars that slide in opposite directions on yaw, a sprinkle
+// of RGB glitter, and the etch doing two jobs: white etch is full foil and dark
+// lines are none, and the lines themselves catch a separate slanted sheen.
+const ETCHED_ULTRA_GLSL = `
+vec3 foilPattern(vec2 uv, vec2 tilt) {
+  vec2 p = (uv - 0.5) * vec2(1.0, CARD_ASPECT);
+  float t = (0.8 * p.x + 0.6 * p.y) * 2.0 * uScale + 0.25 * tilt.x + 0.2 * tilt.y;
+  vec3 film = hueRamp(uHueShift + uHueSpread * t);
+  float pa = pow(0.5 + 0.5 * cos(TAU * (p.x * uP0 + tilt.x * uP1)), 4.0);
+  float pb = pow(0.5 + 0.5 * cos(TAU * (p.x * uP0 * 0.73 - tilt.x * uP1 * 0.8 + 0.31)), 4.0);
+  vec3 light = film * (0.18 + 0.82 * max(pa, pb) + 0.3 * pa * pb);
+  // glitter: sparse sparks, each its own colour, igniting at its own tilt
+  vec2 g = uv * vec2(1.0, CARD_ASPECT) * uP2;
+  vec2 r = hash22(floor(g));
+  float ph = fract(r.x * 13.7 + dot(tilt, vec2(1.3, 0.9)) * (0.6 + r.y));
+  float spark = pow(max(0.0, cos(TAU * ph)), 40.0) * step(0.55, r.y)
+              * smoothstep(0.5, 0.15, length(fract(g) - 0.5));
+  light += (0.5 + 0.5 * cos(TAU * (r.x + vec3(0.0, 0.333, 0.667)))) * spark * uP4;
+  if (uEtchOn > 0.5) {
+    light *= gEtch;
+    float slant = pow(0.5 + 0.5 * cos(TAU * ((p.x + 0.35 * p.y) * 1.2 - 0.6 * uP1 * tilt.x - 0.4 * tilt.y)), 6.0);
+    float relief = clamp(length(gEtchSlope) * 6.0, 0.0, 1.0);
+    light += vec3(0.9, 0.95, 1.0) * (1.0 - gEtch) * slant * (0.35 + 0.65 * relief) * uP5;
+  }
+  return light * uP3;
+}`
+
+// sv-holo-bands: the modern standard holo rare. Two sets of broad, gently
+// slanted horizontal bands (dark indigo -> blue -> white -> tan -> dark red),
+// slanted opposite ways and rolling opposite ways on pitch, speckled by a fine
+// grain and coloured by a slanted rainbow. A broad vertical highlight enters
+// from the right as the card yaws, and bright red peaks get a little extra.
+const SV_HOLO_BANDS_GLSL = `
+vec3 hbStrip(float t) {
+  t = fract(t) * 5.0;
+  vec3 c = mix(vec3(0.10, 0.08, 0.30), vec3(0.25, 0.45, 0.95), smoothstep(0.0, 1.0, t));
+  c = mix(c, vec3(0.97, 0.97, 1.0), smoothstep(1.0, 2.0, t));
+  c = mix(c, vec3(0.85, 0.70, 0.50), smoothstep(2.0, 3.0, t));
+  c = mix(c, vec3(0.45, 0.08, 0.10), smoothstep(3.0, 4.0, t));
+  c = mix(c, vec3(0.10, 0.08, 0.30), smoothstep(4.0, 5.0, t));
+  return c;
+}
+vec3 foilPattern(vec2 uv, vec2 tilt) {
+  vec2 p = (uv - 0.5) * vec2(1.0, CARD_ASPECT);
+  float roll = tilt.y * uP1;
+  float h = 1.0 / CARD_ASPECT;
+  vec3 bands = 0.5 * (hbStrip((p.y + 0.18 * p.x) * h * uP0 * uScale + roll)
+                    + hbStrip((p.y - 0.18 * p.x) * h * uP0 * 0.9 * uScale - 0.8 * roll + 0.4));
+  float grain = hash21(floor(uv * vec2(1.0, CARD_ASPECT) * uP2));
+  bands *= 0.85 + 0.35 * smoothstep(0.75, 0.95, grain);
+  vec3 rb = hueRamp(uHueShift + uHueSpread * ((p.y + 0.4 * p.x) * h * 2.0 + 0.3 * tilt.y));
+  vec3 lit = clamp(bands * (0.35 + 1.15 * rb), 0.0, 1.2);
+  float hx = uv.x - (1.25 - 0.75 * (tilt.x + 1.0));
+  lit *= 0.73 + 0.81 * exp(-hx * hx * 8.0);
+  lit.r += pow(clamp(lit.r, 0.0, 1.0), 4.0) * 0.35;
+  if (uEtchOn > 0.5) lit *= mix(1.0, gEtch, 0.7);
+  return lit * uP3;
+}`
+
 // ── Helpers to derive per-slug variants of a recipe ─────────────────────────
 
 const tuneParams = (
@@ -3423,6 +3534,64 @@ export const PATTERNS: FoilPattern[] = [
       { key: 'uP1', label: 'Beam travel', min: 0, max: 4, step: 0.05, default: 1.5 },
       { key: 'uP2', label: 'Photo coupling', min: 0, max: 1, step: 0.02, default: 0.85 },
       { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.1 },
+    ],
+    implemented: true,
+  },
+  // R10-MODERN (2026-10-18) — see the CROSSED_RAINBOW_GLSL block comment.
+  {
+    id: 'crossed-rainbow',
+    label: 'Crossed rainbow (SV/ME ultra)',
+    taxonomy: 'Two crossing rainbow band systems interfering into moving colour pillars',
+    usedOn:
+      'Scarlet & Violet and Mega era Illustration Rares, Special Illustration Rares, ex double rares and shiny rares; etched or holo masks.',
+    glsl: CROSSED_RAINBOW_GLSL,
+    family: 'field',
+    // uSheen 4 / uDepth 0.75 (eyeballed on a bright pastel IR scan): at the
+    // FIELD defaults the moire vanished into the additive headroom of light art;
+    // at 4.5 / 0.9 it read right but dimmed the art. This is the middle.
+    defaults: { ...FIELD_FOIL, uSheen: 4.0, uDepth: 0.75, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 1.0, uSat: 0.85, uArtGate: 0.0, uSpecular: 0.2, uDarken: 0.2 },
+    params: [
+      { key: 'uP0', label: 'Band frequency', min: 1, max: 10, step: 0.1, default: 5.0 },
+      { key: 'uP1', label: 'Band travel', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP2', label: 'Moire contrast', min: 0.5, max: 4, step: 0.05, default: 2.0 },
+      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP4', label: 'Etch glint', min: 0, max: 3, step: 0.05, default: 1.0 },
+    ],
+    implemented: true,
+  },
+  // R10-MODERN — see the ETCHED_ULTRA_GLSL block comment.
+  {
+    id: 'etched-ultra',
+    label: 'Etched ultra (SV/ME textured)',
+    taxonomy: 'Silver-leaning rainbow film under opposed light pillars, glitter, and an etched line texture',
+    usedOn: 'Scarlet & Violet and Mega era textured ultra rares: regular-frame ex, full-art ex, full-art Trainers.',
+    glsl: ETCHED_ULTRA_GLSL,
+    family: 'field',
+    defaults: { ...FIELD_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 1.0, uSat: 0.35, uArtGate: 0.0, uSpecular: 0.2, uDarken: 0.2 },
+    params: [
+      { key: 'uP0', label: 'Pillar count', min: 0.5, max: 6, step: 0.1, default: 2.2 },
+      { key: 'uP1', label: 'Pillar travel', min: 0, max: 3, step: 0.05, default: 0.9 },
+      { key: 'uP2', label: 'Glitter density', min: 40, max: 400, step: 5, default: 180 },
+      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP4', label: 'Glitter gain', min: 0, max: 3, step: 0.05, default: 0.8 },
+      { key: 'uP5', label: 'Line sheen', min: 0, max: 3, step: 0.05, default: 1.0 },
+    ],
+    implemented: true,
+  },
+  // R10-MODERN — see the SV_HOLO_BANDS_GLSL block comment.
+  {
+    id: 'sv-holo-bands',
+    label: 'SV holo bands (SV/ME holo rare)',
+    taxonomy: 'Two counter-slanted horizontal band sets with grain and a slanted rainbow',
+    usedOn: 'Scarlet & Violet and Mega era standard holo rares (holo window).',
+    glsl: SV_HOLO_BANDS_GLSL,
+    family: 'field',
+    defaults: { ...FIELD_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 1.0, uSat: 0.8, uArtGate: 0.0, uSpecular: 0.2, uDarken: 0.2 },
+    params: [
+      { key: 'uP0', label: 'Bands per height', min: 1, max: 8, step: 0.1, default: 3.0 },
+      { key: 'uP1', label: 'Band roll', min: 0, max: 3, step: 0.05, default: 0.8 },
+      { key: 'uP2', label: 'Grain density', min: 50, max: 600, step: 10, default: 300 },
+      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
     ],
     implemented: true,
   },

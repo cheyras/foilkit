@@ -2912,3 +2912,42 @@ direction can.
 - Mask *generation* is now the project's priority: masks and etches are generated
   for every printing and refined by agent and by hand. Existing masks carry no
   special weight; a generated mask that scores better replaces them.
+
+## 2026-10-18 — R10-MODERN: three Scarlet & Violet / Mega era recipes, the first to read the etch plate
+
+**Decided by:** @cheyras (asked for the modern foils to be rebuilt from what we have measured; recipes authored by the agent)
+
+**Decision:** Add three recipes, all `family: 'field'`, all with code defaults and no saved canon yet:
+
+1. **`crossed-rainbow`** — SV/ME Illustration Rares, Special Illustration Rares, ex double rares, shiny rares. Two
+   rainbow band systems at different angles and frequencies; yaw slides them in opposite directions, and their
+   summed square is a moving moire of colour pillars. A broad horizontal brightness band rides pitch. With an etch
+   plate, the lines dim the film and the faint lines glint under a leaning spectral sweep.
+2. **`etched-ultra`** — SV/ME textured ultra rares (regular-frame ex, full-art ex, full-art Trainers). A
+   silver-leaning rainbow film (uSat 0.35), two sets of soft vertical light pillars sliding opposite ways on yaw,
+   sparse RGB glitter. With an etch plate: white etch is full foil, dark lines are none, and the lines catch a
+   separate slanted sheen scaled by the etch slope.
+3. **`sv-holo-bands`** — SV/ME standard holo rares. Two sets of counter-slanted horizontal bands (indigo, blue,
+   white, tan, dark red) rolling opposite ways on pitch, fine grain, a slanted rainbow, and a vertical highlight
+   that enters from the right on yaw.
+
+**Why:** foilkit had no recipe for the foils on most modern rares: `ex-starfoil` and `horizontal-sheen` are
+video-derived approximations, and nothing read the R9 etch plate. The behaviour of each foil (what moves, in which
+direction, the colour order, the band counts and angles) was written down from real cards as notes and the GLSL was
+authored from those notes. No third-party shader source, texture or plate is in this repository, and the constants
+are round numbers exposed as sliders.
+
+**Measured:**
+- Rendered through the parity host over four local card scans (an ex, a Special Illustration Rare Trainer, an
+  Illustration Rare and a holo rare), with generated masks and etch plates, at four tilts. Scans, masks and renders
+  stayed local (F2). All three compile and render on SwiftShader with no page errors.
+- `crossed-rainbow` at the FIELD defaults was invisible on a bright pastel IR: the additive headroom `0.62·(1−L)` is
+  small over light art. uSheen 4.0 / uDepth 0.75 is the middle between that and a 4.5 / 0.9 render that read right
+  but dimmed the art (n = 1 card; needs a canon pass).
+- Existing recipes: no change. The pattern list grows 45 → 48, the task queue gains three canon (slider) tasks.
+
+**Implications:**
+- These are first drafts awaiting @cheyras's eye and canon. No pattern assignment points at them yet, so no card
+  renders differently until the resolver is told to use them.
+- `ex-starfoil` and `horizontal-sheen` stay as they are (their verdicts and canons are untouched); retiring or
+  re-pointing them is a separate decision.
