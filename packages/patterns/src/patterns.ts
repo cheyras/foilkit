@@ -1326,30 +1326,72 @@ vec3 foilPattern(vec2 uv, vec2 tilt) {
 // the balls hue-rotate as it passes. uP1 flips the Master Ball styling
 // (upper-hemisphere tint + the two side dots).
 const POKEBALL_MASTERBALL_GLSL = `
-vec3 foilPattern(vec2 uv, vec2 tilt) {
-  float sweep = tilt.x + tilt.y * 0.8;
-  vec2 g = uv * vec2(1.0, CARD_ASPECT) * uP0 * uScale;
-  g.x += mod(floor(g.y), 2.0) * 0.5;   // stagger rows
-  vec2 id = floor(g);
-  vec2 f = fract(g) - 0.5;
-  float r = 0.30;
-  float d = length(f);
-  float outline = smoothstep(0.055, 0.028, abs(d - r));
-  float belt = smoothstep(0.040, 0.018, abs(f.y)) * smoothstep(r + 0.02, r - 0.02, d);
-  float button = smoothstep(0.045, 0.022, abs(d - r * 0.28));
-  float ball = clamp(outline + belt + button, 0.0, 1.0);
-  float hueBase = uHueShift + uHueSpread * (hash21(id) * 0.25 + uv.x * 0.30 + uv.y * 0.25 + 0.85 * sweep);
-  float lum = 0.40 + 0.60 * pow(max(0.0, cos(TAU * (hash21(id + 3.7) * 0.4 + sweep * 0.9 + uv.y * 0.5))), 3.0);
-  vec3 emb = hueRamp(hueBase) * ball;
-  // Master Ball variant: purple-shifted upper hemisphere + the two side dots
-  float upper = step(0.05, f.y) * smoothstep(r, r - 0.14, d);
-  float mdots = smoothstep(0.050, 0.024, length(vec2(abs(f.x) - 0.13, f.y - 0.13)));
-  vec3 membl = hueRamp(hueBase + 0.62) * clamp(ball + upper * 0.45 + mdots, 0.0, 1.0);
-  emb = mix(emb, membl, step(0.5, uP1));
-  // smooth mirror sheet between stamps
-  float sheetPh = uv.x * 0.55 + uv.y * 0.35 + sweep * 0.9;
-  vec3 sheet = hueRamp(uHueShift + uHueSpread * sheetPh) * (0.20 + 0.18 * pow(0.5 + 0.5 * cos(TAU * sheetPh), 2.0));
-  return sheet * uP2 + emb * lum * uP3;
+// R12 2026-10-19: the ball reverses are the silver reverse (the R11 plate law
+// runs on a flat plate) plus a CAST-AND-CURE layer: a lattice of outlined
+// balls, two sizes in a checkerboard, over the WHOLE face, art included. The
+// ball's white parts carry a rainbow that rolls with tilt; its cap carries
+// sparse glitter. Measured on a local reference render of the modern client
+// (lattice pitch, the two radii, the stroke layout, the tiling, the ramp);
+// the ball drawing below is our own geometry.
+// uP2 0 = Poke Ball, 1 = Master Ball (cap split into two domes and an M).
+// uP4 cast-and-cure strength, uP5 lattice repeats per sheet.
+#define FOILKIT_CAST_CURE
+vec3 foilPattern(vec2 uv, vec2 tilt) { return vec3(0.0); }
+
+float ccBand(float x, float a, float b) {
+  return smoothstep(a - 0.018, a + 0.018, x) * (1.0 - smoothstep(b - 0.018, b + 0.018, x));
+}
+// One ball in units of its radius, y up (the cap is the upper half).
+// Returns (silhouette, cap): silhouette 1 on the drawn parts, cap 1 on the cap fill.
+vec2 ccBall(vec2 p, float master) {
+  float d = length(p);
+  float rim = ccBand(d, 0.88, 1.0);
+  float hub = ccBand(d, 0.43, 0.54) + ccBand(d, 0.20, 0.32);
+  float outer = smoothstep(0.53, 0.57, d) * (1.0 - smoothstep(0.86, 0.90, d));
+  float cap = outer * smoothstep(0.255, 0.285, p.y);
+  float belt = outer * (ccBand(p.y, 0.17, 0.26) + ccBand(p.y, -0.26, -0.17) + ccBand(p.y, -0.05, 0.05));
+  if (master > 0.5) {
+    // two domes at the cap's sides, outlined, and an M between them
+    float dl = abs(length(p - vec2(-0.50, 0.50)) - 0.30);
+    float dr = abs(length(p - vec2(0.50, 0.50)) - 0.30);
+    float ring = (1.0 - smoothstep(0.03, 0.05, min(dl, dr))) * cap;
+    vec2 q = p - vec2(0.0, 0.56);
+    float ax = abs(q.x);
+    float stem = (1.0 - smoothstep(0.035, 0.055, abs(ax - 0.12))) * step(abs(q.y), 0.12);
+    float vee = (1.0 - smoothstep(0.03, 0.05, abs(q.y - 0.12 + ax * 1.6))) * step(ax, 0.12) * step(-0.02, q.y);
+    float m = clamp(stem + vee, 0.0, 1.0) * cap;
+    float lines = clamp(ring + m, 0.0, 1.0);
+    return vec2(clamp(rim + hub + cap + belt, 0.0, 1.0), cap * (1.0 - lines));
+  }
+  return vec2(clamp(rim + hub + cap + belt, 0.0, 1.0), cap);
+}
+vec3 ccNoise(vec2 c) { // per-texel colour noise, each channel mean ~1/3
+  vec3 h = vec3(hash21(c), hash21(c + 17.13), hash21(c + 31.71));
+  return h * h;
+}
+// The cast-and-cure layer in LINEAR colour: rgb = the light it overlays, a = silhouette.
+// s = the plate law's tilt drive (it nudges the lattice), seed = its per-card phase.
+vec4 castCure(vec2 uv, vec2 tilt, float s, float seed) {
+  vec2 g = vec2(0.1421 + uv.x * 0.7158, uv.y);           // square-sheet space, isotropic in card mm
+  vec2 t = g * uP5 + vec2(seed * 7.0 + 0.006 * s, seed * 5.0);
+  vec2 c = t * 4.0;
+  vec2 id = floor(c);
+  float big = mod(id.x + id.y, 2.0);
+  vec2 bc = ccBall((fract(c) - 0.5) / mix(0.255, 0.43, big), uP2);
+  // rainbow ramp along the sheet's v, rolled by tilt (magenta-red at the top to
+  // violet). It rolls at the reference's own rate, 0.28 per unit of tilt, not at
+  // the bar travel a canon sets: measured hue in the text box steps 0.79, 0.66,
+  // 0.49, 0.31 across tilts -0.8 .. 0.8.
+  float hue = fract(0.86 - 1.1 * (g.y + (tilt.x + tilt.y) * 0.28));
+  vec3 rb = clamp(abs(fract(hue + vec3(0.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0) - 1.0, 0.0, 1.0);
+  vec3 spec = pow(0.82 * mix(vec3(1.0), rb, 0.88), vec3(2.2));
+  // sparse glitter on the cap
+  vec2 tx = g * 512.0;
+  float m1 = smoothstep(0.5, 1.0, 1.0 - dot(ccNoise(floor(tx * 0.7 + seed * 230.0)), vec3(0.299, 0.587, 0.114)));
+  float m2 = smoothstep(0.5, 1.0, 1.0 - dot(ccNoise(floor(tx * 0.8 + seed * 512.0)), vec3(0.299, 0.587, 0.114)));
+  vec3 glit = ccNoise(floor(tx)) * (m1 * m2 * m2) * 2.0 + 0.25;
+  vec3 cc = clamp(mix(spec + 0.30, glit, bc.y), 0.0, 1.0);
+  return vec4(cc, bc.x * uP4);
 }`
 
 // #26 Radiant — 45° criss-cross lattice whose lines are SEGMENTED/pixelated
@@ -3298,23 +3340,32 @@ export const PATTERNS: FoilPattern[] = [
     ],
     implemented: true,
   },
-  // #30 — real recipe 2026-08-02 (R1): true ball SDF stamps (upgrades the
-  // coarse ring+dot reverse-sheet tier); uP1 flips Master Ball styling.
+  // #30 — real recipe 2026-08-02 (R1): true ball SDF stamps; rebuilt R12
+  // 2026-10-19 as the silver reverse plus a cast-and-cure ball lattice.
+  // uP2 flips Master Ball styling.
   {
     id: 'pokeball-masterball',
     label: 'Pokeball / masterball',
-    taxonomy: 'Staggered Poké/Master Ball stamp grid on mirror sheet',
+    taxonomy: 'Silver reverse under a cast-and-cure lattice of outlined Poke / Master Balls',
     usedOn: "Black Bolt & White Flare (2025) brought JP's ball reverses to English.",
     glsl: POKEBALL_MASTERBALL_GLSL,
-    // uTint 0.7 (R3-MISC): the BBWF ball reverses sit on colored bodies —
-    // one of Chey's three named before/after verification cases.
-    family: 'stamp',
-    defaults: { ...STAMP_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.1, uHueSpread: 0.45, uSat: 0.6, uArtGate: 0.0, uSpecular: 0.5, uTint: 0.7 },
+    // R12 2026-10-19: the base is the mirror recipe's silver-plate law on a flat
+    // plate, at the maintainer's mirror canon (uP1 3, uP3 1.65); the additive
+    // terms are off underneath it, as on mirror. The ball layer is the recipe's
+    // castCure(), composited by the law (shader.ts).
+    family: 'metal',
+    defaults: {
+      uIntensity: 1.0, uScale: 1.0, uHueShift: 0.5, uHueSpread: 0.0, uSat: 0.0,
+      uArtGate: 0.0, uSpecular: 0.0, uDarken: 0.0, uTint: 0.0, uInkPop: 0.5,
+      uMetal: 0.0, uSheen: 0.0, uSheenTint: 0.0, uDepth: 0.0, uGrain: 1.0, uPlateOverlay: 1.0,
+    },
     params: [
-      { key: 'uP0', label: 'Stamp density', min: 3, max: 24, step: 0.5, default: 9 },
-      { key: 'uP1', label: 'Master Ball', min: 0, max: 1, step: 1, default: 0 },
-      { key: 'uP2', label: 'Sheet gain', min: 0, max: 3, step: 0.05, default: 1.0 },
-      { key: 'uP3', label: 'Stamp gain', min: 0, max: 3, step: 0.05, default: 1.2 },
+      { key: 'uP0', label: 'Bar half-width', min: 0.04, max: 0.4, step: 0.005, default: 0.14 },
+      { key: 'uP1', label: 'Bar travel', min: 0, max: 4, step: 0.05, default: 3.0 },
+      { key: 'uP2', label: 'Master Ball', min: 0, max: 1, step: 1, default: 0 },
+      { key: 'uP3', label: 'Law strength', min: 0, max: 2, step: 0.05, default: 1.65 },
+      { key: 'uP4', label: 'Ball layer strength', min: 0, max: 2, step: 0.05, default: 1.0 },
+      { key: 'uP5', label: 'Ball tiling', min: 0.5, max: 3, step: 0.05, default: 1.25 },
     ],
     implemented: true,
   },

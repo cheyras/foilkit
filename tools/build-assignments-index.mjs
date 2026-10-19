@@ -42,6 +42,20 @@ const CONF = new Set(['high', 'medium', 'low']);
 // the variant kind/rarity cannot express (baby shinies = window despite a
 // full-foil rarity; VSTAR pearl = full face despite a plain holo kind).
 const SCOPES = new Set(['window', 'full', 'sheet']);
+// Per-row recipe params (R12, 2026-10-19): a row may pin a recipe's own uP
+// dials for the printings it claims (the Master Ball form of the ball-reverse
+// recipe). Only the recipe-owned uP0..uP5 are allowed; a canon still owns
+// every other uniform.
+const PARAM_KEYS = new Set(['uP0', 'uP1', 'uP2', 'uP3', 'uP4', 'uP5']);
+const params = (where, v) => {
+  if (v === undefined) return null;
+  if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error(`${where}: params must be an object`);
+  for (const [k, x] of Object.entries(v)) {
+    if (!PARAM_KEYS.has(k)) throw new Error(`${where}: param ${k} is not a recipe dial (uP0..uP5)`);
+    if (typeof x !== 'number' || !Number.isFinite(x)) throw new Error(`${where}: param ${k} must be a finite number`);
+  }
+  return v;
+};
 
 const facets = {};
 for (const r of src.facet_rows) {
@@ -49,6 +63,8 @@ for (const r of src.facet_rows) {
   if (facets[r.facet])
     throw new Error(`facet ${r.facet}: duplicate row — the resolver needs exactly one mapping per facet`);
   facets[r.facet] = { p: r.pattern, conf: r.confidence, src: hosts(r.sources) };
+  const fp = params(`facet ${r.facet}`, r.params);
+  if (fp) facets[r.facet].pr = fp;
 }
 
 const rows = src.rows.map((r, i) => {
@@ -73,6 +89,7 @@ const rows = src.rows.map((r, i) => {
     sc: r.scope ?? null,
     conf: r.confidence,
     src: hosts(r.sources),
+    ...(r.params !== undefined ? { pr: params(`rows[${i}]`, r.params) } : {}),
   };
 });
 
