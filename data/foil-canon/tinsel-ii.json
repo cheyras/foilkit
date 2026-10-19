@@ -9,7 +9,17 @@
     "at": "2026-09-01",
     "reason": "foilkit extraction: every uniform in the contract recorded explicitly, so the snapshot no longer inherits code defaults that can move. Values are the ones already in effect — no retune, verified byte-identical through the zero-delta render harness.",
     "inheritedKeysRecorded": [
-      "uP4"
+      "uP4",
+      "uPlateOverlay"
+    ],
+    "widened": [
+      {
+        "at": "2026-10-19",
+        "keys": [
+          "uPlateOverlay"
+        ],
+        "reason": "R11 adds uPlateOverlay (silver-plate law, default 0 = off); recorded explicitly, no visual change."
+      }
     ]
   },
   "uniforms": {
@@ -29,6 +39,7 @@
     "uSheenTint": 0,
     "uDepth": 1,
     "uGrain": 1,
+    "uPlateOverlay": 0,
     "uP0": 3.6,
     "uP1": 2.3,
     "uP2": 1.3,

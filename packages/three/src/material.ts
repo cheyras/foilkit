@@ -66,6 +66,7 @@ export function buildFoilMaterial(pattern: FoilPattern, options: FoilMaterialOpt
     uSheenTint: { value: GLOBAL_DEFAULTS.uSheenTint },
     uDepth: { value: GLOBAL_DEFAULTS.uDepth },
     uGrain: { value: GLOBAL_DEFAULTS.uGrain },
+    uPlateOverlay: { value: GLOBAL_DEFAULTS.uPlateOverlay },
     uScanBase: { value: 1 }, // surface-owned: a blank-base canon render sets 0
 
     uMaskRect: { value: new THREE.Vector4(0, 0, 1, 1) },

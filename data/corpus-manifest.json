@@ -4,193 +4,193 @@
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T22:32:20.352Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "confetti": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T22:25:25.728Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "cosmos": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T16:52:45.030Z",
-      "uniforms": 21
+      "uniforms": 22
     },
     "cosmos-ii-pixel": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-07T23:36:58.953Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "cosmos-iii-smooth": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T22:03:23.110Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "cracked-ice": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-07T15:18:59.006Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "detective-pikachu": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T22:31:54.653Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "diagonal-sheen-left": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T19:26:52.248Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "diagonal-sheen-right": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-07T22:05:53.916Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "ex-emerald": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T19:44:41.628Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "fireworks": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-07T22:08:38.821Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "gold-secret": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T22:27:53.315Z",
-      "uniforms": 22
+      "uniforms": 23
     },
     "horizontal-sheen": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-10-18T23:40:45.000Z",
-      "uniforms": 21
+      "uniforms": 22
     },
     "mirror": {
       "contract": 2,
       "exists": true,
-      "savedAt": "2026-08-07T03:41:20.373Z",
-      "uniforms": 20
+      "savedAt": "2026-10-19T11:45:51.000Z",
+      "uniforms": 21
     },
     "pinwheel": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T19:43:29.927Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "pokeball-hologram": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-07T23:34:57.085Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "radiant": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T22:16:07.890Z",
-      "uniforms": 21
+      "uniforms": 22
     },
     "radiant-collection-dots": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T22:22:37.278Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "rainbow-glitter": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T22:17:22.710Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "rainbow-glitter-sheen": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-10-19T04:35:45.000Z",
-      "uniforms": 22
+      "uniforms": 23
     },
     "reverse-sheet": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T19:31:17.866Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "sequin": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T22:33:12.747Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "shiny-vault": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T22:31:33.997Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "starlight": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T19:12:34.335Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "starlight-ii": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T19:14:54.117Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "striped-vertical-sheen": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T19:28:35.781Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "tinsel": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T22:05:25.547Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "tinsel-ii": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-07T04:57:24.838Z",
-      "uniforms": 21
+      "uniforms": 22
     },
     "vertical-sheen": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-07T22:05:10.918Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "vertical-sheen-rainbow": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T19:46:33.284Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "vstar-pearl": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-02T22:29:05.396Z",
-      "uniforms": 20
+      "uniforms": 21
     },
     "water-web": {
       "contract": 2,
       "exists": true,
       "savedAt": "2026-08-07T23:42:16.929Z",
-      "uniforms": 20
+      "uniforms": 21
     }
   },
   "countingUnits": {
@@ -212,7 +212,7 @@
     "windowCards": 1,
     "windowFiles": 1
   },
-  "generatedAt": "2026-10-19T04:35:45.000Z",
+  "generatedAt": "2026-10-19T11:45:51.000Z",
   "maskUnits": {
     "base1-10|window": 39,
     "base1-15|window": 59,

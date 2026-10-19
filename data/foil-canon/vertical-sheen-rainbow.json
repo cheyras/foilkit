@@ -15,7 +15,17 @@
       "uSheen",
       "uSheenTint",
       "uDepth",
-      "uGrain"
+      "uGrain",
+      "uPlateOverlay"
+    ],
+    "widened": [
+      {
+        "at": "2026-10-19",
+        "keys": [
+          "uPlateOverlay"
+        ],
+        "reason": "R11 adds uPlateOverlay (silver-plate law, default 0 = off); recorded explicitly, no visual change."
+      }
     ]
   },
   "uniforms": {
@@ -35,6 +45,7 @@
     "uSheenTint": 0,
     "uDepth": 0.6,
     "uGrain": 1,
+    "uPlateOverlay": 0,
     "uP0": 0.012,
     "uP1": 1.6,
     "uP2": 3.7,

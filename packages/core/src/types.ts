@@ -22,7 +22,7 @@ export interface PatternParam {
 export type CoreDefaults = Partial<
   Record<
     | 'uIntensity' | 'uScale' | 'uHueShift' | 'uHueSpread' | 'uSat' | 'uArtGate' | 'uSpecular' | 'uDarken' | 'uTint' | 'uInkGuard' | 'uInkPop'
-    | 'uMetal' | 'uSheen' | 'uSheenTint' | 'uDepth' | 'uGrain',
+    | 'uMetal' | 'uSheen' | 'uSheenTint' | 'uDepth' | 'uGrain' | 'uPlateOverlay',
     number
   >
 >

@@ -2854,16 +2854,21 @@ export const PATTERNS: FoilPattern[] = [
     // its own and wins. Do not re-derive them: the canon's on-card appearance
     // is a frozen reference.
     family: 'metal',
+    // R11 2026-10-19: the silver-plate law (uPlateOverlay 1) defines this
+    // recipe's look, rebuilt from a reference render of the modern client's
+    // plain silver reverse; the additive terms are switched off underneath it.
     defaults: {
       uIntensity: 1.0, uScale: 1.0, uHueShift: 0.5, uHueSpread: 0.0, uSat: 0.0,
-      uArtGate: 0.0, uSpecular: 0.6, uDarken: 0.5, uTint: 0.7,
-      uMetal: 0.6, uSheen: 0.55, uSheenTint: 0.5, uDepth: 0.55, uGrain: 1.0,
+      uArtGate: 0.0, uSpecular: 0.0, uDarken: 0.0, uTint: 0.0, uInkPop: 0.5,
+      uMetal: 0.0, uSheen: 0.0, uSheenTint: 0.0, uDepth: 0.0, uGrain: 1.0, uPlateOverlay: 1.0,
     },
     params: [
-      { key: 'uP0', label: 'Flash tightness', min: 2, max: 40, step: 0.5, default: 14 },
-      { key: 'uP1', label: 'Flash travel', min: 0, max: 1.5, step: 0.05, default: 0.55 },
-      { key: 'uP2', label: 'Sheet waviness', min: 0, max: 4, step: 0.05, default: 1.5 },
-      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
+      // R11 silver-plate law (shader.ts). uP0 bar half-width in bar periods,
+      // uP1 bar travel, uP3 law strength; uP2 is unused under the law.
+      { key: 'uP0', label: 'Bar half-width', min: 0.04, max: 0.4, step: 0.005, default: 0.14 },
+      { key: 'uP1', label: 'Bar travel', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP2', label: 'Unused (law)', min: 0, max: 1, step: 0.05, default: 0 },
+      { key: 'uP3', label: 'Law strength', min: 0, max: 2, step: 0.05, default: 1.0 },
     ],
     implemented: true,
   },
@@ -2886,21 +2891,21 @@ export const PATTERNS: FoilPattern[] = [
     usedOn: 'Scarlet & Violet and Mega Evolution reverse holos; the printed reverse pattern is in the mask.',
     glsl: MIRROR_GLSL,
     family: 'metal',
+    // R11 2026-10-19: the silver-plate law (uPlateOverlay 1) defines this
+    // recipe's look, rebuilt from a reference render of the modern client's
+    // plain silver reverse; the additive terms are switched off underneath it.
     defaults: {
-      // Tuned on three reverses (sv06-128, me02-011, me02.5-039) at four tilts
-      // against the reference: the colour change matches (chroma 0.008-0.015
-      // vs 0.006-0.015); brightness is about 60% of the reference on light
-      // ME bodies, where the additive headroom budget caps it.
-      uIntensity: 2.0, uScale: 1.0, uHueShift: 0.5, uHueSpread: 0.0, uSat: 0.0,
-      uArtGate: 0.0, uSpecular: 0.0, uDarken: 0.3, uTint: 0.0, uInkPop: 2.0,
-      uMetal: 0.9, uSheen: 0.8, uSheenTint: 0.0, uDepth: 0.3, uGrain: 1.0,
+      uIntensity: 1.0, uScale: 1.0, uHueShift: 0.5, uHueSpread: 0.0, uSat: 0.0,
+      uArtGate: 0.0, uSpecular: 0.0, uDarken: 0.0, uTint: 0.0, uInkPop: 0.5,
+      uMetal: 0.0, uSheen: 0.0, uSheenTint: 0.0, uDepth: 0.0, uGrain: 1.0, uPlateOverlay: 1.0,
     },
     params: [
-      { key: 'uP0', label: 'Bar tightness', min: 2, max: 60, step: 0.5, default: 18 },
-      { key: 'uP1', label: 'Bar travel', min: 0, max: 3, step: 0.05, default: 1.2 },
-      { key: 'uP2', label: 'Sheet waviness', min: 0, max: 4, step: 0.05, default: 0 },
-      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
-      { key: 'uP4', label: 'Bar (0 = round spot)', min: 0, max: 1, step: 0.05, default: 1 },
+      // R11 silver-plate law (shader.ts). uP0 bar half-width in bar periods,
+      // uP1 bar travel, uP3 law strength; uP2 is unused under the law.
+      { key: 'uP0', label: 'Bar half-width', min: 0.04, max: 0.4, step: 0.005, default: 0.14 },
+      { key: 'uP1', label: 'Bar travel', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP2', label: 'Unused (law)', min: 0, max: 1, step: 0.05, default: 0 },
+      { key: 'uP3', label: 'Law strength', min: 0, max: 2, step: 0.05, default: 1.0 },
     ],
     implemented: true,
   },
