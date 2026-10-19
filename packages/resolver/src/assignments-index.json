@@ -601,7 +601,7 @@
    ]
   },
   {
-   "p": "mirror-sv",
+   "p": "mirror",
    "setIds": [
     "me01",
     "me02",
@@ -622,7 +622,7 @@
    ]
   },
   {
-   "p": "mirror-sv",
+   "p": "mirror",
    "setIds": [
     "mee"
    ],
@@ -1129,7 +1129,7 @@
    ]
   },
   {
-   "p": "mirror-sv",
+   "p": "mirror",
    "setIds": [
     "sv10.5b",
     "sv10.5w"
@@ -1244,7 +1244,7 @@
    ]
   },
   {
-   "p": "mirror-sv",
+   "p": "mirror",
    "setIds": [
     "sv02"
    ],
@@ -1358,7 +1358,7 @@
    ]
   },
   {
-   "p": "mirror-sv",
+   "p": "mirror",
    "setIds": [
     "sv09"
    ],
@@ -1471,7 +1471,7 @@
    ]
   },
   {
-   "p": "mirror-sv",
+   "p": "mirror",
    "setIds": [
     "sv10"
    ],
@@ -1625,7 +1625,7 @@
    ]
   },
   {
-   "p": "mirror-sv",
+   "p": "mirror",
    "setIds": [
     "sve"
    ],
@@ -2819,7 +2819,7 @@
    ]
   },
   {
-   "p": "mirror-sv",
+   "p": "mirror",
    "setIds": [
     "sv01",
     "sv02",
