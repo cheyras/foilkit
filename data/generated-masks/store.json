@@ -1,6 +1,6 @@
 {
   "$doc": "Where generated-mask bytes live. Objects are content-addressed and immutable: <publicBase>/<layer>/<sha256>.png. publicBase stays null until the maintainer provisions the bucket (AGENTS.md F6); while it is null the editor shows no generated layer. See tools/generated-masks/index.ts.",
   "bucket": "foilkit-masks",
-  "publicBase": null,
+  "publicBase": "https://jbdfhbmspaqpfzylnlze.supabase.co/storage/v1/object/public/foilkit-masks",
   "layout": "<layer>/<sha256>.png"
 }
