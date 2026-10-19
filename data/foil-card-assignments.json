@@ -374,9 +374,10 @@
   "r7-ex-sheen-energies",
   "r12-svme",
   "r12-promos",
-  "r12-me-balls"
+  "r12-me-balls",
+  "r12-prismatic"
  ],
- "row_count": 196,
+ "row_count": 197,
  "facet_rows": [
   {
    "facet": "cosmos",
@@ -8402,6 +8403,32 @@
    ],
    "conflicts": "R12 2026-10-19: measured against a local reference render of the modern client, which draws these as the plain silver reverse (FlatSilver) with a ball medallion and no cast-and-cure layer. The ball drawings are our own (generated masks, run modular-reverse-ball).",
    "lane": "r12-me-balls"
+  },
+  {
+   "pattern": "prismatic-pokeball",
+   "sel": {
+    "setIds": [
+     "sv08.5"
+    ],
+    "cls": "reverse",
+    "rarities": null,
+    "variantKinds": [
+     "reverse-foil-pokeball",
+     "reverse-foil-masterball"
+    ],
+    "cardIds": null
+   },
+   "claim": "The Prismatic Evolutions Poke Ball and Master Ball parallels carry a whole-card rainbow film with a large ball and fine contour lines etched into it (art background included, the subject left matte).",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Prismatic_Evolutions_(TCG)",
+     "quote": "Paraphrase (Bulbapedia, 'Prismatic Evolutions (TCG)') - the set's commons, uncommons and rares have Poke Ball and Master Ball pattern reverse holo variants."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: measured against a local reference render of the modern client (a rainbow film driven by an etch plate). Plates and etches are our own generation (runs modular-prismatic-ball and modular-prismatic-ball-etch); scope full.",
+   "lane": "r12-prismatic",
+   "scope": "full"
   }
  ]
 }
