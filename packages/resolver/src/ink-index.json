@@ -102,9 +102,9 @@
    ],
    "rar": null,
    "cards": null,
-   "tile": "dot-grid",
+   "tile": null,
    "queued": null,
-   "noInk": false,
+   "noInk": true,
    "pl": [
     11.7,
     0,
@@ -116,7 +116,7 @@
     0.35
    ],
    "delta": "frame",
-   "conf": "low",
+   "conf": "medium",
    "src": [
     "holo-archive/3b-pairs/delta-classes.md",
     "holo-archive/3b-pairs/era-research.md"

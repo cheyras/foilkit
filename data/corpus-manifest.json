@@ -75,8 +75,8 @@
     "horizontal-sheen": {
       "contract": 2,
       "exists": true,
-      "savedAt": "2026-08-07T22:05:29.426Z",
-      "uniforms": 20
+      "savedAt": "2026-10-18T23:40:45.000Z",
+      "uniforms": 21
     },
     "mirror": {
       "contract": 2,
@@ -212,7 +212,7 @@
     "windowCards": 1,
     "windowFiles": 1
   },
-  "generatedAt": "2026-08-08T15:19:46.932Z",
+  "generatedAt": "2026-10-18T23:40:45.000Z",
   "maskUnits": {
     "base1-10|window": 39,
     "base1-15|window": 59,

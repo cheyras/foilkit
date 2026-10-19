@@ -3050,3 +3050,17 @@ per-card random phase on this family.
 **Also:** holo-window plate generation fits its levels from 21 references (0.958 − 0.597·lum) and caps an oversized
 subject by depth. Measured on the 19 cards with both versions: foil/no-foil agreement 0.904 → 0.932, level MAE
 0.087 → 0.072.
+
+## 2026-10-18 — R10: SV/ME reverses draw no ink tile; the design is in the mask
+
+**Decided by:** @cheyras ("The energy symbol patterns we made are just the svi mirror/reverse holo patterns")
+
+**Decision:** the `modern-sv` era reverse row in `data/ink-designs.json` becomes `noInk: true`, so SV/ME plain reverses
+no longer draw the `dot-grid` tile. That tile was a placeholder ("a staggered field", confidence low), never the SVI
+design. The real design, the set's type-symbol tiles, is in each printing's generated mask. Drawing the dot grid as
+well put a second, invented pattern over it, which the hosted-editor check on sv06-128 showed. `modern-swsh` keeps
+its tile.
+
+**Implications:** six ink tests that used the SV reverse as their "design" example now probe Sword & Shield
+(`swsh1`), and the null-tile coverage test can address era rows. A plain SV/ME reverse with no generated mask renders
+the mirror sheet with no design until it gets one.
