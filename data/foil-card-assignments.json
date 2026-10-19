@@ -4740,7 +4740,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme",
    "scope": "full"
   },
@@ -4770,7 +4770,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme",
    "scope": "full"
   },
@@ -4797,7 +4797,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme",
    "scope": "full"
   },
@@ -4824,7 +4824,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme",
    "scope": "full"
   },
@@ -4856,7 +4856,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme",
    "scope": "full"
   },
@@ -4886,7 +4886,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme",
    "scope": "full"
   },
@@ -4943,7 +4943,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -4996,7 +4996,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -5011,30 +5011,25 @@
     "cardIds": [
      "me02.5-003",
      "me02.5-026",
-     "me02.5-038",
      "me02.5-048",
      "me02.5-057",
      "me02.5-058",
      "me02.5-068",
      "me02.5-070",
-     "me02.5-073",
      "me02.5-076",
      "me02.5-079",
      "me02.5-084",
      "me02.5-107",
      "me02.5-111",
      "me02.5-114",
-     "me02.5-121",
      "me02.5-137",
      "me02.5-139",
      "me02.5-142",
      "me02.5-145",
      "me02.5-149",
-     "me02.5-160",
      "me02.5-162",
      "me02.5-164",
      "me02.5-167",
-     "me02.5-179",
      "me02.5-218",
      "me02.5-219",
      "me02.5-220",
@@ -5091,7 +5086,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -5144,7 +5139,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -5197,7 +5192,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -5249,7 +5244,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -5263,7 +5258,6 @@
     "variantKinds": null,
     "cardIds": [
      "sv01-019",
-     "sv01-032",
      "sv01-045",
      "sv01-065",
      "sv01-081",
@@ -5299,7 +5293,6 @@
      "sv01-221",
      "sv01-222",
      "sv01-223",
-     "sv01-224",
      "sv01-225",
      "sv01-226",
      "sv01-227",
@@ -5328,7 +5321,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -5341,7 +5334,6 @@
     "rarities": null,
     "variantKinds": null,
     "cardIds": [
-     "sv02-005",
      "sv02-015",
      "sv02-027",
      "sv02-037",
@@ -5350,8 +5342,6 @@
      "sv02-061",
      "sv02-063",
      "sv02-079",
-     "sv02-086",
-     "sv02-093",
      "sv02-117",
      "sv02-127",
      "sv02-130",
@@ -5394,7 +5384,6 @@
      "sv02-227",
      "sv02-228",
      "sv02-229",
-     "sv02-230",
      "sv02-231",
      "sv02-232",
      "sv02-233",
@@ -5402,8 +5391,6 @@
      "sv02-235",
      "sv02-236",
      "sv02-237",
-     "sv02-238",
-     "sv02-239",
      "sv02-240",
      "sv02-241",
      "sv02-242",
@@ -5430,7 +5417,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -5446,12 +5433,9 @@
      "sv03-015",
      "sv03-022",
      "sv03-033",
-     "sv03-042",
-     "sv03-066",
      "sv03-073",
      "sv03-079",
      "sv03-082",
-     "sv03-096",
      "sv03-102",
      "sv03-120",
      "sv03-123",
@@ -5461,9 +5445,7 @@
      "sv03-135",
      "sv03-153",
      "sv03-156",
-     "sv03-159",
      "sv03-164",
-     "sv03-179",
      "sv03-198",
      "sv03-199",
      "sv03-200",
@@ -5476,12 +5458,8 @@
      "sv03-207",
      "sv03-208",
      "sv03-209",
-     "sv03-210",
-     "sv03-211",
-     "sv03-212",
      "sv03-213",
      "sv03-214",
-     "sv03-215",
      "sv03-216",
      "sv03-217",
      "sv03-218",
@@ -5498,7 +5476,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -5565,7 +5543,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -5578,18 +5556,14 @@
     "rarities": null,
     "variantKinds": null,
     "cardIds": [
-     "sv04-003",
      "sv04-027",
      "sv04-038",
      "sv04-046",
      "sv04-050",
-     "sv04-058",
      "sv04-068",
      "sv04-070",
      "sv04-076",
      "sv04-089",
-     "sv04-098",
-     "sv04-100",
      "sv04-108",
      "sv04-124",
      "sv04-135",
@@ -5632,17 +5606,12 @@
      "sv04-214",
      "sv04-215",
      "sv04-216",
-     "sv04-217",
      "sv04-218",
-     "sv04-219",
-     "sv04-220",
      "sv04-221",
      "sv04-222",
      "sv04-223",
      "sv04-224",
      "sv04-225",
-     "sv04-226",
-     "sv04-227",
      "sv04-228",
      "sv04-229",
      "sv04-230",
@@ -5670,7 +5639,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -5683,9 +5652,7 @@
     "rarities": null,
     "variantKinds": null,
     "cardIds": [
-     "sv04.5-002",
      "sv04.5-005",
-     "sv04.5-006",
      "sv04.5-029",
      "sv04.5-053",
      "sv04.5-054",
@@ -5723,7 +5690,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -5742,7 +5709,6 @@
      "sv05-034",
      "sv05-038",
      "sv05-050",
-     "sv05-060",
      "sv05-081",
      "sv05-099",
      "sv05-104",
@@ -5778,11 +5744,9 @@
      "sv05-187",
      "sv05-188",
      "sv05-189",
-     "sv05-190",
      "sv05-191",
      "sv05-192",
      "sv05-193",
-     "sv05-194",
      "sv05-195",
      "sv05-196",
      "sv05-197",
@@ -5801,7 +5765,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -5815,17 +5779,11 @@
     "variantKinds": null,
     "cardIds": [
      "sv06-023",
-     "sv06-025",
-     "sv06-029",
-     "sv06-040",
      "sv06-061",
      "sv06-064",
      "sv06-068",
      "sv06-077",
      "sv06-094",
-     "sv06-106",
-     "sv06-112",
-     "sv06-130",
      "sv06-134",
      "sv06-141",
      "sv06-168",
@@ -5850,17 +5808,10 @@
      "sv06-187",
      "sv06-188",
      "sv06-189",
-     "sv06-190",
-     "sv06-191",
-     "sv06-192",
      "sv06-193",
-     "sv06-194",
      "sv06-195",
      "sv06-196",
      "sv06-197",
-     "sv06-198",
-     "sv06-199",
-     "sv06-200",
      "sv06-201",
      "sv06-202",
      "sv06-203",
@@ -5880,7 +5831,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -5894,7 +5845,6 @@
     "variantKinds": null,
     "cardIds": [
      "sv06.5-012",
-     "sv06.5-015",
      "sv06.5-036",
      "sv06.5-037",
      "sv06.5-038",
@@ -5915,7 +5865,6 @@
      "sv06.5-078",
      "sv06.5-079",
      "sv06.5-080",
-     "sv06.5-081",
      "sv06.5-082",
      "sv06.5-083",
      "sv06.5-084",
@@ -5934,7 +5883,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -5949,18 +5898,14 @@
     "cardIds": [
      "sv07-001",
      "sv07-014",
-     "sv07-028",
      "sv07-030",
-     "sv07-032",
      "sv07-041",
-     "sv07-051",
      "sv07-067",
      "sv07-080",
      "sv07-082",
      "sv07-089",
      "sv07-105",
      "sv07-110",
-     "sv07-128",
      "sv07-143",
      "sv07-144",
      "sv07-145",
@@ -5975,9 +5920,6 @@
      "sv07-154",
      "sv07-155",
      "sv07-156",
-     "sv07-157",
-     "sv07-158",
-     "sv07-159",
      "sv07-160",
      "sv07-161",
      "sv07-162",
@@ -5995,7 +5937,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -6009,22 +5951,13 @@
     "variantKinds": null,
     "cardIds": [
      "sv08-004",
-     "sv08-036",
      "sv08-037",
      "sv08-042",
      "sv08-048",
-     "sv08-057",
      "sv08-068",
      "sv08-076",
-     "sv08-086",
-     "sv08-091",
-     "sv08-106",
-     "sv08-119",
      "sv08-130",
-     "sv08-133",
-     "sv08-142",
      "sv08-147",
-     "sv08-159",
      "sv08-160",
      "sv08-192",
      "sv08-193",
@@ -6053,16 +5986,9 @@
      "sv08-216",
      "sv08-217",
      "sv08-218",
-     "sv08-219",
      "sv08-220",
-     "sv08-221",
-     "sv08-222",
-     "sv08-223",
      "sv08-224",
-     "sv08-225",
-     "sv08-226",
      "sv08-227",
-     "sv08-228",
      "sv08-229",
      "sv08-230",
      "sv08-231",
@@ -6080,7 +6006,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -6093,31 +6019,17 @@
     "rarities": null,
     "variantKinds": null,
     "cardIds": [
-     "sv08.5-006",
      "sv08.5-011",
-     "sv08.5-012",
-     "sv08.5-014",
-     "sv08.5-017",
-     "sv08.5-023",
-     "sv08.5-026",
      "sv08.5-027",
      "sv08.5-028",
-     "sv08.5-030",
      "sv08.5-031",
      "sv08.5-032",
-     "sv08.5-034",
-     "sv08.5-041",
      "sv08.5-051",
      "sv08.5-056",
-     "sv08.5-058",
-     "sv08.5-060",
      "sv08.5-064",
-     "sv08.5-073",
-     "sv08.5-075",
      "sv08.5-076",
      "sv08.5-082",
      "sv08.5-091",
-     "sv08.5-092",
      "sv08.5-132",
      "sv08.5-133",
      "sv08.5-134",
@@ -6140,7 +6052,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -6201,7 +6113,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -6286,7 +6198,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -6392,7 +6304,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -6499,7 +6411,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -6642,7 +6554,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme",
    "scope": "window"
   },
@@ -6668,7 +6580,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -6692,7 +6604,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -6717,7 +6629,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -6741,7 +6653,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -6765,7 +6677,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -6789,7 +6701,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -6835,7 +6747,7 @@
      "me01-186"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -6843,7 +6755,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -6873,7 +6785,7 @@
      "me02-129"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -6881,7 +6793,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -6897,16 +6809,21 @@
      "me02.5-010",
      "me02.5-022",
      "me02.5-031",
+     "me02.5-038",
      "me02.5-043",
      "me02.5-047",
      "me02.5-061",
+     "me02.5-073",
      "me02.5-089",
      "me02.5-113",
      "me02.5-116",
+     "me02.5-121",
      "me02.5-125",
      "me02.5-135",
      "me02.5-152",
+     "me02.5-160",
      "me02.5-172",
+     "me02.5-179",
      "me02.5-253",
      "me02.5-265",
      "me02.5-266",
@@ -6939,7 +6856,7 @@
      "me02.5-293"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -6947,7 +6864,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -6976,7 +6893,7 @@
      "me03-123"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -6984,7 +6901,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7014,7 +6931,7 @@
      "me04-121"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7022,7 +6939,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7053,7 +6970,7 @@
      "me05-119"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7061,7 +6978,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7074,6 +6991,8 @@
     "rarities": null,
     "variantKinds": null,
     "cardIds": [
+     "sv01-032",
+     "sv01-224",
      "sv01-243",
      "sv01-244",
      "sv01-245",
@@ -7092,7 +7011,7 @@
      "sv01-258"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7100,7 +7019,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7113,6 +7032,12 @@
     "rarities": null,
     "variantKinds": null,
     "cardIds": [
+     "sv02-005",
+     "sv02-086",
+     "sv02-093",
+     "sv02-230",
+     "sv02-238",
+     "sv02-239",
      "sv02-256",
      "sv02-257",
      "sv02-258",
@@ -7139,7 +7064,7 @@
      "sv02-279"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7147,7 +7072,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7160,6 +7085,15 @@
     "rarities": null,
     "variantKinds": null,
     "cardIds": [
+     "sv03-042",
+     "sv03-066",
+     "sv03-096",
+     "sv03-159",
+     "sv03-179",
+     "sv03-210",
+     "sv03-211",
+     "sv03-212",
+     "sv03-215",
      "sv03-222",
      "sv03-223",
      "sv03-224",
@@ -7171,7 +7105,7 @@
      "sv03-230"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7179,7 +7113,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7204,7 +7138,7 @@
      "sv03.5-207"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7212,7 +7146,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7225,6 +7159,15 @@
     "rarities": null,
     "variantKinds": null,
     "cardIds": [
+     "sv04-003",
+     "sv04-058",
+     "sv04-098",
+     "sv04-100",
+     "sv04-217",
+     "sv04-219",
+     "sv04-220",
+     "sv04-226",
+     "sv04-227",
      "sv04-245",
      "sv04-246",
      "sv04-247",
@@ -7249,7 +7192,7 @@
      "sv04-266"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7257,7 +7200,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7270,6 +7213,8 @@
     "rarities": null,
     "variantKinds": null,
     "cardIds": [
+     "sv04.5-002",
+     "sv04.5-006",
      "sv04.5-232",
      "sv04.5-233",
      "sv04.5-234",
@@ -7286,7 +7231,7 @@
      "sv04.5-245"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7294,7 +7239,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7307,6 +7252,9 @@
     "rarities": null,
     "variantKinds": null,
     "cardIds": [
+     "sv05-060",
+     "sv05-190",
+     "sv05-194",
      "sv05-203",
      "sv05-204",
      "sv05-205",
@@ -7325,7 +7273,7 @@
      "sv05-218"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7333,7 +7281,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7346,6 +7294,19 @@
     "rarities": null,
     "variantKinds": null,
     "cardIds": [
+     "sv06-025",
+     "sv06-029",
+     "sv06-040",
+     "sv06-106",
+     "sv06-112",
+     "sv06-130",
+     "sv06-190",
+     "sv06-191",
+     "sv06-192",
+     "sv06-194",
+     "sv06-198",
+     "sv06-199",
+     "sv06-200",
      "sv06-210",
      "sv06-211",
      "sv06-212",
@@ -7365,7 +7326,7 @@
      "sv06-226"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7373,7 +7334,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7386,6 +7347,8 @@
     "rarities": null,
     "variantKinds": null,
     "cardIds": [
+     "sv06.5-015",
+     "sv06.5-081",
      "sv06.5-090",
      "sv06.5-091",
      "sv06.5-092",
@@ -7398,7 +7361,7 @@
      "sv06.5-099"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7406,7 +7369,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7419,6 +7382,13 @@
     "rarities": null,
     "variantKinds": null,
     "cardIds": [
+     "sv07-028",
+     "sv07-032",
+     "sv07-051",
+     "sv07-128",
+     "sv07-157",
+     "sv07-158",
+     "sv07-159",
      "sv07-167",
      "sv07-168",
      "sv07-169",
@@ -7430,7 +7400,7 @@
      "sv07-175"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7438,7 +7408,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7451,6 +7421,22 @@
     "rarities": null,
     "variantKinds": null,
     "cardIds": [
+     "sv08-036",
+     "sv08-057",
+     "sv08-086",
+     "sv08-091",
+     "sv08-106",
+     "sv08-119",
+     "sv08-133",
+     "sv08-142",
+     "sv08-159",
+     "sv08-219",
+     "sv08-221",
+     "sv08-222",
+     "sv08-223",
+     "sv08-225",
+     "sv08-226",
+     "sv08-228",
      "sv08-236",
      "sv08-237",
      "sv08-238",
@@ -7470,7 +7456,7 @@
      "sv08-252"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7478,7 +7464,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7491,6 +7477,20 @@
     "rarities": null,
     "variantKinds": null,
     "cardIds": [
+     "sv08.5-006",
+     "sv08.5-012",
+     "sv08.5-014",
+     "sv08.5-017",
+     "sv08.5-023",
+     "sv08.5-026",
+     "sv08.5-030",
+     "sv08.5-034",
+     "sv08.5-041",
+     "sv08.5-058",
+     "sv08.5-060",
+     "sv08.5-073",
+     "sv08.5-075",
+     "sv08.5-092",
      "sv08.5-144",
      "sv08.5-145",
      "sv08.5-146",
@@ -7530,7 +7530,7 @@
      "sv08.5-180"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7538,7 +7538,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7562,7 +7562,7 @@
      "sv09-190"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7570,7 +7570,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7602,7 +7602,7 @@
      "sv10-244"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7610,7 +7610,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7632,7 +7632,7 @@
      "sv10.5b-170"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7640,7 +7640,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   },
   {
@@ -7662,7 +7662,7 @@
      "sv10.5w-171"
     ]
    },
-   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "claim": "Special Illustration Rares, Hyper Rares, Mega ex and Tera ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
    "confidence": "medium",
    "sources": [
     {
@@ -7670,7 +7670,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
   }
  ]
