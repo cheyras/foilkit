@@ -3529,3 +3529,17 @@ reference strength (|dL| 0.043–0.055 against 0.086–0.102).
 The 30 SV/ME ACE SPEC Rares that have a TCGdex scan now get our etch v2 (40 rows, run `modular-etch` v2). On a
 reference card, our etch gives the same result as the reference's own etch: |dL| 0.086 / 0.101 / 0.095 / 0.092, and
 structure correlation +0.83…+0.87.
+
+## 2026-10-19 — R12: Black White Rares get the rainbow film; two card-list corrections
+
+**Decided by:** @cheyras ("get it so that meg and svi are as done as you can make them on your own")
+
+- **Black White Rares.** The 4 Black White Rares (the Black Bolt / White Flare homage full arts) are drawn by the
+  modern client with the same whole-card rainbow film, driven by the etch, as the Prismatic Evolutions ball
+  parallels. They now resolve to `prismatic-pokeball` with scope full. They were `tinsel-ii` in the window; their
+  generated full-art plates and etch v2 already exist.
+- **Tera rule.** The Tera-badge match now applies only in Scarlet & Violet sets. Tera ex do not exist in Mega
+  Evolution, so a match there is a false positive.
+- **Mega rule.** "Mega" now needs the ex suffix as well. "Mega Signal", a Trainer, had been taken for a Mega ex.
+
+R10 card lists regenerated: `rainbow-glitter-sheen` 467 cards, `prismatic-pokeball` 4.
