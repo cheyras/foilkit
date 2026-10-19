@@ -1240,56 +1240,106 @@ vec3 foilPattern(vec2 uv, vec2 tilt) {
 // thickness varies strongly line to line, full face; a smooth sheen sweeps
 // vertically with hue rotation — no discrete pops (vs tinsel I's dashes).
 const TINSEL_II_GLSL = `
-// one striation system: lines with per-line jittered position, strongly
-// varying thickness, and chaotic along-line brightness segments. The line
-// coordinate itself is noise-perturbed along x so lines waver, break, and
-// merge — never perfect scanlines (round-3 fix).
-float tinselLines(vec2 uv, float dens, float seed, float coarse) {
-  float wob = (fnoise(vec2(uv.x * 2.8 * coarse, uv.y * dens * 0.11 + seed)) - 0.5) * 1.6;
-  float ly = uv.y * dens + wob;
-  float id = floor(ly);
-  float r1 = hash21(vec2(id, seed));
-  float r2 = hash21(vec2(id, seed + 5.3));
-  // per-line vertical jitter breaks the even scanline spacing
-  float fy = fract(ly) - 0.5 - (r1 - 0.5) * 0.5;
-  // heavy thickness variance: some lines near-invisible threads, some fat
-  float w = mix(0.02, 0.55, pow(r2, 3.0));
-  float line = smoothstep(w, w * 0.35, abs(fy));
-  // chaotic along-line static segments
-  float seg = fnoise(vec2(uv.x * (5.0 + r1 * 14.0) * coarse, id * 0.71 + seed));
-  return line * mix(0.15, 1.0, seg) * mix(0.35, 1.0, r1);
+// R12 2026-10-19: rebuilt as the modern client draws the Black Bolt / White
+// Flare holo rares (the same tinsel film it uses for BW-era holos). A custom
+// composite (shader.ts FOILKIT_COMPOSITE): two layers of fine horizontal bars
+// (256 over the card height) slide against each other with yaw, each bar a
+// rainbow run with its own phase; the bar colour is overlaid onto a rainbow
+// and a dull shine, colour-dodged twice by a band that tracks yaw, overlaid
+// into the art, soft-lit with the bars again and topped with a desaturated
+// sheen that a pitch-driven hump sweeps. All of it is our own: the bars, the
+// ramps and the shine bands are analytic, shaped to measured statistics.
+//   uP0 bar scale, uP1 travel, uP2 bar gain, uP3 shine-band gain.
+#define FOILKIT_COMPOSITE
+vec3 foilPattern(vec2 uv, vec2 tilt) { return vec3(0.0); }
+
+float tnEase(float t) { return t * t * (3.0 - 2.0 * t); }
+// one bar's colour run (linear): dark for the first ~30%, then yellow, green, teal,
+// blue, dark again, and a short orange tail
+vec3 tnBarRamp(float u) {
+  u = fract(u);
+  vec3 c = vec3(0.04);
+  c = mix(c, vec3(0.08, 0.14, 0.01), smoothstep(0.27, 0.32, u));
+  c = mix(c, vec3(0.42, 0.40, 0.0), smoothstep(0.33, 0.375, u));
+  c = mix(c, vec3(0.0, 0.72, 0.0), smoothstep(0.40, 0.47, u));
+  c = mix(c, vec3(0.0, 0.30, 0.15), smoothstep(0.58, 0.625, u));
+  c = mix(c, vec3(0.0, 0.20, 0.72), smoothstep(0.64, 0.69, u));
+  c = mix(c, vec3(0.03, 0.11, 0.07), smoothstep(0.82, 0.875, u));
+  c = mix(c, vec3(0.55, 0.09, 0.0), smoothstep(0.90, 0.94, u));
+  c = mix(c, vec3(0.04), smoothstep(0.97, 1.0, u));
+  return c;
 }
-vec3 foilPattern(vec2 uv, vec2 tilt) {
-  // R3-MISC 2026-08-03 (Chey lu0eeo): "the lines should mostly be silvery
-  // except for where they are highlighted by a VERTICAL rainbow band. This
-  // band is not visible outside the lines." The r1 horizontal hue envelope
-  // is replaced by a narrow full-height band in x that travels with tilt
-  // (x-dominant sweep); the band exists ONLY as a recolor of the line-work —
-  // the gaps between lines stay the dark substrate at every angle.
-  float sweep = tilt.x * 1.1 + tilt.y * 0.4;
-  float lines = tinselLines(uv, uP0 * 75.0 * uScale, 3.7, uP2)
-              + tinselLines(uv, uP0 * 47.0 * uScale, 11.9, uP2) * 0.8
-              + tinselLines(uv, uP0 * 110.0 * uScale, 23.3, uP2) * 0.6;
-  // vertical rainbow band: gaussian window over x, sliding with the sweep.
-  // R7 (Chey b8klnq): uP4 exposes the band WIDTH (was the hard-coded 0.014).
-  // Default raised to 0.024 (σ ≈ 0.155, ~45% of the face) — with the line-work
-  // now gated to the band, 0.014 left too little of the card doing anything.
-  float bx = uv.x - 0.5 - sweep * uP1 * 0.32;
-  float band = exp(-bx * bx / max(uP4, 0.001));
-  // hue runs ACROSS the band width (spectral order preserved), tiny per-line
-  // jitter keeps it foil-organic
-  float r2 = hash21(vec2(floor(uv.y * uP0 * 75.0 * uScale), 9.1));
-  float hue = uHueShift + uHueSpread * (bx * 2.6 + r2 * 0.12);
-  // R7 2026-08-08 (Chey b8klnq): "pretty awful, way too busy - lines are super
-  // stark. Line should only show where color is overlapping." The R3-MISC
-  // model drew every line at a bright silver 0.60 across the WHOLE face and
-  // only recoloured them inside the band — so the line-work was at full
-  // contrast everywhere, which is both the starkness and the business. The
-  // silver term is now 0.10 (a hint of sheet, not a drawn line) and the whole
-  // line-work is gated by the band: outside the colour there is nothing to
-  // see, which is the same ruling he gave for tinsel I in the same sitting.
-  vec3 lineCol = hueRamp(hue) * 1.35 + vec3(0.10);
-  return lines * lineCol * band * uP3;
+// a broad pastel rainbow (linear): grey, olive, yellow, green, sky, pale cyan, an orange tail
+vec3 tnRamp(float u) {
+  u = fract(u);
+  vec3 c = vec3(0.04);
+  c = mix(c, vec3(0.15, 0.18, 0.17), smoothstep(0.08, 0.13, u));
+  c = mix(c, vec3(0.07, 0.10, 0.06), smoothstep(0.23, 0.28, u));
+  c = mix(c, vec3(0.55, 0.55, 0.0), smoothstep(0.30, 0.38, u));
+  c = mix(c, vec3(0.0, 0.72, 0.0), smoothstep(0.42, 0.47, u));
+  c = mix(c, vec3(0.20, 0.55, 0.85), smoothstep(0.59, 0.66, u));
+  c = mix(c, vec3(0.65, 0.92, 0.97), smoothstep(0.70, 0.79, u));
+  c = mix(c, vec3(0.32, 0.50, 0.50), smoothstep(0.82, 0.88, u));
+  c = mix(c, vec3(0.58, 0.20, 0.05), smoothstep(0.89, 0.94, u));
+  c = mix(c, vec3(0.04), smoothstep(0.96, 1.0, u));
+  return c;
+}
+float tnBand(float u) { float b = fract(u) - 0.5625; return exp(-0.5 * b * b / (0.125 * 0.125)); }
+// 32 bars per tile vertically, each a one-cycle eased ramp along u with its own phase
+float tnBar(vec2 p) {
+  float id = floor(fract(p.y) * 32.0);
+  return tnEase(fract(p.x + hash21(vec2(id, 7.3))));
+}
+vec3 foilComposite(vec2 uv, vec2 tilt, vec3 art, float wp) {
+  vec2 g = vec2(0.1421 + uv.x * 0.7158, uv.y);
+  float ay = tilt.x * uTiltMax;
+  float ax = -tilt.y * uTiltMax;
+  vec3 N = vec3(sin(ay), -cos(ay) * sin(ax), cos(ay) * cos(ax));
+  vec3 T = vec3(cos(ay), sin(ay) * sin(ax), -sin(ay) * cos(ax));
+  vec3 B = vec3(0.0, cos(ax), sin(ax));
+  vec3 V = gViewTS;
+  vec3 Vw = T * V.x + B * V.y + N * V.z;
+  vec2 P = V.xy / (V.z + 0.42);
+  vec3 Nt = vec3(N.xy * uP1, N.z);
+  float nSum = Nt.x + Nt.y + Nt.z;
+  float dodgeDivA = max(1.0 - clamp((0.054 + 0.946 * tnBand(g.x + nSum) + 0.51) * 0.16, 0.0, 1.0), 1e-5);
+  vec2 tiltUV = -Nt.xy + g;
+  float sc = max(uP0, 0.1);
+  vec2 bb = g * vec2(1.5, 8.0 / sc);
+  vec3 bars = clamp(tnBarRamp(tnBar(bb + vec2(tiltUV.x * 0.5, 0.0)))
+                  + tnBarRamp(tnBar(bb + vec2(-(tiltUV.x * 0.5 + 0.5), -1.0) - 0.125 * P)), 0.0, 1.0) * uP2;
+  float seed = hash21(floor(texture2D(uFace, vec2(0.5)).rg * 255.0)) * 9.0 + 1.0;
+  vec2 shine2UV = g * 5.2 + seed + vec2(1.0 - tiltUV.x, 1.0) * 2.0 + vec2(0.0, tiltUV.y);
+  float dull = 0.067 + 0.55 * tnBand(tiltUV.x) * uP3;
+  float dodgeDivB = max(1.0 - dull, 1e-5);
+  vec3 shineSum = vec3(0.067 + 0.55 * tnBand(shine2UV.x) + 0.067);
+  vec3 barsShine = plateOverlay(shineSum, bars);
+  vec3 spec = tnRamp(g.x * 2.0 + seed);
+  vec3 barsSpec = plateOverlay(spec, bars);
+  vec3 foil = barsSpec * barsShine + clamp(spec * (barsShine * barsSpec) - 0.78, 0.0, 1.0);
+  foil = min(foil / dodgeDivB, 1.0);
+  foil = min(foil / dodgeDivB, 1.0);
+  float fl = dot(foil, vec3(0.299, 0.587, 0.114));
+  vec3 foilDesat = mix(foil, vec3(fl), 0.7);
+  vec3 foilTone = clamp((mix(foil, vec3(fl), 0.27) + 0.15) * 0.8, 0.0, 1.0);
+  // a broad hump that sweeps across as the card pitches
+  vec2 vyz = normalize(Vw.yz);
+  float a = 1.0 - dot(N.yz, vyz);
+  float x = a * 1.5 + 0.5;
+  float f = x - floor(a * 1.5 + 1.0);
+  float s = f * 2.0 + g.x;
+  float sheenRaw = s * (1.0 - s) * 3.0 + foil.g;
+  vec3 etch = vec3(uEtchOn > 0.5 ? gEtch : 1.0);
+  float sheenGain = clamp(sheenRaw + etch.r, 0.0, 4.0) * 0.3 + 0.5;
+  vec3 etchSheen = min(sheenGain * plateOverlay(etch, etch), 1.0);
+  vec3 foilMul = etch * 0.25 + (sheenGain * 0.65 + 0.35);
+  vec3 sheenLayer = clamp(foilDesat * etchSheen * wp, 0.0, 1.0);
+  vec3 artFoil = min(plateOverlay(art, foilTone) + art * (etch + 0.5) * 0.4, 1.0);
+  vec3 dodged = min(artFoil / dodgeDivA, 1.0);
+  vec3 barsSoft = clamp(dodged * dodged * (1.0 - 2.0 * bars) + 2.0 * bars * dodged, 0.0, 1.0);
+  vec3 comp = min((barsSoft * wp + sheenLayer + dodged) * foilMul * 0.85, 1.0);
+  vec3 fm = min((etch + 1.0) * wp, 1.0) * clamp(uIntensity, 0.0, 1.0);
+  return clamp(mix(art, comp, fm) * (1.0 - 0.2 * (1.0 - etch.g) * wp), 0.0, 1.0);
 }`
 
 // #16 Cosmos III (smooth/HD) — perfectly smooth AA discs only (no crosses, no
@@ -3239,28 +3289,22 @@ export const PATTERNS: FoilPattern[] = [
     taxonomy: 'Denser darker chaotic tinsel ("static"), full face',
     usedOn: 'Black Bolt & White Flare (2025) only.',
     glsl: TINSEL_II_GLSL,
-    // hueShift 0.08: the lit band on the reference reads coppery-orange, not
-    // blue-purple (eyeball round 1 against the Thundurus/Metal Energy frames)
-    // — under the R3-MISC vertical-band model this is the band-center hue
-    // (Metal Energy frame-02: copper band at left, silver lines elsewhere).
-    // uDarken 0.4 (R2 blend-model opt-in): the reference static is DARK broken
-    // lines between iridescent ones — under screen-only blending the gaps
-    // between lines stayed the near-white card body and the static plateaued
-    // at "fine bright brushed metal" (three R1 rounds, static_appearance 2).
-    // Darkening the substrate makes the un-lit gaps the dark half of the static.
+    // R12 2026-10-19: rebuilt to the modern client's tinsel film (a custom
+    // composite, shader.ts FOILKIT_COMPOSITE). The R1-R7 static, tuned to
+    // physical Thundurus / Metal Energy frames, is in git history and its canon
+    // values are in DECISIONS.md. The additive terms are off underneath.
     family: 'line',
-    defaults: { ...LINE_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.08, uHueSpread: 0.6, uSat: 0.5, uArtGate: 0.0, uSpecular: 0.35, uDarken: 0.4 },
+    defaults: {
+      uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 0.0, uSat: 1.0,
+      uArtGate: 0.0, uSpecular: 0.0, uDarken: 0.0, uTint: 0.0, uInkPop: 0.0,
+      uMetal: 0.0, uSheen: 0.0, uSheenTint: 0.0, uDepth: 0.0, uGrain: 1.0,
+    },
     params: [
-      { key: 'uP0', label: 'Line density', min: 0.5, max: 4, step: 0.1, default: 2.0 },
-      // uP1 (R3-MISC): now the VERTICAL band's horizontal travel; Chey's
-      // canon 2.3 migrates in place (same "how far per tilt" feel).
-      { key: 'uP1', label: 'Band travel', min: 0, max: 4, step: 0.05, default: 1.5 },
-      { key: 'uP2', label: 'Static coarseness', min: 0.2, max: 3, step: 0.05, default: 1.0 },
-      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.8 },
-      // R7 (b8klnq): the colour band's width — now that the line-work only
-      // exists inside the band, this is how much of the card carries lines.
-      // 0.014 = the R3 hard-coded value (σ ≈ 0.084, ~30% of the face).
-      { key: 'uP4', label: 'Band width', min: 0.002, max: 0.16, step: 0.002, default: 0.024 },
+      { key: 'uP0', label: 'Bar scale', min: 0.25, max: 4, step: 0.05, default: 1.0 },
+      { key: 'uP1', label: 'Travel', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP2', label: 'Bar gain', min: 0, max: 2, step: 0.05, default: 1.0 },
+      { key: 'uP3', label: 'Shine-band gain', min: 0, max: 1.6, step: 0.05, default: 1.0 },
+      { key: 'uP4', label: 'Unused', min: 0, max: 1, step: 0.01, default: 0 },
     ],
     implemented: true,
   },

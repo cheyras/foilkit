@@ -952,6 +952,19 @@ void main() {
     col = pow(clamp(fc, 0.0, 1.0), vec3(1.0 / 2.2));
   }
 #endif
+#ifdef FOILKIT_COMPOSITE
+  // ── CUSTOM COMPOSITE (R12, 2026-10-19; opt-in per recipe) ──────────────
+  // A recipe that defines FOILKIT_COMPOSITE supplies
+  // vec3 foilComposite(uv, tilt, art, plate): the whole foil composite, in
+  // LINEAR colour, from the linear art and the plate strength (m * gate). For
+  // films whose blend chain fits neither the additive law nor the overlay
+  // film. It replaces the composite above; every other recipe compiles it out.
+  {
+    vec3 la = pow(clamp(face.rgb, 0.0, 1.0), vec3(2.2));
+    vec3 cc = foilComposite(uv, uTilt, la, clamp(m * gate, 0.0, 1.0));
+    col = pow(clamp(cc, 0.0, 1.0), vec3(1.0 / 2.2));
+  }
+#endif
   // The ink itself. uInkTone 0 (the default) leaves the design visible purely
   // as ABSENCE of foil, which is all a flat scan of the NORMAL printing can
   // honestly support: the white ink is not in those pixels, so painting it is a

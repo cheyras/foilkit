@@ -256,3 +256,9 @@ is in git history (the commit before R10's horizontal-sheen change), and its val
 `cosmos-iii-smooth` was rebuilt (R12: an overlay film, a sweeping band plus four parallax bubble layers, replaces
 the R1 additive disc field) and its canon re-tuned under contract 2. It leaves the contract-1 retune queue above. Its
 rows in the tables above describe the previous recipe and canon; the prior values are listed in DECISIONS.md.
+
+## 2026-10-19 — tinsel-ii retuned under contract 2
+
+`tinsel-ii` (the Black Bolt / White Flare holo rare) was rebuilt (R12: a custom-composite tinsel film replaces the
+R1-R7 static) and its canon re-tuned under contract 2. It leaves the contract-1 retune queue above; the prior values
+are listed in DECISIONS.md.
