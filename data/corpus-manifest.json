@@ -165,7 +165,7 @@
     "tinsel-ii": {
       "contract": 2,
       "exists": true,
-      "savedAt": "2026-08-07T04:57:24.838Z",
+      "savedAt": "2026-10-19T21:30:00.000Z",
       "uniforms": 22
     },
     "vertical-sheen": {
@@ -212,7 +212,7 @@
     "windowCards": 1,
     "windowFiles": 1
   },
-  "generatedAt": "2026-10-19T20:30:00.000Z",
+  "generatedAt": "2026-10-19T21:30:00.000Z",
   "maskUnits": {
     "base1-10|window": 39,
     "base1-15|window": 59,

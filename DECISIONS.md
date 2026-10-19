@@ -3327,3 +3327,64 @@ Measured layers, per texture tile:
 - about 250, 460 and 1,070 small dots (median r 0.0056, 0.0031, 0.0037).
 
 The band peaks at 0.56 of its period (σ 0.125) on a 0.054 floor.
+
+## 2026-10-19 — R12: tinsel-ii rebuilt as the modern client's tinsel film
+
+**Decided by:** @cheyras ("get it so that meg and svi are as done as you can make them on your own"; "The whole point
+of this is to learn from how PTCG live does it so that they are correct")
+
+**Decision:** the modern client draws the Black Bolt / White Flare holo rares (24 printings, `tinsel-ii`) with the
+same tinsel film it uses for the BW-era holos. `tinsel-ii` is rebuilt to that film. `tinsel` (BW era) is unchanged.
+
+**The film:**
+- two layers of fine horizontal bars (256 over the card height) slide in opposite directions with yaw, one with a
+  parallax offset;
+- each bar is an eased one-cycle colour run with its own phase: dark for the first ~30%, then yellow, green, teal,
+  blue, and a short orange tail;
+- the bars are overlaid onto a broad pastel rainbow and a dull shine;
+- the result is colour-dodged twice by a band that tracks yaw;
+- that is overlaid into the art, soft-lit with the bars again, and topped with a desaturated sheen that a
+  pitch-driven hump sweeps.
+
+All of it is ours: the bars, the ramps and the bands are analytic, shaped to measured statistics.
+
+**Core hook:** this blend chain fits neither the additive law nor the overlay film, so a third opt-in hook,
+`FOILKIT_COMPOSITE`, lets a recipe supply the whole composite in linear colour:
+`vec3 foilComposite(uv, tilt, art, plate)`. Every other recipe compiles it out.
+
+**Canon retuned.** The R1–R7 static, tuned to physical Thundurus / Metal Energy frames, is replaced.
+
+| Uniform | Old | New |
+|---|---|---|
+| uIntensity | 0.96 | 1 |
+| uScale | 0.5 | 1 |
+| uHueShift | 0.38 | 0 |
+| uHueSpread | 1.25 | 0 |
+| uArtGate | 0.11 | 0 |
+| uSpecular | 0.35 | 0 |
+| uInkPop | 0.98 | 0 |
+| uSheen | 3 | 0 |
+| uDepth | 1 | 0 |
+| uP0 | 3.6 | 1 |
+| uP1 | 2.3 | 1 |
+| uP2 | 1.3 | 1 |
+| uP3 | 0.9 | 1 |
+| uP4 | 0.024 | 0 |
+
+All other values are unchanged, and the canon is now `tunedUnderContract: 2`. The params now mean: `uP0` bar
+scale, `uP1` travel, `uP2` bar gain, `uP3` shine-band gain.
+
+**Measured** against a local reference render of a tinsel holo (the same art and plate on both sides; statistics
+only):
+
+| Recipe | \|dL\| across tilts | Structure correlation |
+|---|---|---|
+| Reference | 0.022 / 0.030 / 0.031 / 0.024 | — |
+| New `tinsel-ii` | 0.032 / 0.036 / 0.040 / 0.040 | +0.53 / +0.49 / +0.72 / +0.58 |
+| Old `tinsel-ii` | 0.043–0.057 | −0.31 to −0.63 |
+| `tinsel` | — | −0.35 to 0.00 |
+
+The old recipe darkened the window. The remaining excess is a white sheen column at the extreme tilts.
+
+**Measured bar statistics:** 32 bars per tile, tiled 1.5 × 8 across the sheet. The dull band peaks at 0.62 (floor
+0.067, σ 0.125).
