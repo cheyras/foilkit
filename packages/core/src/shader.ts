@@ -262,6 +262,8 @@ export const GLOBAL_DEFAULTS = {
   uSheenTint: 0.5,
   uDepth: 0.22,
   uGrain: 1.0,
+  // R11: plate-overlay composite weight (0 = off). Only mirror-sv opts in.
+  uPlateOverlay: 0.0,
 } as const
 
 export type CoreUniform = keyof typeof GLOBAL_DEFAULTS
@@ -363,6 +365,7 @@ uniform float uEtchOn;
 uniform vec2 uEtchTexel;
 uniform float uEtchRelief;
 uniform float uEtchBump;
+uniform float uPlateOverlay;
 uniform float uP0;
 uniform float uP1;
 uniform float uP2;
@@ -422,6 +425,10 @@ vec3 hueRamp(float t) {
   return mix(vec3(l), c, uSat);
 }
 vec3 screenBlend(vec3 a, vec3 b) { return 1.0 - (1.0 - a) * (1.0 - b); }
+// Overlay keyed on the base (>= 0.5 screens, below multiplies), as print blend modes do.
+vec3 plateOverlay(vec3 b, vec3 l) {
+  return clamp(mix(2.0 * b * l, 1.0 - 2.0 * (1.0 - b) * (1.0 - l), step(0.5, b)), 0.0, 1.0);
+}
 
 float sdRoundRect(vec2 p, vec2 halfSize, float r) {
   vec2 q = abs(p) - halfSize + r;
@@ -875,6 +882,46 @@ void main() {
     // ink never re-hues toward the paper.
     scanCol += (face.rgb - vec3(faceLum)) * (uInkPop * 0.5 * inkChroma * popDrive * faceLum * faceLum);
     col = mix(col, clamp(scanCol, 0.0, 1.0), smoothstep(0.0, 0.35, clamp(uInkGuard, 0.0, 1.0)));
+  }
+  // ── SILVER-PLATE LAW (R11, 2026-10-19; opt-in, uPlateOverlay > 0) ──────
+  // The mirror / reverse-holo composite, rebuilt step by step from a reference
+  // render of how a modern client draws a plain silver reverse. It is mostly a
+  // re-toning of the art inside the foil plate rather than added light, which
+  // the additive law cannot express, and it applies over coloured ink too.
+  // Computed in LINEAR colour like the reference, from our own analytic bar
+  // and tint. Inside the plate (graded strength m):
+  //   1. bright art is pulled toward metallic grey: x min(1.7 - luma, 1);
+  //   2. a faint near-neutral tint is added (+0.2 x ~0.2);
+  //   3. a near-neutral contrast overlay (blend ~0.4) gives the metal its bite;
+  //   4. ONE wide soft vertical light bar sweeps sideways with tilt, overlaid
+  //      at half weight (blend = bar + 0.22), so off-bar foil reads darker and
+  //      the bar brightens; the graded plate makes both carry the design;
+  //   5. a grazing rim.
+  // Recipe uniforms: uP0 bar half-width (in bar periods), uP1 bar travel,
+  // uP3 law strength. 0 (the default, every non-mirror recipe) executes nothing.
+  if (uPlateOverlay > 0.0) {
+    float wpv = clamp(m * gate, 0.0, 1.0);
+    vec3 la = pow(clamp(face.rgb, 0.0, 1.0), vec3(2.2));               // display -> linear
+    float aLum = dot(la, vec3(0.299, 0.587, 0.114));
+    float artDim = min(1.7 - aLum, 1.0);
+    vec3 lc = min(mix(vec3(min(1.6 - wpv, 1.0)), vec3(artDim), wpv) * la, 1.0);
+    float NdotV = clamp(gViewTS.z, 0.0, 1.0);
+    // per-card phase from the art itself, so cards in a binder do not flash in step
+    float seed = hash21(floor(texture2D(uFace, vec2(0.5)).rg * 255.0));
+    float s = (uTilt.x + uTilt.y) * 0.28 * uP1;
+    float bu = 0.1421 + uv.x * 0.7158;                                   // bar space spans the face like a 63/88 card on a square sheet
+    float bx = fract(bu + s + seed) - 0.5;
+    float bar = exp(-bx * bx / (2.0 * uP0 * uP0));
+    // faint tint: near-neutral grey with a whisper of green-teal in one band
+    float tb = fract(2.0 * uv.x + s + seed);
+    float band = smoothstep(0.4, 0.55, tb) * (1.0 - smoothstep(0.75, 0.9, tb));
+    vec3 tint = vec3(0.19) + band * vec3(-0.01, 0.025, 0.012);
+    lc = mix(lc, min(lc + tint * 0.2, 1.0), wpv);
+    lc = clamp(mix(lc, plateOverlay(lc, vec3(NdotV * (tint.g + 0.2))), wpv * uP3), 0.0, 1.0);
+    lc = mix(lc, plateOverlay(lc, vec3(clamp(NdotV * bar, 0.0, 1.0) + 0.22)), wpv * 0.5 * uP3);
+    lc = clamp(lc + 2.0 * NdotV * (1.0 - NdotV) * (1.0 - NdotV) * bar * wpv, 0.0, 1.0);
+    vec3 law = pow(lc, vec3(1.0 / 2.2));                                // linear -> display
+    col = mix(col, law, clamp(uPlateOverlay, 0.0, 1.0));
   }
   // The ink itself. uInkTone 0 (the default) leaves the design visible purely
   // as ABSENCE of foil, which is all a flat scan of the NORMAL printing can

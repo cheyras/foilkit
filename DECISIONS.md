@@ -3155,3 +3155,34 @@ Plates were also generated for SV/ME printings that had none: 9 ex, 33 ACE SPEC,
 - 1 card whose art download failed.
 
 These render with the era-rule prior until they have a mask.
+
+## 2026-10-19 — R11: the silver-plate law; mirror and mirror-sv render the reverse the way the reference does
+
+**Decided by:** @cheyras ("Make our mirror look exactly like it looks in PTCG live. Our current canon is weak, don't
+treat anything about it as sacred at all"; "Not just the SVI one, mirror in general too")
+
+**Decision:** a new opt-in composite, the **silver-plate law** (`uPlateOverlay`, default 0 = off), in `main()`.
+It replaces the additive composite for the recipes that turn it on: `mirror` and `mirror-sv`. Inside the foil
+plate, in linear colour, it:
+1. pulls bright art toward metallic grey (× min(1.7 − luma, 1));
+2. adds a faint near-neutral tint;
+3. applies a near-neutral contrast overlay;
+4. overlays one wide soft vertical light bar at half weight (blend = bar + 0.22), so off-bar foil reads darker,
+   the bar brightens, and the graded plate makes both carry the printed design;
+5. adds a grazing rim.
+
+The bar and tint are our own analytic functions. `mirror`'s canon is rewritten to the law's settings.
+
+**Why:** the reference's reverse is mostly a re-toning of the art under the plate. The additive law cannot darken,
+and it exempts saturated ink. So on a yellow SV body the pattern barely showed (the maintainer: "you can barely see
+the pattern on that dreepy"), and the old mirror canon looked like the one he disliked.
+
+**Measured:** three reverses (sv06-128, me02-011, me02.5-039), with our generated masks:
+- foil change |ΔL| is 0.011–0.027, against the reference's 0.012–0.029;
+- chroma 0.005–0.014, against 0.006–0.015;
+- the printed pattern reads on the body at every tilt, as in the reference.
+
+Every other recipe renders byte-identically (horizontal-sheen canon frames, 8/8). All 31 other canons were widened
+with `uPlateOverlay: 0` by `tools/freeze-canon.mjs`, with no value changes and their freeze provenance kept.
+
+**Previous mirror canon** (in git history): `{"uIntensity":1.64,"uScale":0.9,"uHueShift":0.4,"uHueSpread":0,"uSat":0,"uArtGate":0.64,"uSpecular":0.64,"uDarken":1,"uTint":1,"uInkGuard":1,"uInkPop":0.96,"uMetal":0.99,"uSheen":1.66,"uSheenTint":0.5,"uDepth":0.72,"uGrain":0.7,"uP0":7,"uP1":1.05,"uP2":0.85,"uP3":0.95}`
