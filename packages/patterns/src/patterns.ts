@@ -1180,92 +1180,75 @@ vec3 foilPattern(vec2 uv, vec2 tilt) {
 // light differently". R3-GLYPH models it as a light-RESPONSE region: same
 // facet field, phase-offset flash lobe + shifted hue inside the ball.
 const PRISMATIC_POKEBALL_GLSL = `
-vec3 foilPattern(vec2 uv, vec2 tilt) {
-  float sweep = tilt.x + tilt.y * 0.8;
-  vec2 g = uv * vec2(1.0, CARD_ASPECT) * uP0 * uScale;
-  vec2 id = floor(g);
-  vec2 f = fract(g);
-  float best = 8.0; float second = 8.0; vec2 bid = id;
-  for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
-    vec2 o = vec2(float(x), float(y));
-    vec2 r = hash22(id + o);
-    vec2 dp = o + r - f;
-    float d = dot(dp, dp);
-    if (d < best) { second = best; best = d; bid = id + o; }
-    else if (d < second) { second = d; }
-  }
-  vec2 rnd = hash22(bid);
-  // broad rainbow flash lobe sweeping across the card with tilt — the
-  // rainbow-mirror base layer. Outside the lobe the body stays the darkened
-  // substrate (uDarken) with only a faint metallic floor.
-  float ph = uv.y * 0.8 + uv.x * 0.35 - sweep * 1.25;
-  float lobe = pow(max(0.0, cos(PI * clamp(ph, -1.0, 1.0))), 2.0);
-  // facet-quantized flash: each cell is a flat mirror with its own threshold —
-  // the lobe edge breaks into discrete polygons, but the window is wide and
-  // the jitter modest so the lobe interior stays a CONTINUOUS gradient
-  // (eyeball round 1: tight window + big jitter read as lit/unlit confetti)
-  float glint = smoothstep(0.18, 0.72, lobe + (rnd.x - 0.5) * 0.35);
-  float hue = uHueShift + uHueSpread * (uv.y * 0.5 + uv.x * 0.2 + 0.75 * sweep) + (rnd.y - 0.5) * uP2;
-  vec3 fcol = pow(hueRamp(hue), vec3(1.3));
-  // facet seams — visible inside the flash (shattered-glass definition)
-  float edge = smoothstep(0.10, 0.02, sqrt(second) - sqrt(best));
-  vec3 base = fcol * (0.05 + 0.45 * lobe + 0.85 * glint) + edge * fcol * (0.10 + 0.45 * glint);
-  // faint metallic floor so the dark mirror reads silver, not void
-  base += vec3(0.055) * (1.0 - lobe);
-  // Poké Ball watermark, R3-GLYPH rework (Chey hjwcss): "the ball shouldn't
-  // darken, it just catches light differently" — the R2 overprint SUPPRESSION
-  // is gone. Inside the ball the SAME facet field answers a phase-offset
-  // flash lobe with a shifted hue: the ball flashes at different tilt angles
-  // than its surround (visible as a hue/timing discontinuity, never a
-  // luminance subtraction — equal brightness model inside and out). Interior
-  // detail (belt/button procedurally, or the glyph's own shading when his
-  // real ball SVG lands in assets/glyphs/prismatic-pokeball/) offsets
-  // the phase further so the ball's structure reads through light response.
-  vec2 bp = (uv - vec2(0.5, uP1)) * vec2(1.0, CARD_ASPECT);
-  float rball = 0.33;
-  float cover; float detail;
-  if (uGlyphOn > 0.5) {
-    vec4 gt = glyphTex(0.0, bp / (2.2 * rball));
-    cover = gt.a;
-    detail = dot(gt.rgb, vec3(0.299, 0.587, 0.114)); // glyph shading = response detail
-  } else {
-    float d2 = length(bp);
-    cover = smoothstep(rball + 0.012, rball - 0.012, d2);
-    float belt = smoothstep(0.055, 0.030, abs(bp.y)) * cover;
-    float ring = smoothstep(0.015, 0.006, abs(d2 - 0.105)) * cover;
-    detail = max(belt, ring);
-  }
-  // the ball BODY shares the surround's exact flash envelope (zero phase
-  // offset — eyeball rounds 1-2: any body-level offset displaces the band and
-  // re-creates the darkening he vetoed at the band edges); "catches light
-  // differently" is carried by a hue shift + a crunchier facet quantization,
-  // and only the interior DETAIL (belt/button, or his glyph's shading) leads
-  // the phase slightly so the ball's structure shimmers through the flash.
-  float ph2 = ph + detail * 0.12;
-  float lobe2 = pow(max(0.0, cos(PI * clamp(ph2, -1.0, 1.0))), 2.0);
-  float glint2 = smoothstep(0.18, 0.72, lobe2 + (rnd.x - 0.5) * 0.35);
-  // small hue lean + a WHITE mix: a big hue offset (0.12, rounds 2-3) lands
-  // yellow->magenta, and a saturated magenta can never reach yellow's
-  // luminance through the screen-blend clamp — it perceptually darkens no
-  // matter how it is luminance-"matched". The physical watermark is a
-  // smoother varnish: its response is PALER/shinier, so mix toward white
-  // (whiteness with color, the shiny-vault lesson), never darker.
-  vec3 fcol2 = mix(pow(hueRamp(hue + 0.05 + detail * 0.08), vec3(1.3)), vec3(1.0), 0.24 + 0.10 * detail);
-  vec3 ballBase = fcol2 * (0.05 + 0.45 * lobe2 + 0.85 * glint2) + edge * fcol2 * (0.10 + 0.45 * glint2);
-  ballBase += vec3(0.055) * (1.0 - lobe2);
-  base = mix(base, ballBase, cover);
-  // round 3 ("ball too faint, needs to catch light distinctly WITHOUT
-  // darkening"): the ball is a smoother plane than the facet mosaic, so its
-  // own flash is COHERENT — a unified bright plane flash riding slightly
-  // behind the mosaic lobe, purely additive (can only brighten), with the
-  // belt/button detail popping hardest inside it. The solid filled ball
-  // reads exactly during this flash and blends back into the mosaic outside.
-  float planeFlash = pow(max(0.0, cos(PI * clamp(ph + 0.30, -1.0, 1.0))), 6.0);
-  // 0.42/0.10 (eyeball): at 0.75/0.28 the flash clipped to a structureless
-  // white blob — the coherent flash should read as a pale unified plane with
-  // the belt/button still legible through it
-  base += cover * planeFlash * (fcol2 * 0.42 + vec3(0.10)) * (1.0 + 0.45 * detail);
-  return base * uP3;
+// R12 2026-10-19: rebuilt as the modern client draws the Prismatic Evolutions
+// Poke Ball / Master Ball parallels: a whole-card rainbow film (FOILKIT_COMPOSITE).
+// A one-cycle hue gradient lies diagonally across the card (iso-hue lines at about
+// 55 degrees, repeating every ~0.61 of the sheet) and shifts along itself as the
+// card turns; a narrow yellow-white-blue streak rides it; it is overlaid into the
+// art, a broad stripe that follows the pitch brightens it, and the etch plate (the
+// fine contour lines and the big ball, generated per printing) brightens the foil
+// where it is white and dims the card where it is dark. Our own analytic ramps.
+//   uP0 gradient scale, uP1 travel, uP2 streak gain, uP3 strength.
+#define FOILKIT_COMPOSITE
+vec3 foilPattern(vec2 uv, vec2 tilt) { return vec3(0.0); }
+
+vec3 prHsv(float h, float s, float v) {
+  vec3 k = clamp(abs(fract(h + vec3(0.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0) - 1.0, 0.0, 1.0);
+  return v * mix(vec3(1.0), k, s);
+}
+// soft one-cycle hue wheel: pink-magenta, red, orange, yellow, green, cyan, blue, violet (linear)
+vec3 prRamp(float u) {
+  u = fract(u);
+  float h = 0.90 + u * 0.55 + 0.45 * smoothstep(0.19, 1.0, u);
+  return pow(prHsv(h, 0.9, 0.94), vec3(2.2));
+}
+// the narrow streak: dark, a yellow rise, a white peak, light blue to deep blue, dark (linear)
+vec3 prStreak(float u) {
+  u = fract(u);
+  float pk = exp(-0.5 * (u - 0.5) * (u - 0.5) / (0.09 * 0.09));
+  vec3 side = mix(vec3(1.0, 0.85, 0.25), vec3(0.45, 0.70, 1.0), smoothstep(0.42, 0.58, u));
+  return mix(side * 0.6, vec3(1.0), smoothstep(0.35, 1.0, pk)) * pk;
+}
+vec3 foilComposite(vec2 uv, vec2 tilt, vec3 art, float wp) {
+  vec2 g = vec2(0.1421 + uv.x * 0.7158, uv.y);
+  float ay = tilt.x * uTiltMax;
+  float ax = -tilt.y * uTiltMax;
+  vec3 N = vec3(sin(ay), -cos(ay) * sin(ax), cos(ay) * cos(ax));
+  vec3 T = vec3(cos(ay), sin(ay) * sin(ax), -sin(ay) * cos(ax));
+  vec3 B = vec3(0.0, cos(ax), sin(ax));
+  vec3 V = gViewTS;
+  vec3 Vw = T * V.x + B * V.y + N * V.z;
+  // a broad stripe that sweeps as the card pitches
+  float d = dot(N.yz, normalize(Vw.yz));
+  float s = (1.0 - d) * 2.5;
+  float a = (s + 0.35) - floor(s + 0.85);
+  float bt = a * 2.0 + g.x;
+  float band = bt * (1.0 - bt);
+  float seed = hash21(floor(texture2D(uFace, vec2(0.5)).rg * 255.0)) * 9.0 + 1.0;
+  // the eye in the card's own frame drives the shift along the gradient
+  float pitch = -tilt.y * uTiltMax;
+  float yaw = tilt.x * uTiltMax;
+  vec3 c = vec3(0.0, 0.0, uCamDist);
+  c = vec3(c.x, cos(pitch) * c.y + sin(pitch) * c.z, -sin(pitch) * c.y + cos(pitch) * c.z);
+  c = vec3(cos(yaw) * c.x - sin(yaw) * c.z, c.y, sin(yaw) * c.x + cos(yaw) * c.z);
+  vec3 w = normalize(vec3(1.0, 0.0, 0.0) + c - vec3(0.0, 0.0, 1.0));
+  float w0 = normalize(vec3(1.0, 0.0, uCamDist - 1.0)).x;
+  float k = 0.82 * ((w.x + w.y) - w0) * uP1 + 0.82 * w0;
+  float us = (1.342020 * g.x - 0.939693 * g.y) * uP0 + 0.402327 * seed + 0.060307 + k;
+  vec3 bright = prStreak(us) * uP2;
+  vec3 spec = prRamp(us);
+  vec3 foilRaw = 1.0 - (1.0 - pow(clamp(bright, 0.0, 1.0), vec3(3.79))) * (1.0 - spec);
+  float lum = clamp(band * 4.0 + foilRaw.g, 0.0, 1.0);
+  vec3 foil = clamp(foilRaw, 0.0, 1.0);
+  float f = (lum * 0.3 + 0.5) * 0.62 + 0.38;
+  float e = uEtchOn > 0.5 ? gEtch : 1.0;
+  vec3 ovl = plateOverlay(art, foil) + art * (e + 0.5) * 0.5;
+  vec3 foilMix = min((e * 0.25 + f) * ovl * 0.85, vec3(1.0));
+  float mask = min((e + 1.0) * wp, 1.0);
+  vec3 col = mix(art, foilMix, mask);
+  col = clamp(wp * foil * art * art + col, 0.0, 1.0);
+  col *= 1.0 - 0.2 * (1.0 - e);
+  return mix(art, col, clamp(uP3 * uIntensity, 0.0, 1.0));
 }`
 
 // #18 Tinsel II — dense chaotic horizontal static: fine striations whose
@@ -3533,27 +3516,21 @@ export const PATTERNS: FoilPattern[] = [
     taxonomy: 'Polygon mosaic + ball watermark catching light differently over rainbow-mirror',
     usedOn: 'Prismatic Evolutions poke-ball reverses.',
     glsl: PRISMATIC_POKEBALL_GLSL,
-    // uDarken 0.5: the reference body is a pale-to-dark gray mirror at most
-    // angles — the R1 screen-only recipe could not darken the near-white
-    // Prismatic Evolutions body at all (structural nay, best 8/20).
-    // uDarken 0.6: at 0.5 the flash screen-blended over a still-mid-gray body
-    // and washed pastel; the reference flash is vivid BECAUSE the base is dark
+    // R12 2026-10-19: rebuilt as the modern client's whole-card rainbow film
+    // (FOILKIT_COMPOSITE). The ball watermark and the contour lines now come from
+    // the generated etch plate of each printing (Poke Ball or Master Ball), the
+    // polygon mosaic from the printed art itself. The additive terms are off.
     family: 'stamp',
-    defaults: { ...STAMP_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.5, uHueSpread: 1.0, uSat: 0.85, uArtGate: 0.0, uSpecular: 0.25, uDarken: 0.6 },
+    defaults: {
+      uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 0.0, uSat: 1.0,
+      uArtGate: 0.0, uSpecular: 0.0, uDarken: 0.0, uTint: 0.0, uInkPop: 0.0,
+      uMetal: 0.0, uSheen: 0.0, uSheenTint: 0.0, uDepth: 0.0, uGrain: 1.0,
+    },
     params: [
-      // 13: reference cells are 1/15–1/10 card width; the R1 default 9 judged
-      // "significantly larger and less dense than the reference"
-      { key: 'uP0', label: 'Facet density', min: 3, max: 24, step: 0.5, default: 13 },
-      // 0.30: at 0.45 the ball watermark sat almost entirely behind the art
-      // window, which the REVERSE mask cuts out — on the exemplar card the
-      // judge never saw it ("watermark completely missing", round 3). The
-      // physical ball is card-centered, but the render must put its visible
-      // mass on the foiled body.
-      { key: 'uP1', label: 'Ball center Y', min: 0.2, max: 0.8, step: 0.01, default: 0.3 },
-      // 0.25: adjacent facets sample SLIGHTLY different hues (vision spec);
-      // 0.4 jumped whole spectrum bands between neighbors
-      { key: 'uP2', label: 'Facet scatter', min: 0, max: 1, step: 0.02, default: 0.25 },
-      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.3 },
+      { key: 'uP0', label: 'Gradient scale', min: 0.25, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP1', label: 'Travel', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP2', label: 'Streak gain', min: 0, max: 2, step: 0.05, default: 1.0 },
+      { key: 'uP3', label: 'Strength', min: 0, max: 1, step: 0.05, default: 1.0 },
     ],
     implemented: true,
   },

@@ -10,7 +10,7 @@
       "params": {
         "method": "region classes (lines/solid/none) + direction-field stripes, 3.5 px pitch @1024"
       },
-      "generatedAt": "2026-10-19T17:53:20Z"
+      "generatedAt": "2026-10-19T21:27:50Z"
     },
     "modular-holo-cosmos-2026-10-19": {
       "name": "modular-holo-cosmos",
@@ -248,17 +248,17 @@
     ["sv07-131",30411,"foil","sheet","93372826b1eec3f28c5cfb355b7123de9fb85b37de3b8fba2c946849d799b066",61245,"modular-reverse-2026-10-19",null],
     ["sv07-132",30413,"foil","sheet","e87359b3f300690f30589a85ff92b040dbdf2c519d6f2b644d977bc234ff7222",61279,"modular-reverse-2026-10-19",null],
     ["sv07-133",30415,"foil","sheet","baceceaab2105f8b0ded7b74691c103f3fb8183b6f66612172a75cb567fec13a",61191,"modular-reverse-2026-10-19",null],
-    ["sv07-134",30416,"etch","full","e610024291fb0435bcb3cc5fa3cca8a9d1a8e56edbffdde213309e23fe41d4a1",266294,"modular-etch-v2-2026-10-19",null],
+    ["sv07-134",30416,"etch","full","f1aaa5a3fffc07f3f7feb91b34c98199d800052aae1801c04cb7f7d3e28040e2",205057,"modular-etch-v2-2026-10-19",null],
     ["sv07-134",30416,"foil","full","b07a3484df0a48c2ed5305b4e10fb55fa4e4625e8b8ef77434621ba87a9c4235",90349,"modular-holo-full-2026-10-19",null],
     ["sv07-135",30418,"foil","sheet","c33c9db7324903c3a57002b80e46a63130ad9d850e322a08fb816dd687518255",60264,"modular-reverse-2026-10-19",null],
-    ["sv07-136",30419,"etch","full","92877a599f1b8158c5fa1049e051152972052818fd8925c71953e17ae946c927",288818,"modular-etch-v2-2026-10-19",null],
+    ["sv07-136",30419,"etch","full","dbab56d40be355978256f016b4cc7a603dc51286a0a0a597f62ffcbfe0892bd2",218471,"modular-etch-v2-2026-10-19",null],
     ["sv07-136",30419,"foil","full","6690eceb7725be9ff5b37e9c8bd38be10d99fb61ba414f1ba18e827cda3af05c",102328,"modular-holo-full-2026-10-19",null],
     ["sv07-137",30421,"foil","sheet","ea125457bf4c438ed3f06555b52def5013912c58101c8c1d2e69d9cd1d4290de",62017,"modular-reverse-2026-10-19",null],
     ["sv07-138",30423,"foil","sheet","312f02b6544221807c4bd1b4993d8b32428d8ab5c708ec5f38626ff55a370365",61369,"modular-reverse-2026-10-19",null],
     ["sv07-139",30425,"foil","sheet","fe7cccd53d6931583c2416a82d4ecb471c1130f4ef377f7ec36b1853efd4de0b",61373,"modular-reverse-2026-10-19",null],
     ["sv07-140",30427,"foil","sheet","bfddc763a1dcc111d604ac2b1852332749a02724f4421735be008caf0f3d6465",62018,"modular-reverse-2026-10-19",null],
     ["sv07-141",30429,"foil","sheet","eb34057e0aaed54902738d3a621b248fa9cb77d40c192fc7800cb7620d0678d4",62072,"modular-reverse-2026-10-19",null],
-    ["sv07-142",30430,"etch","full","b2e71a1fe6e4239d61491c5d1277b3c46ed79cdf88ee40fc9498cf2f9c889f9f",255829,"modular-etch-v2-2026-10-19",null],
+    ["sv07-142",30430,"etch","full","c7aeb6088b7f6c66281975afac9d19318d72504b05e429b4b42e58c74e7b108b",214005,"modular-etch-v2-2026-10-19",null],
     ["sv07-142",30430,"foil","full","827d8e73736c1343d0337ab255bdaa30914bb308e62975fed3a919e7eac936da",83860,"modular-holo-full-2026-10-19",null],
     ["sv07-143",30431,"etch","full","b7a223b898b62dd5fb0e9a0022271d4b73a52b7f39976a28cd788abffba174ae",366269,"modular-etch-v2-2026-10-19",null],
     ["sv07-143",30431,"foil","full","7d4200232b8384eaaa68dd677f3b6dd3ff00a4f1c72246cf93e253cc4c5e9249",132806,"modular-holo-full-2026-10-19",null],
