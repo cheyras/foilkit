@@ -2491,37 +2491,40 @@ vec3 foilPattern(vec2 uv, vec2 tilt) {
 // -> indigo -> purple, desaturated by uSat like hueRamp.
 const CROSSED_RAINBOW_GLSL = `
 vec3 crStrip(float t) {
-  t = fract(t) * 6.0;
+  t = fract(t) * 7.0;
   vec3 c = mix(vec3(0.55, 0.22, 0.78), vec3(0.96, 0.28, 0.32), smoothstep(0.0, 1.0, t));
-  c = mix(c, vec3(1.0, 0.90, 0.38), smoothstep(1.0, 2.0, t));
-  c = mix(c, vec3(0.72, 0.98, 0.95), smoothstep(2.0, 3.0, t));
-  c = mix(c, vec3(0.28, 0.48, 1.0), smoothstep(3.0, 4.0, t));
-  c = mix(c, vec3(0.30, 0.16, 0.62), smoothstep(4.0, 5.0, t));
-  c = mix(c, vec3(0.55, 0.22, 0.78), smoothstep(5.0, 6.0, t));
+  c = mix(c, vec3(1.0, 0.62, 0.25), smoothstep(1.0, 2.0, t));
+  c = mix(c, vec3(1.0, 0.92, 0.40), smoothstep(2.0, 3.0, t));
+  c = mix(c, vec3(0.80, 0.98, 0.96), smoothstep(3.0, 4.0, t));
+  c = mix(c, vec3(0.28, 0.48, 1.0), smoothstep(4.0, 5.0, t));
+  c = mix(c, vec3(0.30, 0.16, 0.62), smoothstep(5.0, 6.0, t));
+  c = mix(c, vec3(0.55, 0.22, 0.78), smoothstep(6.0, 7.0, t));
   float l = dot(c, vec3(0.299, 0.587, 0.114));
   return mix(vec3(l), c, uSat);
 }
 vec3 foilPattern(vec2 uv, vec2 tilt) {
-  vec2 p = (uv - 0.5) * vec2(1.0, CARD_ASPECT);
-  float drift = tilt.x * uP1;
-  float a = dot(p, vec2(0.848, 0.530)) * uP0 * uScale + drift + 0.3 * tilt.y;
-  float b = dot(p, vec2(-0.454, 0.891)) * uP0 * 0.78 * uScale - drift + 0.3 * tilt.y + 0.37;
+  // Two rainbow systems whose bands BOTH rise to the right, at different
+  // slopes and frequencies; they slide in opposite directions with yaw. Their
+  // summed square reads as long parallel diagonal streaks, not a checkerboard.
+  float tx = 0.28 * tilt.x * uP1;            // card-normal x at full tilt
+  float a = (3.14 * uv.x - 2.79 * uv.y) * uP0 * uScale - 1.84 * tx;
+  float b = (1.57 * uv.x - 3.57 * uv.y) * uP0 * uScale + tx + 0.37;
   vec3 sA = crStrip(uHueShift + uHueSpread * a);
   vec3 sB = crStrip(uHueShift + uHueSpread * b);
-  // summed and squared, they interfere into a contrasty moire; uP2 sharpens it
   vec3 light = pow(clamp((sA + sB) * (sA + sB) * 0.25, 0.0, 1.0), vec3(uP2));
-  // a gentle horizontal brightness band that rides pitch
   float by = clamp((uv.y - 0.5 - 0.6 * tilt.y) * 1.4, -1.0, 1.0);
   light *= 0.75 + 0.27 * pow(0.5 + 0.5 * cos(PI * by), 2.0);
   if (uEtchOn > 0.5) {
-    // etched lines dim the film, and the faint ones glint under a broad,
-    // slightly leaning spectral band that sweeps with yaw
     light *= mix(1.0, gEtch, 0.85);
     float sweep = pow(0.5 + 0.5 * cos(TAU * (uv.y - 0.4 * uv.x + 0.5 * tilt.x * uP1)), 3.0);
     float faint = step(0.01, gEtch) * pow(clamp(1.36 - gEtch, 0.0, 1.36), 4.0) * 0.2;
     light += crStrip(uHueShift + 0.5 * uv.y + 0.3 * tilt.x) * clamp(faint, 0.0, 1.0)
            * (1.0 - gEtch) * sweep * uP4 * 4.0;
   }
+  // dark-ink factor, as in horizontal-sheen: the reference changes dark and
+  // light ink about equally; the additive composite would not (uFace exception).
+  float faceL = dot(texture2D(uFace, uv).rgb, vec3(0.299, 0.587, 0.114));
+  light *= mix(uP5, 1.0, smoothstep(0.05, 0.75, faceL));
   return light * uP3;
 }`
 
@@ -3653,11 +3656,14 @@ export const PATTERNS: FoilPattern[] = [
     // at 4.5 / 0.9 it read right but dimmed the art. This is the middle.
     defaults: { ...FIELD_FOIL, uSheen: 4.0, uDepth: 0.75, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 1.0, uSat: 0.85, uArtGate: 0.0, uSpecular: 0.2, uDarken: 0.2 },
     params: [
-      { key: 'uP0', label: 'Band frequency', min: 1, max: 10, step: 0.1, default: 5.0 },
+      // Round-2 tuning against the reference on 4 cards (IR, ex, 2 etched UR), plates from the reference:
+      // structure correlation +0.17..+0.69; |dL| about 1.0x (ex) to 1.7x (IR, etched UR) of the reference.
+      { key: 'uP0', label: 'Band frequency', min: 0.3, max: 3, step: 0.05, default: 1.6 },
       { key: 'uP1', label: 'Band travel', min: 0, max: 3, step: 0.05, default: 1.0 },
-      { key: 'uP2', label: 'Moire contrast', min: 0.5, max: 4, step: 0.05, default: 2.0 },
-      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP2', label: 'Moire contrast', min: 0.5, max: 4, step: 0.05, default: 3.0 },
+      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 0.4 },
       { key: 'uP4', label: 'Etch glint', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP5', label: 'Dark-ink factor', min: 0, max: 1, step: 0.05, default: 0.3 },
     ],
     implemented: true,
   },
