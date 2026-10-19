@@ -3197,3 +3197,29 @@ The maintainer tuned the `mirror` canon (PR #7: uIntensity 2, uP1 3, uP3 1.65). 
 
 **Measured:** resolver over the catalog: 2,617 SV/ME `reverse` and 140 `reverse-foil-energy` variants resolve to
 `mirror`.
+
+## 2026-10-19 — Etch plates ship; per-card on/off and a segment etch editor
+
+**Decided by:** @cheyras ("Ship the etches. Make it so they can be turned off/on per-card…")
+
+**Decision:** generated etch plates for SV/ME (1,754 rows, layer `etch`, 1008 × 1408, 8 grey levels) join the
+generated-mask store, in the same bucket and the same set index. The editor and viewer now show them: before, no
+etch reached the renderer.
+
+A person's choice goes in `data/foil-etches/<cardId>/<variantId>.json`. It always beats the generated plate (F4),
+and `enabled: false` means the printing shows no etch. The editor has an etch mode with these labels:
+
+- **Keep:** the generated etch.
+- **White:** plain foil.
+- **Black:** solid line, such as eyes.
+- **Sections A–H:** each takes a pattern from the library (contour, arcs, parallel, wave, radial, crosshatch,
+  chevron, shards, stipple, solid, clear), with its own direction, pitch, weight, centre, phase and amount.
+
+Segments are drawn with brush, lasso or erase on a 504 × 704 map. The mode bakes a live 1008 × 1408 plate. On save
+(writers only, `PUT /api/etch`) it commits the record, the plate and the segment map. The section rules and notes
+are kept so that an agent can learn which pattern people choose for which kind of region.
+
+**Measured:** pattern defaults come from statistics over 160 modern-era reference etches in 48 px patches:
+50% blank, 33% curved, 10% parallel, 3.7% cross-hatch, 2.5% stipple and 1% solid. The pitch median is 4.85 px at
+1008 wide, the weight 0.51–0.61, and the border band is diagonal. Only the numbers carry over; the references are
+local and never committed.

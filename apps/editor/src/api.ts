@@ -502,6 +502,95 @@ export async function generatedEtchUrl(cardId: string, variantId: number, signal
   return (await generatedRow(cardId, variantId, 'etch', signal))?.url ?? null
 }
 
+// ── Etch records (data/foil-etches/, human decisions) ───────────────────────
+
+export type EtchPatternName = 'contour' | 'arcs' | 'parallel' | 'wave' | 'radial' | 'crosshatch' | 'chevron' | 'shards' | 'stipple' | 'solid' | 'clear'
+export interface EtchSectionSettings {
+  pattern: EtchPatternName
+  angle: number
+  pitch: number
+  weight: number
+  cx: number
+  cy: number
+  phase: number
+  amount: number
+  note?: string
+}
+export interface EtchRecordFile {
+  version: 1
+  cardId: string
+  variantId: number
+  enabled: boolean
+  base: { kind: 'generated' | 'none'; sha256: string | null }
+  sections: Partial<Record<string, EtchSectionSettings>>
+  files: { etch: string | null; segs: string | null }
+  savedAt: string
+  author: { login: string; id: number | null }
+}
+
+/** The committed etch record for a printing, or null. `fresh` bypasses the 5-minute cache after a save. */
+export async function getEtchRecord(cardId: string, variantId: number, fresh = false): Promise<EtchRecordFile | null> {
+  try {
+    const res = await fetch(`/foil-etches/${cardId}/${variantId}.json`, fresh ? { cache: 'no-store' } : undefined)
+    // A missing record falls through to the SPA's index.html with a 200.
+    if (!res.ok || !(res.headers.get('content-type') ?? '').includes('json')) return null
+    return (await res.json()) as EtchRecordFile
+  } catch {
+    return null
+  }
+}
+
+/**
+ * What etch a printing shows, in priority order: a human record (its baked
+ * plate, or nothing when switched off), else the generated plate, else none.
+ */
+export async function resolveEtch(
+  cardId: string,
+  variantId: number,
+  fresh = false,
+): Promise<{ url: string | null; source: 'edited' | 'generated' | 'off' | 'none'; record: EtchRecordFile | null; generated: { url: string; sha256: string } | null }> {
+  const [record, gen] = await Promise.all([getEtchRecord(cardId, variantId, fresh), generatedRow(cardId, variantId, 'etch')])
+  const generated = gen ? { url: gen.url, sha256: gen.sha256 } : null
+  if (record) {
+    if (!record.enabled) return { url: null, source: 'off', record, generated }
+    if (record.files.etch) {
+      const v = encodeURIComponent(record.savedAt)
+      return { url: `/foil-etches/${cardId}/${record.files.etch}?v=${v}`, source: 'edited', record, generated }
+    }
+  }
+  if (generated) return { url: generated.url, source: 'generated', record, generated }
+  return { url: null, source: 'none', record, generated }
+}
+
+/** Save a human etch record (writer only). Images are data:image/png URLs. */
+export async function saveEtch(body: {
+  cardId: string
+  variantId: number
+  enabled: boolean
+  base?: { kind: 'generated' | 'none'; sha256: string | null }
+  sections?: Record<string, EtchSectionSettings>
+  etch?: string | null
+  segs?: string | null
+}): Promise<EtchRecordFile> {
+  const res = await fetch('/api/etch', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(await writeError(res, 'etch save'))
+  return (await res.json()) as EtchRecordFile
+}
+
+/** Remove a human etch record, so the printing reverts to its generated etch (writer only). */
+export async function deleteEtch(cardId: string, variantId: number): Promise<void> {
+  const res = await fetch(`/api/etch?cardId=${encodeURIComponent(cardId)}&variantId=${variantId}`, {
+    method: 'DELETE',
+    credentials: 'same-origin',
+  })
+  if (!res.ok) throw new Error(await writeError(res, 'etch revert'))
+}
+
 // ── Fetchers ───────────────────────────────────────────────────
 
 export const foilApi = {

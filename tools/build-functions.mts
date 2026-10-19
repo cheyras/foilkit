@@ -193,7 +193,7 @@ async function main(): Promise<void> {
       // The corpus can change under a direct write, so it revalidates. Short
       // rather than immutable: a contributor who saves a mask must see it.
       {
-        src: '^/foil-(masks|canon|windows|glyphs)/(.*)$',
+        src: '^/foil-(masks|canon|windows|glyphs|etches)/(.*)$',
         headers: { 'cache-control': 'public, max-age=300, must-revalidate' },
         continue: true,
       },

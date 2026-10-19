@@ -33,6 +33,8 @@ const CORPUS_DIRS = [
   ['foil-windows', 'foil-windows'],
   // The ink-design tiles (R8-INK), at the route @foilkit/three defaults to.
   ['ink-tiles', 'ink-tiles'],
+  // Human etch records (data/foil-etches): the per-card on/off switch and hand-edited plates.
+  ['foil-etches', 'foil-etches'],
   // The generated-mask INDEX (the bytes live in object storage).
   ['generated-masks', 'generated-masks'],
 ]
