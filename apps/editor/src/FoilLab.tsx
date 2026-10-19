@@ -25,7 +25,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import {
   foilApi,
-  generatedEtchUrl,
   proxied,
   type FoilDerivationMethod,
   type FoilMaskMeta,
@@ -74,6 +73,7 @@ import {
   type PenPath,
 } from '@foilkit/forge/geometry'
 import { usePenSnap } from './penSnap.ts'
+import { EtchOverlay, EtchPanel, useEtchSession } from './etch/EtchMode.tsx'
 import { ActionBtn, Chip, CoreSliders, Section, Select, Slider, SurfaceTabs } from './ui.tsx'
 import { CorpusView, FILTER_LABEL, type ContributionFilter } from './catalog/manifest.ts'
 import { navigate, setParam } from './router.ts'
@@ -514,19 +514,12 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   }, [detailQ.data, sel.variantId])
 
   const detail = detailQ.data
-  // The generated etch plate for this printing, when the store has one.
-  const [etchUrl, setEtchUrl] = useState<string | null>(null)
-  useEffect(() => {
-    setEtchUrl(null)
-    if (!detail || sel.variantId == null) return
-    let cancelled = false
-    void generatedEtchUrl(detail.card.cardId, sel.variantId).then((u) => {
-      if (!cancelled) setEtchUrl(u)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [detail, sel.variantId])
+  // The etch plate: a human record wins (its baked plate, or none when switched
+  // off), else the generated plate. Etch mode paints over it and the card shows
+  // the baked preview live.
+  const [etchMode, setEtchMode] = useState(false)
+  const etch = useEtchSession(detail?.card.cardId ?? null, sel.variantId ?? null, etchMode, viewer.savePath === 'direct-write')
+  const etchUrl = etch.previewUrl
   const variant = detail?.variants.find((v) => v.variantId === sel.variantId) ?? null
 
   // ── Resolve pattern + mask ──
@@ -1617,13 +1610,13 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
           imageUrl={imageUrl}
           pattern={pattern}
           settingsRef={settingsRef}
-          tiltTarget={editMode || adjustMode || penMode ? zeroTilt : tilt.target}
+          tiltTarget={editMode || adjustMode || penMode || etchMode ? zeroTilt : tilt.target}
           maskCanvas={handActive ? maskCanvas : null}
           etchUrl={etchUrl}
           ink={inkForViewer}
           view={viewCtl}
-          onPointerMove={editMode || adjustMode || penMode ? undefined : tilt.onPointerMove}
-          onPointerLeave={editMode || adjustMode || penMode ? undefined : tilt.onPointerLeave}
+          onPointerMove={editMode || adjustMode || penMode || etchMode ? undefined : tilt.onPointerMove}
+          onPointerLeave={editMode || adjustMode || penMode || etchMode ? undefined : tilt.onPointerLeave}
           className="h-full w-full"
         >
           {editMode && cardRect.width > 0 && (
@@ -1638,6 +1631,9 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
               onStrokeCancel={onStrokeCancel}
               registerHandle={registerEditor}
             />
+          )}
+          {etchMode && !editMode && !adjustMode && !penMode && cardRect.width > 0 && (
+            <EtchOverlay session={etch} rect={cardRect} />
           )}
           {penMode && !editMode && !adjustMode && cardRect.width > 0 && (
             <PenEditor
@@ -2329,6 +2325,7 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
         </Section>
 
         {/* ── Staged work, the conflict choice, and the provisional numbers ── */}
+        <EtchPanel session={etch} editing={etchMode} setEditing={setEtchMode} canWrite={canWrite} />
         <Section title={canWrite ? 'Direct write' : 'Your session'}>
           {canWrite ? (
             <p className="text-[12px] leading-[1.5] text-text-muted">
