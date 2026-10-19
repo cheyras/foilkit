@@ -3389,6 +3389,44 @@ The old recipe darkened the window. The remaining excess is a white sheen column
 **Measured bar statistics:** 32 bars per tile, tiled 1.5 × 8 across the sheet. The dull band peaks at 0.62 (floor
 0.067, σ 0.125).
 
+## 2026-10-19 — R12: ace-spec rebuilt as the modern client's ACE SPEC film
+
+**Decided by:** @cheyras ("get it so that meg and svi are as done as you can make them on your own")
+
+**Decision:** R10 left `ace-spec` at about 0.6× of the reference. Its additive diamond outlines were capped by the
+headroom budget over the light ACE SPEC body, and they were the wrong texture: the modern client shows no visible
+diamonds at card scale.
+
+The recipe is rebuilt on the `FOILKIT_COMPOSITE` hook (R12, tinsel):
+- **Lattice:** a soft 45° diamond lattice, made of two crossed sets of soft stripes sampled twice with opposite tilt
+  drift.
+- **Texture:** the lattice is pixelated onto a fine cell grid (192 per sheet width) whose columns alternate between
+  bright and dim. That alternation is the fine vertical-dash texture the reference shows.
+- **Colour:** the lattice value picks a colour from a ramp (grey-green, teal, grey, magenta, red, orange-yellow,
+  cream), which is then desaturated.
+- **Composite:** inside the plate, a sweeping white band is overlaid into the art, which is then colour-dodged by that
+  colour. Where an etch plate is dark, the band also dodges and the relief soft-lights it.
+
+The stripes and the ramp are our own and analytic. The params now mean: `uP0` cell grid, `uP1` lattice travel, `uP2`
+column contrast, `uP3` dodge gain. There is no canon file, so no canon changes.
+
+**Measured** against a local reference render of three SV ACE SPECs (each card's own art, plate and etch on both
+sides; statistics only):
+
+| Card | Reference \|dL\| | New \|dL\| | New structure corr | R10 \|dL\| | R10 corr |
+|---|---|---|---|---|---|
+| sv05-162 | 0.086 / 0.102 / 0.093 / 0.093 | 0.086 / 0.101 / 0.095 / 0.092 | +0.84 to +0.88 | 0.028–0.052 | −0.21 to +0.05 |
+| sv06-163 | — | — | +0.75 to +0.86 | — | — |
+| sv05-152 | — | — | +0.80 to +0.87 | — | — |
+
+Chroma matches within 0.003.
+
+**Measured lattice statistics:**
+- stripes are Gaussian, period half a tile, σ 0.106 of the period;
+- the lattice is pixelated at 192 cells per sheet;
+- columns alternate between 0.6 and 1.0;
+- the band peaks at 0.56 of its period (σ 0.125, floor 0.054).
+
 ## 2026-10-19 — R12: SV/ME promos get masks and assignments; Tera ex found with four badge templates
 
 **Decided by:** @cheyras ("get it so that meg and svi are as done as you can make them on your own")
