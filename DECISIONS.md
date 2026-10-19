@@ -3517,3 +3517,15 @@ The ball and the fine lines live in **per-printing generated plates**, all our o
 
 The correlation drop with our plates comes from the different line field and the text cuts. Only this set cuts
 Trainer text in the reference; checked on 44 cached SV/ME Trainer reverse plates.
+
+## 2026-10-19 — R12: ACE SPEC printings get generated etch plates
+
+**Decided by:** @cheyras ("get it so that meg and svi are as done as you can make them on your own")
+
+**Decision:** the R12 ACE SPEC film reads the card's etch. Lines on the subject and the frame, a dark art
+background and a white text box drive the dodge and the relief. Without an etch it renders at about half the
+reference strength (|dL| 0.043–0.055 against 0.086–0.102).
+
+The 30 SV/ME ACE SPEC Rares that have a TCGdex scan now get our etch v2 (40 rows, run `modular-etch` v2). On a
+reference card, our etch gives the same result as the reference's own etch: |dL| 0.086 / 0.101 / 0.095 / 0.092, and
+structure correlation +0.83…+0.87.
