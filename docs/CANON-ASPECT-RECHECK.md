@@ -251,3 +251,8 @@ streak field) and its canon re-tuned under contract 2, so it now carries `tunedU
 contract-1 retune queue above. Its rows in the tables above describe the previous recipe and canon. The prior canon
 is in git history (the commit before R10's horizontal-sheen change), and its values are listed in DECISIONS.md.
 
+## 2026-10-19 — cosmos-iii-smooth retuned under contract 2
+
+`cosmos-iii-smooth` was rebuilt (R12: an overlay film, a sweeping band plus four parallax bubble layers, replaces
+the R1 additive disc field) and its canon re-tuned under contract 2. It leaves the contract-1 retune queue above. Its
+rows in the tables above describe the previous recipe and canon; the prior values are listed in DECISIONS.md.

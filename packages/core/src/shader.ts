@@ -932,6 +932,26 @@ void main() {
     vec3 law = pow(lc, vec3(1.0 / 2.2));                                // linear -> display
     col = mix(col, law, clamp(uPlateOverlay, 0.0, 1.0));
   }
+#ifdef FOILKIT_OVERLAY_FILM
+  // ── OVERLAY FILM (R12, 2026-10-19; opt-in per recipe) ──────────────────
+  // A recipe that defines FOILKIT_OVERLAY_FILM supplies
+  // overlayFilm(uv, tilt, out S, out F): a film OVERLAY-blended into the art
+  // inside the plate (S; 0.5 is neutral) plus some additive light (F). In
+  // linear colour, like the reference: the plate dims the art 20%, the overlay
+  // re-tones it, and 0.3 F is added on top. It replaces the composite above.
+  // uIntensity scales the whole film; every other recipe compiles this out.
+  {
+    float wf = clamp(m * gate, 0.0, 1.0);
+    vec3 la = pow(clamp(face.rgb, 0.0, 1.0), vec3(2.2));
+    vec3 fS; vec3 fF;
+    overlayFilm(uv, uTilt, fS, fF);
+    float k = clamp(uIntensity, 0.0, 2.0);
+    fS = 0.5 + (fS - 0.5) * k;
+    vec3 artD = la * (1.0 - 0.2 * wf * min(k, 1.0));
+    vec3 fc = clamp(artD + wf * (plateOverlay(artD, fS) - artD), 0.0, 1.0) + 0.3 * fF * wf * k;
+    col = pow(clamp(fc, 0.0, 1.0), vec3(1.0 / 2.2));
+  }
+#endif
   // The ink itself. uInkTone 0 (the default) leaves the design visible purely
   // as ABSENCE of foil, which is all a flat scan of the NORMAL printing can
   // honestly support: the white ink is not in those pixels, so painting it is a

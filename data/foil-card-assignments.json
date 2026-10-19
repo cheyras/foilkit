@@ -371,9 +371,10 @@
   "xy-special",
   "r2-subset-commons",
   "r2b-vocab-wiring",
-  "r7-ex-sheen-energies"
+  "r7-ex-sheen-energies",
+  "r12-svme"
  ],
- "row_count": 183,
+ "row_count": 185,
  "facet_rows": [
   {
    "facet": "cosmos",
@@ -2411,7 +2412,7 @@
    "lane": "sv-era"
   },
   {
-   "pattern": "cosmos-ii-pixel",
+   "pattern": "cosmos-iii-smooth",
    "sel": {
     "setIds": [
      "sv02"
@@ -2443,7 +2444,7 @@
      "quote": "Paraphrase (ch. 'Cosmos II / pixel cosmos', 11:11) — the denser Platinum-onward cosmos, and the promo default; the SV era also puts cosmos borders on regular cards."
     }
    ],
-   "conflicts": "No direct Paldea Evolved set-page fetch; the stamped/blister-promo = Cosmos convention is extrapolated from the Journey Together / Destined Rivals Bulbapedia set pages, where stamped/B&B/checklane/blister holos are explicitly labelled 'Cosmos Holo'/'Pixel Cosmos Holofoil'. The catalog declares a 'cosmos' foil facet on the holo-foil-cosmos variants.",
+   "conflicts": "No direct Paldea Evolved set-page fetch; the stamped/blister-promo = Cosmos convention is extrapolated from the Journey Together / Destined Rivals Bulbapedia set pages, where stamped/B&B/checklane/blister holos are explicitly labelled 'Cosmos Holo'/'Pixel Cosmos Holofoil'. The catalog declares a 'cosmos' foil facet on the holo-foil-cosmos variants. R12 2026-10-19: re-pointed from cosmos-ii-pixel; the modern client draws SV/ME cosmos as Cosmos III (smooth).",
    "lane": "sv-era"
   },
   {
@@ -2583,7 +2584,7 @@
    "lane": "sv-era"
   },
   {
-   "pattern": "cosmos-ii-pixel",
+   "pattern": "cosmos-iii-smooth",
    "sel": {
     "setIds": [
      "sv09"
@@ -2612,7 +2613,8 @@
      "quote": "Paraphrase (ch. 'Cosmos II / pixel cosmos', 11:11) — the denser Platinum-onward cosmos, and the promo default."
     }
    ],
-   "lane": "sv-era"
+   "lane": "sv-era",
+   "conflicts": "R12 2026-10-19: re-pointed from cosmos-ii-pixel; the modern client draws SV/ME cosmos as Cosmos III (smooth)."
   },
   {
    "pattern": "mirror",
@@ -2751,7 +2753,7 @@
    "lane": "sv-era"
   },
   {
-   "pattern": "cosmos-ii-pixel",
+   "pattern": "cosmos-iii-smooth",
    "sel": {
     "setIds": [
      "sv10"
@@ -2779,7 +2781,7 @@
      "quote": "Paraphrase (ch. 'Cosmos II / pixel cosmos', 11:11) — the denser Platinum-onward cosmos, and the promo default."
     }
    ],
-   "conflicts": "Resolver cluster count for sv10[holo] is 37 cards here vs the task's stated 36; the one-card delta is a clustering nuance (the catalog's holo-foil-cosmos-stamp-eb-games variant of Team Rocket's Zapdos). Pattern identity is unaffected.",
+   "conflicts": "Resolver cluster count for sv10[holo] is 37 cards here vs the task's stated 36; the one-card delta is a clustering nuance (the catalog's holo-foil-cosmos-stamp-eb-games variant of Team Rocket's Zapdos). Pattern identity is unaffected. R12 2026-10-19: re-pointed from cosmos-ii-pixel; the modern client draws SV/ME cosmos as Cosmos III (smooth).",
    "lane": "sv-era"
   },
   {
@@ -2921,7 +2923,7 @@
    "lane": "sv-era"
   },
   {
-   "pattern": "cosmos-ii-pixel",
+   "pattern": "cosmos-iii-smooth",
    "sel": {
     "setIds": [
      "svp"
@@ -2945,10 +2947,11 @@
      "quote": "Paraphrase (ch. 'Cosmos II / pixel cosmos', 11:11) — the denser Platinum-onward cosmos, and the promo default."
     }
    ],
-   "lane": "sv-era"
+   "lane": "sv-era",
+   "conflicts": "R12 2026-10-19: re-pointed from cosmos-ii-pixel; the modern client draws SV/ME cosmos as Cosmos III (smooth)."
   },
   {
-   "pattern": "cosmos-ii-pixel",
+   "pattern": "cosmos-iii-smooth",
    "sel": {
     "setIds": [
      "svp"
@@ -2978,7 +2981,7 @@
      "quote": "Paraphrase (ch. 'Cosmos II / pixel cosmos', 11:11) — the denser Platinum-onward cosmos, and the promo default."
     }
    ],
-   "conflicts": "Generalised from the Journey Together / Destined Rivals stamped-promo 'Cosmos Holo' labels to all stamped SVP promos; the SVP-specific stamp types (Pokemon Center, Horizons, illustration-contest) are not individually label-confirmed.",
+   "conflicts": "Generalised from the Journey Together / Destined Rivals stamped-promo 'Cosmos Holo' labels to all stamped SVP promos; the SVP-specific stamp types (Pokemon Center, Horizons, illustration-contest) are not individually label-confirmed. R12 2026-10-19: re-pointed from cosmos-ii-pixel; the modern client draws SV/ME cosmos as Cosmos III (smooth).",
    "lane": "sv-era"
   },
   {
@@ -3035,7 +3038,7 @@
    "lane": "sv-era"
   },
   {
-   "pattern": "cosmos-ii-pixel",
+   "pattern": "cosmos-iii-smooth",
    "sel": {
     "setIds": [
      "sve"
@@ -3061,7 +3064,7 @@
      "quote": "Paraphrase (ch. 'Cosmos II / pixel cosmos', 11:11) — the denser Platinum-onward cosmos, and the promo default."
     }
    ],
-   "conflicts": "The cosmos reverse assignment rests on the catalog's declared 'cosmos' foil facet plus the documented existence of the Cosmos pattern; no secondary source independently describes the SVE product's per-energy reverse foils.",
+   "conflicts": "The cosmos reverse assignment rests on the catalog's declared 'cosmos' foil facet plus the documented existence of the Cosmos pattern; no secondary source independently describes the SVE product's per-energy reverse foils. R12 2026-10-19: re-pointed from cosmos-ii-pixel; the modern client draws SV/ME cosmos as Cosmos III (smooth).",
    "lane": "sv-era"
   },
   {
@@ -3196,7 +3199,7 @@
    "lane": "sv-era"
   },
   {
-   "pattern": "cosmos-ii-pixel",
+   "pattern": "cosmos-iii-smooth",
    "sel": {
     "setIds": [
      "sv03"
@@ -3222,7 +3225,7 @@
      "quote": "Paraphrase (ch. 'Cosmos II / pixel cosmos', 11:11) — the denser Platinum-onward cosmos, and the promo default."
     }
    ],
-   "conflicts": "The 'normal-foil-cosmos' facet is unusual (a non-holo-rare Common card with a cosmos foil overprint); the exact product/origin of sv03-148 Pawniard's cosmos foil is not independently documented. Pattern identity from Bulbapedia + catalog facet.",
+   "conflicts": "The 'normal-foil-cosmos' facet is unusual (a non-holo-rare Common card with a cosmos foil overprint); the exact product/origin of sv03-148 Pawniard's cosmos foil is not independently documented. Pattern identity from Bulbapedia + catalog facet. R12 2026-10-19: re-pointed from cosmos-ii-pixel; the modern client draws SV/ME cosmos as Cosmos III (smooth).",
    "lane": "sv-era"
   },
   {
@@ -7679,6 +7682,112 @@
    ],
    "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
    "lane": "r10-svme"
+  },
+  {
+   "pattern": "cosmos-iii-smooth",
+   "sel": {
+    "setIds": [
+     "sv01",
+     "sv02",
+     "sv03",
+     "sv03.5",
+     "sv04",
+     "sv04.5",
+     "sv05",
+     "sv06",
+     "sv06.5",
+     "sv07",
+     "sv08",
+     "sv08.5",
+     "sv09",
+     "sv10",
+     "sv10.5b",
+     "sv10.5w",
+     "svp",
+     "sve",
+     "me01",
+     "me02",
+     "me02.5",
+     "me03",
+     "me04",
+     "me05",
+     "mep",
+     "mee"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo-foil-cosmos",
+     "holo-foil-cosmos-stamp-eb-games",
+     "holo-foil-cosmos-stamp-gamestop",
+     "holo-foil-cosmos-stamp-player-rewards-program",
+     "holo-foil-cosmos-stamp-set-logo",
+     "holo-foil-cosmos-stamp-snowflake",
+     "holo-foil-cosmos-stamp-ultra-ball-league"
+    ],
+    "cardIds": null
+   },
+   "claim": "Scarlet & Violet and Mega Evolution cosmos holo printings (blister, box and stamped cosmos variants) are the smooth-disc cosmos foil inside the art window.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Holographic_card",
+     "quote": "Paraphrase (Bulbapedia, 'Holographic card') - Cosmos holofoil, the dots-and-circles pattern, is used on promotional and specialty printings."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: the modern client draws every Scarlet & Violet / Mega Evolution cosmos printing with one smooth-disc cosmos film (a sweeping band and four parallax bubble layers), which is the community's Cosmos III (smooth). Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-svme"
+  },
+  {
+   "pattern": "cosmos-iii-smooth",
+   "sel": {
+    "setIds": [
+     "sv01",
+     "sv02",
+     "sv03",
+     "sv03.5",
+     "sv04",
+     "sv04.5",
+     "sv05",
+     "sv06",
+     "sv06.5",
+     "sv07",
+     "sv08",
+     "sv08.5",
+     "sv09",
+     "sv10",
+     "sv10.5b",
+     "sv10.5w",
+     "svp",
+     "sve",
+     "me01",
+     "me02",
+     "me02.5",
+     "me03",
+     "me04",
+     "me05",
+     "mep",
+     "mee"
+    ],
+    "cls": "reverse",
+    "rarities": null,
+    "variantKinds": [
+     "reverse-foil-cosmos",
+     "reverse-foil-cosmos-stamp-player-rewards-program",
+     "reverse-foil-cosmos-stamp-professor-program"
+    ],
+    "cardIds": null
+   },
+   "claim": "Scarlet & Violet and Mega Evolution cosmos reverse printings carry the smooth-disc cosmos foil over the reverse area.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Holographic_card",
+     "quote": "Paraphrase (Bulbapedia, 'Holographic card') - Cosmos holofoil, the dots-and-circles pattern, is used on promotional and specialty printings."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: the modern client draws every Scarlet & Violet / Mega Evolution cosmos printing with one smooth-disc cosmos film (a sweeping band and four parallax bubble layers), which is the community's Cosmos III (smooth). Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-svme"
   }
  ]
 }

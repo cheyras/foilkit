@@ -3266,3 +3266,64 @@ over):
 - Mega Ascended Heroes ball reverses swap the medallion for a ball and have no cast-and-cure layer.
 
 Both still resolve to this recipe, pending their own work.
+
+## 2026-10-19 — R12: SV/ME cosmos is Cosmos III, rebuilt as an overlay film
+
+**Decided by:** @cheyras ("get it so that meg and svi are as done as you can make them on your own")
+
+**Decision:** the modern client draws every Scarlet & Violet / Mega Evolution cosmos printing with one cosmos
+film: smooth discs and a sweeping band, which is the community's **Cosmos III (smooth)**. 283 SV/ME cosmos
+printings now resolve to `cosmos-iii-smooth`; before, they were split between `cosmos` and `cosmos-ii-pixel`.
+Two new SV/ME rows (holo and reverse cosmos kinds, lane `r12-svme`) do this, and the seven SV `cosmos-ii-pixel`
+rows are re-pointed. `cosmos` and `cosmos-ii-pixel` are unchanged for older eras.
+
+`cosmos-iii-smooth` is rebuilt as an **overlay film**. A new opt-in core hook, `FOILKIT_OVERLAY_FILM`, takes
+`overlayFilm(uv, tilt, out S, out F)` from the recipe. In linear colour, the plate dims the art 20%, `S` is overlay
+blended into it (0.5 is neutral), and `0.3 F` is added. It replaces the additive composite for that recipe only.
+
+The film:
+- one soft white band (a peak on a dark floor) sweeps sideways with the card's turn, darkening the art off the band
+  and lifting it under it;
+- four parallax bubble layers add pastel rainbow light. The dot fields are ours, drawn procedurally to the
+  measured statistics, with sub-pixel dots prefiltered so they don't alias away;
+- the band and the rainbow ramp (grey, olive-yellow, green, sky, pale cyan, an orange tail) are analytic.
+
+**Masks:** 167 SV/ME cosmos holo printings get a cosmos plate (run `modular-holo-cosmos`): our window plate with
+the card edge cut. On 264 reference cosmos plates the edge is never foil, and the window level has a median of 0.68.
+
+**Canon retuned:**
+
+| Uniform | Old | New |
+|---|---|---|
+| uScale | 0.85 | 1 |
+| uHueShift | 0.76 | 0 |
+| uHueSpread | 1.4 | 0 |
+| uSat | 0.7 | 1 |
+| uArtGate | 0.2 | 0 |
+| uSpecular | 0.45 | 0 |
+| uInkPop | 0.5 | 0 |
+| uSheen | 3.4 | 0 |
+| uP0 | 1.3 | 1 |
+| uP1 | 0.25 | 1 |
+| uP2 | 0 | 1 |
+| uP3 | 1.2 | 1 |
+
+All other values are unchanged, and the canon is now `tunedUnderContract: 2`. The params now mean: `uP0` bubble
+scale, `uP1` band travel, `uP2` bubble gain, `uP3` band gain.
+
+**Measured** against a local reference render of a cosmos holo (the same art and plate on both sides; statistics
+only):
+
+| Measure | Reference | Ours |
+|---|---|---|
+| Foil-delta \|dL\| across tilts | 0.023 / 0.017 / 0.017 / 0.022 | 0.017 / 0.018 / 0.018 / 0.018 |
+| Chroma | 0.004–0.007 | 0.005 |
+
+Structure correlation is 0.45 / 0.59 / 0.83 / 0.75. That is high for a seeded dot field; the band carries it. The
+old recipe measured \|dL\| 0.007–0.028 and correlation −0.24…+0.16.
+
+Measured layers, per texture tile:
+- 22 large flat discs (r ≈ 0.033 tile, brightness p10/p50/p90 0.06/0.38/0.95);
+- about 250, 460 and 1,070 small dots (median r 0.0056, 0.0031, 0.0037).
+
+The band peaks at 0.56 of its period (σ 0.125) on a 0.054 floor.

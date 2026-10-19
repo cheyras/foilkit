@@ -12,6 +12,15 @@
       },
       "generatedAt": "2026-10-19T17:53:20Z"
     },
+    "modular-holo-cosmos-2026-10-19": {
+      "name": "modular-holo-cosmos",
+      "version": 1,
+      "modelId": "birefnet-lite+isnet-anime",
+      "params": {
+        "method": "our window plate (window minus subject, level 0.958-0.597*lum) with the card edge cut: cosmos never foils the edge (n=264)"
+      },
+      "generatedAt": "2026-10-19T20:07:05Z"
+    },
     "modular-holo-ex-2026-10-19": {
       "name": "modular-holo-ex",
       "version": 1,
@@ -73,9 +82,9 @@
     ["sv04.5-005",28823,"foil","full","37c029322f1fd6311db02226cb61701d4abb48d29d0fc8a9aa3c195f6aa6675a",67264,"modular-holo-ex-2026-10-19",null],
     ["sv04.5-006",28824,"etch","full","ebc529675dc9b5e79e25c8bc458132a84e609fe9981cff94ccfe95f50963cf4b",202265,"modular-etch-v2-2026-10-19",null],
     ["sv04.5-006",28824,"foil","full","9eb2bb1d2f6859f7e38f0d07432bdcbefd9a8c83b4c720707593fcfe490eef90",54618,"modular-holo-ex-2026-10-19",null],
-    ["sv04.5-007",28826,"foil","window","b9dbbbbe59cf5d226fd40aaca9e8f794982b9d9ca894b7d2148a9279ed2b5743",48264,"modular-holo-window-2026-10-19",null],
+    ["sv04.5-007",28826,"foil","window","18ba6475b0661fc092b8236122355d3e77717d2c7828ba3575d91cb3d0051e06",48047,"modular-holo-cosmos-2026-10-19",null],
     ["sv04.5-007",28827,"foil","sheet","f97c98bb7be92a131c5c29bf8d1e6b08628aa90bd9b29a020a4a4bf125c5f997",70708,"modular-reverse-2026-10-19",null],
-    ["sv04.5-008",28829,"foil","window","bc0259534b3876777f12378f2a2070a38ce20f118b998238dbdaa738318dcca6",44858,"modular-holo-window-2026-10-19",null],
+    ["sv04.5-008",28829,"foil","window","7b354c3c2bd9cb9da2efce7917927fb85a524eca686a166f56b5504d43657797",44671,"modular-holo-cosmos-2026-10-19",null],
     ["sv04.5-008",28830,"foil","sheet","f917672e52fc2bb89ed88e2b026145460725af459802299c2e5402b67c2d5929",70845,"modular-reverse-2026-10-19",null],
     ["sv04.5-009",28832,"foil","sheet","cecf66f78f21fbde19828cf0a40ce79cb356b73e9e9e7d8dd11e07e13d54d941",70768,"modular-reverse-2026-10-19",null],
     ["sv04.5-010",28833,"foil","window","5e0e900f50441c1c964ad11438d17ae20df9479d1c76bba129e2c205edb78fba",48907,"modular-holo-window-2026-10-19",null],

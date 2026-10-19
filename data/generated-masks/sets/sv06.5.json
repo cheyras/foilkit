@@ -12,6 +12,15 @@
       },
       "generatedAt": "2026-10-19T17:53:20Z"
     },
+    "modular-holo-cosmos-2026-10-19": {
+      "name": "modular-holo-cosmos",
+      "version": 1,
+      "modelId": "birefnet-lite+isnet-anime",
+      "params": {
+        "method": "our window plate (window minus subject, level 0.958-0.597*lum) with the card edge cut: cosmos never foils the edge (n=264)"
+      },
+      "generatedAt": "2026-10-19T20:07:05Z"
+    },
     "modular-holo-ex-2026-10-19": {
       "name": "modular-holo-ex",
       "version": 1,
@@ -63,9 +72,9 @@
     ["sv06.5-007",29993,"foil","sheet","d86f6b7250dd80921c56fb44f2fef27e11c7927d98c6a63cd078a81a5cb9ced7",88923,"modular-reverse-2026-10-19",null],
     ["sv06.5-008",29995,"foil","sheet","23d1da27b9bc0210cbe6fbb88a5426063b6ea8d3df05f8d4ea81bdf372a20f89",88068,"modular-reverse-2026-10-19",null],
     ["sv06.5-009",29997,"foil","sheet","c887907ec3ff63aff373150cc0ae8abfbf57bc443d9f4ffdf698ee009263cf75",89358,"modular-reverse-2026-10-19",null],
-    ["sv06.5-010",29999,"foil","window","a429a06d326321f3c8a53c4dee190cb84d736f6d193c59337ed41922a33160a8",47819,"modular-holo-window-2026-10-19",null],
+    ["sv06.5-010",29999,"foil","window","344f916b471d139b0fe3d2605edf7db4be5dd2714016f6958f60d45071e5e1a6",47607,"modular-holo-cosmos-2026-10-19",null],
     ["sv06.5-010",30000,"foil","sheet","8042366606c5a8806dde0c1ef02cd14ad794116e749e5ef850ff8a17052721ac",88925,"modular-reverse-2026-10-19",null],
-    ["sv06.5-011",30002,"foil","window","7ffd98139c87431ccf66b424c7cc99894c9c415bd52031e574ab876e9145526b",49321,"modular-holo-window-2026-10-19",null],
+    ["sv06.5-011",30002,"foil","window","6f0a04d9e743fa30359698486d85e73594304cdf64dde8d922c5985dfa22fd44",49095,"modular-holo-cosmos-2026-10-19",null],
     ["sv06.5-011",30003,"foil","sheet","7265e2d2c908faf051a7fd0662c162e5becf7f4ea435dce0be19cc55c3de8e49",87907,"modular-reverse-2026-10-19",null],
     ["sv06.5-012",30004,"etch","full","c4fee85898d1de4fe43667062ed0e2d70fd480acd3edf03a5ac5164c405a15e0",208206,"modular-etch-v2-2026-10-19",null],
     ["sv06.5-012",30004,"foil","full","5ea00d8333188bd5dee3dfcb35a4fe16d0f5b82d971989118718f7d72ddb31b5",67852,"modular-holo-ex-2026-10-19",null],

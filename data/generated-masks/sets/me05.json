@@ -12,6 +12,15 @@
       },
       "generatedAt": "2026-10-19T17:53:20Z"
     },
+    "modular-holo-cosmos-2026-10-19": {
+      "name": "modular-holo-cosmos",
+      "version": 1,
+      "modelId": "birefnet-lite+isnet-anime",
+      "params": {
+        "method": "our window plate (window minus subject, level 0.958-0.597*lum) with the card edge cut: cosmos never foils the edge (n=264)"
+      },
+      "generatedAt": "2026-10-19T20:07:05Z"
+    },
     "modular-holo-ex-2026-10-19": {
       "name": "modular-holo-ex",
       "version": 1,
@@ -124,7 +133,7 @@
     ["me05-055",37281,"foil","full","8b2f96e377098a4c7a8217dc6a250996b753a221d26a2a980b1272fd6749da1f",56151,"modular-holo-ex-2026-10-19",null],
     ["me05-056",37283,"foil","sheet","afd0fb84b43a42ecbec6f417721a53a9499eaf49dd52c416c50699b6022feb5e",10471,"modular-reverse-2026-10-19",null],
     ["me05-056",77563,"foil","window","56ba10eba2c69788775467161ffc545fb4449a139ed6d9993937b8c088738d3e",50253,"modular-holo-window-2026-10-19",null],
-    ["me05-056",154037,"foil","window","56ba10eba2c69788775467161ffc545fb4449a139ed6d9993937b8c088738d3e",50253,"modular-holo-window-2026-10-19",null],
+    ["me05-056",154037,"foil","window","e07c106b497e00b9dd1042d79125b7322ee4a0c51ea6066cf9f53bf986c7e6aa",50090,"modular-holo-cosmos-2026-10-19",null],
     ["me05-057",37285,"foil","sheet","8dabafdd9907d0dcaf574a70f94afce78e3ed8d687222af317c4f185d6fe4538",9901,"modular-reverse-2026-10-19",null],
     ["me05-058",37287,"foil","sheet","3069fc8e7e8f3ea9e6b1e0bbfd5e2e6f3d305a61a1422380093de9b694b81c96",13010,"modular-reverse-2026-10-19",null],
     ["me05-059",37288,"foil","window","750a7ef68d80d3ea0abbc5f64c2f3e15e3c1370305263f77ac042936cf232bea",55988,"modular-holo-window-2026-10-19",null],
