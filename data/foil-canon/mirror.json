@@ -1,7 +1,30 @@
 {
   "version": 1,
   "patternId": "mirror",
-  "savedAt": "2026-10-19T11:45:51.000Z",
+  "savedAt": "2026-10-19T13:10:47.597Z",
+  "uniforms": {
+    "uArtGate": 0,
+    "uDarken": 0,
+    "uDepth": 0,
+    "uGrain": 1,
+    "uHueShift": 0.5,
+    "uHueSpread": 0,
+    "uInkGuard": 1,
+    "uInkPop": 0.5,
+    "uIntensity": 2,
+    "uMetal": 0,
+    "uP0": 0.14,
+    "uP1": 3,
+    "uP2": 0,
+    "uP3": 1.65,
+    "uPlateOverlay": 1,
+    "uSat": 0,
+    "uScale": 1,
+    "uSheen": 0,
+    "uSheenTint": 0,
+    "uSpecular": 0,
+    "uTint": 0
+  },
   "contract": 2,
   "tunedUnderContract": 2,
   "frozen": {
@@ -9,27 +32,29 @@
     "reason": "foilkit extraction: every uniform in the contract recorded explicitly, so the snapshot no longer inherits code defaults that can move. Values are the ones already in effect — no retune, verified byte-identical through the zero-delta render harness.",
     "inheritedKeysRecorded": []
   },
-  "uniforms": {
-    "uIntensity": 1,
-    "uScale": 1,
-    "uHueShift": 0.5,
-    "uHueSpread": 0,
-    "uSat": 0,
-    "uArtGate": 0,
-    "uSpecular": 0,
-    "uDarken": 0,
-    "uTint": 0,
-    "uInkGuard": 1,
-    "uInkPop": 0.5,
-    "uMetal": 0,
-    "uSheen": 0,
-    "uSheenTint": 0,
-    "uDepth": 0,
-    "uGrain": 1,
-    "uPlateOverlay": 1,
-    "uP0": 0.14,
-    "uP1": 1,
-    "uP2": 0,
-    "uP3": 1
+  "provenance": {
+    "version": 1,
+    "startedFrom": {
+      "savedAt": "2026-10-19T11:45:51.000Z",
+      "contract": 2,
+      "tunedUnderContract": 2,
+      "uniforms": 21
+    },
+    "changed": {
+      "keys": [
+        "uIntensity",
+        "uP1",
+        "uP3"
+      ],
+      "dropped": [],
+      "n": 3
+    },
+    "author": {
+      "login": "cheyras",
+      "id": 38292020,
+      "via": "contribution-pr"
+    },
+    "verification": null,
+    "tier": "contributor"
   }
 }
