@@ -4,7 +4,8 @@
  "selector_semantics": {
   "facet_rows": "catalog-wide: a variant kind that declares an explicit foil finish (holo-foil-cosmos -> facet cosmos) maps to a pattern slug; in the resolver this outranks set rows and loses to explicit cardIds rows and variantKinds selectors.",
   "rows": "sel joins on catalog ids: setIds + cls (holo|reverse|full-foil|normal+facet), optional rarities (case-insensitive substring match on the card rarity), variantKinds (exact kind codes), cardIds (exact card tcgdex ids). Most specific match wins: cardIds > variantKinds > facet row > rarities > bare set. Anything unmatched falls through to the v2 usage table, then era heuristics.",
-  "scope": "optional per-row override of the resolver's computed scope ('window' | 'full' | 'sheet'). Added 2026-08-02 (R2b) for treatments whose physical extent the variant kind/rarity cannot express: baby shinies are window-scope despite full-foil rarities, VSTAR pearls are full-face despite plain holo kinds, det1 holos are window-scope despite 'ultra rare' full-foil rarities. Absent = keep the computed scope."
+  "scope": "optional per-row override of the resolver's computed scope ('window' | 'full' | 'sheet'). Added 2026-08-02 (R2b) for treatments whose physical extent the variant kind/rarity cannot express: baby shinies are window-scope despite full-foil rarities, VSTAR pearls are full-face despite plain holo kinds, det1 holos are window-scope despite 'ultra rare' full-foil rarities. Absent = keep the computed scope.",
+  "params": "optional per-row recipe dials (uP0..uP5 only) for the printings the row claims, e.g. the Master Ball form of pokeball-masterball. Added 2026-10-19 (R12). The resolver returns them; surfaces layer them above the canon and below per-card overrides."
  },
  "known_residuals": [
   {
@@ -465,6 +466,9 @@
   {
    "facet": "masterball",
    "pattern": "pokeball-masterball",
+   "params": {
+    "uP2": 1
+   },
    "claim": "The Master Ball stamp-grid reverse holofoil - the master-ball palette variant of the SV/Mega ball-stamp reverse. Catalog 'masterball' covers Prismatic Evolutions (sv08.5) and Black Bolt/White Flare (sv10.5b/w) reverses only.",
    "confidence": "medium",
    "sources": [
@@ -2331,6 +2335,9 @@
      "reverse-foil-masterball"
     ],
     "cardIds": null
+   },
+   "params": {
+    "uP2": 1
    },
    "claim": "The Master Ball parallel reverse-holofoil variant in Black Bolt and White Flare prints a staggered grid of Master Ball icons etched into the background foil (over the mirror base); it uses the same pokeball-masterball physical sheet family as the Poke Ball variant, only the ball glyph differs.",
    "confidence": "high",

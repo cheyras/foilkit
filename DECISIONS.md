@@ -3223,3 +3223,46 @@ are kept so that an agent can learn which pattern people choose for which kind o
 50% blank, 33% curved, 10% parallel, 3.7% cross-hatch, 2.5% stipple and 1% solid. The pitch median is 4.85 px at
 1008 wide, the weight 0.51–0.61, and the border band is diagonal. Only the numbers carry over; the references are
 local and never committed.
+
+## 2026-10-19 — R12: ball reverses are the silver reverse under a cast-and-cure ball lattice
+
+**Decided by:** @cheyras ("get it so that meg and svi are as done as you can make them on your own")
+
+**Decision:** `pokeball-masterball` was a grid of small, faint ball stamps in the text box. It is rebuilt on the
+R11 silver-plate law, which runs on a flat plate, plus a **cast-and-cure layer**, a pattern cast into varnish over
+the foil:
+
+- outlined balls, two sizes in a checkerboard lattice, across the whole face including the art;
+- a rainbow on the ball's white parts that rolls with tilt;
+- sparse glitter on the cap.
+
+The ball drawing is our own geometry. `uP2` 1 gives the Master Ball, with the cap split into two domes and an M.
+
+- **Core hook:** a recipe that `#define`s `FOILKIT_CAST_CURE` supplies `vec4 castCure(uv, tilt, s, seed)`, and the
+  plate law composites it in linear colour. Every other recipe compiles the block out, so it renders exactly as
+  before. No new global uniform; no canon changes.
+- **Per-row recipe params:** an assignment row (or facet row) may now carry `params`, recipe dials `uP0..uP5`
+  only. The resolver returns them as `FoilRecipeRef.params`, and the editor layers them above the canon and below
+  per-card overrides. The Black Bolt / White Flare Master Ball row pins `uP2: 1`.
+- **Masks:** 304 Black Bolt / White Flare ball-reverse printings get their own generated plate (run
+  `modular-reverse-ballflat`). It is our reverse plate's foil region at a flat level: the ball parallel has no
+  printed reverse pattern of its own.
+- **Defaults** follow the maintainer's `mirror` canon (bar travel 3, law strength 1.65), so ball reverses read as
+  the same silver as every other modern reverse.
+
+**Measured** against a local reference render of a ball parallel, all statistics (no texture or geometry carried
+over):
+
+| Measure | Value |
+|---|---|
+| Lattice | 4 × 4 per tile, tiled 1.25× (≈3.6 balls across a card) |
+| Ball radii | 0.43 and 0.255 of the pitch |
+| Strokes | rim 0.88–1.0 r; hub rings 0.20–0.32 and 0.43–0.54 r; belt strokes at ±0.17–0.26 r and a centre line |
+| Rainbow roll | 0.28 per unit tilt. Text-box hue across tilts −0.8…0.8: reference 0.79 / 0.66 / 0.49 / 0.31, ours 0.77 / 0.64 / 0.45 / 0.33 |
+| Foil delta at the reference's own bar settings | \|dL\| 0.053 / 0.055 / 0.049 / 0.036 vs 0.054 / 0.052 / 0.051 / 0.042; chroma equal; structure correlation ≈0.7 (the per-card lattice phase differs) |
+
+**Not covered here:**
+- Prismatic Evolutions ball reverses use a different rainbow film with an etched ball motif.
+- Mega Ascended Heroes ball reverses swap the medallion for a ball and have no cast-and-cure layer.
+
+Both still resolve to this recipe, pending their own work.

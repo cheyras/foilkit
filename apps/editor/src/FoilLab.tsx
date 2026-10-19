@@ -729,11 +729,18 @@ export function FoilLab({ staging, viewer }: { staging: Staging; viewer: ViewerS
   // save, card/variant, override save) — background refetches with identical
   // data never clobber in-progress slider tweaks.
   const canon = canonFor(canonQ.data ?? undefined, pattern.id)
-  const baseline = useMemo(() => canonBaseline(pattern, canon), [pattern, canon])
+  // R12: recipe dials the winning assignment row pins for this printing (the
+  // Master Ball form of the ball reverse) sit above the canon, below overrides.
+  const rowParams = resolved.params && canonicalPatternId(resolved.patternId) === pattern.id ? resolved.params : null
+  const rowParamsKey = rowParams ? JSON.stringify(rowParams) : ''
+  const baseline = useMemo(
+    () => ({ ...canonBaseline(pattern, canon), ...(rowParamsKey ? (JSON.parse(rowParamsKey) as Record<string, number>) : {}) }),
+    [pattern, canon, rowParamsKey],
+  )
   const override =
     overrideQ.data && canonicalPatternId(overrideQ.data.patternId) === pattern.id ? overrideQ.data : null
   const [uniforms, setUniforms] = useState<Record<string, number>>(() => canonBaseline(pattern, undefined))
-  const seedKey = `${pattern.id}|${canon?.savedAt ?? 'code'}|${sel.cardId ?? ''}|${sel.variantId ?? ''}|${override?.savedAt ?? 'none'}`
+  const seedKey = `${pattern.id}|${canon?.savedAt ?? 'code'}|${sel.cardId ?? ''}|${sel.variantId ?? ''}|${override?.savedAt ?? 'none'}|${rowParamsKey}`
   const lastSeed = useRef<string | null>(null)
   useEffect(() => {
     if (lastSeed.current === seedKey) return

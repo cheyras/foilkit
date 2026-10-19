@@ -920,6 +920,15 @@ void main() {
     lc = clamp(mix(lc, plateOverlay(lc, vec3(NdotV * (tint.g + 0.2))), wpv * uP3), 0.0, 1.0);
     lc = mix(lc, plateOverlay(lc, vec3(clamp(NdotV * bar, 0.0, 1.0) + 0.22)), wpv * 0.5 * uP3);
     lc = clamp(lc + 2.0 * NdotV * (1.0 - NdotV) * (1.0 - NdotV) * bar * wpv, 0.0, 1.0);
+#ifdef FOILKIT_CAST_CURE
+    // Cast-and-cure (R12): a recipe that defines FOILKIT_CAST_CURE supplies
+    // vec4 castCure(uv, tilt, s, seed), a pattern cast into varnish over the
+    // foil. It is NOT plate-gated: it covers the whole face, art included. A
+    // faint direct mix, then an overlay of (bar + the layer's light).
+    vec4 ccL = castCure(uv, uTilt, s, seed);
+    lc = mix(lc, ccL.rgb, 0.04 * ccL.a);
+    lc = mix(lc, plateOverlay(lc, vec3(bar * 0.4) + ccL.rgb + 0.04), clamp(ccL.a, 0.0, 1.0));
+#endif
     vec3 law = pow(lc, vec3(1.0 / 2.2));                                // linear -> display
     col = mix(col, law, clamp(uPlateOverlay, 0.0, 1.0));
   }

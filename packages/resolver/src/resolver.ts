@@ -74,6 +74,12 @@ export interface FoilRecipeRef {
   scope: FoilScope
   eraId: keyof typeof layouts.eras
   guess: FoilGuess
+  /**
+   * R12: recipe dials the winning assignment row pins for this printing
+   * (only uP0..uP5), e.g. the Master Ball form of the ball reverse. They sit
+   * above the canon and below any per-card override. Absent: none.
+   */
+  params?: Record<string, number>
 }
 
 const ERA_BY_SERIES: Record<string, keyof typeof layouts.eras> = {}
@@ -168,12 +174,14 @@ interface AssignRow {
   sc: FoilScope | null
   conf: 'high' | 'medium' | 'low'
   src: string[]
+  /** R12: per-row recipe params (uP0..uP5), absent = none. */
+  pr?: Record<string, number>
 }
 
 const ASSIGN_ROWS = assignIndex.rows as AssignRow[]
 const ASSIGN_FACETS = assignIndex.facets as Record<
   string,
-  { p: string; conf: 'high' | 'medium' | 'low'; src: string[] }
+  { p: string; conf: 'high' | 'medium' | 'low'; src: string[]; pr?: Record<string, number> }
 >
 
 const ASSIGN_BY_SET = new Map<string, AssignRow[]>()
@@ -215,6 +223,7 @@ function lookupAssignment(input: {
   row: { p: string; conf: 'high' | 'medium' | 'low'; src: string[] }
   match: 'card' | 'facet' | 'set'
   sc: FoilScope | null
+  pr: Record<string, number> | null
 } | null {
   type Hit = {
     p: string
@@ -222,6 +231,7 @@ function lookupAssignment(input: {
     src: string[]
     match: 'card' | 'facet' | 'set'
     sc: FoilScope | null
+    pr: Record<string, number> | null
     score: number
     penalty: number
     breadth: number
@@ -245,6 +255,7 @@ function lookupAssignment(input: {
         src: row.src,
         match: row.cards ? 'card' : 'set',
         sc: row.sc ?? null,
+        pr: row.pr ?? null,
         score,
         penalty: penaltyOf(row.p),
         breadth: row.setIds.length,
@@ -256,7 +267,7 @@ function lookupAssignment(input: {
   if (input.facet) {
     const f = ASSIGN_FACETS[input.facet]
     if (f)
-      hits.push({ p: f.p, conf: f.conf, src: f.src, match: 'facet', sc: null, score: 6, penalty: penaltyOf(f.p), breadth: 1 })
+      hits.push({ p: f.p, conf: f.conf, src: f.src, match: 'facet', sc: null, pr: f.pr ?? null, score: 6, penalty: penaltyOf(f.p), breadth: 1 })
   }
   if (hits.length === 0) return null
   hits.sort(
@@ -269,7 +280,7 @@ function lookupAssignment(input: {
       a.breadth - b.breadth,
   )
   const best = hits[0]
-  return { row: { p: best.p, conf: best.conf, src: best.src }, match: best.match, sc: best.sc }
+  return { row: { p: best.p, conf: best.conf, src: best.src }, match: best.match, sc: best.sc, pr: best.pr }
 }
 
 /**
@@ -448,6 +459,7 @@ export function resolveFoil(input: {
         scope: hit.sc ?? scope,
         eraId,
         guess: { match: hit.match, confidence: hit.row.conf, sources: hit.row.src, era: null, years: null },
+        ...(hit.pr ? { params: { ...hit.pr } } : {}),
       }
     }
   }
