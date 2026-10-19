@@ -1,0 +1,42 @@
+{
+  "pr": "7",
+  "rendered": [
+    {
+      "kind": "canon",
+      "patternId": "mirror",
+      "file": "data/foil-canon/mirror.json",
+      "name": "canon-mirror",
+      "strip": "canon-mirror.png",
+      "meta": {
+        "generatedAt": "2026-10-19T13:19:45.326Z",
+        "pattern": "mirror",
+        "mask": null,
+        "canonFile": "/data/foil-canon/mirror.json",
+        "tone": "dark",
+        "maxTiltDeg": 16,
+        "framesPerStep": 300,
+        "tilts": [
+          -1,
+          -0.7,
+          -0.35,
+          -0.1,
+          0.1,
+          0.35,
+          0.7,
+          1
+        ],
+        "cell": {
+          "width": 246,
+          "height": 344
+        },
+        "strip": {
+          "width": 2024,
+          "height": 344,
+          "bytes": 82454
+        },
+        "sha256": "178afb1b960d8ae147c0b82a87a578b4155ad544541bec92b992b8babd5076e1"
+      }
+    }
+  ],
+  "skipped": []
+}
