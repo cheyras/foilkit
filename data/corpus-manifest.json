@@ -117,8 +117,8 @@
     "rainbow-glitter-sheen": {
       "contract": 2,
       "exists": true,
-      "savedAt": "2026-08-07T05:21:01.012Z",
-      "uniforms": 20
+      "savedAt": "2026-10-19T04:35:45.000Z",
+      "uniforms": 22
     },
     "reverse-sheet": {
       "contract": 2,
@@ -207,12 +207,12 @@
     "maskCards": 20,
     "maskRecords": 20,
     "maskUnits": 20,
-    "patterns": 47,
-    "uncanonedPatterns": 14,
+    "patterns": 46,
+    "uncanonedPatterns": 13,
     "windowCards": 1,
     "windowFiles": 1
   },
-  "generatedAt": "2026-10-18T23:40:45.000Z",
+  "generatedAt": "2026-10-19T04:35:45.000Z",
   "maskUnits": {
     "base1-10|window": 39,
     "base1-15|window": 59,
@@ -613,7 +613,6 @@
     "disco",
     "energy-symbols",
     "energy-symbols-ii",
-    "etched-ultra",
     "ex-emerald",
     "ex-starfoil",
     "fireworks",
@@ -653,7 +652,6 @@
     "disco",
     "energy-symbols",
     "energy-symbols-ii",
-    "etched-ultra",
     "ex-starfoil",
     "mirror-sv",
     "pokeball-masterball",

@@ -3097,3 +3097,31 @@ card lists. No game data enters them.
 
 **Implications:** `rainbow-glitter-sheen`, `gold-secret` and `ace-spec` keep their current recipes until compared
 against their own families.
+
+## 2026-10-18 — R10: rainbow-glitter-sheen rebuilt as the SV/ME SIR / hyper / Mega ex / Tera ex foil, canon retuned
+
+**Decided by:** @cheyras ("the whole point is to improve the canons"; "keep going until Meg and SVI cards all look
+fucking great")
+
+**Decision:** `rainbow-glitter-sheen` takes `ETCHED_ULTRA_GLSL` (the `etched-ultra` prototype, now folded in
+with an alias). It renders as:
+- a silver-to-rainbow film whose spectrum runs across the card, so each vertical light pillar carries its own band
+  of colour;
+- two pillar sets that slide opposite ways on yaw;
+- sparse RGB glitter;
+- the etch, where white is full foil, lines carry none, and the lines catch a slanted sheen.
+
+Its canon is retuned under contract 2.
+
+**Why:** against a local reference render of this family, the previous recipe drew faint diagonal streaks at about
+half the reference's strength, with little colour.
+
+**Measured:** four cards (sv06-130 Tera ex, me02.5-280 SIR, me01-104 Mega ex, sv04.5-234 SIR), reference plates
+and etches as masks.
+- |ΔL| is within 1.2× of the reference on three cards and 1.5× on the darkest (sv04.5-234). Chroma is 0.010–0.029
+  against the reference's 0.012–0.025.
+- Structure correlation is +0.05 to +0.59. It is limited because this family places its pillars by a per-card
+  random seed.
+- The saved canon reproduces the tuned frames exactly.
+
+**Previous canon** (in git history): `{"uIntensity":1,"uScale":0.55,"uHueShift":0.5,"uHueSpread":0.9,"uSat":1,"uArtGate":1,"uSpecular":0.35,"uDarken":0.4,"uTint":0,"uInkGuard":1,"uInkPop":0.5,"uMetal":0,"uSheen":1.4,"uSheenTint":0,"uDepth":1,"uGrain":1,"uP0":1,"uP1":0.8,"uP2":1.5,"uP3":1}`

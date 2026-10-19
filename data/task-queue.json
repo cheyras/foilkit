@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-10-18T23:40:45.000Z",
+  "generatedAt": "2026-10-19T04:35:45.000Z",
   "source": "catalog",
   "resolverVersion": 5,
   "countingUnits": {
@@ -36,9 +36,9 @@
     "catalog": true
   },
   "counts": {
-    "tasks": 116,
+    "tasks": 115,
     "byType": {
-      "canon": 14,
+      "canon": 13,
       "verdict": 5,
       "window-mask": 34,
       "ink-tile": 6,
@@ -48,7 +48,7 @@
       "approximation": 1
     },
     "bySkill": {
-      "slider": 14,
+      "slider": 13,
       "glsl": 2,
       "mask": 39,
       "art": 6,
@@ -56,7 +56,7 @@
       "research": 51
     },
     "impactTotal": 20921,
-    "unsized": 17
+    "unsized": 16
   },
   "reconciliation": [
     {
@@ -71,8 +71,8 @@
       "key": "uncanoned",
       "claim": "13 patterns carry no canon file (subtask 5)",
       "claimedAt": "DECISIONS.md:2062-2065 (2026-09-06, historical record — the doc claim itself was corrected at docs/HOSTED-EDITOR.md:195-200)",
-      "measured": "14: ace-spec, acid-wash, crosshatch, disco, energy-symbols, energy-symbols-ii, etched-ultra, ex-starfoil, mirror-sv, pokeball-masterball, prism, prismatic-pokeball, rainbow-mirror, tcg-classic",
-      "agrees": false,
+      "measured": "13: ace-spec, acid-wash, crosshatch, disco, energy-symbols, energy-symbols-ii, ex-starfoil, mirror-sv, pokeball-masterball, prism, prismatic-pokeball, rainbow-mirror, tcg-classic",
+      "agrees": true,
       "note": "The manifest derives the list rather than trusting the count, and 13 counted `none`, the no-foil recipe, which has no canon by definition. This is NOT the same list as the approximations above: canon-less is about a saved uniform snapshot, approximated is about the GLSL. Three slugs (acid-wash, disco, tcg-classic) appear on both lists for unrelated reasons."
     },
     {
@@ -2602,24 +2602,6 @@
       "impact": null,
       "impactWhy": "No group in this bake resolves to this pattern, so there is nothing to count.",
       "link": "/canon?pattern=disco",
-      "source": "data/corpus-manifest.json — uncanoned[] (PATTERNS minus data/foil-canon/*.json, derived)",
-      "guards": [],
-      "tieBreak": 0,
-      "detail": {
-        "hasRealRecipe": true
-      }
-    },
-    {
-      "id": "canon:etched-ultra",
-      "type": "canon",
-      "title": "Freeze a canon for Etched ultra (SV/ME textured)",
-      "need": "No canon file exists, so this pattern renders whatever the code defaults happen to be. Open it in the canon lab, tilt it against the reference, move the dials until it matches, and save. The saved snapshot becomes the pattern truth every card inherits.",
-      "skill": "slider",
-      "estimate": "half-hour",
-      "estimateWhy": "The dials are live and the reference is on screen; this is one tuning pass, not new machinery.",
-      "impact": null,
-      "impactWhy": "No group in this bake resolves to this pattern, so there is nothing to count.",
-      "link": "/canon?pattern=etched-ultra",
       "source": "data/corpus-manifest.json — uncanoned[] (PATTERNS minus data/foil-canon/*.json, derived)",
       "guards": [],
       "tieBreak": 0,

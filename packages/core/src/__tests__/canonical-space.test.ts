@@ -193,6 +193,7 @@ const EXPECTED_TUNING: Record<string, { contract: number; tunedUnderContract: nu
   // R10 2026-10-18: retuned under contract 2 against a reference render of the
   // SV/ME holo rare (DECISIONS R10, docs/CANON-ASPECT-RECHECK.md).
   'horizontal-sheen': { contract: 2, tunedUnderContract: 2 },
+  'rainbow-glitter-sheen': { contract: 2, tunedUnderContract: 2 },
 };
 
 test('every canon file stamps the composite contract it is read under', () => {

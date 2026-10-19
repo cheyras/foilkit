@@ -73,6 +73,7 @@ export const PATTERN_ALIASES: Record<string, string> = {
   // turned out to be, the same day.
   'crossed-rainbow': 'ex-starfoil',
   'sv-holo-bands': 'horizontal-sheen',
+  'etched-ultra': 'rainbow-glitter-sheen',
 }
 
 export const canonicalPatternId = (id: string): string => PATTERN_ALIASES[id] ?? id
@@ -2538,7 +2539,9 @@ vec3 foilPattern(vec2 uv, vec2 tilt) {
 const ETCHED_ULTRA_GLSL = `
 vec3 foilPattern(vec2 uv, vec2 tilt) {
   vec2 p = (uv - 0.5) * vec2(1.0, CARD_ASPECT);
-  float t = (0.8 * p.x + 0.6 * p.y) * 2.0 * uScale + 0.25 * tilt.x + 0.2 * tilt.y;
+  // the rainbow runs ACROSS the card (along x), so each vertical pillar carries
+  // its own band of the spectrum; it slides with yaw (R10 reference).
+  float t = (p.x * 2.0 + 0.15 * p.y) * uScale + 0.35 * tilt.x;
   vec3 film = hueRamp(uHueShift + uHueSpread * t);
   float pa = pow(0.5 + 0.5 * cos(TAU * (p.x * uP0 + tilt.x * uP1)), 4.0);
   float pb = pow(0.5 + 0.5 * cos(TAU * (p.x * uP0 * 0.73 - tilt.x * uP1 * 0.8 + 0.31)), 4.0);
@@ -3282,24 +3285,23 @@ export const PATTERNS: FoilPattern[] = [
     id: 'rainbow-glitter-sheen',
     label: 'Rainbow glitter sheen',
     taxonomy: 'Glitter + shaped directional band base',
-    usedOn: 'Mega-era Mega EX cards and others.',
-    glsl: RAINBOW_GLITTER_SHEEN_GLSL,
-    // uDarken 0.4 (R3-MOTION): saturated laser stripes over a bright silver
-    // substrate are unrenderable under screen-only blending — 4th data point
-    // of the legibility physics (prismatic-pokeball, R2 window foils, R3
-    // sheens). The mirror term darkens the body so the band's primaries read
-    // saturated instead of pastel.
+    usedOn: 'Scarlet & Violet and Mega Evolution Special Illustration Rares, Hyper Rares, Mega ex and Tera ex.',
+    // R10 2026-10-18: ETCHED_ULTRA_GLSL replaces the R1 glitter-sheen field
+    // (RAINBOW_GLITTER_SHEEN_GLSL stays defined for history). Measured against
+    // a reference render of the SIR / hyper / Mega ex family: vertical pillars
+    // of rainbow that slide with yaw, glitter, and the etch line texture. The
+    // canon is retuned (data/foil-canon/rainbow-glitter-sheen.json); the
+    // previous canon is in DECISIONS.md.
+    glsl: ETCHED_ULTRA_GLSL,
     family: 'field',
-    defaults: { ...FIELD_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.5, uHueSpread: 0.9, uSat: 1.0, uArtGate: 0.0, uSpecular: 0.35, uDarken: 0.4 },
+    defaults: { ...FIELD_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 1.0, uSat: 0.9, uArtGate: 0.0, uSpecular: 0.2, uDarken: 0.2 },
     params: [
-      { key: 'uP0', label: 'Glitter density', min: 0.4, max: 3, step: 0.05, default: 1.0 },
-      // travel 0.8: at 2.0 the band left the card entirely at |tilt| ≥ 0.7
-      // (eyeball round 1); at 1.0 the apex still exited (judge round 1)
-      { key: 'uP1', label: 'Band travel', min: 0, max: 4, step: 0.05, default: 0.8 },
-      // 1.3: judge round 1 read the 0.8 arms as "a straight diagonal band"
-      // 1.9 (R3-MOTION): the reference V is more acute than 1.3 rendered
-      { key: 'uP2', label: 'Chevron angle', min: 0, max: 2.5, step: 0.05, default: 1.9 },
-      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP0', label: 'Pillar count', min: 0.5, max: 6, step: 0.1, default: 1.5 },
+      { key: 'uP1', label: 'Pillar travel', min: 0, max: 3, step: 0.05, default: 0.9 },
+      { key: 'uP2', label: 'Glitter density', min: 40, max: 400, step: 5, default: 180 },
+      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 0.7 },
+      { key: 'uP4', label: 'Glitter gain', min: 0, max: 3, step: 0.05, default: 0.8 },
+      { key: 'uP5', label: 'Line sheen', min: 0, max: 3, step: 0.05, default: 1.0 },
     ],
     implemented: true,
   },
@@ -3648,25 +3650,6 @@ export const PATTERNS: FoilPattern[] = [
       { key: 'uP1', label: 'Beam travel', min: 0, max: 4, step: 0.05, default: 1.5 },
       { key: 'uP2', label: 'Photo coupling', min: 0, max: 1, step: 0.02, default: 0.85 },
       { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.1 },
-    ],
-    implemented: true,
-  },
-  // R10-MODERN — see the ETCHED_ULTRA_GLSL block comment.
-  {
-    id: 'etched-ultra',
-    label: 'Etched ultra (SV/ME textured)',
-    taxonomy: 'Silver-leaning rainbow film under opposed light pillars, glitter, and an etched line texture',
-    usedOn: 'Scarlet & Violet and Mega era textured ultra rares: regular-frame ex, full-art ex, full-art Trainers.',
-    glsl: ETCHED_ULTRA_GLSL,
-    family: 'field',
-    defaults: { ...FIELD_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 1.0, uSat: 0.35, uArtGate: 0.0, uSpecular: 0.2, uDarken: 0.2 },
-    params: [
-      { key: 'uP0', label: 'Pillar count', min: 0.5, max: 6, step: 0.1, default: 2.2 },
-      { key: 'uP1', label: 'Pillar travel', min: 0, max: 3, step: 0.05, default: 0.9 },
-      { key: 'uP2', label: 'Glitter density', min: 40, max: 400, step: 5, default: 180 },
-      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
-      { key: 'uP4', label: 'Glitter gain', min: 0, max: 3, step: 0.05, default: 0.8 },
-      { key: 'uP5', label: 'Line sheen', min: 0, max: 3, step: 0.05, default: 1.0 },
     ],
     implemented: true,
   },
