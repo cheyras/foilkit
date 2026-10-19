@@ -1,0 +1,42 @@
+{
+  "pr": "12",
+  "rendered": [
+    {
+      "kind": "canon",
+      "patternId": "tinsel-ii",
+      "file": "data/foil-canon/tinsel-ii.json",
+      "name": "canon-tinsel-ii",
+      "strip": "canon-tinsel-ii.png",
+      "meta": {
+        "generatedAt": "2026-10-19T20:37:20.528Z",
+        "pattern": "tinsel-ii",
+        "mask": null,
+        "canonFile": "/data/foil-canon/tinsel-ii.json",
+        "tone": "dark",
+        "maxTiltDeg": 16,
+        "framesPerStep": 300,
+        "tilts": [
+          -1,
+          -0.7,
+          -0.35,
+          -0.1,
+          0.1,
+          0.35,
+          0.7,
+          1
+        ],
+        "cell": {
+          "width": 246,
+          "height": 344
+        },
+        "strip": {
+          "width": 2024,
+          "height": 344,
+          "bytes": 1649503
+        },
+        "sha256": "1a34ca6a3076146ae96c5ed2692efb77b725f8cc5cd8cb6748f0998749aa3252"
+      }
+    }
+  ],
+  "skipped": []
+}
