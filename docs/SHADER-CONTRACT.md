@@ -49,6 +49,14 @@ that made extracting it a move rather than a rewrite.
 | `foil/api.ts` | Self-contained read client (series → sets → paged set cards → card detail, plus `/search`; each browse tier takes an ownedOnly flag) + the foil-lab dev surface (masks, comments). Do NOT import `lib/api.ts`. |
 | `apps/api/src/routes/foil-lab.ts` | Branch-instance-only routes (mask save/load with sidecar v2 prior+diff artifacts, artwork-keyed alias lookup, comments → working tree, `GET /pattern-cards/:patternId` random samples from the baked resolver inversion — DB-free by design). Mounted only when `POKEDEX_FOIL_LAB=1`; inert in prod. Artifact generation: `packages/forge/src/mask-artifacts.ts` + pure-JS `png.ts`. |
 
+## Opt-in tangent-space view direction
+
+`buildFoilShader(pattern, { viewDirection: true })` adds `uViewDirection` without changing the recipe signature. It is the surface-to-camera vector in card-local tangent space: x/y follow increasing UV/card axes and +z is the front normal. The shader supplies recipes with `clamp(direction.xy / max(abs(direction.z), 0.05), -1, 1)`, retaining signed yaw/pitch while bounding grazing and backfacing cases. The no-options assembly is exactly the historical `PREAMBLE + pattern.glsl + MAIN`, including its uniform and structural seeds.
+
+Direct uniform users must supply a finite, normalized surface-to-camera vector; CPU helper sanitization does not cover arbitrary writes to `uViewDirection`.
+
+The Three stage's value is explicitly a **planar-center approximation** computed after current camera and mesh transforms. Perspective uses the card center-to-camera ray; orthographic uses the parallel camera ray. Transformed UV x and the inverse-transpose front normal preserve reflection signs. Under hierarchy-induced shear, Gram-Schmidt preserves those two axes and chooses the orthogonal bitangent sign that agrees with transformed UV y; singular or non-finite frames fall back to +z. It is not per-fragment perspective parallax and is not a physical-fidelity claim. This API follows the tangent-view concept described by [Cyanilux's stylized holofoil breakdown](https://www.cyanilux.com/tutorials/holofoil-card-shader-breakdown/); transform handling follows [Three's matrix conventions](https://threejs.org/docs/pages/Matrix3.html). No Unity assets or shader code are used.
+
 ## The uniform contract
 
 A pattern is a GLSL function `vec3 foilPattern(vec2 uv, vec2 tilt)` returning the foil

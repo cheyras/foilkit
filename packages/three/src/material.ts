@@ -38,11 +38,17 @@ export function transparentTexture(): THREE.DataTexture {
   return transparent
 }
 
-export function buildFoilMaterial(pattern: FoilPattern): THREE.ShaderMaterial {
-  const src = buildFoilShader(pattern)
+export interface FoilMaterialOptions {
+  /** Add the tangent-space `uViewDirection` input and route recipes through it. */
+  viewDirection?: boolean
+}
+
+export function buildFoilMaterial(pattern: FoilPattern, options: FoilMaterialOptions = {}): THREE.ShaderMaterial {
+  const src = buildFoilShader(pattern, options)
   const uniforms: Record<string, THREE.IUniform> = {
     uFace: { value: null },
     uTilt: { value: new THREE.Vector2(0, 0) },
+    ...(options.viewDirection ? { uViewDirection: { value: new THREE.Vector3(0, 0, 1) } } : {}),
     uTime: { value: 0 },
     uIntensity: { value: GLOBAL_DEFAULTS.uIntensity },
     uScale: { value: GLOBAL_DEFAULTS.uScale },

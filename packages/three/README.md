@@ -69,6 +69,14 @@ assets, `uGlyphOn` stays 0 and every slotted recipe renders its procedural
 fallback — the current and correct state. Read `assets/glyphs/README.md` before
 adding one.
 
+### Tangent-space view direction
+
+`buildFoilMaterial(pattern, { viewDirection: true })`, or `CardSettings.viewDirection: true` in `FoilStage`, opts a surface into the planar-center surface-to-camera input. The stage isolates opted and legacy cache variants. Local x/y follow the transformed card UV axes and +z is the inverse-transpose front normal, including reflected transforms. Under hierarchy-induced shear, the helper preserves transformed UV x and the front normal, then signs an orthogonal Gram-Schmidt bitangent to agree with transformed UV y. Singular or non-finite frames fall back to +z. This is not per-fragment parallax.
+
+Direct `buildFoilMaterial` consumers that assign `uViewDirection` themselves must supply a finite, normalized surface-to-camera vector. Only `FoilStage` uses `tangentViewDirection` to enforce normalization and fallback automatically.
+
+To reproduce the tangent verifier, pass an immutable pre-change JSON map of complete `buildFoilShader` objects keyed by pattern id: `PW_ROOT=/absolute/path/to/package.json /usr/bin/node tools/verify-tangent-view.mts --baseline /absolute/path/to/default-shaders.json --out /absolute/output`. `PW_ROOT` must refer to the `package.json` that provides Playwright.
+
 ## `@foilkit/three/react`
 
 `react` is an **optional peer dependency**; importing this subpath is what makes
