@@ -3071,7 +3071,7 @@
    "lane": "sv-era"
   },
   {
-   "pattern": "ex-emerald",
+   "pattern": "pokeball-masterball",
    "sel": {
     "setIds": [
      "sve"
@@ -3091,7 +3091,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Holofoil') — EX Emerald's holo is Poke Balls and stars, with the set logo at the lower right of the art window."
     }
    ],
-   "conflicts": "The Poke Ball reverse on energies could alternatively be the 3D pokeball-hologram (EX Unseen Forces) sheet; ex-emerald (flat Poke Ball + stars reverse) is the closer catalog-historical match for a flat reverse Poke Ball facet. Single source; catalog facet corroborates the 'pokeball' identity.",
+   "conflicts": "The Poke Ball reverse on energies could alternatively be the 3D pokeball-hologram (EX Unseen Forces) sheet; ex-emerald (flat Poke Ball + stars reverse) is the closer catalog-historical match for a flat reverse Poke Ball facet. Single source; catalog facet corroborates the 'pokeball' identity. R12 2026-10-19: re-pointed from ex-emerald (an EX-era sheet) to pokeball-masterball, the modern silver reverse under a Poke Ball lattice; the reference client has no record of these printings to compare against.",
    "lane": "sv-era"
   },
   {
@@ -3119,7 +3119,7 @@
    "lane": "sv-era"
   },
   {
-   "pattern": "tinsel",
+   "pattern": "tinsel-ii",
    "sel": {
     "setIds": [
      "sve"
@@ -3139,7 +3139,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Tinsel was the standard holo finish from Black & White to Legendary Treasures, plus assorted promos — horizontal banding across the art."
     }
    ],
-   "conflicts": "Pattern identity from Bulbapedia + the catalog's declared 'tinsel' facet; not a second truly independent source.",
+   "conflicts": "Pattern identity from Bulbapedia + the catalog's declared 'tinsel' facet; not a second truly independent source. R12 2026-10-19: re-pointed from tinsel to tinsel-ii, which is now the modern client's tinsel film (the client draws these energies with that film).",
    "lane": "sv-era"
   },
   {

@@ -1,0 +1,26 @@
+{
+  "$doc": "Generated foil masks and etch plates for this set: GUESSES, never exemplars, answering only where data/foil-masks/ has no record. Bytes live in object storage at <publicBase>/<layer>/<sha256>.png (data/generated-masks/store.json). Row: [cardId, variantId, layer, scope, sha256, bytes, runId, confidence]. Written by tools/generated-masks/stage.mts.",
+  "version": 1,
+  "setId": "mee",
+  "runs": {
+    "modular-basic-energy-2026-10-19": {
+      "name": "modular-basic-energy",
+      "version": 1,
+      "modelId": null,
+      "params": {
+        "method": "art rectangle foil, energy-symbol disc matte (found per card), printed glow lowers the plate (1 - 0.75 * glow); scans from Limitless"
+      },
+      "generatedAt": "2026-10-19T22:51:16Z"
+    }
+  },
+  "rows": [
+    ["mee-001",34727,"foil","sheet","0c191ed4855d522c13012a236b79f19cdca41b012483318d857928c2714feaf3",58521,"modular-basic-energy-2026-10-19",null],
+    ["mee-002",34729,"foil","sheet","4ce6f40840a416a93bb72f724b0924dd09bd8f85677efc851a351e6a58616e90",58131,"modular-basic-energy-2026-10-19",null],
+    ["mee-003",34731,"foil","sheet","eb6266d7dbf41d43441f04108f4bef01634833ee7897955a8907c0eded0d23c6",58309,"modular-basic-energy-2026-10-19",null],
+    ["mee-004",34733,"foil","sheet","d8c62dfb92e2fe1b20d78ed5e4b40fcf59caa74562ef8ae34e124ba2ebe12b66",56118,"modular-basic-energy-2026-10-19",null],
+    ["mee-005",34735,"foil","sheet","25d7c72ef1b0d5f5f7e628e573189c09d814d36498a3f1d4890eba410bcc9e9c",60485,"modular-basic-energy-2026-10-19",null],
+    ["mee-006",34737,"foil","sheet","7f62b7c4bd804f5960eff7a75804140853d4db3bafd7d904c0d4688e5f7e33c7",58086,"modular-basic-energy-2026-10-19",null],
+    ["mee-007",34739,"foil","sheet","85383a9b26f81d7a954e2777530f65630b7231b63ebd4db4cbb9ff6ead897787",59528,"modular-basic-energy-2026-10-19",null],
+    ["mee-008",34741,"foil","sheet","60b1f31bb9eb2db7952afe41130cc659d81280b62aa9dfe68214f2ee65d0b0e3",55964,"modular-basic-energy-2026-10-19",null]
+  ]
+}
