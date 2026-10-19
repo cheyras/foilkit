@@ -863,40 +863,72 @@ vec3 foilPattern(vec2 uv, vec2 tilt) {
 // same one driving its brightness, so a square swells as it lights), and the
 // ring edge is softened, softest when swollen (defocus read).
 const ACE_SPEC_GLSL = `
-vec3 foilPattern(vec2 uv, vec2 tilt) {
-  float sweep = tilt.x * 0.8 + tilt.y * 0.6;
-  vec2 p = (uv - 0.5) * vec2(1.0, CARD_ASPECT);
-  vec2 q = mat2(0.7071, 0.7071, -0.7071, 0.7071) * p * uP0 * uScale;
-  vec3 acc = vec3(0.0);
-  // faint silver connecting lattice between the squares
-  vec2 gf = abs(fract(q) - 0.5);
-  acc += vec3(0.09) * smoothstep(0.44, 0.5, max(gf.x, gf.y));
-  // hollow square rings on two grid scales (1-cell + 2-cell squares)
-  for (int i = 0; i < 2; i++) {
-    float s = (i == 0) ? 1.0 : 0.5;
-    vec2 g = q * s + float(i) * 7.3;
-    vec2 id = floor(g);
-    vec2 f = fract(g) - 0.5;
-    vec2 rnd = hash22(id + float(i) * 13.1);
-    // cluster co-selection -> neighboring squares light as plus/cross motifs
-    // (0.52: the sheet is busier than the first render's sparse clusters)
-    float on = step(0.52, vnoise(id * 0.55 + float(i) * 3.7) * 0.65 + rnd.x * 0.35);
-    float b = max(abs(f.x), abs(f.y));
-    // per-square tilt phase drives brightness AND size together (1ckdc2)
-    float ph = 0.5 + 0.5 * cos(TAU * (rnd.x + sweep * uP1));
-    float size = 0.33 * (1.0 + uP2 * (ph - 0.5));
-    // touch of blur (ulxj32) — two-step: round 1 (w to 0.10) judged "far too
-    // thick and glowing", round 2 (w to 0.064) judged "perfectly sharp";
-    // settled in between — visibly soft, still thin
-    float w = 0.046 + 0.034 * ph;
-    float ring = smoothstep(w, w * 0.18, abs(b - size));
-    float hue = uHueShift + uHueSpread * (rnd.y * 0.6 + 0.28 * (uv.x + uv.y) + 0.85 * sweep);
-    // floor 0.22 (round 2): off-phase squares fade further so the lit
-    // clusters keep their cross-motif contrast
-    float lum = 0.22 + 0.78 * ph * ph;
-    acc += on * ring * hueRamp(hue) * lum * ((i == 0) ? 1.0 : 0.85);
-  }
-  return acc * uP3;
+// R12 2026-10-19: rebuilt as the modern client draws the SV ACE SPEC foil. A soft
+// 45-degree diamond lattice (two crossed sets of soft stripes, sampled twice with
+// opposite tilt drift) is pixelated onto a fine cell grid whose columns alternate
+// bright and dim, which is what reads as the fine vertical dash texture. The
+// lattice value picks a colour from a ramp (grey-green, teal, grey, magenta, red,
+// orange-yellow, cream), desaturated, and the art inside the plate is colour-dodged
+// by it after a sweeping white band is overlaid into it (FOILKIT_COMPOSITE).
+// Our own analytic stripes and ramp, shaped to measured statistics.
+//   uP0 cell grid (per sheet width), uP1 lattice travel, uP2 column contrast, uP3 dodge gain.
+#define FOILKIT_COMPOSITE
+vec3 foilPattern(vec2 uv, vec2 tilt) { return vec3(0.0); }
+
+float aceStripe(float x) { float p = fract(2.0 * x) - 0.5; return exp(-0.5 * p * p / (0.106 * 0.106)); }
+vec2 aceCross(vec2 t) { return vec2(aceStripe(t.x), aceStripe(t.y)); }
+vec3 aceRamp(float u) {
+  u = clamp(u, 0.0, 1.0);
+  vec3 c = vec3(0.19, 0.25, 0.22);
+  c = mix(c, vec3(0.06, 0.48, 0.40), smoothstep(0.0, 0.14, u));
+  c = mix(c, vec3(0.16, 0.40, 0.33), smoothstep(0.14, 0.27, u));
+  c = mix(c, vec3(0.75, 0.05, 0.35), smoothstep(0.27, 0.42, u));
+  c = mix(c, vec3(0.86, 0.08, 0.10), smoothstep(0.42, 0.60, u));
+  c = mix(c, vec3(0.86, 0.60, 0.07), smoothstep(0.60, 0.80, u));
+  c = mix(c, vec3(0.80, 0.80, 0.46), smoothstep(0.80, 0.91, u));
+  c = mix(c, vec3(0.56, 0.62, 0.56), smoothstep(0.91, 1.0, u));
+  return c;
+}
+float aceBand(float u) { float b = fract(u) - 0.5625; return 0.054 + 0.946 * exp(-0.5 * b * b / (0.125 * 0.125)); }
+vec3 foilComposite(vec2 uv, vec2 tilt, vec3 art, float wp) {
+  vec2 g = vec2(0.1421 + uv.x * 0.7158, uv.y);
+  float ay = tilt.x * uTiltMax;
+  float ax = -tilt.y * uTiltMax;
+  vec3 N = vec3(sin(ay), -cos(ay) * sin(ax), cos(ay) * cos(ax));
+  float nSum = N.x + N.y + N.z;
+  float cells = max(uP0, 16.0);
+  vec2 cA = floor(g * cells);
+  float cB = floor(g.x * cells * 4.0 / 3.0);
+  float gridMask = mix(1.0, mix(0.6, 1.0, mod(cB, 2.0)), clamp(uP2, 0.0, 1.0));
+  vec2 pix = cA / (cells / 3.0) - 0.5;
+  vec2 r = vec2(dot(pix, vec2(0.707107, 0.707107)), dot(pix, vec2(-0.707107, 0.707107))) + 0.5;
+  float off = 0.5 * ((nSum - 1.0) * uP1 + 1.0) * 1.5;
+  vec2 uA = r + off;
+  vec2 uB = uA + (1.0 - off * 1.5);
+  vec2 ca = aceCross(uA);
+  vec2 mA = gridMask * ca;
+  float sA = clamp(1.0 - (1.0 - mA.x) * (1.0 - mA.y), 0.0, 1.0);
+  vec2 cb = aceCross(uB);
+  vec2 mB = clamp(gridMask * cb, 0.0, 1.0);
+  float sB = 1.0 - (1.0 - mB.x) * (1.0 - mB.y);
+  float sBraw = clamp(1.0 - (1.0 - cb.x) * (1.0 - cb.y), 0.0, 1.0);
+  float lattice = (1.0 - (1.0 - sA) * (1.0 - sB)) * (1.0 - (1.0 - sA) * (1.0 - sBraw));
+  vec3 sp = aceRamp(lattice);
+  sp = mix(sp, vec3(dot(sp, vec3(0.299, 0.587, 0.114))), 0.8) * uP3;
+  vec3 den = max(1.0 - min(sp, vec3(0.95)), 1e-5);
+  vec3 artD = art * (1.0 - 0.15 * wp);
+  float sh = aceBand(g.x + nSum);
+  vec3 c = mix(artD, plateOverlay(artD, vec3(sh)), wp);
+  float e = uEtchOn > 0.5 ? gEtch : 1.0;
+  vec3 b2 = c * (e * 0.15 + 0.85);
+  c = clamp(mix(b2, b2 / den, min(wp + (1.0 - e), 1.0)), 0.0, 1.0);
+  float eInv = 1.0 - e;
+  c = clamp(mix(c, c / max(1.0 - sh * 0.5, 1e-5), eInv), 0.0, 1.0);
+  vec3 nE = normalize(vec3(-gEtchSlope * 2.0, 1.0));
+  float s = dot(nE, gViewTS) * sh;
+  vec3 soft = c * c * (1.0 - 2.0 * s) + 2.0 * c * s;
+  c = clamp(mix(c, soft, eInv * 0.5), 0.0, 1.0);
+  return mix(art, c, clamp(uIntensity, 0.0, 1.0));
 }`
 
 // #8 Energy symbols II — scattered energy-glyph field: procedural SDF glyphs
@@ -3443,17 +3475,19 @@ export const PATTERNS: FoilPattern[] = [
     usedOn: 'SV-era ACE SPEC cards only (BW ACE SPECs used tinsel).',
     glsl: ACE_SPEC_GLSL,
     family: 'flash',
-    // R10 2026-10-18: against a reference render of the SV ACE SPEC foil (3 cards) the
-    // lattice is ~3x finer and pastel, and the change is ~3x larger: density 9 -> 24, uSat
-    // 1 -> 0.4, gain 1.1 -> 3, specular 0.3 -> 0.6. That reaches ~0.6x of the reference;
-    // the rest is the additive headroom budget over the light ACE SPEC body.
-    defaults: { ...FLASH_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 0.8, uSat: 0.4, uArtGate: 0.0, uSpecular: 0.6 },
+    // R12 2026-10-19: rebuilt as the modern client's ACE SPEC film (FOILKIT_COMPOSITE).
+    // The R10 additive diamond outlines reached ~0.6x of the reference under the
+    // headroom budget; the colour dodge reaches it. The additive terms are off underneath.
+    defaults: {
+      uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 0.0, uSat: 1.0,
+      uArtGate: 0.0, uSpecular: 0.0, uDarken: 0.0, uTint: 0.0, uInkPop: 0.0,
+      uMetal: 0.0, uSheen: 0.0, uSheenTint: 0.0, uDepth: 0.0, uGrain: 1.0,
+    },
     params: [
-      { key: 'uP0', label: 'Grid density', min: 4, max: 36, step: 0.5, default: 24 },
-      { key: 'uP1', label: 'Cycle rate', min: 0.2, max: 4, step: 0.05, default: 1.3 },
-      // ±size swing on each square's own tilt phase (1ckdc2); 0.5 = ±25%
-      { key: 'uP2', label: 'Size pulse', min: 0, max: 1, step: 0.02, default: 0.5 },
-      { key: 'uP3', label: 'Gain', min: 0, max: 4, step: 0.05, default: 3.0 },
+      { key: 'uP0', label: 'Cell grid', min: 48, max: 384, step: 8, default: 192 },
+      { key: 'uP1', label: 'Lattice travel', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP2', label: 'Column contrast', min: 0, max: 1, step: 0.05, default: 1.0 },
+      { key: 'uP3', label: 'Dodge gain', min: 0, max: 1.5, step: 0.05, default: 1.0 },
     ],
     implemented: true,
   },
