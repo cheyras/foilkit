@@ -86,6 +86,7 @@ import {
   serializeCanonEntry,
 } from './_lib/canon-entry.ts'
 import { readFileAt } from './_lib/github.ts'
+import { GeneratedSeedError, recordGeneratedParent } from './_lib/generated.ts'
 import { canonicalPatternId, patternById } from '@foilkit/patterns'
 import { COMPOSITE_CONTRACT } from '@foilkit/core'
 import { MASK_VECTOR_FILE_SUFFIX, parseMaskVector, parsePrior, writeMaskRecord } from '@foilkit/forge'
@@ -255,8 +256,10 @@ async function submitMask(res: FnResponse, body: Record<string, unknown>, contri
   // cannot throw.
   const prior = parsePrior(body.prior)
   const vector = body.vector === undefined || body.vector === null ? null : parseMaskVector(body.vector)
-  const startedFrom = derivation.startedFrom as 'layout' | 'window-bake' | 'mask'
-  const parentRef = readRef(derivation.parent)
+  let startedFrom = derivation.startedFrom as 'layout' | 'window-bake' | 'mask'
+  let parentRef = readRef(derivation.parent)
+  const g = (derivation as { generated?: { sha256?: unknown } | null }).generated
+  const generatedSha = g === null || g === undefined ? null : String(g.sha256)
 
   const token = await installationToken(appCredentials())
   const ref: RepoRef = { ...repoRef(), token }
@@ -271,6 +274,23 @@ async function submitMask(res: FnResponse, body: Record<string, unknown>, contri
     if (parentRef !== null && parentRef.cardId !== cardId) dirs.push(`${MASKS_PREFIX}/${parentRef.cardId}`)
     const ws = await materialise(ref, dirs)
     workspaceRoot = ws.root
+
+    // Seeded from a generated mask: record it as the machine parent first, so
+    // the contribution derives as a correction of it. See _lib/generated.ts.
+    if (generatedSha !== null) {
+      try {
+        if (await recordGeneratedParent({ ref, masksDir: ws.masksDir, cardId, variantId, sha256: generatedSha, prior })) {
+          startedFrom = 'mask'
+          parentRef = { cardId, variantId }
+        }
+      } catch (err) {
+        if (err instanceof GeneratedSeedError) {
+          sendPrivateError(res, 400, 'refused', err.message)
+          return
+        }
+        throw err
+      }
+    }
 
     const sidecar = await writeMaskRecord({
       masksDir: ws.masksDir,

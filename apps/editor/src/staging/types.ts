@@ -75,6 +75,13 @@ export interface SessionSeed {
   resolvedFrom: { cardId: string; variantId: number } | null
   /** sha256 of the resolved parent PNG at seed time. The staleness pin. */
   parentSha256: string | null
+  /**
+   * Set when the canvas was seeded from a GENERATED mask (object storage, a row
+   * in data/generated-masks/) rather than a committed record. The server
+   * records that mask as the machine parent before saving, so the save derives
+   * as a correction of it. Absent on every other seed.
+   */
+  generated?: { sha256: string } | null
   /** The deterministic era-rule prior in effect at seed time. */
   prior: FoilMaskPrior
   seededAt: string

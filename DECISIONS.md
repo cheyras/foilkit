@@ -2882,3 +2882,276 @@ would have been the hole in that.
 **Why:** Tangent-space view direction is established public prior art for stylized holofoil response (Cyanilux, “Holofoil Card Shader Breakdown”), and Three's documented matrix/normal conventions support deriving it from current transforms. This is an original implementation and a better geometric input than synthetic pointer tilt when a surface explicitly requests it.
 
 **Implications:** The Three adapter computes a planar-center approximation after camera and mesh transforms are current. Perspective uses center-to-camera; orthographic uses its parallel view ray. The orthonormal frame preserves transformed UV x and the inverse-transpose front normal, including reflections; under hierarchy-induced shear, Gram-Schmidt chooses the bitangent sign that agrees with transformed UV y. Singular or non-finite frames use +z. Direct uniform writers remain responsible for finite normalized input. This does not provide per-fragment perspective parallax, does not retune any recipe or default, and makes no claim of physical or foil fidelity. The shader's bounded mapping covers zero, grazing, and backfacing finite vectors. Conceptual sources: https://www.cyanilux.com/tutorials/holofoil-card-shader-breakdown/ and https://threejs.org/docs/pages/Matrix3.html.
+
+## 2026-10-17 — R9-PLATES: a card-space view vector and an etch plate, both structural no-ops
+
+**Decided by:** @cheyras
+
+**Decision:** The shader contract gains two layers, added the way the ink layer
+was (R8-INK): surface-owned, structural, and off until a card supplies data.
+
+1. **Card-space view.** New uniforms `uTiltMax` (radians) and `uCamDist` (card
+   widths) let `cardViewTS(uv)` rebuild the real eye direction per fragment from
+   the mesh rotation the three stage already applies. MAIN writes it to the
+   global `gViewTS` before `foilPattern()` runs, so a recipe can read it. The
+   stage sets both uniforms every frame.
+2. **Etch plate.** `uEtchTex` (red channel, linear, white = etched, y-down like
+   the hand mask), `uEtchOn`, `uEtchTexel`, `uEtchRelief`, `uEtchBump`. When on,
+   MAIN fills `gEtch` / `gEtchSlope` and applies a relief term to the foil: the
+   glint the bumped surface adds over the flat one, under a key light above the
+   camera. `CardConfig.etch` (an `EtchPlate`) carries it into the stage.
+3. **Graded foil strength needs no new contract.** The hand-mask tier already
+   multiplies the foil by mask alpha, so a mask whose alpha holds graded, linear
+   foil strength (not 0/255 coverage) renders correctly today. Generated masks
+   should use that: real foil is rarely full strength.
+
+**Why:** Measured against a local reference set of real per-card foil plates
+(never committed): foil strength on real cards is graded per region (typical
+linear levels 0.35-0.85), and etched cards carry a separate per-card texture
+plate whose line field (0.3 mm pitch, direction drawn per region) is what makes
+etched foil glint as it tilts. A recipe that only sees an abstract 2-vector tilt
+cannot produce parallax layers or relief glints; one that sees the eye
+direction can.
+
+**Implications:**
+- Parity: 45/45 byte-identical against main, after a 45/45 control pair. The
+  structural reasons are pinned in `packages/core/src/__tests__/view-etch-layer.test.ts`.
+- The etch relief term is a starting default; it has not yet been tuned against
+  a render. Recipes that want family-specific etch behaviour read `gEtch` /
+  `gEtchSlope` / `gViewTS` directly.
+- Mask *generation* is now the project's priority: masks and etches are generated
+  for every printing and refined by agent and by hand. Existing masks carry no
+  special weight; a generated mask that scores better replaces them.
+
+## 2026-10-18 — R10-MODERN: three Scarlet & Violet / Mega era recipes, the first to read the etch plate
+
+**Decided by:** @cheyras (asked for the modern foils to be rebuilt from what we have measured; recipes authored by the agent)
+
+**Decision:** Add three recipes, all `family: 'field'`, all with code defaults and no saved canon yet:
+
+1. **`crossed-rainbow`** — SV/ME Illustration Rares, Special Illustration Rares, ex double rares, shiny rares. Two
+   rainbow band systems at different angles and frequencies; yaw slides them in opposite directions, and their
+   summed square is a moving moire of colour pillars. A broad horizontal brightness band rides pitch. With an etch
+   plate, the lines dim the film and the faint lines glint under a leaning spectral sweep.
+2. **`etched-ultra`** — SV/ME textured ultra rares (regular-frame ex, full-art ex, full-art Trainers). A
+   silver-leaning rainbow film (uSat 0.35), two sets of soft vertical light pillars sliding opposite ways on yaw,
+   sparse RGB glitter. With an etch plate: white etch is full foil, dark lines are none, and the lines catch a
+   separate slanted sheen scaled by the etch slope.
+3. **`sv-holo-bands`** — SV/ME standard holo rares. Two sets of counter-slanted horizontal bands (indigo, blue,
+   white, tan, dark red) rolling opposite ways on pitch, fine grain, a slanted rainbow, and a vertical highlight
+   that enters from the right on yaw.
+
+**Why:** foilkit had no recipe for the foils on most modern rares: `ex-starfoil` and `horizontal-sheen` are
+video-derived approximations, and nothing read the R9 etch plate. The behaviour of each foil (what moves, in which
+direction, the colour order, the band counts and angles) was written down from real cards as notes and the GLSL was
+authored from those notes. No third-party shader source, texture or plate is in this repository, and the constants
+are round numbers exposed as sliders.
+
+**Measured:**
+- Rendered through the parity host over four local card scans (an ex, a Special Illustration Rare Trainer, an
+  Illustration Rare and a holo rare), with generated masks and etch plates, at four tilts. Scans, masks and renders
+  stayed local (F2). All three compile and render on SwiftShader with no page errors.
+- `crossed-rainbow` at the FIELD defaults was invisible on a bright pastel IR: the additive headroom `0.62·(1−L)` is
+  small over light art. uSheen 4.0 / uDepth 0.75 is the middle between that and a 4.5 / 0.9 render that read right
+  but dimmed the art (n = 1 card; needs a canon pass).
+- Existing recipes: no change. The pattern list grows 45 → 48, the task queue gains three canon (slider) tasks.
+
+**Implications:**
+- These are first drafts awaiting @cheyras's eye and canon. No pattern assignment points at them yet, so no card
+  renders differently until the resolver is told to use them.
+- `ex-starfoil` and `horizontal-sheen` stay as they are (their verdicts and canons are untouched); retiring or
+  re-pointing them is a separate decision.
+
+## 2026-10-18 — Generated masks live in object storage; git keeps an index. Mask diffs gain a graded score.
+
+**Decided by:** @cheyras ("Masks should probably not live in git … Deckpal's supabase?", "Supabase is fine"; the
+graded score and the etch record type were proposed by the agent and accepted)
+
+**Decision:**
+1. **Generated masks and etch plates are not committed.** Their bytes go to a public, content-addressed bucket
+   (`foilkit-masks`, `<layer>/<sha256>.png`, immutable). Git keeps `data/generated-masks/sets/<setId>.json`: one
+   row per (card, variant, layer) with scope, hash, size, run and confidence, plus each run's identity.
+   `data/generated-masks/store.json` names the bucket; `publicBase` stays `null` until the maintainer provisions it
+   (F6), and while it is null nothing renders differently.
+2. **Two layers:** `foil` (504 × 704, alpha = graded strength) and `etch` (1008 × 1408, red = height).
+3. **They are guesses.** A row answers only where `data/foil-masks/` has no record, never becomes an exemplar (F3),
+   and is freely rewritten by the next run. A human edit seeded from one is saved through `writeMaskRecord` after
+   the route first records the generated mask as the machine parent (bytes fetched from the store and checked
+   against the indexed hash), so the save derives `ai-corrected`, not `hand`. Only edited printings enter git.
+4. **`DiffStats.strength`** (optional): weighted Jaccard `Σmin/Σmax` and mean |Δ| over graded alpha. The binary
+   stats at `FOIL_THRESHOLD` are unchanged; they still answer "is this pixel foil at all".
+
+**Why:** a full generated pass is about 4,000 printings, which would be about 16,000 files written through
+`writeMaskRecord`, all copied into the editor build. And with graded foil strength (R9-PLATES), the binary stats
+count every region below half strength as no foil.
+
+**Measured:** tests 756/756. `tools/generated-masks/stage.mts --check` runs in CI. No shards are committed yet:
+this change adds the path and nothing else.
+
+**Implications:**
+- Provisioning is pending. The agent could not create the bucket: reading DeckPal's service credentials was blocked.
+  The maintainer creates `foilkit-masks` (public read) and sets `publicBase`. Uploads use
+  `FOILKIT_MASKS_URL` / `FOILKIT_MASKS_KEY` from the environment only.
+- The bucket sits in DeckPal's Supabase project, outside DeckPal's image store and its `image_asset` choke
+  point, the way `dev-captures` does.
+
+## 2026-10-18 — R10: SV/ME reverses render as a mirror sheet with the design in the mask (`mirror-sv`)
+
+**Decided by:** @cheyras ("I thought mirror was flat silver"; "I don't think the reverse holos use rainbow mirror,
+just mirror"; "The energy symbol patterns we made are just the svi mirror/reverse holo patterns")
+
+**Decision:** Plain Scarlet & Violet and Mega Evolution reverse holos resolve to `mirror-sv`: the `mirror` recipe with
+a new highlight-shape uniform (`uP4`: 0 round spot as before, 1 a wide slanted vertical bar) and SV/ME settings. The
+printed reverse design (the type-symbol tiles) comes from the card's generated mask as graded foil strength, never
+from the recipe. Six assignment rows that named energy-symbols-ii for SV reverses now name `mirror-sv`, as does the
+ME reverse row (previously `mirror`); every one of those rows already described "a tile design over a flat mirror
+foil base". `energy-symbols-ii` remains the EX FireRed & LeafGreen scattered-glyph foil (TAXONOMY #8).
+
+**Why:** rendered at four tilts against a local reference of the modern reverse, on three cards
+(sv06-128, me02-011, me02.5-039):
+- the reference has one wide vertical light bar that sweeps sideways, and no round spotlight or dark lobe;
+- it is silver, not ink-coloured;
+- it leaves the art window untouched;
+- energy-symbols-ii drew coloured glyph shapes across the art window, where a reverse has no foil.
+
+**Measured:** foil change (render minus no-foil), mean |ΔL| and chroma per tilt:
+- reference: |ΔL| 0.012–0.029, chroma 0.006–0.015;
+- `mirror-sv`: |ΔL| 0.009–0.027, chroma 0.007–0.015.
+
+On light ME bodies it is about 60% as bright as the reference, where the additive headroom budget caps it. Per-pixel
+correlation is not used: the reference places its bar at a per-card random phase. `mirror` canon renders are
+byte-identical before and after (8/8 frames). Resolver over the catalog: 2,617 SV/ME `reverse` variants plus
+140 `reverse-foil-energy` resolve to `mirror-sv`. Ball reverses keep `pokeball-masterball` pending their own
+comparison.
+
+**Implications:** `data/foil-pattern-cards.json` (which needs the database walk) is stale for these rows until the
+next bake.
+
+## 2026-10-18 — R10: horizontal-sheen rebuilt as the SV/ME holo rare, canon retuned
+
+**Decided by:** @cheyras ("Yeah the whole point is to improve the canons.")
+
+**Decision:** `horizontal-sheen` (used only on SV/ME standard holo rares) gets a new shader, `SV_HOLO_GLSL`,
+replacing the R3 streak field. Its canon is retuned under contract 2.
+- One continuous saturated rainbow on a slant, about two cycles up the card, fixed under tilt.
+- Two light-band systems (indigo, blue, white, tan, dark red; about three per card height) slanted and rolling
+  opposite ways, multiplied into the rainbow, with a fine grain.
+- A broad vertical highlight that pitch moves.
+- A dark-ink factor (`uP4`; samples `uFace`, the documented exception). The reference changes dark and light
+  ink about equally, but the additive composite has the most headroom over dark ink.
+
+**Why:** against a local reference of the SV/ME holo rare, the streak field added a fifth to a third of the
+reference's colour and almost no structure match.
+
+**Measured:** foil change per tilt on three holo rares (sv10-078, sv06.5-020, me04-013), each rendered with the
+reference's own plate as the mask so the comparison isolates the shader.
+
+| | Brightness change (\|ΔL\|) | Colour change | Structure correlation |
+|---|---|---|---|
+| Reference | 0.016–0.023 | 0.023–0.033 | — |
+| Old recipe | — | 0.003–0.019 | −0.18 to +0.36 |
+| New canon | 0.017–0.030 | 0.019–0.026 | +0.26 to +0.59 |
+
+The saved canon reproduces the tuned frames exactly (8/8). Correlation is meaningful here: the reference uses no
+per-card random phase on this family.
+
+**Previous canon** (savedAt 2026-08-07T22:05:29.426Z, in git history): `{"uIntensity":0.9,"uScale":1,"uHueShift":0.42,"uHueSpread":0.6,"uSat":0.65,"uArtGate":0.35,"uSpecular":0.5,"uDarken":0.32,"uTint":0,"uInkGuard":1,"uInkPop":0.5,"uMetal":0,"uSheen":4.2,"uSheenTint":0,"uDepth":0.45,"uGrain":1,"uP0":2,"uP1":2.2,"uP2":0,"uP3":1}`
+
+**Also:** holo-window plate generation fits its levels from 21 references (0.958 − 0.597·lum) and caps an oversized
+subject by depth. Measured on the 19 cards with both versions: foil/no-foil agreement 0.904 → 0.932, level MAE
+0.087 → 0.072.
+
+## 2026-10-18 — R10: SV/ME reverses draw no ink tile; the design is in the mask
+
+**Decided by:** @cheyras ("The energy symbol patterns we made are just the svi mirror/reverse holo patterns")
+
+**Decision:** the `modern-sv` era reverse row in `data/ink-designs.json` becomes `noInk: true`, so SV/ME plain reverses
+no longer draw the `dot-grid` tile. That tile was a placeholder ("a staggered field", confidence low), never the SVI
+design. The real design, the set's type-symbol tiles, is in each printing's generated mask. Drawing the dot grid as
+well put a second, invented pattern over it, which the hosted-editor check on sv06-128 showed. `modern-swsh` keeps
+its tile.
+
+**Implications:** six ink tests that used the SV reverse as their "design" example now probe Sword & Shield
+(`swsh1`), and the null-tile coverage test can address era rows. A plain SV/ME reverse with no generated mask renders
+the mirror sheet with no design until it gets one.
+
+## 2026-10-18 — R10: ex-starfoil is the SV/ME ex / IR / UR foil; SV/ME full arts assigned by exact rarity
+
+**Decided by:** @cheyras ("keep going until Meg and SVI cards all look fucking great"). The type mapping was
+proposed by the agent and the call left to it.
+
+**Decision:**
+- `ex-starfoil` gets the measured geometry of the reference family that renders regular ex, Illustration Rares,
+  Ultra Rares and shiny rares: two rainbow systems rising to the right at different slopes, sliding opposite ways on
+  yaw, summed and squared into parallel diagonal streaks, plus an etch-glint term and a dark-ink factor. The
+  `crossed-rainbow` prototype is folded in (alias kept), and `sv-holo-bands` is folded into `horizontal-sheen` (alias
+  kept).
+- Assignment rows (lane `r10-svme`, explicit card lists built from the catalog's own rarity and name fields by exact
+  match):
+
+| Cards | Recipe |
+|---|---|
+| Double rare (non-Mega), Illustration rare, Ultra Rare (non-Mega), Shiny Ultra Rare | ex-starfoil |
+| Shiny rare | ex-starfoil, scope window |
+| Special illustration rare, Hyper rare, Mega ex (Double / Ultra Rare) | rainbow-glitter-sheen |
+| Mega Hyper Rare | gold-secret |
+| ACE SPEC Rare | ace-spec, scope full |
+
+**Why:** the per-set rows split the same rarities across six recipes. The reference uses one foil family per rarity
+tier. The substring rarity selector cannot tell "Illustration rare" from "Special illustration rare", so the rows are
+card lists. No game data enters them.
+
+**Measured:** ex-starfoil against the reference, game plates as masks, four cards:
+- structure correlation +0.17 to +0.69 (the old recipe −0.19 to +0.30);
+- |ΔL| about 1.0× the reference on ex and 1.7× on IR and etched UR.
+
+**Implications:** `rainbow-glitter-sheen`, `gold-secret` and `ace-spec` keep their current recipes until compared
+against their own families.
+
+## 2026-10-18 — R10: rainbow-glitter-sheen rebuilt as the SV/ME SIR / hyper / Mega ex / Tera ex foil, canon retuned
+
+**Decided by:** @cheyras ("the whole point is to improve the canons"; "keep going until Meg and SVI cards all look
+fucking great")
+
+**Decision:** `rainbow-glitter-sheen` takes `ETCHED_ULTRA_GLSL` (the `etched-ultra` prototype, now folded in
+with an alias). It renders as:
+- a silver-to-rainbow film whose spectrum runs across the card, so each vertical light pillar carries its own band
+  of colour;
+- two pillar sets that slide opposite ways on yaw;
+- sparse RGB glitter;
+- the etch, where white is full foil, lines carry none, and the lines catch a slanted sheen.
+
+Its canon is retuned under contract 2.
+
+**Why:** against a local reference render of this family, the previous recipe drew faint diagonal streaks at about
+half the reference's strength, with little colour.
+
+**Measured:** four cards (sv06-130 Tera ex, me02.5-280 SIR, me01-104 Mega ex, sv04.5-234 SIR), reference plates
+and etches as masks.
+- |ΔL| is within 1.2× of the reference on three cards and 1.5× on the darkest (sv04.5-234). Chroma is 0.010–0.029
+  against the reference's 0.012–0.025.
+- Structure correlation is +0.05 to +0.59. It is limited because this family places its pillars by a per-card
+  random seed.
+- The saved canon reproduces the tuned frames exactly.
+
+**Previous canon** (in git history): `{"uIntensity":1,"uScale":0.55,"uHueShift":0.5,"uHueSpread":0.9,"uSat":1,"uArtGate":1,"uSpecular":0.35,"uDarken":0.4,"uTint":0,"uInkGuard":1,"uInkPop":0.5,"uMetal":0,"uSheen":1.4,"uSheenTint":0,"uDepth":1,"uGrain":1,"uP0":1,"uP1":0.8,"uP2":1.5,"uP3":1}`
+
+## 2026-10-18 — Generated masks cover every variant that shares a plate
+
+**Decided by:** @cheyras ("keep going until Meg and SVI cards all look fucking great")
+
+**Decision:** A generated plate now answers for every variant kind that shares the card's art and foil area:
+- the holo plate for stamped, jumbo, staff, Cosmos-foil and gold-foil holo variants;
+- the reverse plate for Poké Ball, Master Ball, specialty-ball, energy and stamped reverse variants. SV/ME reverse
+  plates are flat or type-patterned, and a ball variant's pattern comes from its own recipe.
+
+Plates were also generated for SV/ME printings that had none: 9 ex, 33 ACE SPEC, 33 holo Commons/Uncommons/Rares.
+
+**Measured:** 5,719 index rows (was 4,513), 4,810 unique objects, all present in the bucket (HEAD-checked).
+
+**Not covered:**
+- 289 promos;
+- 32 basic Energy printings (sve, mee), which TCGdex serves no image for;
+- 1 card whose art download failed.
+
+These render with the era-rule prior until they have a mask.

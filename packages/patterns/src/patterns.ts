@@ -48,6 +48,8 @@
 //   rebuild, cosmos-ii pixel edges, crosshatch thinned, gold-secret origin +
 //   sparkle; dedicated recipes for the four no-exemplar types (sequin,
 //   tcg-classic, acid-wash, disco); the uTint ink-metallic blend term
+//   R10 (2026-10-18) — SV/ME rebuilt against a reference render: mirror-sv,
+//   horizontal-sheen and ex-starfoil rewritten; etched-ultra (pending fold-in)
 
 import type { CoreDefaults, FoilFamily, FoilPattern, PatternParam } from '@foilkit/core'
 
@@ -67,6 +69,11 @@ export type { CoreDefaults, FoilFamily, FoilPattern, PatternParam }
 //   "Library mislabel corrections".)
 export const PATTERN_ALIASES: Record<string, string> = {
   'sv-holo': 'vertical-sheen',
+  // R10 2026-10-18: two recipes added and folded back into the types they
+  // turned out to be, the same day.
+  'crossed-rainbow': 'ex-starfoil',
+  'sv-holo-bands': 'horizontal-sheen',
+  'etched-ultra': 'rainbow-glitter-sheen',
 }
 
 export const canonicalPatternId = (id: string): string => PATTERN_ALIASES[id] ?? id
@@ -573,6 +580,52 @@ const SHEEN_H = sheenGlsl({ nx: 0, ny: 1, sharp: 3.0, beam: 0.28, boost: 2.3, fi
 const SHEEN_DR = sheenGlsl({ nx: 0.7071, ny: 0.7071, sharp: 3.0, beam: 0.55 }) // band falls "\" (right/frame-03, -05)
 const SHEEN_DL = sheenGlsl({ nx: 0.7071, ny: -0.7071, sharp: 3.0, beam: 0.55 }) // band rises "/" (left/frame-04, -06)
 const SHEEN_V_STRIPED = sheenGlsl({ nx: 1, ny: 0, stripes: true })
+
+// R10 (2026-10-18): the SV / Mega Evolution standard holo, rebuilt from a
+// reference render of the modern holo rare. Replaces the R3 streak field for
+// horizontal-sheen only. What the reference does:
+//   - one continuous, saturated rainbow (magenta, red, orange, yellow, green,
+//     cyan, blue, violet) laid on a slant, about two cycles up the card; tilt
+//     does not move it;
+//   - two light-band systems (dark indigo, blue, white, tan, dark red; about
+//     three bands per card height) slanted opposite ways, rolling opposite
+//     ways with yaw and together with pitch;
+//   - the bands multiply into the rainbow, so colour is strongest where a band
+//     is bright, and they carry a fine grain;
+//   - a broad vertical highlight (0.73x-1.54x) that the pitch moves across.
+// Over dark ink the additive composite has the most headroom, which is where
+// the reference's rainbow is strongest too.
+const SV_HOLO_GLSL = `
+vec3 svhStrip(float t) {
+  t = fract(t) * 6.0;
+  vec3 c = mix(vec3(0.16, 0.05, 0.35), vec3(0.16, 0.12, 0.67), smoothstep(0.0, 1.0, t));
+  c = mix(c, vec3(0.30, 0.48, 0.79), smoothstep(1.0, 2.0, t));
+  c = mix(c, vec3(0.86, 0.84, 0.87), smoothstep(2.0, 3.0, t));
+  c = mix(c, vec3(0.60, 0.40, 0.29), smoothstep(3.0, 4.0, t));
+  c = mix(c, vec3(0.45, 0.13, 0.23), smoothstep(4.0, 5.0, t));
+  c = mix(c, vec3(0.16, 0.05, 0.35), smoothstep(5.0, 6.0, t));
+  return c;
+}
+float svhOverlay(float b, float l) { return b < 0.5 ? 2.0 * b * l : 1.0 - 2.0 * (1.0 - b) * (1.0 - l); }
+vec3 foilPattern(vec2 uv, vec2 tilt) {
+  float k = 0.28 * uP1;                       // card-normal shift at full tilt
+  float tx = tilt.x * k, ty = tilt.y * k;
+  float s1 = (2.9 * uv.y - 0.36 * uv.x) * uP0 * uScale + ty - 0.98 * tx;
+  float s2 = (3.0 * uv.y + 0.47 * uv.x) * uP0 * uScale + ty + 0.5 * tx + 0.33;
+  float grain = 1.0 - uP2 * hash21(floor(uv * vec2(1.0, CARD_ASPECT) * 420.0));
+  vec3 SG = (svhStrip(s1) + svhStrip(s2)) * grain;
+  vec3 rb = hueRamp(uHueShift + uHueSpread * (1.9 * uv.y - 0.62 * uv.x));
+  vec3 foil = SG * vec3(svhOverlay(rb.r, SG.r), svhOverlay(rb.g, SG.g), svhOverlay(rb.b, SG.b));
+  float w = uv.x + 2.0 * fract(0.75 * ty / 0.28 + 0.25) - 1.0;
+  foil *= 0.73 + 0.81 * clamp(w * (1.0 - w) * 4.0, 0.0, 1.0);
+  // The reference changes dark and light ink about equally; the additive
+  // composite has the most headroom over dark ink, so without this the same
+  // pattern lands 2x stronger on a dark art window. uP4 is the dark-ink factor.
+  // Samples uFace, the documented contract exception (see detective-pikachu).
+  float faceL = dot(texture2D(uFace, uv).rgb, vec3(0.299, 0.587, 0.114));
+  foil *= mix(uP4, 1.0, smoothstep(0.05, 0.75, faceL));
+  return foil * uP3;
+}`
 
 const SHEEN_DEFAULTS: CoreDefaults = {
   ...LINE_FOIL,
@@ -1457,7 +1510,17 @@ vec3 foilPattern(vec2 uv, vec2 tilt) {
   // broad specular blob traveling WITH tilt
   vec2 lc = vec2(0.5, 0.55) + tilt * (0.45 * uP1);
   vec2 d = (uv - lc) * vec2(1.0, CARD_ASPECT * 0.85);
-  float lobe = exp(-dot(d, d) * uP0) * (0.7 + 0.3 * w1);
+  float lobe = exp(-dot(d, d) * uP0);
+  // uP4 > 0 (R10, 2026-10-18): the highlight is a wide, slightly slanted
+  // VERTICAL BAR that sweeps sideways as the card turns (yaw and pitch both
+  // move it), not a round spotlight. Measured on SV/ME reverse holos against a
+  // local reference. 0 (the default, and every saved canon) is the round lobe,
+  // exactly as before.
+  if (uP4 > 0.0) {
+    float bx = uv.x + 0.18 * (uv.y - 0.5) - 0.5 - (tilt.x + 0.6 * tilt.y) * 0.45 * uP1;
+    lobe = mix(lobe, exp(-bx * bx * uP0), clamp(uP4, 0.0, 1.0));
+  }
+  lobe *= 0.7 + 0.3 * w1;
   // dim, faintly warm environment reflection — never fully black
   float env = 0.07 + 0.20 * w1 * w2;
   return vec3(1.03, 1.0, 0.95) * env + vec3(1.0, 0.99, 0.97) * lobe * uP3;
@@ -2418,6 +2481,119 @@ vec3 foilPattern(vec2 uv, vec2 tilt) {
   return disc * vis * hueRamp(hue) * uP3;
 }`
 
+// ── R10-MODERN wave (2026-10-18) — the Scarlet & Violet / Mega era foils ────
+// Three recipes for the foils on most modern rares, written from behaviour
+// notes measured on real cards (what moves, which way, how far, the colour
+// order), never from anyone's shader source. The constants are round numbers
+// chosen to match those notes, and the ones worth tuning are sliders. Each
+// reads the R9 etch plate when a card has one and is unchanged otherwise.
+
+// crossed-rainbow: two rainbow band systems at different angles and
+// frequencies. Yaw slides them in OPPOSITE directions, so their crossings (the
+// bright colour "pillars") race along the card while each system only drifts.
+// The strip is one smooth cycle, purple -> red -> yellow -> pale cyan -> blue
+// -> indigo -> purple, desaturated by uSat like hueRamp.
+const CROSSED_RAINBOW_GLSL = `
+vec3 crStrip(float t) {
+  t = fract(t) * 7.0;
+  vec3 c = mix(vec3(0.55, 0.22, 0.78), vec3(0.96, 0.28, 0.32), smoothstep(0.0, 1.0, t));
+  c = mix(c, vec3(1.0, 0.62, 0.25), smoothstep(1.0, 2.0, t));
+  c = mix(c, vec3(1.0, 0.92, 0.40), smoothstep(2.0, 3.0, t));
+  c = mix(c, vec3(0.80, 0.98, 0.96), smoothstep(3.0, 4.0, t));
+  c = mix(c, vec3(0.28, 0.48, 1.0), smoothstep(4.0, 5.0, t));
+  c = mix(c, vec3(0.30, 0.16, 0.62), smoothstep(5.0, 6.0, t));
+  c = mix(c, vec3(0.55, 0.22, 0.78), smoothstep(6.0, 7.0, t));
+  float l = dot(c, vec3(0.299, 0.587, 0.114));
+  return mix(vec3(l), c, uSat);
+}
+vec3 foilPattern(vec2 uv, vec2 tilt) {
+  // Two rainbow systems whose bands BOTH rise to the right, at different
+  // slopes and frequencies; they slide in opposite directions with yaw. Their
+  // summed square reads as long parallel diagonal streaks, not a checkerboard.
+  float tx = 0.28 * tilt.x * uP1;            // card-normal x at full tilt
+  float a = (3.14 * uv.x - 2.79 * uv.y) * uP0 * uScale - 1.84 * tx;
+  float b = (1.57 * uv.x - 3.57 * uv.y) * uP0 * uScale + tx + 0.37;
+  vec3 sA = crStrip(uHueShift + uHueSpread * a);
+  vec3 sB = crStrip(uHueShift + uHueSpread * b);
+  vec3 light = pow(clamp((sA + sB) * (sA + sB) * 0.25, 0.0, 1.0), vec3(uP2));
+  float by = clamp((uv.y - 0.5 - 0.6 * tilt.y) * 1.4, -1.0, 1.0);
+  light *= 0.75 + 0.27 * pow(0.5 + 0.5 * cos(PI * by), 2.0);
+  if (uEtchOn > 0.5) {
+    light *= mix(1.0, gEtch, 0.85);
+    float sweep = pow(0.5 + 0.5 * cos(TAU * (uv.y - 0.4 * uv.x + 0.5 * tilt.x * uP1)), 3.0);
+    float faint = step(0.01, gEtch) * pow(clamp(1.36 - gEtch, 0.0, 1.36), 4.0) * 0.2;
+    light += crStrip(uHueShift + 0.5 * uv.y + 0.3 * tilt.x) * clamp(faint, 0.0, 1.0)
+           * (1.0 - gEtch) * sweep * uP4 * 4.0;
+  }
+  // dark-ink factor, as in horizontal-sheen: the reference changes dark and
+  // light ink about equally; the additive composite would not (uFace exception).
+  float faceL = dot(texture2D(uFace, uv).rgb, vec3(0.299, 0.587, 0.114));
+  light *= mix(uP5, 1.0, smoothstep(0.05, 0.75, faceL));
+  return light * uP3;
+}`
+
+// etched-ultra: a mostly-silver rainbow film (uSat low), two sets of soft
+// vertical light pillars that slide in opposite directions on yaw, a sprinkle
+// of RGB glitter, and the etch doing two jobs: white etch is full foil and dark
+// lines are none, and the lines themselves catch a separate slanted sheen.
+const ETCHED_ULTRA_GLSL = `
+vec3 foilPattern(vec2 uv, vec2 tilt) {
+  vec2 p = (uv - 0.5) * vec2(1.0, CARD_ASPECT);
+  // the rainbow runs ACROSS the card (along x), so each vertical pillar carries
+  // its own band of the spectrum; it slides with yaw (R10 reference).
+  float t = (p.x * 2.0 + 0.15 * p.y) * uScale + 0.35 * tilt.x;
+  vec3 film = hueRamp(uHueShift + uHueSpread * t);
+  float pa = pow(0.5 + 0.5 * cos(TAU * (p.x * uP0 + tilt.x * uP1)), 4.0);
+  float pb = pow(0.5 + 0.5 * cos(TAU * (p.x * uP0 * 0.73 - tilt.x * uP1 * 0.8 + 0.31)), 4.0);
+  vec3 light = film * (0.18 + 0.82 * max(pa, pb) + 0.3 * pa * pb);
+  // glitter: sparse sparks, each its own colour, igniting at its own tilt
+  vec2 g = uv * vec2(1.0, CARD_ASPECT) * uP2;
+  vec2 r = hash22(floor(g));
+  float ph = fract(r.x * 13.7 + dot(tilt, vec2(1.3, 0.9)) * (0.6 + r.y));
+  float spark = pow(max(0.0, cos(TAU * ph)), 40.0) * step(0.55, r.y)
+              * smoothstep(0.5, 0.15, length(fract(g) - 0.5));
+  light += (0.5 + 0.5 * cos(TAU * (r.x + vec3(0.0, 0.333, 0.667)))) * spark * uP4;
+  if (uEtchOn > 0.5) {
+    light *= gEtch;
+    float slant = pow(0.5 + 0.5 * cos(TAU * ((p.x + 0.35 * p.y) * 1.2 - 0.6 * uP1 * tilt.x - 0.4 * tilt.y)), 6.0);
+    float relief = clamp(length(gEtchSlope) * 6.0, 0.0, 1.0);
+    light += vec3(0.9, 0.95, 1.0) * (1.0 - gEtch) * slant * (0.35 + 0.65 * relief) * uP5;
+  }
+  return light * uP3;
+}`
+
+// sv-holo-bands: the modern standard holo rare. Two sets of broad, gently
+// slanted horizontal bands (dark indigo -> blue -> white -> tan -> dark red),
+// slanted opposite ways and rolling opposite ways on pitch, speckled by a fine
+// grain and coloured by a slanted rainbow. A broad vertical highlight enters
+// from the right as the card yaws, and bright red peaks get a little extra.
+const SV_HOLO_BANDS_GLSL = `
+vec3 hbStrip(float t) {
+  t = fract(t) * 5.0;
+  vec3 c = mix(vec3(0.10, 0.08, 0.30), vec3(0.25, 0.45, 0.95), smoothstep(0.0, 1.0, t));
+  c = mix(c, vec3(0.97, 0.97, 1.0), smoothstep(1.0, 2.0, t));
+  c = mix(c, vec3(0.85, 0.70, 0.50), smoothstep(2.0, 3.0, t));
+  c = mix(c, vec3(0.45, 0.08, 0.10), smoothstep(3.0, 4.0, t));
+  c = mix(c, vec3(0.10, 0.08, 0.30), smoothstep(4.0, 5.0, t));
+  return c;
+}
+vec3 foilPattern(vec2 uv, vec2 tilt) {
+  vec2 p = (uv - 0.5) * vec2(1.0, CARD_ASPECT);
+  float roll = tilt.y * uP1;
+  float h = 1.0 / CARD_ASPECT;
+  vec3 bands = 0.5 * (hbStrip((p.y + 0.18 * p.x) * h * uP0 * uScale + roll)
+                    + hbStrip((p.y - 0.18 * p.x) * h * uP0 * 0.9 * uScale - 0.8 * roll + 0.4));
+  float grain = hash21(floor(uv * vec2(1.0, CARD_ASPECT) * uP2));
+  bands *= 0.85 + 0.35 * smoothstep(0.75, 0.95, grain);
+  vec3 rb = hueRamp(uHueShift + uHueSpread * ((p.y + 0.4 * p.x) * h * 2.0 + 0.3 * tilt.y));
+  vec3 lit = clamp(bands * (0.35 + 1.15 * rb), 0.0, 1.2);
+  float hx = uv.x - (1.25 - 0.75 * (tilt.x + 1.0));
+  lit *= 0.73 + 0.81 * exp(-hx * hx * 8.0);
+  lit.r += pow(clamp(lit.r, 0.0, 1.0), 4.0) * 0.35;
+  if (uEtchOn > 0.5) lit *= mix(1.0, gEtch, 0.7);
+  return lit * uP3;
+}`
+
 // ── Helpers to derive per-slug variants of a recipe ─────────────────────────
 
 const tuneParams = (
@@ -2517,7 +2693,10 @@ export const PATTERNS: FoilPattern[] = [
     label: 'Horizontal sheen (SV default)',
     taxonomy: 'Sheen — horizontal rotation (Bulbapedia "Mirage")',
     usedOn: 'The default holo of Scarlet & Violet AND the Mega-era standard holos.',
-    glsl: SHEEN_H,
+    glsl: SV_HOLO_GLSL,
+    // R10 2026-10-18: SV_HOLO_GLSL replaces the R3 streak field (SHEEN_H stays
+    // defined for history; nothing else used it). The uniforms below are code
+    // defaults; the canon in data/foil-canon/horizontal-sheen.json wins.
     // uDarken 0.22 (R3 round 3): the SV "Mirage" streaks are saturated over a
     // BRIGHT silver body — screen-only blending erased the streak field on the
     // Kyogre exemplar (judge: "uniform smooth gradient"). Chey's canon
@@ -2525,8 +2704,14 @@ export const PATTERNS: FoilPattern[] = [
     // R5b eyeball: the SV Mirage band is broad and low-contrast; at the SHEET
     // default it barely registered on the me04 exemplar.
     family: 'line',
-    defaults: { ...SHEEN_DEFAULTS, uDarken: 0.32 },
-    params: tuneParams(SHEEN_PARAMS, { uP0: 2, uP1: 2.2 }),
+    defaults: { ...SHEEN_DEFAULTS, uDarken: 0.32, uSat: 1.0, uHueShift: 0.0, uHueSpread: 1.0 },
+    params: [
+      { key: 'uP0', label: 'Band scale', min: 0.3, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP1', label: 'Tilt response', min: 0, max: 4, step: 0.05, default: 1.0 },
+      { key: 'uP2', label: 'Grain', min: 0, max: 0.6, step: 0.01, default: 0.08 },
+      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP4', label: 'Dark-ink factor', min: 0, max: 1, step: 0.05, default: 0.45 },
+    ],
     implemented: true,
   },
 
@@ -2679,6 +2864,43 @@ export const PATTERNS: FoilPattern[] = [
       { key: 'uP1', label: 'Flash travel', min: 0, max: 1.5, step: 0.05, default: 0.55 },
       { key: 'uP2', label: 'Sheet waviness', min: 0, max: 4, step: 0.05, default: 1.5 },
       { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
+    ],
+    implemented: true,
+  },
+  // R10 (2026-10-18): the SV / Mega Evolution reverse holo. The same plain
+  // mirror sheet (the printed reverse pattern comes from the card's MASK, as
+  // graded foil strength), tuned against a local reference of how the modern
+  // reverse actually renders:
+  //   - a wide vertical bar of light that sweeps across with tilt (uP4 1),
+  //     not a round spotlight;
+  //   - an even, mild change everywhere else, with no dark lobe (uDarken and
+  //     uDepth low);
+  //   - silver, not ink-coloured (uTint 0, uSheenTint 0);
+  //   - nothing outside the mask (uSpecular low: the shared gloss is the only
+  //     light that reaches the unfoiled art window).
+  // mirror's own canon is untouched.
+  {
+    id: 'mirror-sv',
+    label: 'Mirror (SV/ME reverse)',
+    taxonomy: 'Plain aluminum mirror foil — no pattern, no hue shift',
+    usedOn: 'Scarlet & Violet and Mega Evolution reverse holos; the printed reverse pattern is in the mask.',
+    glsl: MIRROR_GLSL,
+    family: 'metal',
+    defaults: {
+      // Tuned on three reverses (sv06-128, me02-011, me02.5-039) at four tilts
+      // against the reference: the colour change matches (chroma 0.008-0.015
+      // vs 0.006-0.015); brightness is about 60% of the reference on light
+      // ME bodies, where the additive headroom budget caps it.
+      uIntensity: 2.0, uScale: 1.0, uHueShift: 0.5, uHueSpread: 0.0, uSat: 0.0,
+      uArtGate: 0.0, uSpecular: 0.0, uDarken: 0.3, uTint: 0.0, uInkPop: 2.0,
+      uMetal: 0.9, uSheen: 0.8, uSheenTint: 0.0, uDepth: 0.3, uGrain: 1.0,
+    },
+    params: [
+      { key: 'uP0', label: 'Bar tightness', min: 2, max: 60, step: 0.5, default: 18 },
+      { key: 'uP1', label: 'Bar travel', min: 0, max: 3, step: 0.05, default: 1.2 },
+      { key: 'uP2', label: 'Sheet waviness', min: 0, max: 4, step: 0.05, default: 0 },
+      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP4', label: 'Bar (0 = round spot)', min: 0, max: 1, step: 0.05, default: 1 },
     ],
     implemented: true,
   },
@@ -3063,24 +3285,23 @@ export const PATTERNS: FoilPattern[] = [
     id: 'rainbow-glitter-sheen',
     label: 'Rainbow glitter sheen',
     taxonomy: 'Glitter + shaped directional band base',
-    usedOn: 'Mega-era Mega EX cards and others.',
-    glsl: RAINBOW_GLITTER_SHEEN_GLSL,
-    // uDarken 0.4 (R3-MOTION): saturated laser stripes over a bright silver
-    // substrate are unrenderable under screen-only blending — 4th data point
-    // of the legibility physics (prismatic-pokeball, R2 window foils, R3
-    // sheens). The mirror term darkens the body so the band's primaries read
-    // saturated instead of pastel.
+    usedOn: 'Scarlet & Violet and Mega Evolution Special Illustration Rares, Hyper Rares, Mega ex and Tera ex.',
+    // R10 2026-10-18: ETCHED_ULTRA_GLSL replaces the R1 glitter-sheen field
+    // (RAINBOW_GLITTER_SHEEN_GLSL stays defined for history). Measured against
+    // a reference render of the SIR / hyper / Mega ex family: vertical pillars
+    // of rainbow that slide with yaw, glitter, and the etch line texture. The
+    // canon is retuned (data/foil-canon/rainbow-glitter-sheen.json); the
+    // previous canon is in DECISIONS.md.
+    glsl: ETCHED_ULTRA_GLSL,
     family: 'field',
-    defaults: { ...FIELD_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.5, uHueSpread: 0.9, uSat: 1.0, uArtGate: 0.0, uSpecular: 0.35, uDarken: 0.4 },
+    defaults: { ...FIELD_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 1.0, uSat: 0.9, uArtGate: 0.0, uSpecular: 0.2, uDarken: 0.2 },
     params: [
-      { key: 'uP0', label: 'Glitter density', min: 0.4, max: 3, step: 0.05, default: 1.0 },
-      // travel 0.8: at 2.0 the band left the card entirely at |tilt| ≥ 0.7
-      // (eyeball round 1); at 1.0 the apex still exited (judge round 1)
-      { key: 'uP1', label: 'Band travel', min: 0, max: 4, step: 0.05, default: 0.8 },
-      // 1.3: judge round 1 read the 0.8 arms as "a straight diagonal band"
-      // 1.9 (R3-MOTION): the reference V is more acute than 1.3 rendered
-      { key: 'uP2', label: 'Chevron angle', min: 0, max: 2.5, step: 0.05, default: 1.9 },
-      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP0', label: 'Pillar count', min: 0.5, max: 6, step: 0.1, default: 1.5 },
+      { key: 'uP1', label: 'Pillar travel', min: 0, max: 3, step: 0.05, default: 0.9 },
+      { key: 'uP2', label: 'Glitter density', min: 40, max: 400, step: 5, default: 180 },
+      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 0.7 },
+      { key: 'uP4', label: 'Glitter gain', min: 0, max: 3, step: 0.05, default: 0.8 },
+      { key: 'uP5', label: 'Line sheen', min: 0, max: 3, step: 0.05, default: 1.0 },
     ],
     implemented: true,
   },
@@ -3093,13 +3314,17 @@ export const PATTERNS: FoilPattern[] = [
     usedOn: 'SV-era ACE SPEC cards only (BW ACE SPECs used tinsel).',
     glsl: ACE_SPEC_GLSL,
     family: 'flash',
-    defaults: { ...FLASH_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 0.8, uSat: 1.0, uArtGate: 0.0, uSpecular: 0.3 },
+    // R10 2026-10-18: against a reference render of the SV ACE SPEC foil (3 cards) the
+    // lattice is ~3x finer and pastel, and the change is ~3x larger: density 9 -> 24, uSat
+    // 1 -> 0.4, gain 1.1 -> 3, specular 0.3 -> 0.6. That reaches ~0.6x of the reference;
+    // the rest is the additive headroom budget over the light ACE SPEC body.
+    defaults: { ...FLASH_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 0.8, uSat: 0.4, uArtGate: 0.0, uSpecular: 0.6 },
     params: [
-      { key: 'uP0', label: 'Grid density', min: 4, max: 18, step: 0.5, default: 9 },
+      { key: 'uP0', label: 'Grid density', min: 4, max: 36, step: 0.5, default: 24 },
       { key: 'uP1', label: 'Cycle rate', min: 0.2, max: 4, step: 0.05, default: 1.3 },
       // ±size swing on each square's own tilt phase (1ckdc2); 0.5 = ±25%
       { key: 'uP2', label: 'Size pulse', min: 0, max: 1, step: 0.02, default: 0.5 },
-      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.1 },
+      { key: 'uP3', label: 'Gain', min: 0, max: 4, step: 0.05, default: 3.0 },
     ],
     implemented: true,
   },
@@ -3187,23 +3412,29 @@ export const PATTERNS: FoilPattern[] = [
   // #33 — real recipe 2026-08-02 (R1): diagonal-sheen base + star overprint.
   {
     id: 'ex-starfoil',
-    label: 'ex starfoil (SV ex)',
-    taxonomy: 'Dense star overprint over a diagonal-sheen base',
-    usedOn: 'SV-era ex cards (full face, "almost triple printed").',
-    glsl: EX_STARFOIL_GLSL,
-    // uDarken 0.2 (R3 round 3): streaks + star ignition were illegible over the
-    // bright lilac 151 scan under screen-only blending.
-    // R5b eyeball: at the WASH default the star/streak layer washed the 151
-    // full-art to grey-pink. Gentler, and almost fully ink-tinted.
-    family: 'flash',
-    defaults: { ...FLASH_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.55, uHueSpread: 0.6, uSat: 0.7, uArtGate: 0.0, uSpecular: 0.35, uDarken: 0.2 },
+    label: 'ex starfoil (SV/ME ex, IR, UR)',
+    taxonomy: 'Parallel diagonal rainbow streaks rising to the right, sliding with tilt (the "star overprint" is the occasional star-sprite layer)',
+    usedOn: 'Scarlet & Violet and Mega Evolution regular ex (Double rare), Illustration Rares, Ultra Rares and shiny rares.',
+    // R10 2026-10-18: CROSSED_RAINBOW_GLSL replaces the R1 star-overprint
+    // recipe (EX_STARFOIL_GLSL stays defined for history). Measured against a
+    // reference render of this family, the old recipe added 5-20x too little
+    // light with no structure match. The two crossing rainbow systems below
+    // are that family's measured geometry. No canon was saved for this id.
+    glsl: CROSSED_RAINBOW_GLSL,
+    family: 'field',
+    // uSheen 4 / uDepth 0.75 (eyeballed on a bright pastel IR scan): at the
+    // FIELD defaults the moire vanished into the additive headroom of light art;
+    // at 4.5 / 0.9 it read right but dimmed the art. This is the middle.
+    defaults: { ...FIELD_FOIL, uSheen: 4.0, uDepth: 0.75, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 1.0, uSat: 0.85, uArtGate: 0.0, uSpecular: 0.2, uDarken: 0.2 },
     params: [
-      // band count 1.5: the reference shows 1-2 broad diagonal bands, the
-      // first render's 2.5 read as ~5 stripes (eyeball round 1)
-      { key: 'uP0', label: 'Band count', min: 1, max: 8, step: 0.5, default: 1.5 },
-      { key: 'uP1', label: 'Band drift', min: 0, max: 4, step: 0.05, default: 1.8 },
-      { key: 'uP2', label: 'Star density', min: 10, max: 60, step: 1, default: 28 },
-      { key: 'uP3', label: 'Star gain', min: 0, max: 3, step: 0.05, default: 1.0 },
+      // Round-2 tuning against the reference on 4 cards (IR, ex, 2 etched UR), plates from the reference:
+      // structure correlation +0.17..+0.69; |dL| about 1.0x (ex) to 1.7x (IR, etched UR) of the reference.
+      { key: 'uP0', label: 'Band frequency', min: 0.3, max: 3, step: 0.05, default: 1.6 },
+      { key: 'uP1', label: 'Band travel', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP2', label: 'Moire contrast', min: 0.5, max: 4, step: 0.05, default: 3.0 },
+      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 0.4 },
+      { key: 'uP4', label: 'Etch glint', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP5', label: 'Dark-ink factor', min: 0, max: 1, step: 0.05, default: 0.3 },
     ],
     implemented: true,
   },

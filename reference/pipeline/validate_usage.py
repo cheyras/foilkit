@@ -17,7 +17,7 @@ ALLOWED = {
     "starlight-ii", "water-web", "radiant", "rainbow-glitter", "rainbow-glitter-sheen",
     "ace-spec", "pokeball-masterball", "prismatic-pokeball", "radiant-collection-dots",
     "ex-starfoil", "sequin", "crosshatch", "tcg-classic", "confetti", "acid-wash",
-    "disco", "none",
+    "disco", "mirror-sv", "none",
 }
 
 path = sys.argv[1] if len(sys.argv) > 1 else "usage-rows.json"

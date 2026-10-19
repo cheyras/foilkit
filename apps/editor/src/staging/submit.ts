@@ -76,7 +76,7 @@ export interface MaskContribution {
   width: number
   height: number
   prior: MaskSession['seed']['prior']
-  derivation: { startedFrom: string; parent: { cardId: string; variantId: number } | null }
+  derivation: { startedFrom: string; parent: { cardId: string; variantId: number } | null; generated?: { sha256: string } }
   seed: {
     parentSha256: string | null
     resolvedFrom: { cardId: string; variantId: number } | null

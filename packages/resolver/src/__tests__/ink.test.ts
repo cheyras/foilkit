@@ -56,13 +56,15 @@ test('Prismatic Evolutions: three reverses of ONE card resolve three different w
   const pb = resolveInk({ ...base, variantKind: 'reverse-foil-pokeball' })
   const mb = resolveInk({ ...base, variantKind: 'reverse-foil-masterball' })
 
-  // The standard reverse falls through to its era and gets a shipped tile.
+  // The standard reverse falls through to its era, whose recorded decision
+  // (R10, 2026-10-18) is NO ink tile: the SV/ME reverse design is carried by
+  // the printing's generated mask instead.
   assert.equal(std.match, 'era')
   assert.equal(std.scope, 'modern-sv')
-  assert.equal(std.state, 'design')
-  assert.equal(std.tileId, 'dot-grid')
-  assert.equal(std.uInkOn, true)
-  assert.equal(std.uInkDraw, true)
+  assert.equal(std.state, 'no-ink')
+  assert.equal(std.tileId, null)
+  assert.equal(std.uInkOn, false)
+  assert.equal(std.uInkDraw, false)
 
   // The two ball reverses match SET rows, which outrank the era row, and both
   // are queued rather than traced.
@@ -84,7 +86,7 @@ test('Prismatic Evolutions: three reverses of ONE card resolve three different w
   }
 
   // Three distinct answers, which is the whole point.
-  assert.equal(new Set([std.tileId ?? std.queued, pb.queued, mb.queued]).size, 3)
+  assert.equal(new Set([std.tileId ?? std.queued ?? std.state, pb.queued, mb.queued]).size, 3)
   // …and the two queued ones differ in PLACEMENT, not just in name: the Master
   // Ball lattice is half a cell out of phase with the Poke Ball one.
   assert.notEqual(pb.placement.phaseX, mb.placement.phaseX)
@@ -113,7 +115,7 @@ test('Black Bolt, White Flare and Ascended Heroes key the same way', () => {
   // The plain reverse in the same set is NOT swallowed by that row.
   const plain = resolveInk({ seriesSlug: 'mega-evolution', setId: 'me02.5', variantKind: 'reverse' })
   assert.equal(plain.match, 'era')
-  assert.equal(plain.tileId, 'dot-grid')
+  assert.equal(plain.state, 'no-ink')
 })
 
 // ── The case that puts RARITY in the key ────────────────────────────────────
@@ -241,8 +243,6 @@ test('a series no era covers gets NO ink at all, rather than another era’s des
 
 test('…and a series an era DOES cover still resolves, so the fix is not a blanket off-switch', () => {
   for (const [seriesSlug, tileId] of [
-    ['scarlet-violet', 'dot-grid'],
-    ['mega-evolution', 'dot-grid'],
     ['sword-shield', 'dot-grid'],
     ['e-card', 'crosshatch'],
   ] as const) {
@@ -251,6 +251,12 @@ test('…and a series an era DOES cover still resolves, so the fix is not a blan
     assert.equal(r.state, 'design')
     assert.equal(r.tileId, tileId)
     assert.equal(r.uInkOn, true)
+  }
+  // SV and ME still MATCH their era row; its decision is no ink (R10).
+  for (const seriesSlug of ['scarlet-violet', 'mega-evolution']) {
+    const r = resolveInk({ seriesSlug, setId: `${seriesSlug}-1`, variantKind: 'reverse' })
+    assert.equal(r.match, 'era', `${seriesSlug} lost its era row`)
+    assert.equal(r.state, 'no-ink')
   }
 })
 
@@ -309,7 +315,8 @@ test('the Team Plasma shield is queued WITHOUT a row, and the registry says why'
 // ── The shows consultation — the double-draw guard ──────────────────────────
 
 test('a MEASURED reverse suppresses the overlay; unknown draws', () => {
-  const base = { seriesSlug: 'scarlet-violet', setId: 'sv03.5', variantKind: 'reverse' } as const
+  // Sword & Shield: an era whose row still draws a tile (SV/ME is no-ink, R10).
+  const base = { seriesSlug: 'sword-shield', setId: 'swsh1', variantKind: 'reverse' } as const
 
   // The default, and the documented assumption: every catalog scan is the
   // normal printing (TCGdex serves one image per card), so unknown draws.
@@ -337,8 +344,8 @@ test('a frame-record override beats the generated shows value, in both direction
   // nothing has been measured — so this asserts the empty state honestly rather
   // than asserting a fixture nobody wrote.
   const r = resolveInk({
-    seriesSlug: 'scarlet-violet',
-    setId: 'sv03.5',
+    seriesSlug: 'sword-shield',
+    setId: 'swsh1',
     variantKind: 'reverse',
     shows: 'unknown',
     frameId: 'canonical',
@@ -392,8 +399,12 @@ test('a row with no tile leaves the tier OFF — every such row, not the two tha
       // rows by the era's own id standing in as a series is not possible, so
       // the set rows are what this can address — and every null-tile row in the
       // registry is set-scoped, which the assertion below pins.
-      assert.equal(row.kind, 'set', `${row.scope}: a null-tile row outside the set tier is not covered here`)
-      const r = resolveInk({ seriesSlug: 'no-such-series', setId: row.scope, variantKind: kind, rarity: 'Rare' })
+      // Era rows are probed through one of the era's own series (era-layouts.json).
+      const ERA_SERIES: Record<string, string> = { 'modern-sv': 'scarlet-violet' }
+      assert.ok(row.kind === 'set' || ERA_SERIES[row.scope], `${row.scope}: a null-tile ${row.kind} row is not covered here`)
+      const r = row.kind === 'set'
+        ? resolveInk({ seriesSlug: 'no-such-series', setId: row.scope, variantKind: kind, rarity: 'Rare' })
+        : resolveInk({ seriesSlug: ERA_SERIES[row.scope]!, setId: 'no-such-set', variantKind: kind, rarity: 'Rare' })
       if (r.scope !== row.scope) continue // a rarity gate this probe does not satisfy
       assert.equal(r.tileId, null, `${row.scope}/${kind}: resolved a tile a null-tile row cannot have`)
       assert.equal(r.uInkOn, false, `${row.scope}/${kind}: a null tile turned the tier ON — the render goes blank`)

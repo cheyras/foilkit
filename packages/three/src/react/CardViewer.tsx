@@ -38,6 +38,7 @@ export function CardViewer({
   settingsRef,
   tiltTarget,
   maskCanvas,
+  etchUrl = null,
   ink,
   view,
   stage,
@@ -52,6 +53,12 @@ export function CardViewer({
   tiltTarget: React.RefObject<{ x: number; y: number }>
   /** Hand-mask drawing surface (alpha = coverage); null when layout tier active. */
   maskCanvas?: HTMLCanvasElement | null
+  /**
+   * An etch plate image (R9-PLATES: red = height, white = etched, y-down). The
+   * component loads it as a linear texture and hands it to the stage; null or
+   * omitted leaves uEtchOn 0, which is every card that has none.
+   */
+  etchUrl?: string | null
   /**
    * The resolved reverse-holo DESIGN (R8-INK), as `@foilkit/resolver`'s
    * `resolveInk` returned it. Omitted or null — every card until a caller asks —
@@ -145,6 +152,36 @@ export function CardViewer({
   useEffect(() => {
     handleRef.current?.update({ maskCanvas })
   }, [maskCanvas])
+
+  useEffect(() => {
+    if (!etchUrl) {
+      handleRef.current?.update({ etch: null })
+      return
+    }
+    let cancelled = false
+    let tex: THREE.Texture | null = null
+    new THREE.TextureLoader().load(
+      etchUrl,
+      (t) => {
+        // Linear data, not colour: a decoded sRGB sample would bend the height field.
+        t.colorSpace = THREE.NoColorSpace
+        t.flipY = false // the shader owns the one V flip, as for the mask
+        t.generateMipmaps = false
+        t.minFilter = THREE.LinearFilter
+        if (cancelled) { t.dispose(); return }
+        tex = t
+        const img = t.image as { width: number; height: number }
+        handleRef.current?.update({ etch: { texture: t, width: img.width, height: img.height } })
+      },
+      undefined,
+      () => { if (!cancelled) handleRef.current?.update({ etch: null }) },
+    )
+    return () => {
+      cancelled = true
+      handleRef.current?.update({ etch: null })
+      tex?.dispose()
+    }
+  }, [etchUrl])
 
   // Glyph slot (R3-GLYPH): while a glyph-capable pattern is displayed, poll the
   // dev api's glyph index and (re)rasterize the dropped artwork into the atlas

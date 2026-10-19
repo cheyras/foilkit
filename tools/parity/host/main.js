@@ -169,6 +169,10 @@ async function main() {
         // writes gl_FragColor raw. Only `.a` is read, but a decoded sample
         // would still be the wrong bytes.
         tex.colorSpace = THREE.NoColorSpace
+        // Exactly one V flip, and the shader owns it (`1.0 - uv.y` in MAIN),
+        // the same rule the stage applies. TextureLoader's default flipY
+        // would make two, and the mask would render upside down.
+        tex.flipY = false
         mat.uniforms.uMaskTex.value = tex
         maskReady = true
       },
