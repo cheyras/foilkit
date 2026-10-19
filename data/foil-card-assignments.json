@@ -372,9 +372,10 @@
   "r2-subset-commons",
   "r2b-vocab-wiring",
   "r7-ex-sheen-energies",
-  "r12-svme"
+  "r12-svme",
+  "r12-promos"
  ],
- "row_count": 185,
+ "row_count": 195,
  "facet_rows": [
   {
    "facet": "cosmos",
@@ -4724,6 +4725,112 @@
    "lane": "sv-era"
   },
   {
+   "pattern": "cosmos-iii-smooth",
+   "sel": {
+    "setIds": [
+     "sv01",
+     "sv02",
+     "sv03",
+     "sv03.5",
+     "sv04",
+     "sv04.5",
+     "sv05",
+     "sv06",
+     "sv06.5",
+     "sv07",
+     "sv08",
+     "sv08.5",
+     "sv09",
+     "sv10",
+     "sv10.5b",
+     "sv10.5w",
+     "svp",
+     "sve",
+     "me01",
+     "me02",
+     "me02.5",
+     "me03",
+     "me04",
+     "me05",
+     "mep",
+     "mee"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo-foil-cosmos",
+     "holo-foil-cosmos-stamp-eb-games",
+     "holo-foil-cosmos-stamp-gamestop",
+     "holo-foil-cosmos-stamp-player-rewards-program",
+     "holo-foil-cosmos-stamp-set-logo",
+     "holo-foil-cosmos-stamp-snowflake",
+     "holo-foil-cosmos-stamp-ultra-ball-league"
+    ],
+    "cardIds": null
+   },
+   "claim": "Scarlet & Violet and Mega Evolution cosmos holo printings (blister, box and stamped cosmos variants) are the smooth-disc cosmos foil inside the art window.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Holographic_card",
+     "quote": "Paraphrase (Bulbapedia, 'Holographic card') - Cosmos holofoil, the dots-and-circles pattern, is used on promotional and specialty printings."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: the modern client draws every Scarlet & Violet / Mega Evolution cosmos printing with one smooth-disc cosmos film (a sweeping band and four parallax bubble layers), which is the community's Cosmos III (smooth). Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-svme"
+  },
+  {
+   "pattern": "cosmos-iii-smooth",
+   "sel": {
+    "setIds": [
+     "sv01",
+     "sv02",
+     "sv03",
+     "sv03.5",
+     "sv04",
+     "sv04.5",
+     "sv05",
+     "sv06",
+     "sv06.5",
+     "sv07",
+     "sv08",
+     "sv08.5",
+     "sv09",
+     "sv10",
+     "sv10.5b",
+     "sv10.5w",
+     "svp",
+     "sve",
+     "me01",
+     "me02",
+     "me02.5",
+     "me03",
+     "me04",
+     "me05",
+     "mep",
+     "mee"
+    ],
+    "cls": "reverse",
+    "rarities": null,
+    "variantKinds": [
+     "reverse-foil-cosmos",
+     "reverse-foil-cosmos-stamp-player-rewards-program",
+     "reverse-foil-cosmos-stamp-professor-program"
+    ],
+    "cardIds": null
+   },
+   "claim": "Scarlet & Violet and Mega Evolution cosmos reverse printings carry the smooth-disc cosmos foil over the reverse area.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Holographic_card",
+     "quote": "Paraphrase (Bulbapedia, 'Holographic card') - Cosmos holofoil, the dots-and-circles pattern, is used on promotional and specialty printings."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: the modern client draws every Scarlet & Violet / Mega Evolution cosmos printing with one smooth-disc cosmos film (a sweeping band and four parallax bubble layers), which is the community's Cosmos III (smooth). Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-svme"
+  },
+  {
    "pattern": "ace-spec",
    "sel": {
     "setIds": [
@@ -4750,7 +4857,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme",
    "scope": "full"
   },
@@ -4780,7 +4887,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme",
    "scope": "full"
   },
@@ -4807,7 +4914,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme",
    "scope": "full"
   },
@@ -4834,7 +4941,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme",
    "scope": "full"
   },
@@ -4866,7 +4973,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme",
    "scope": "full"
   },
@@ -4896,7 +5003,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme",
    "scope": "full"
   },
@@ -4953,7 +5060,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -5006,7 +5113,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -5022,7 +5129,6 @@
      "me02.5-003",
      "me02.5-026",
      "me02.5-048",
-     "me02.5-057",
      "me02.5-058",
      "me02.5-068",
      "me02.5-070",
@@ -5096,7 +5202,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -5149,7 +5255,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -5202,7 +5308,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -5254,7 +5360,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -5268,7 +5374,6 @@
     "variantKinds": null,
     "cardIds": [
      "sv01-019",
-     "sv01-045",
      "sv01-065",
      "sv01-081",
      "sv01-086",
@@ -5303,7 +5408,6 @@
      "sv01-221",
      "sv01-222",
      "sv01-223",
-     "sv01-225",
      "sv01-226",
      "sv01-227",
      "sv01-228",
@@ -5331,7 +5435,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -5427,7 +5531,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -5450,7 +5554,6 @@
      "sv03-120",
      "sv03-123",
      "sv03-124",
-     "sv03-125",
      "sv03-134",
      "sv03-135",
      "sv03-153",
@@ -5486,7 +5589,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -5553,7 +5656,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -5567,8 +5670,6 @@
     "variantKinds": null,
     "cardIds": [
      "sv04-027",
-     "sv04-038",
-     "sv04-046",
      "sv04-050",
      "sv04-068",
      "sv04-070",
@@ -5577,7 +5678,6 @@
      "sv04-108",
      "sv04-124",
      "sv04-135",
-     "sv04-137",
      "sv04-139",
      "sv04-140",
      "sv04-155",
@@ -5649,7 +5749,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -5665,7 +5765,6 @@
      "sv04.5-005",
      "sv04.5-029",
      "sv04.5-053",
-     "sv04.5-054",
      "sv04.5-059",
      "sv04.5-066",
      "sv04.5-069",
@@ -5700,7 +5799,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -5722,7 +5821,6 @@
      "sv05-081",
      "sv05-099",
      "sv05-104",
-     "sv05-108",
      "sv05-111",
      "sv05-120",
      "sv05-122",
@@ -5775,7 +5873,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -5790,7 +5888,6 @@
     "cardIds": [
      "sv06-023",
      "sv06-061",
-     "sv06-064",
      "sv06-068",
      "sv06-077",
      "sv06-094",
@@ -5841,7 +5938,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -5893,7 +5990,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -5947,7 +6044,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6016,7 +6113,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6030,7 +6127,6 @@
     "variantKinds": null,
     "cardIds": [
      "sv08.5-011",
-     "sv08.5-027",
      "sv08.5-028",
      "sv08.5-031",
      "sv08.5-032",
@@ -6062,7 +6158,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6123,7 +6219,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6208,7 +6304,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6314,7 +6410,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6421,7 +6517,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6564,7 +6660,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme",
    "scope": "window"
   },
@@ -6590,7 +6686,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6614,7 +6710,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6639,7 +6735,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6663,7 +6759,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6687,7 +6783,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6711,7 +6807,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6765,7 +6861,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6803,7 +6899,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6822,6 +6918,7 @@
      "me02.5-038",
      "me02.5-043",
      "me02.5-047",
+     "me02.5-057",
      "me02.5-061",
      "me02.5-073",
      "me02.5-089",
@@ -6874,7 +6971,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6911,7 +7008,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6949,7 +7046,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -6988,7 +7085,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -7002,7 +7099,9 @@
     "variantKinds": null,
     "cardIds": [
      "sv01-032",
+     "sv01-045",
      "sv01-224",
+     "sv01-225",
      "sv01-243",
      "sv01-244",
      "sv01-245",
@@ -7029,7 +7128,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -7082,7 +7181,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -7098,6 +7197,7 @@
      "sv03-042",
      "sv03-066",
      "sv03-096",
+     "sv03-125",
      "sv03-159",
      "sv03-179",
      "sv03-210",
@@ -7123,7 +7223,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -7156,7 +7256,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -7170,9 +7270,12 @@
     "variantKinds": null,
     "cardIds": [
      "sv04-003",
+     "sv04-038",
+     "sv04-046",
      "sv04-058",
      "sv04-098",
      "sv04-100",
+     "sv04-137",
      "sv04-217",
      "sv04-219",
      "sv04-220",
@@ -7210,7 +7313,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -7225,6 +7328,7 @@
     "cardIds": [
      "sv04.5-002",
      "sv04.5-006",
+     "sv04.5-054",
      "sv04.5-232",
      "sv04.5-233",
      "sv04.5-234",
@@ -7249,7 +7353,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -7263,6 +7367,7 @@
     "variantKinds": null,
     "cardIds": [
      "sv05-060",
+     "sv05-108",
      "sv05-190",
      "sv05-194",
      "sv05-203",
@@ -7291,7 +7396,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -7307,6 +7412,7 @@
      "sv06-025",
      "sv06-029",
      "sv06-040",
+     "sv06-064",
      "sv06-106",
      "sv06-112",
      "sv06-130",
@@ -7344,7 +7450,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -7379,7 +7485,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -7418,7 +7524,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -7474,7 +7580,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -7493,6 +7599,7 @@
      "sv08.5-017",
      "sv08.5-023",
      "sv08.5-026",
+     "sv08.5-027",
      "sv08.5-030",
      "sv08.5-034",
      "sv08.5-041",
@@ -7548,7 +7655,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -7580,7 +7687,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -7620,7 +7727,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -7650,7 +7757,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
@@ -7680,114 +7787,591 @@
      "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
     }
    ],
-   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
   },
   {
    "pattern": "cosmos-iii-smooth",
    "sel": {
     "setIds": [
-     "sv01",
-     "sv02",
-     "sv03",
-     "sv03.5",
-     "sv04",
-     "sv04.5",
-     "sv05",
-     "sv06",
-     "sv06.5",
-     "sv07",
-     "sv08",
-     "sv08.5",
-     "sv09",
-     "sv10",
-     "sv10.5b",
-     "sv10.5w",
-     "svp",
-     "sve",
-     "me01",
-     "me02",
-     "me02.5",
-     "me03",
-     "me04",
-     "me05",
-     "mep",
-     "mee"
+     "mep"
     ],
     "cls": "holo",
     "rarities": null,
     "variantKinds": [
-     "holo-foil-cosmos",
-     "holo-foil-cosmos-stamp-eb-games",
-     "holo-foil-cosmos-stamp-gamestop",
-     "holo-foil-cosmos-stamp-player-rewards-program",
-     "holo-foil-cosmos-stamp-set-logo",
-     "holo-foil-cosmos-stamp-snowflake",
-     "holo-foil-cosmos-stamp-ultra-ball-league"
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
     ],
-    "cardIds": null
+    "cardIds": [
+     "mep-005",
+     "mep-006",
+     "mep-018",
+     "mep-019",
+     "mep-020",
+     "mep-021",
+     "mep-068",
+     "mep-069",
+     "mep-078",
+     "mep-079"
+    ]
    },
-   "claim": "Scarlet & Violet and Mega Evolution cosmos holo printings (blister, box and stamped cosmos variants) are the smooth-disc cosmos foil inside the art window.",
+   "claim": "Promos that are printed as cosmos holos (the catalog lists a cosmos variant) are cosmos printings: every holo variant of them carries the smooth-disc cosmos foil in the art window.",
    "confidence": "medium",
    "sources": [
     {
-     "url": "https://bulbapedia.bulbagarden.net/wiki/Holographic_card",
-     "quote": "Paraphrase (Bulbapedia, 'Holographic card') - Cosmos holofoil, the dots-and-circles pattern, is used on promotional and specialty printings."
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
     }
    ],
-   "conflicts": "R12 2026-10-19: the modern client draws every Scarlet & Violet / Mega Evolution cosmos printing with one smooth-disc cosmos film (a sweeping band and four parallax bubble layers), which is the community's Cosmos III (smooth). Behaviour measured against a local reference render; see DECISIONS R12.",
-   "lane": "r12-svme"
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos"
   },
   {
    "pattern": "cosmos-iii-smooth",
    "sel": {
     "setIds": [
-     "sv01",
-     "sv02",
-     "sv03",
-     "sv03.5",
-     "sv04",
-     "sv04.5",
-     "sv05",
-     "sv06",
-     "sv06.5",
-     "sv07",
-     "sv08",
-     "sv08.5",
-     "sv09",
-     "sv10",
-     "sv10.5b",
-     "sv10.5w",
-     "svp",
-     "sve",
-     "me01",
-     "me02",
-     "me02.5",
-     "me03",
-     "me04",
-     "me05",
-     "mep",
-     "mee"
+     "svp"
     ],
-    "cls": "reverse",
+    "cls": "holo",
     "rarities": null,
     "variantKinds": [
-     "reverse-foil-cosmos",
-     "reverse-foil-cosmos-stamp-player-rewards-program",
-     "reverse-foil-cosmos-stamp-professor-program"
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
     ],
-    "cardIds": null
+    "cardIds": [
+     "svp-040"
+    ]
    },
-   "claim": "Scarlet & Violet and Mega Evolution cosmos reverse printings carry the smooth-disc cosmos foil over the reverse area.",
+   "claim": "Promos that are printed as cosmos holos (the catalog lists a cosmos variant) are cosmos printings: every holo variant of them carries the smooth-disc cosmos foil in the art window.",
    "confidence": "medium",
    "sources": [
     {
-     "url": "https://bulbapedia.bulbagarden.net/wiki/Holographic_card",
-     "quote": "Paraphrase (Bulbapedia, 'Holographic card') - Cosmos holofoil, the dots-and-circles pattern, is used on promotional and specialty printings."
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
     }
    ],
-   "conflicts": "R12 2026-10-19: the modern client draws every Scarlet & Violet / Mega Evolution cosmos printing with one smooth-disc cosmos film (a sweeping band and four parallax bubble layers), which is the community's Cosmos III (smooth). Behaviour measured against a local reference render; see DECISIONS R12.",
-   "lane": "r12-svme"
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "mep"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "mep-024"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution ex promos carry the regular ex foil across the whole face, like the main-set Double rares.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos",
+   "scope": "full"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "svp"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "svp-004",
+     "svp-016",
+     "svp-017",
+     "svp-018",
+     "svp-028",
+     "svp-029",
+     "svp-030",
+     "svp-031",
+     "svp-032",
+     "svp-033",
+     "svp-034",
+     "svp-035",
+     "svp-049",
+     "svp-050",
+     "svp-053",
+     "svp-054",
+     "svp-055",
+     "svp-067",
+     "svp-068",
+     "svp-072",
+     "svp-073",
+     "svp-074",
+     "svp-078",
+     "svp-081",
+     "svp-084",
+     "svp-086",
+     "svp-087",
+     "svp-100",
+     "svp-103",
+     "svp-104",
+     "svp-105",
+     "svp-106",
+     "svp-110",
+     "svp-125",
+     "svp-126",
+     "svp-127",
+     "svp-128",
+     "svp-131",
+     "svp-132",
+     "svp-142",
+     "svp-143",
+     "svp-144",
+     "svp-145",
+     "svp-146",
+     "svp-147",
+     "svp-160",
+     "svp-161",
+     "svp-162",
+     "svp-174",
+     "svp-175",
+     "svp-176",
+     "svp-177",
+     "svp-178",
+     "svp-179",
+     "svp-180",
+     "svp-193",
+     "svp-194",
+     "svp-195",
+     "svp-196",
+     "svp-197",
+     "svp-198",
+     "svp-204",
+     "svp-205",
+     "svp-215",
+     "svp-216",
+     "svp-217",
+     "svp-218"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution ex promos carry the regular ex foil across the whole face, like the main-set Double rares.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos",
+   "scope": "full"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "mep"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "mep-011",
+     "mep-012",
+     "mep-013",
+     "mep-023",
+     "mep-025",
+     "mep-029",
+     "mep-030",
+     "mep-032",
+     "mep-033",
+     "mep-034",
+     "mep-035",
+     "mep-036",
+     "mep-071",
+     "mep-072",
+     "mep-073",
+     "mep-081"
+    ]
+   },
+   "claim": "Mega ex and Tera ex promos carry the textured etched ultra-rare foil, like their main-set counterparts.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos",
+   "scope": "full"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "svp"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "svp-056",
+     "svp-163",
+     "svp-164",
+     "svp-165",
+     "svp-166"
+    ]
+   },
+   "claim": "Mega ex and Tera ex promos carry the textured etched ultra-rare foil, like their main-set counterparts.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos",
+   "scope": "full"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "mep"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "mep-009",
+     "mep-010",
+     "mep-022",
+     "mep-026",
+     "mep-027",
+     "mep-031",
+     "mep-037",
+     "mep-038",
+     "mep-039",
+     "mep-040",
+     "mep-041",
+     "mep-042",
+     "mep-043",
+     "mep-045"
+    ]
+   },
+   "claim": "Full-art Scarlet & Violet / Mega Evolution promos (non-ex) carry the ex / Illustration Rare foil across the whole face.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos",
+   "scope": "full"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "svp"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "svp-013",
+     "svp-014",
+     "svp-021",
+     "svp-027",
+     "svp-044",
+     "svp-051",
+     "svp-052",
+     "svp-058",
+     "svp-065",
+     "svp-066",
+     "svp-071",
+     "svp-075",
+     "svp-088",
+     "svp-092",
+     "svp-097",
+     "svp-098",
+     "svp-123",
+     "svp-124",
+     "svp-129",
+     "svp-130",
+     "svp-141",
+     "svp-159",
+     "svp-173",
+     "svp-189",
+     "svp-203",
+     "svp-206",
+     "svp-207"
+    ]
+   },
+   "claim": "Full-art Scarlet & Violet / Mega Evolution promos (non-ex) carry the ex / Illustration Rare foil across the whole face.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos",
+   "scope": "full"
+  },
+  {
+   "pattern": "horizontal-sheen",
+   "sel": {
+    "setIds": [
+     "mep"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "mep-001",
+     "mep-002",
+     "mep-003",
+     "mep-004",
+     "mep-007",
+     "mep-008",
+     "mep-014",
+     "mep-015",
+     "mep-016",
+     "mep-017",
+     "mep-028",
+     "mep-044",
+     "mep-046",
+     "mep-047",
+     "mep-048",
+     "mep-049",
+     "mep-050",
+     "mep-051",
+     "mep-052",
+     "mep-053",
+     "mep-054",
+     "mep-055",
+     "mep-056",
+     "mep-057",
+     "mep-058",
+     "mep-059",
+     "mep-060",
+     "mep-061",
+     "mep-062",
+     "mep-063",
+     "mep-064",
+     "mep-065",
+     "mep-066",
+     "mep-067",
+     "mep-070",
+     "mep-074",
+     "mep-075",
+     "mep-076",
+     "mep-077",
+     "mep-080",
+     "mep-082",
+     "mep-083",
+     "mep-084",
+     "mep-085",
+     "mep-088"
+    ]
+   },
+   "claim": "Regular-frame Scarlet & Violet / Mega Evolution promos (non-ex) carry the standard SV holo in the art window, like the main-set holo rares.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos"
+  },
+  {
+   "pattern": "horizontal-sheen",
+   "sel": {
+    "setIds": [
+     "svp"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "svp-001",
+     "svp-002",
+     "svp-003",
+     "svp-005",
+     "svp-006",
+     "svp-007",
+     "svp-008",
+     "svp-019",
+     "svp-020",
+     "svp-022",
+     "svp-036",
+     "svp-037",
+     "svp-038",
+     "svp-039",
+     "svp-057",
+     "svp-059",
+     "svp-060",
+     "svp-069",
+     "svp-070",
+     "svp-076",
+     "svp-077",
+     "svp-079",
+     "svp-080",
+     "svp-082",
+     "svp-083",
+     "svp-089",
+     "svp-090",
+     "svp-091",
+     "svp-115",
+     "svp-116",
+     "svp-117",
+     "svp-118",
+     "svp-133",
+     "svp-134",
+     "svp-135",
+     "svp-136",
+     "svp-151",
+     "svp-152",
+     "svp-153",
+     "svp-154",
+     "svp-181",
+     "svp-182",
+     "svp-183",
+     "svp-184",
+     "svp-191",
+     "svp-192",
+     "svp-208",
+     "svp-209",
+     "svp-210",
+     "svp-211",
+     "svp-212"
+    ]
+   },
+   "claim": "Regular-frame Scarlet & Violet / Mega Evolution promos (non-ex) carry the standard SV holo in the art window, like the main-set holo rares.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos"
   }
  ]
 }

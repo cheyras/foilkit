@@ -3388,3 +3388,35 @@ The old recipe darkened the window. The remaining excess is a white sheen column
 
 **Measured bar statistics:** 32 bars per tile, tiled 1.5 × 8 across the sheet. The dull band peaks at 0.62 (floor
 0.067, σ 0.125).
+
+## 2026-10-19 — R12: SV/ME promos get masks and assignments; Tera ex found with four badge templates
+
+**Decided by:** @cheyras ("get it so that meg and svi are as done as you can make them on your own")
+
+**Promos (svp, mep; 315 cards).** Each promo is assigned from visible features only: the catalog name (ex, Mega), a
+Tera-badge template match, whether the catalog lists a cosmos variant, and a regular-frame / full-art classifier
+on our own TCGdex scans. The classifier is a logistic fit on four frame correlations and three text-box texture
+measures, and scores 98.6% on 900 main-set cards whose frame the rarity fixes.
+
+| Visible class | Pattern | Scope | Like |
+|---|---|---|---|
+| cosmos (a cosmos variant is listed) | `cosmos-iii-smooth` | window | — |
+| Mega or Tera ex | `rainbow-glitter-sheen` | full | — |
+| other ex | `ex-starfoil` | full | main-set Double rares |
+| non-ex full art | `ex-starfoil` | full | Illustration Rares |
+| non-ex regular frame | `horizontal-sheen` | window | main-set holo rares |
+
+64 promos have no TCGdex scan. They fall back to name rules, and otherwise to the window holo.
+
+Checked locally against the reference client's own choices (statistics only; the mapping is never exported):
+- cosmos-variant promos are cosmos 63/63;
+- ex promos are SvUltra exactly when Mega or Tera;
+- the frame rule agrees 86% (full art → SunPillar 37/46, regular → SvHolo 44/47).
+
+The masks come from our own generators: the window plate, the ex-frame plate, the full-art plate, and the cosmos
+plate (window plate, edge cut). The full-art and ex promos also get etch v2. Rows are in lane `r12-promos`, and the
+masks are in the svp / mep shards.
+
+**Tera ex.** R10 matched the "Tera" badge with one template and found 88 of 99 Tera ex. Four templates, one per
+badge colour family, find all 97 checked locally (2 extras). The R10 card lists are regenerated:
+`rainbow-glitter-sheen` now covers 474 SV/ME full arts.
