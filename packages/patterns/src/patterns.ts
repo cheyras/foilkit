@@ -1296,29 +1296,95 @@ vec3 foilPattern(vec2 uv, vec2 tilt) {
 // pixels), denser, visible as a dim grey field even unlit; orbs activate
 // SMOOTHLY through the spectrum as a vertical specular band sweeps past.
 const COSMOS_III_GLSL = `
-vec3 foilPattern(vec2 uv, vec2 tilt) {
-  float sweep = tilt.x + tilt.y * 0.6;
-  float bandPh = uv.x * 1.3 - 0.65 - (tilt.x * 1.2 + tilt.y * 0.4);
-  float bandEnv = pow(0.5 + 0.5 * cos(PI * clamp(bandPh, -1.0, 1.0)), 3.0);
-  vec3 acc = vec3(0.0);
-  for (int i = 0; i < 3; i++) {
-    float fi = float(i);
-    float sc = (10.0 + fi * 7.0) * uP0 * uScale;
-    vec2 g = uv * vec2(1.0, CARD_ASPECT) * sc + hash22(vec2(fi * 5.1, fi + 3.0)) * 19.0;
-    vec2 id = floor(g);
-    vec2 f = fract(g) - 0.5;
-    vec2 rnd = hash22(id + fi * 11.3);
-    float r = 0.16 + 0.18 * rnd.x;
-    float d = length(f - (rnd - 0.5) * 0.35);
-    float disc = smoothstep(r, r - 0.10, d);
-    // smooth WIDE activation (the "HD" feel) driven by phase + the band
-    float win = pow(max(0.0, cos(TAU * (rnd.y * 1.7 + fi * 0.31 + sweep * uP1))), 6.0);
-    float lit = win * (0.35 + 0.65 * bandEnv);
-    float hue = uHueShift + uHueSpread * (rnd.y + 0.35 * sweep + fi * 0.11);
-    // dim grey orb field always present; lit orbs go spectral
-    acc += disc * (vec3(0.085) + hueRamp(hue) * lit * 1.1);
-  }
-  return acc * uP3 * 0.6;
+// R12 2026-10-19: rebuilt as the modern client draws cosmos. The film is an
+// OVERLAY re-tone of the art inside the plate (core: FOILKIT_OVERLAY_FILM):
+// one soft white band sweeps across the card with tilt, darkening the art off
+// the band and lifting it under it, and four parallax layers of bubbles add
+// pastel rainbow light. Everything here is our own: the dot fields are drawn
+// procedurally to measured statistics (count per tile, radius and brightness
+// percentiles per layer), the band and the rainbow ramp are analytic.
+//   uP0 bubble scale, uP1 band travel, uP2 bubble gain, uP3 band gain.
+#define FOILKIT_OVERLAY_FILM
+vec3 foilPattern(vec2 uv, vec2 tilt) { return vec3(0.0); }
+
+float cmSaw(float x) { return x - floor(x + 0.5); }
+vec2 cmSaw2(vec2 x) { return x - floor(x + 0.5); }
+float cmBand(float w) { return clamp(w * (1.0 - w) * 12.0, 0.0, 4.0); }
+vec2 cmRot(float c, float s, vec2 p) { return vec2(c * p.x + s * p.y, -s * p.x + c * p.y); }
+// One bubble layer: a jittered disc per cell. n cells per unit, r disc radius in
+// cell units, edge softness k (0 = hard-edged flat disc), brightness drawn as
+// pow(h, bp) * bmax, present with probability pr. Discs smaller than rmin are
+// drawn at rmin with their energy kept (amplitude x (r / rmin)^2), so dots a
+// pixel or less across still read instead of aliasing away.
+float cmDots(vec2 p, float n, float r, float k, float bp, float bmax, float pr, float rmin, float salt) {
+  vec2 c = p * n;
+  vec2 id = floor(c);
+  vec2 f = fract(c) - 0.5;
+  vec2 j = hash22(id + salt) - 0.5;
+  float on = step(hash21(id + salt * 1.7 + 3.1), pr);
+  float rr = r * (0.85 + 0.3 * hash21(id + salt + 9.7));
+  float re = max(rr, rmin);
+  float d = length(f - j * (1.0 - 2.0 * re));
+  float disc = 1.0 - smoothstep(re * (1.0 - max(k, 0.06)), re, d);
+  return disc * on * pow(hash21(id + salt + 5.3), bp) * bmax * (rr * rr) / (re * re);
+}
+// Rainbow band ramp along u (one cycle): grey, olive, yellow, green, sky blue,
+// pale cyan, a warm orange tail. Linear colour.
+vec3 cmRamp(float u) {
+  u = fract(u);
+  vec3 c = vec3(0.04);
+  c = mix(c, vec3(0.15, 0.18, 0.17), smoothstep(0.08, 0.13, u));
+  c = mix(c, vec3(0.07, 0.10, 0.06), smoothstep(0.23, 0.28, u));
+  c = mix(c, vec3(0.55, 0.55, 0.0), smoothstep(0.30, 0.38, u));
+  c = mix(c, vec3(0.0, 0.72, 0.0), smoothstep(0.42, 0.47, u));
+  c = mix(c, vec3(0.20, 0.55, 0.85), smoothstep(0.59, 0.66, u));
+  c = mix(c, vec3(0.65, 0.92, 0.97), smoothstep(0.70, 0.79, u));
+  c = mix(c, vec3(0.32, 0.50, 0.50), smoothstep(0.82, 0.88, u));
+  c = mix(c, vec3(0.58, 0.20, 0.05), smoothstep(0.89, 0.94, u));
+  c = mix(c, vec3(0.04), smoothstep(0.96, 1.0, u));
+  return c;
+}
+// S = the overlay blend over the art, F = the additive bubble light (both linear).
+void overlayFilm(vec2 uv, vec2 tilt, out vec3 S, out vec3 F) {
+  vec2 g = vec2(0.1421 + uv.x * 0.7158, uv.y);                  // square-sheet space
+  float seed = hash21(floor(texture2D(uFace, vec2(0.5)).rg * 255.0));
+  float ay = tilt.x * uTiltMax;
+  float ax = -tilt.y * uTiltMax;
+  vec3 N = vec3(sin(ay), -cos(ay) * sin(ax), cos(ay) * cos(ax));
+  vec2 TB = vec2(cos(ay), sin(ay) * sin(ax) + cos(ax));         // (T + B).xy of the turned card
+  float tiltS = (N.x + N.y + N.z - 1.0) * uP1 + 1.0;
+  vec3 V = gViewTS;
+  vec2 pOff = V.xy / (V.z + 0.42);
+  float sc = max(uP0, 0.05);
+  vec2 b0 = (2.0 * g + 9.0 * seed) / sc;
+  // big discs: two sparse jittered grids overlaid, so they cluster like a random scatter (22 per tile)
+  vec2 p1 = b0 + 1.25 - 0.010 * pOff;
+  float L1 = max(cmDots(p1, 3.4, 0.12, 0.0, 1.3, 0.95, 0.95, 0.0, 11.0),
+                 cmDots(p1 + vec2(0.37, 0.61), 3.4, 0.12, 0.0, 1.3, 0.95, 0.95, 0.0, 17.0));
+  float L2 = cmDots(b0 + vec2(1.10, 1.37) - 0.015 * pOff, 15.8, 0.09, 0.35, 1.8, 0.9, 0.98, 0.14, 23.0) * (1.0 - L1);
+  float L3 = cmDots(b0 + vec2(1.20, 1.25) - 0.025 * pOff, 21.4, 0.065, 0.35, 1.4, 0.85, 1.0, 0.16, 37.0) * (1.0 - (L1 + L2));
+  float L4 = cmDots(b0 + vec2(1.12, 1.50) - 0.020 * pOff, 32.7, 0.12, 0.35, 1.0, 0.95, 0.98, 0.2, 53.0) * (1.0 - (L1 + L2 + L3));
+  float nI = 0.75 + 0.18 * fnoise(4.0 * g + 0.7 * (tiltS * (L1 + L2)) + tiltS);
+  vec2 tb = TB + V.xy;
+  float bp = V.x;
+  float bandA = cmBand(2.0 * cmSaw(bp) + g.x) * 0.4 + 0.6;
+  float bandB = cmBand(2.0 * cmSaw(bp + 0.25) + g.x) * 0.4 + 0.6;
+  float bandC = cmBand(2.0 * cmSaw(bp + 0.5) + g.x) * 0.4 + 0.6;
+  float bandD = cmBand(2.0 * cmSaw(bp - 0.25) + g.x) * 0.4 + 0.6;
+  vec2 u2 = cmRot(0.7109, 0.7033, 2.0 * cmSaw2(0.5 * tb + vec2(0.75, 0.39)) + g - 0.5) + 0.5;
+  vec2 u1 = cmRot(0.7109, -0.7033, tb + vec2(0.30, -0.36) + g - 0.5) + 0.5;
+  vec2 u3 = cmRot(0.5062, 0.8624, 2.0 * cmSaw2(0.5 * tb + vec2(0.60, 0.35)) + 2.0 * g - 0.5) + 0.5;
+  vec2 u4 = cmRot(0.0707, 0.9975, 2.0 * cmSaw2(0.15 * tb) + g - 0.5) + 0.5;
+  vec3 f = cmRamp(u2.x) * nI * L2 * bandA * 1.5
+         + cmRamp(u1.x) * 0.8 * nI * L1 * bandB
+         + cmRamp(u3.x) * nI * L3 * bandC * 1.5
+         + cmRamp(u4.x) * nI * L4 * bandD;
+  F = clamp(f * uP2, 0.0, 1.0);
+  // the sweeping band: a soft white peak on a dark floor, periodic along the sheet
+  float bu = fract(tiltS + 0.1 + g.x) - 0.5625;
+  float sh = 0.054 + 0.946 * exp(-0.5 * bu * bu / (0.125 * 0.125));
+  sh = mix(0.5, sh, clamp(uP3, 0.0, 2.0));
+  S = 1.0 - (1.0 - vec3(sh)) * (1.0 - F);
 }`
 
 // #30 Pokeball / masterball — staggered TRUE ball-SDF stamp grid (outline +
@@ -3121,19 +3187,26 @@ export const PATTERNS: FoilPattern[] = [
     implemented: true,
   },
   // #16 — real recipe 2026-08-02 (R1): smooth AA discs + sweeping band.
+  // Rebuilt R12 2026-10-19 as an overlay film (see COSMOS_III_GLSL).
   {
     id: 'cosmos-iii-smooth',
     label: 'Cosmos III (smooth/HD)',
     taxonomy: 'Smooth-disc cosmos + sweeping specular band',
-    usedOn: 'Legendary Treasures onward; modern promos ship pixel OR smooth.',
+    usedOn: 'Legendary Treasures onward; modern promos ship pixel OR smooth. The modern client draws every Scarlet & Violet / Mega Evolution cosmos printing this way.',
     glsl: COSMOS_III_GLSL,
+    // R12 2026-10-19: an overlay-film recipe (shader.ts FOILKIT_OVERLAY_FILM):
+    // the film replaces the additive composite, so the additive terms are off.
     family: 'flash',
-    defaults: { ...FLASH_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 0.6, uSat: 0.7, uArtGate: 0.2, uSpecular: 0.45 },
+    defaults: {
+      uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 0.0, uSat: 1.0,
+      uArtGate: 0.0, uSpecular: 0.0, uDarken: 0.0, uTint: 0.0, uInkPop: 0.0,
+      uMetal: 0.0, uSheen: 0.0, uSheenTint: 0.0, uDepth: 0.0, uGrain: 1.0,
+    },
     params: [
-      { key: 'uP0', label: 'Orb scale', min: 0.4, max: 3, step: 0.05, default: 1.3 },
-      { key: 'uP1', label: 'Shimmer rate', min: 0.2, max: 4, step: 0.05, default: 0.9 },
-      { key: 'uP2', label: '(unused)', min: 0, max: 1, step: 0.01, default: 0 },
-      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.2 },
+      { key: 'uP0', label: 'Bubble scale', min: 0.4, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP1', label: 'Band travel', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP2', label: 'Bubble gain', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP3', label: 'Band gain', min: 0, max: 2, step: 0.05, default: 1.0 },
     ],
     implemented: true,
   },

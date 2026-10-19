@@ -195,6 +195,8 @@ const EXPECTED_TUNING: Record<string, { contract: number; tunedUnderContract: nu
   'horizontal-sheen': { contract: 2, tunedUnderContract: 2 },
   'rainbow-glitter-sheen': { contract: 2, tunedUnderContract: 2 },
   mirror: { contract: 2, tunedUnderContract: 2 },
+  // R12 2026-10-19: rebuilt as an overlay film against a reference render of cosmos.
+  'cosmos-iii-smooth': { contract: 2, tunedUnderContract: 2 },
 };
 
 test('every canon file stamps the composite contract it is read under', () => {
