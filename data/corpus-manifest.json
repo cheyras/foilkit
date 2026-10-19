@@ -207,8 +207,8 @@
     "maskCards": 20,
     "maskRecords": 20,
     "maskUnits": 20,
-    "patterns": 49,
-    "uncanonedPatterns": 16,
+    "patterns": 47,
+    "uncanonedPatterns": 14,
     "windowCards": 1,
     "windowFiles": 1
   },
@@ -606,7 +606,6 @@
     "cosmos-ii-pixel",
     "cosmos-iii-smooth",
     "cracked-ice",
-    "crossed-rainbow",
     "crosshatch",
     "detective-pikachu",
     "diagonal-sheen-left",
@@ -639,7 +638,6 @@
     "starlight",
     "starlight-ii",
     "striped-vertical-sheen",
-    "sv-holo-bands",
     "tcg-classic",
     "tinsel",
     "tinsel-ii",
@@ -651,7 +649,6 @@
   "uncanoned": [
     "ace-spec",
     "acid-wash",
-    "crossed-rainbow",
     "crosshatch",
     "disco",
     "energy-symbols",
@@ -663,7 +660,6 @@
     "prism",
     "prismatic-pokeball",
     "rainbow-mirror",
-    "sv-holo-bands",
     "tcg-classic"
   ],
   "version": 1,

@@ -48,9 +48,8 @@
 //   rebuild, cosmos-ii pixel edges, crosshatch thinned, gold-secret origin +
 //   sparkle; dedicated recipes for the four no-exemplar types (sequin,
 //   tcg-classic, acid-wash, disco); the uTint ink-metallic blend term
-//   R10-MODERN wave (2026-10-18) — crossed-rainbow, etched-ultra, sv-holo-bands:
-//   the Scarlet & Violet / Mega era foils, the first recipes to read the R9
-//   etch plate
+//   R10 (2026-10-18) — SV/ME rebuilt against a reference render: mirror-sv,
+//   horizontal-sheen and ex-starfoil rewritten; etched-ultra (pending fold-in)
 
 import type { CoreDefaults, FoilFamily, FoilPattern, PatternParam } from '@foilkit/core'
 
@@ -70,6 +69,10 @@ export type { CoreDefaults, FoilFamily, FoilPattern, PatternParam }
 //   "Library mislabel corrections".)
 export const PATTERN_ALIASES: Record<string, string> = {
   'sv-holo': 'vertical-sheen',
+  // R10 2026-10-18: two recipes added and folded back into the types they
+  // turned out to be, the same day.
+  'crossed-rainbow': 'ex-starfoil',
+  'sv-holo-bands': 'horizontal-sheen',
 }
 
 export const canonicalPatternId = (id: string): string => PATTERN_ALIASES[id] ?? id
@@ -3403,23 +3406,29 @@ export const PATTERNS: FoilPattern[] = [
   // #33 — real recipe 2026-08-02 (R1): diagonal-sheen base + star overprint.
   {
     id: 'ex-starfoil',
-    label: 'ex starfoil (SV ex)',
-    taxonomy: 'Dense star overprint over a diagonal-sheen base',
-    usedOn: 'SV-era ex cards (full face, "almost triple printed").',
-    glsl: EX_STARFOIL_GLSL,
-    // uDarken 0.2 (R3 round 3): streaks + star ignition were illegible over the
-    // bright lilac 151 scan under screen-only blending.
-    // R5b eyeball: at the WASH default the star/streak layer washed the 151
-    // full-art to grey-pink. Gentler, and almost fully ink-tinted.
-    family: 'flash',
-    defaults: { ...FLASH_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.55, uHueSpread: 0.6, uSat: 0.7, uArtGate: 0.0, uSpecular: 0.35, uDarken: 0.2 },
+    label: 'ex starfoil (SV/ME ex, IR, UR)',
+    taxonomy: 'Parallel diagonal rainbow streaks rising to the right, sliding with tilt (the "star overprint" is the occasional star-sprite layer)',
+    usedOn: 'Scarlet & Violet and Mega Evolution regular ex (Double rare), Illustration Rares, Ultra Rares and shiny rares.',
+    // R10 2026-10-18: CROSSED_RAINBOW_GLSL replaces the R1 star-overprint
+    // recipe (EX_STARFOIL_GLSL stays defined for history). Measured against a
+    // reference render of this family, the old recipe added 5-20x too little
+    // light with no structure match. The two crossing rainbow systems below
+    // are that family's measured geometry. No canon was saved for this id.
+    glsl: CROSSED_RAINBOW_GLSL,
+    family: 'field',
+    // uSheen 4 / uDepth 0.75 (eyeballed on a bright pastel IR scan): at the
+    // FIELD defaults the moire vanished into the additive headroom of light art;
+    // at 4.5 / 0.9 it read right but dimmed the art. This is the middle.
+    defaults: { ...FIELD_FOIL, uSheen: 4.0, uDepth: 0.75, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 1.0, uSat: 0.85, uArtGate: 0.0, uSpecular: 0.2, uDarken: 0.2 },
     params: [
-      // band count 1.5: the reference shows 1-2 broad diagonal bands, the
-      // first render's 2.5 read as ~5 stripes (eyeball round 1)
-      { key: 'uP0', label: 'Band count', min: 1, max: 8, step: 0.5, default: 1.5 },
-      { key: 'uP1', label: 'Band drift', min: 0, max: 4, step: 0.05, default: 1.8 },
-      { key: 'uP2', label: 'Star density', min: 10, max: 60, step: 1, default: 28 },
-      { key: 'uP3', label: 'Star gain', min: 0, max: 3, step: 0.05, default: 1.0 },
+      // Round-2 tuning against the reference on 4 cards (IR, ex, 2 etched UR), plates from the reference:
+      // structure correlation +0.17..+0.69; |dL| about 1.0x (ex) to 1.7x (IR, etched UR) of the reference.
+      { key: 'uP0', label: 'Band frequency', min: 0.3, max: 3, step: 0.05, default: 1.6 },
+      { key: 'uP1', label: 'Band travel', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP2', label: 'Moire contrast', min: 0.5, max: 4, step: 0.05, default: 3.0 },
+      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 0.4 },
+      { key: 'uP4', label: 'Etch glint', min: 0, max: 3, step: 0.05, default: 1.0 },
+      { key: 'uP5', label: 'Dark-ink factor', min: 0, max: 1, step: 0.05, default: 0.3 },
     ],
     implemented: true,
   },
@@ -3642,31 +3651,6 @@ export const PATTERNS: FoilPattern[] = [
     ],
     implemented: true,
   },
-  // R10-MODERN (2026-10-18) — see the CROSSED_RAINBOW_GLSL block comment.
-  {
-    id: 'crossed-rainbow',
-    label: 'Crossed rainbow (SV/ME ultra)',
-    taxonomy: 'Two crossing rainbow band systems interfering into moving colour pillars',
-    usedOn:
-      'Scarlet & Violet and Mega era Illustration Rares, Special Illustration Rares, ex double rares and shiny rares; etched or holo masks.',
-    glsl: CROSSED_RAINBOW_GLSL,
-    family: 'field',
-    // uSheen 4 / uDepth 0.75 (eyeballed on a bright pastel IR scan): at the
-    // FIELD defaults the moire vanished into the additive headroom of light art;
-    // at 4.5 / 0.9 it read right but dimmed the art. This is the middle.
-    defaults: { ...FIELD_FOIL, uSheen: 4.0, uDepth: 0.75, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 1.0, uSat: 0.85, uArtGate: 0.0, uSpecular: 0.2, uDarken: 0.2 },
-    params: [
-      // Round-2 tuning against the reference on 4 cards (IR, ex, 2 etched UR), plates from the reference:
-      // structure correlation +0.17..+0.69; |dL| about 1.0x (ex) to 1.7x (IR, etched UR) of the reference.
-      { key: 'uP0', label: 'Band frequency', min: 0.3, max: 3, step: 0.05, default: 1.6 },
-      { key: 'uP1', label: 'Band travel', min: 0, max: 3, step: 0.05, default: 1.0 },
-      { key: 'uP2', label: 'Moire contrast', min: 0.5, max: 4, step: 0.05, default: 3.0 },
-      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 0.4 },
-      { key: 'uP4', label: 'Etch glint', min: 0, max: 3, step: 0.05, default: 1.0 },
-      { key: 'uP5', label: 'Dark-ink factor', min: 0, max: 1, step: 0.05, default: 0.3 },
-    ],
-    implemented: true,
-  },
   // R10-MODERN — see the ETCHED_ULTRA_GLSL block comment.
   {
     id: 'etched-ultra',
@@ -3683,23 +3667,6 @@ export const PATTERNS: FoilPattern[] = [
       { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
       { key: 'uP4', label: 'Glitter gain', min: 0, max: 3, step: 0.05, default: 0.8 },
       { key: 'uP5', label: 'Line sheen', min: 0, max: 3, step: 0.05, default: 1.0 },
-    ],
-    implemented: true,
-  },
-  // R10-MODERN — see the SV_HOLO_BANDS_GLSL block comment.
-  {
-    id: 'sv-holo-bands',
-    label: 'SV holo bands (SV/ME holo rare)',
-    taxonomy: 'Two counter-slanted horizontal band sets with grain and a slanted rainbow',
-    usedOn: 'Scarlet & Violet and Mega era standard holo rares (holo window).',
-    glsl: SV_HOLO_BANDS_GLSL,
-    family: 'field',
-    defaults: { ...FIELD_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 1.0, uSat: 0.8, uArtGate: 0.0, uSpecular: 0.2, uDarken: 0.2 },
-    params: [
-      { key: 'uP0', label: 'Bands per height', min: 1, max: 8, step: 0.1, default: 3.0 },
-      { key: 'uP1', label: 'Band roll', min: 0, max: 3, step: 0.05, default: 0.8 },
-      { key: 'uP2', label: 'Grain density', min: 50, max: 600, step: 10, default: 300 },
-      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.0 },
     ],
     implemented: true,
   },

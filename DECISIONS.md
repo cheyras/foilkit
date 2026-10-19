@@ -3064,3 +3064,36 @@ its tile.
 **Implications:** six ink tests that used the SV reverse as their "design" example now probe Sword & Shield
 (`swsh1`), and the null-tile coverage test can address era rows. A plain SV/ME reverse with no generated mask renders
 the mirror sheet with no design until it gets one.
+
+## 2026-10-18 — R10: ex-starfoil is the SV/ME ex / IR / UR foil; SV/ME full arts assigned by exact rarity
+
+**Decided by:** @cheyras ("keep going until Meg and SVI cards all look fucking great"). The type mapping was
+proposed by the agent and the call left to it.
+
+**Decision:**
+- `ex-starfoil` gets the measured geometry of the reference family that renders regular ex, Illustration Rares,
+  Ultra Rares and shiny rares: two rainbow systems rising to the right at different slopes, sliding opposite ways on
+  yaw, summed and squared into parallel diagonal streaks, plus an etch-glint term and a dark-ink factor. The
+  `crossed-rainbow` prototype is folded in (alias kept), and `sv-holo-bands` is folded into `horizontal-sheen` (alias
+  kept).
+- Assignment rows (lane `r10-svme`, explicit card lists built from the catalog's own rarity and name fields by exact
+  match):
+
+| Cards | Recipe |
+|---|---|
+| Double rare (non-Mega), Illustration rare, Ultra Rare (non-Mega), Shiny Ultra Rare | ex-starfoil |
+| Shiny rare | ex-starfoil, scope window |
+| Special illustration rare, Hyper rare, Mega ex (Double / Ultra Rare) | rainbow-glitter-sheen |
+| Mega Hyper Rare | gold-secret |
+| ACE SPEC Rare | ace-spec, scope full |
+
+**Why:** the per-set rows split the same rarities across six recipes. The reference uses one foil family per rarity
+tier. The substring rarity selector cannot tell "Illustration rare" from "Special illustration rare", so the rows are
+card lists. No game data enters them.
+
+**Measured:** ex-starfoil against the reference, game plates as masks, four cards:
+- structure correlation +0.17 to +0.69 (the old recipe −0.19 to +0.30);
+- |ΔL| about 1.0× the reference on ex and 1.7× on IR and etched UR.
+
+**Implications:** `rainbow-glitter-sheen`, `gold-secret` and `ace-spec` keep their current recipes until compared
+against their own families.

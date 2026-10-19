@@ -372,7 +372,7 @@
   "r2b-vocab-wiring",
   "r7-ex-sheen-energies"
  ],
- "row_count": 126,
+ "row_count": 183,
  "facet_rows": [
   {
    "facet": "cosmos",
@@ -4712,6 +4712,2966 @@
    ],
    "conflicts": "The usage table maps SV reverses to energy-symbols-ii because the sources describe the tile DESIGN; energy-symbols-ii is the EX FireRed & LeafGreen scattered-glyph foil (docs/TAXONOMY.md #8). This row separates the sheet (mirror) from the design (mask). RESOLVED 2026-10-18 (R10): rendered against a local reference of the modern reverse at four tilts, the sheet is a plain silver mirror whose highlight is one wide vertical bar sweeping with tilt (not a round spotlight), untinted, with the printed design carried by the card's mask. Re-pointed to mirror-sv (the mirror recipe at those settings); mirror's own canon is unchanged.",
    "lane": "sv-era"
+  },
+  {
+   "pattern": "ace-spec",
+   "sel": {
+    "setIds": [
+     "sv05"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv05-141",
+     "sv05-152",
+     "sv05-153",
+     "sv05-154",
+     "sv05-157",
+     "sv05-158",
+     "sv05-162"
+    ]
+   },
+   "claim": "ACE SPEC Rares use the ACE SPEC foil across the whole face.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme",
+   "scope": "full"
+  },
+  {
+   "pattern": "ace-spec",
+   "sel": {
+    "setIds": [
+     "sv06"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv06-152",
+     "sv06-162",
+     "sv06-163",
+     "sv06-164",
+     "sv06-165",
+     "sv06-167"
+    ]
+   },
+   "claim": "ACE SPEC Rares use the ACE SPEC foil across the whole face.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme",
+   "scope": "full"
+  },
+  {
+   "pattern": "ace-spec",
+   "sel": {
+    "setIds": [
+     "sv06.5"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv06.5-058",
+     "sv06.5-060",
+     "sv06.5-062"
+    ]
+   },
+   "claim": "ACE SPEC Rares use the ACE SPEC foil across the whole face.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme",
+   "scope": "full"
+  },
+  {
+   "pattern": "ace-spec",
+   "sel": {
+    "setIds": [
+     "sv07"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv07-134",
+     "sv07-136",
+     "sv07-142"
+    ]
+   },
+   "claim": "ACE SPEC Rares use the ACE SPEC foil across the whole face.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme",
+   "scope": "full"
+  },
+  {
+   "pattern": "ace-spec",
+   "sel": {
+    "setIds": [
+     "sv08"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv08-162",
+     "sv08-164",
+     "sv08-176",
+     "sv08-182",
+     "sv08-183",
+     "sv08-185",
+     "sv08-186",
+     "sv08-191"
+    ]
+   },
+   "claim": "ACE SPEC Rares use the ACE SPEC foil across the whole face.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme",
+   "scope": "full"
+  },
+  {
+   "pattern": "ace-spec",
+   "sel": {
+    "setIds": [
+     "sv08.5"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv08.5-116",
+     "sv08.5-117",
+     "sv08.5-119",
+     "sv08.5-128",
+     "sv08.5-129",
+     "sv08.5-131"
+    ]
+   },
+   "claim": "ACE SPEC Rares use the ACE SPEC foil across the whole face.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme",
+   "scope": "full"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "me01"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me01-133",
+     "me01-134",
+     "me01-135",
+     "me01-136",
+     "me01-137",
+     "me01-138",
+     "me01-139",
+     "me01-140",
+     "me01-141",
+     "me01-142",
+     "me01-143",
+     "me01-144",
+     "me01-145",
+     "me01-146",
+     "me01-147",
+     "me01-148",
+     "me01-149",
+     "me01-150",
+     "me01-151",
+     "me01-152",
+     "me01-153",
+     "me01-154",
+     "me01-165",
+     "me01-166",
+     "me01-167",
+     "me01-168",
+     "me01-169",
+     "me01-170",
+     "me01-172",
+     "me01-173",
+     "me01-174",
+     "me01-175",
+     "me01-176"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "me02"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me02-018",
+     "me02-029",
+     "me02-036",
+     "me02-070",
+     "me02-095",
+     "me02-096",
+     "me02-097",
+     "me02-098",
+     "me02-099",
+     "me02-100",
+     "me02-101",
+     "me02-102",
+     "me02-103",
+     "me02-104",
+     "me02-105",
+     "me02-106",
+     "me02-107",
+     "me02-110",
+     "me02-111",
+     "me02-112",
+     "me02-114",
+     "me02-116",
+     "me02-117",
+     "me02-118",
+     "me02-119",
+     "me02-120",
+     "me02-121",
+     "me02-122",
+     "me02-123",
+     "me02-124"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "me02.5"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me02.5-003",
+     "me02.5-026",
+     "me02.5-038",
+     "me02.5-048",
+     "me02.5-057",
+     "me02.5-058",
+     "me02.5-068",
+     "me02.5-070",
+     "me02.5-073",
+     "me02.5-076",
+     "me02.5-079",
+     "me02.5-084",
+     "me02.5-107",
+     "me02.5-111",
+     "me02.5-114",
+     "me02.5-121",
+     "me02.5-137",
+     "me02.5-139",
+     "me02.5-142",
+     "me02.5-145",
+     "me02.5-149",
+     "me02.5-160",
+     "me02.5-162",
+     "me02.5-164",
+     "me02.5-167",
+     "me02.5-179",
+     "me02.5-218",
+     "me02.5-219",
+     "me02.5-220",
+     "me02.5-221",
+     "me02.5-222",
+     "me02.5-223",
+     "me02.5-224",
+     "me02.5-225",
+     "me02.5-226",
+     "me02.5-227",
+     "me02.5-228",
+     "me02.5-229",
+     "me02.5-230",
+     "me02.5-231",
+     "me02.5-232",
+     "me02.5-233",
+     "me02.5-234",
+     "me02.5-235",
+     "me02.5-236",
+     "me02.5-237",
+     "me02.5-238",
+     "me02.5-239",
+     "me02.5-240",
+     "me02.5-241",
+     "me02.5-242",
+     "me02.5-243",
+     "me02.5-244",
+     "me02.5-245",
+     "me02.5-246",
+     "me02.5-247",
+     "me02.5-248",
+     "me02.5-249",
+     "me02.5-250",
+     "me02.5-251",
+     "me02.5-252",
+     "me02.5-254",
+     "me02.5-255",
+     "me02.5-256",
+     "me02.5-257",
+     "me02.5-258",
+     "me02.5-259",
+     "me02.5-260",
+     "me02.5-261",
+     "me02.5-262",
+     "me02.5-263",
+     "me02.5-264"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "me03"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me03-012",
+     "me03-016",
+     "me03-022",
+     "me03-053",
+     "me03-062",
+     "me03-089",
+     "me03-090",
+     "me03-091",
+     "me03-092",
+     "me03-093",
+     "me03-094",
+     "me03-095",
+     "me03-096",
+     "me03-097",
+     "me03-098",
+     "me03-099",
+     "me03-100",
+     "me03-101",
+     "me03-105",
+     "me03-107",
+     "me03-108",
+     "me03-109",
+     "me03-110",
+     "me03-111",
+     "me03-112",
+     "me03-113",
+     "me03-114",
+     "me03-115",
+     "me03-116",
+     "me03-117"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "me04"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me04-003",
+     "me04-041",
+     "me04-055",
+     "me04-064",
+     "me04-073",
+     "me04-087",
+     "me04-088",
+     "me04-089",
+     "me04-090",
+     "me04-091",
+     "me04-092",
+     "me04-093",
+     "me04-094",
+     "me04-095",
+     "me04-096",
+     "me04-097",
+     "me04-098",
+     "me04-102",
+     "me04-103",
+     "me04-105",
+     "me04-106",
+     "me04-107",
+     "me04-108",
+     "me04-109",
+     "me04-110",
+     "me04-111",
+     "me04-112",
+     "me04-113",
+     "me04-114",
+     "me04-115"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "me05"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me05-004",
+     "me05-016",
+     "me05-045",
+     "me05-055",
+     "me05-085",
+     "me05-086",
+     "me05-087",
+     "me05-088",
+     "me05-089",
+     "me05-090",
+     "me05-091",
+     "me05-092",
+     "me05-093",
+     "me05-094",
+     "me05-095",
+     "me05-096",
+     "me05-097",
+     "me05-100",
+     "me05-102",
+     "me05-104",
+     "me05-105",
+     "me05-106",
+     "me05-107",
+     "me05-108",
+     "me05-109",
+     "me05-110",
+     "me05-111",
+     "me05-112",
+     "me05-113"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv01"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv01-019",
+     "sv01-032",
+     "sv01-045",
+     "sv01-065",
+     "sv01-081",
+     "sv01-086",
+     "sv01-088",
+     "sv01-123",
+     "sv01-125",
+     "sv01-131",
+     "sv01-143",
+     "sv01-158",
+     "sv01-199",
+     "sv01-200",
+     "sv01-201",
+     "sv01-202",
+     "sv01-203",
+     "sv01-204",
+     "sv01-205",
+     "sv01-206",
+     "sv01-207",
+     "sv01-208",
+     "sv01-209",
+     "sv01-210",
+     "sv01-211",
+     "sv01-212",
+     "sv01-213",
+     "sv01-214",
+     "sv01-215",
+     "sv01-216",
+     "sv01-217",
+     "sv01-218",
+     "sv01-219",
+     "sv01-220",
+     "sv01-221",
+     "sv01-222",
+     "sv01-223",
+     "sv01-224",
+     "sv01-225",
+     "sv01-226",
+     "sv01-227",
+     "sv01-228",
+     "sv01-229",
+     "sv01-230",
+     "sv01-231",
+     "sv01-232",
+     "sv01-233",
+     "sv01-234",
+     "sv01-235",
+     "sv01-236",
+     "sv01-237",
+     "sv01-238",
+     "sv01-239",
+     "sv01-240",
+     "sv01-241",
+     "sv01-242"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv02"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv02-005",
+     "sv02-015",
+     "sv02-027",
+     "sv02-037",
+     "sv02-040",
+     "sv02-052",
+     "sv02-061",
+     "sv02-063",
+     "sv02-079",
+     "sv02-086",
+     "sv02-093",
+     "sv02-117",
+     "sv02-127",
+     "sv02-130",
+     "sv02-150",
+     "sv02-153",
+     "sv02-169",
+     "sv02-194",
+     "sv02-195",
+     "sv02-196",
+     "sv02-197",
+     "sv02-198",
+     "sv02-199",
+     "sv02-200",
+     "sv02-201",
+     "sv02-202",
+     "sv02-203",
+     "sv02-204",
+     "sv02-205",
+     "sv02-206",
+     "sv02-207",
+     "sv02-208",
+     "sv02-209",
+     "sv02-210",
+     "sv02-211",
+     "sv02-212",
+     "sv02-213",
+     "sv02-214",
+     "sv02-215",
+     "sv02-216",
+     "sv02-217",
+     "sv02-218",
+     "sv02-219",
+     "sv02-220",
+     "sv02-221",
+     "sv02-222",
+     "sv02-223",
+     "sv02-224",
+     "sv02-225",
+     "sv02-226",
+     "sv02-227",
+     "sv02-228",
+     "sv02-229",
+     "sv02-230",
+     "sv02-231",
+     "sv02-232",
+     "sv02-233",
+     "sv02-234",
+     "sv02-235",
+     "sv02-236",
+     "sv02-237",
+     "sv02-238",
+     "sv02-239",
+     "sv02-240",
+     "sv02-241",
+     "sv02-242",
+     "sv02-243",
+     "sv02-244",
+     "sv02-245",
+     "sv02-246",
+     "sv02-247",
+     "sv02-248",
+     "sv02-249",
+     "sv02-250",
+     "sv02-251",
+     "sv02-252",
+     "sv02-253",
+     "sv02-254",
+     "sv02-255"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv03"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv03-015",
+     "sv03-022",
+     "sv03-033",
+     "sv03-042",
+     "sv03-066",
+     "sv03-073",
+     "sv03-079",
+     "sv03-082",
+     "sv03-096",
+     "sv03-102",
+     "sv03-120",
+     "sv03-123",
+     "sv03-124",
+     "sv03-125",
+     "sv03-134",
+     "sv03-135",
+     "sv03-153",
+     "sv03-156",
+     "sv03-159",
+     "sv03-164",
+     "sv03-179",
+     "sv03-198",
+     "sv03-199",
+     "sv03-200",
+     "sv03-201",
+     "sv03-202",
+     "sv03-203",
+     "sv03-204",
+     "sv03-205",
+     "sv03-206",
+     "sv03-207",
+     "sv03-208",
+     "sv03-209",
+     "sv03-210",
+     "sv03-211",
+     "sv03-212",
+     "sv03-213",
+     "sv03-214",
+     "sv03-215",
+     "sv03-216",
+     "sv03-217",
+     "sv03-218",
+     "sv03-219",
+     "sv03-220",
+     "sv03-221"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv03.5"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv03.5-003",
+     "sv03.5-006",
+     "sv03.5-009",
+     "sv03.5-024",
+     "sv03.5-038",
+     "sv03.5-040",
+     "sv03.5-065",
+     "sv03.5-076",
+     "sv03.5-115",
+     "sv03.5-124",
+     "sv03.5-145",
+     "sv03.5-151",
+     "sv03.5-166",
+     "sv03.5-167",
+     "sv03.5-168",
+     "sv03.5-169",
+     "sv03.5-170",
+     "sv03.5-171",
+     "sv03.5-172",
+     "sv03.5-173",
+     "sv03.5-174",
+     "sv03.5-175",
+     "sv03.5-176",
+     "sv03.5-177",
+     "sv03.5-178",
+     "sv03.5-179",
+     "sv03.5-180",
+     "sv03.5-181",
+     "sv03.5-182",
+     "sv03.5-183",
+     "sv03.5-184",
+     "sv03.5-185",
+     "sv03.5-186",
+     "sv03.5-187",
+     "sv03.5-188",
+     "sv03.5-189",
+     "sv03.5-190",
+     "sv03.5-191",
+     "sv03.5-192",
+     "sv03.5-193",
+     "sv03.5-194",
+     "sv03.5-195",
+     "sv03.5-196",
+     "sv03.5-197"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv04"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv04-003",
+     "sv04-027",
+     "sv04-038",
+     "sv04-046",
+     "sv04-050",
+     "sv04-058",
+     "sv04-068",
+     "sv04-070",
+     "sv04-076",
+     "sv04-089",
+     "sv04-098",
+     "sv04-100",
+     "sv04-108",
+     "sv04-124",
+     "sv04-135",
+     "sv04-137",
+     "sv04-139",
+     "sv04-140",
+     "sv04-155",
+     "sv04-156",
+     "sv04-183",
+     "sv04-184",
+     "sv04-185",
+     "sv04-186",
+     "sv04-187",
+     "sv04-188",
+     "sv04-189",
+     "sv04-190",
+     "sv04-191",
+     "sv04-192",
+     "sv04-193",
+     "sv04-194",
+     "sv04-195",
+     "sv04-196",
+     "sv04-197",
+     "sv04-198",
+     "sv04-199",
+     "sv04-200",
+     "sv04-201",
+     "sv04-202",
+     "sv04-203",
+     "sv04-204",
+     "sv04-205",
+     "sv04-206",
+     "sv04-207",
+     "sv04-208",
+     "sv04-209",
+     "sv04-210",
+     "sv04-211",
+     "sv04-212",
+     "sv04-213",
+     "sv04-214",
+     "sv04-215",
+     "sv04-216",
+     "sv04-217",
+     "sv04-218",
+     "sv04-219",
+     "sv04-220",
+     "sv04-221",
+     "sv04-222",
+     "sv04-223",
+     "sv04-224",
+     "sv04-225",
+     "sv04-226",
+     "sv04-227",
+     "sv04-228",
+     "sv04-229",
+     "sv04-230",
+     "sv04-231",
+     "sv04-232",
+     "sv04-233",
+     "sv04-234",
+     "sv04-235",
+     "sv04-236",
+     "sv04-237",
+     "sv04-238",
+     "sv04-239",
+     "sv04-240",
+     "sv04-241",
+     "sv04-242",
+     "sv04-243",
+     "sv04-244"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv04.5"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv04.5-002",
+     "sv04.5-005",
+     "sv04.5-006",
+     "sv04.5-029",
+     "sv04.5-053",
+     "sv04.5-054",
+     "sv04.5-059",
+     "sv04.5-066",
+     "sv04.5-069",
+     "sv04.5-075",
+     "sv04.5-212",
+     "sv04.5-213",
+     "sv04.5-214",
+     "sv04.5-215",
+     "sv04.5-216",
+     "sv04.5-217",
+     "sv04.5-218",
+     "sv04.5-219",
+     "sv04.5-220",
+     "sv04.5-221",
+     "sv04.5-222",
+     "sv04.5-223",
+     "sv04.5-224",
+     "sv04.5-225",
+     "sv04.5-226",
+     "sv04.5-227",
+     "sv04.5-228",
+     "sv04.5-229",
+     "sv04.5-230",
+     "sv04.5-231"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv05"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv05-012",
+     "sv05-022",
+     "sv05-025",
+     "sv05-034",
+     "sv05-038",
+     "sv05-050",
+     "sv05-060",
+     "sv05-081",
+     "sv05-099",
+     "sv05-104",
+     "sv05-108",
+     "sv05-111",
+     "sv05-120",
+     "sv05-122",
+     "sv05-123",
+     "sv05-163",
+     "sv05-164",
+     "sv05-165",
+     "sv05-166",
+     "sv05-167",
+     "sv05-168",
+     "sv05-169",
+     "sv05-170",
+     "sv05-171",
+     "sv05-172",
+     "sv05-173",
+     "sv05-174",
+     "sv05-175",
+     "sv05-176",
+     "sv05-177",
+     "sv05-178",
+     "sv05-179",
+     "sv05-180",
+     "sv05-181",
+     "sv05-182",
+     "sv05-183",
+     "sv05-184",
+     "sv05-185",
+     "sv05-186",
+     "sv05-187",
+     "sv05-188",
+     "sv05-189",
+     "sv05-190",
+     "sv05-191",
+     "sv05-192",
+     "sv05-193",
+     "sv05-194",
+     "sv05-195",
+     "sv05-196",
+     "sv05-197",
+     "sv05-198",
+     "sv05-199",
+     "sv05-200",
+     "sv05-201",
+     "sv05-202"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv06"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv06-023",
+     "sv06-025",
+     "sv06-029",
+     "sv06-040",
+     "sv06-061",
+     "sv06-064",
+     "sv06-068",
+     "sv06-077",
+     "sv06-094",
+     "sv06-106",
+     "sv06-112",
+     "sv06-130",
+     "sv06-134",
+     "sv06-141",
+     "sv06-168",
+     "sv06-169",
+     "sv06-170",
+     "sv06-171",
+     "sv06-172",
+     "sv06-173",
+     "sv06-174",
+     "sv06-175",
+     "sv06-176",
+     "sv06-177",
+     "sv06-178",
+     "sv06-179",
+     "sv06-180",
+     "sv06-181",
+     "sv06-182",
+     "sv06-183",
+     "sv06-184",
+     "sv06-185",
+     "sv06-186",
+     "sv06-187",
+     "sv06-188",
+     "sv06-189",
+     "sv06-190",
+     "sv06-191",
+     "sv06-192",
+     "sv06-193",
+     "sv06-194",
+     "sv06-195",
+     "sv06-196",
+     "sv06-197",
+     "sv06-198",
+     "sv06-199",
+     "sv06-200",
+     "sv06-201",
+     "sv06-202",
+     "sv06-203",
+     "sv06-204",
+     "sv06-205",
+     "sv06-206",
+     "sv06-207",
+     "sv06-208",
+     "sv06-209"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv06.5"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv06.5-012",
+     "sv06.5-015",
+     "sv06.5-036",
+     "sv06.5-037",
+     "sv06.5-038",
+     "sv06.5-039",
+     "sv06.5-065",
+     "sv06.5-066",
+     "sv06.5-067",
+     "sv06.5-068",
+     "sv06.5-069",
+     "sv06.5-070",
+     "sv06.5-071",
+     "sv06.5-072",
+     "sv06.5-073",
+     "sv06.5-074",
+     "sv06.5-075",
+     "sv06.5-076",
+     "sv06.5-077",
+     "sv06.5-078",
+     "sv06.5-079",
+     "sv06.5-080",
+     "sv06.5-081",
+     "sv06.5-082",
+     "sv06.5-083",
+     "sv06.5-084",
+     "sv06.5-085",
+     "sv06.5-086",
+     "sv06.5-087",
+     "sv06.5-088",
+     "sv06.5-089"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv07"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv07-001",
+     "sv07-014",
+     "sv07-028",
+     "sv07-030",
+     "sv07-032",
+     "sv07-041",
+     "sv07-051",
+     "sv07-067",
+     "sv07-080",
+     "sv07-082",
+     "sv07-089",
+     "sv07-105",
+     "sv07-110",
+     "sv07-128",
+     "sv07-143",
+     "sv07-144",
+     "sv07-145",
+     "sv07-146",
+     "sv07-147",
+     "sv07-148",
+     "sv07-149",
+     "sv07-150",
+     "sv07-151",
+     "sv07-152",
+     "sv07-153",
+     "sv07-154",
+     "sv07-155",
+     "sv07-156",
+     "sv07-157",
+     "sv07-158",
+     "sv07-159",
+     "sv07-160",
+     "sv07-161",
+     "sv07-162",
+     "sv07-163",
+     "sv07-164",
+     "sv07-165",
+     "sv07-166"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv08"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv08-004",
+     "sv08-036",
+     "sv08-037",
+     "sv08-042",
+     "sv08-048",
+     "sv08-057",
+     "sv08-068",
+     "sv08-076",
+     "sv08-086",
+     "sv08-091",
+     "sv08-106",
+     "sv08-119",
+     "sv08-130",
+     "sv08-133",
+     "sv08-142",
+     "sv08-147",
+     "sv08-159",
+     "sv08-160",
+     "sv08-192",
+     "sv08-193",
+     "sv08-194",
+     "sv08-195",
+     "sv08-196",
+     "sv08-197",
+     "sv08-198",
+     "sv08-199",
+     "sv08-200",
+     "sv08-201",
+     "sv08-202",
+     "sv08-203",
+     "sv08-204",
+     "sv08-205",
+     "sv08-206",
+     "sv08-207",
+     "sv08-208",
+     "sv08-209",
+     "sv08-210",
+     "sv08-211",
+     "sv08-212",
+     "sv08-213",
+     "sv08-214",
+     "sv08-215",
+     "sv08-216",
+     "sv08-217",
+     "sv08-218",
+     "sv08-219",
+     "sv08-220",
+     "sv08-221",
+     "sv08-222",
+     "sv08-223",
+     "sv08-224",
+     "sv08-225",
+     "sv08-226",
+     "sv08-227",
+     "sv08-228",
+     "sv08-229",
+     "sv08-230",
+     "sv08-231",
+     "sv08-232",
+     "sv08-233",
+     "sv08-234",
+     "sv08-235"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv08.5"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv08.5-006",
+     "sv08.5-011",
+     "sv08.5-012",
+     "sv08.5-014",
+     "sv08.5-017",
+     "sv08.5-023",
+     "sv08.5-026",
+     "sv08.5-027",
+     "sv08.5-028",
+     "sv08.5-030",
+     "sv08.5-031",
+     "sv08.5-032",
+     "sv08.5-034",
+     "sv08.5-041",
+     "sv08.5-051",
+     "sv08.5-056",
+     "sv08.5-058",
+     "sv08.5-060",
+     "sv08.5-064",
+     "sv08.5-073",
+     "sv08.5-075",
+     "sv08.5-076",
+     "sv08.5-082",
+     "sv08.5-091",
+     "sv08.5-092",
+     "sv08.5-132",
+     "sv08.5-133",
+     "sv08.5-134",
+     "sv08.5-135",
+     "sv08.5-136",
+     "sv08.5-137",
+     "sv08.5-138",
+     "sv08.5-139",
+     "sv08.5-140",
+     "sv08.5-141",
+     "sv08.5-142",
+     "sv08.5-143"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv09"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv09-011",
+     "sv09-024",
+     "sv09-030",
+     "sv09-031",
+     "sv09-043",
+     "sv09-051",
+     "sv09-053",
+     "sv09-056",
+     "sv09-069",
+     "sv09-075",
+     "sv09-079",
+     "sv09-094",
+     "sv09-098",
+     "sv09-111",
+     "sv09-114",
+     "sv09-121",
+     "sv09-160",
+     "sv09-161",
+     "sv09-162",
+     "sv09-163",
+     "sv09-164",
+     "sv09-165",
+     "sv09-166",
+     "sv09-167",
+     "sv09-168",
+     "sv09-169",
+     "sv09-170",
+     "sv09-171",
+     "sv09-172",
+     "sv09-173",
+     "sv09-174",
+     "sv09-175",
+     "sv09-176",
+     "sv09-177",
+     "sv09-178",
+     "sv09-179",
+     "sv09-180",
+     "sv09-181"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv10"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv10-003",
+     "sv10-023",
+     "sv10-025",
+     "sv10-031",
+     "sv10-039",
+     "sv10-065",
+     "sv10-066",
+     "sv10-069",
+     "sv10-081",
+     "sv10-101",
+     "sv10-104",
+     "sv10-119",
+     "sv10-122",
+     "sv10-136",
+     "sv10-139",
+     "sv10-145",
+     "sv10-150",
+     "sv10-183",
+     "sv10-184",
+     "sv10-185",
+     "sv10-186",
+     "sv10-187",
+     "sv10-188",
+     "sv10-189",
+     "sv10-190",
+     "sv10-191",
+     "sv10-192",
+     "sv10-193",
+     "sv10-194",
+     "sv10-195",
+     "sv10-196",
+     "sv10-197",
+     "sv10-198",
+     "sv10-199",
+     "sv10-200",
+     "sv10-201",
+     "sv10-202",
+     "sv10-203",
+     "sv10-204",
+     "sv10-205",
+     "sv10-206",
+     "sv10-207",
+     "sv10-208",
+     "sv10-209",
+     "sv10-210",
+     "sv10-211",
+     "sv10-212",
+     "sv10-213",
+     "sv10-214",
+     "sv10-215",
+     "sv10-216",
+     "sv10-217",
+     "sv10-218",
+     "sv10-219",
+     "sv10-220",
+     "sv10-221",
+     "sv10-222",
+     "sv10-223",
+     "sv10-224",
+     "sv10-225",
+     "sv10-226",
+     "sv10-227"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv10.5b"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv10.5b-003",
+     "sv10.5b-028",
+     "sv10.5b-034",
+     "sv10.5b-044",
+     "sv10.5b-046",
+     "sv10.5b-067",
+     "sv10.5b-087",
+     "sv10.5b-088",
+     "sv10.5b-089",
+     "sv10.5b-090",
+     "sv10.5b-091",
+     "sv10.5b-092",
+     "sv10.5b-093",
+     "sv10.5b-094",
+     "sv10.5b-095",
+     "sv10.5b-096",
+     "sv10.5b-097",
+     "sv10.5b-098",
+     "sv10.5b-099",
+     "sv10.5b-100",
+     "sv10.5b-101",
+     "sv10.5b-102",
+     "sv10.5b-103",
+     "sv10.5b-104",
+     "sv10.5b-105",
+     "sv10.5b-106",
+     "sv10.5b-107",
+     "sv10.5b-108",
+     "sv10.5b-109",
+     "sv10.5b-110",
+     "sv10.5b-111",
+     "sv10.5b-112",
+     "sv10.5b-113",
+     "sv10.5b-114",
+     "sv10.5b-115",
+     "sv10.5b-116",
+     "sv10.5b-117",
+     "sv10.5b-118",
+     "sv10.5b-119",
+     "sv10.5b-120",
+     "sv10.5b-121",
+     "sv10.5b-122",
+     "sv10.5b-123",
+     "sv10.5b-124",
+     "sv10.5b-125",
+     "sv10.5b-126",
+     "sv10.5b-127",
+     "sv10.5b-128",
+     "sv10.5b-129",
+     "sv10.5b-130",
+     "sv10.5b-131",
+     "sv10.5b-132",
+     "sv10.5b-133",
+     "sv10.5b-134",
+     "sv10.5b-135",
+     "sv10.5b-136",
+     "sv10.5b-137",
+     "sv10.5b-138",
+     "sv10.5b-139",
+     "sv10.5b-140",
+     "sv10.5b-141",
+     "sv10.5b-142",
+     "sv10.5b-143",
+     "sv10.5b-144",
+     "sv10.5b-145",
+     "sv10.5b-146",
+     "sv10.5b-147",
+     "sv10.5b-148",
+     "sv10.5b-149",
+     "sv10.5b-150",
+     "sv10.5b-151",
+     "sv10.5b-152",
+     "sv10.5b-153",
+     "sv10.5b-154",
+     "sv10.5b-155",
+     "sv10.5b-156",
+     "sv10.5b-157",
+     "sv10.5b-158",
+     "sv10.5b-159",
+     "sv10.5b-160",
+     "sv10.5b-161",
+     "sv10.5b-162",
+     "sv10.5b-163"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv10.5w"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv10.5w-005",
+     "sv10.5w-020",
+     "sv10.5w-030",
+     "sv10.5w-045",
+     "sv10.5w-067",
+     "sv10.5w-077",
+     "sv10.5w-087",
+     "sv10.5w-088",
+     "sv10.5w-089",
+     "sv10.5w-090",
+     "sv10.5w-091",
+     "sv10.5w-092",
+     "sv10.5w-093",
+     "sv10.5w-094",
+     "sv10.5w-095",
+     "sv10.5w-096",
+     "sv10.5w-097",
+     "sv10.5w-098",
+     "sv10.5w-099",
+     "sv10.5w-100",
+     "sv10.5w-101",
+     "sv10.5w-102",
+     "sv10.5w-103",
+     "sv10.5w-104",
+     "sv10.5w-105",
+     "sv10.5w-106",
+     "sv10.5w-107",
+     "sv10.5w-108",
+     "sv10.5w-109",
+     "sv10.5w-110",
+     "sv10.5w-111",
+     "sv10.5w-112",
+     "sv10.5w-113",
+     "sv10.5w-114",
+     "sv10.5w-115",
+     "sv10.5w-116",
+     "sv10.5w-117",
+     "sv10.5w-118",
+     "sv10.5w-119",
+     "sv10.5w-120",
+     "sv10.5w-121",
+     "sv10.5w-122",
+     "sv10.5w-123",
+     "sv10.5w-124",
+     "sv10.5w-125",
+     "sv10.5w-126",
+     "sv10.5w-127",
+     "sv10.5w-128",
+     "sv10.5w-129",
+     "sv10.5w-130",
+     "sv10.5w-131",
+     "sv10.5w-132",
+     "sv10.5w-133",
+     "sv10.5w-134",
+     "sv10.5w-135",
+     "sv10.5w-136",
+     "sv10.5w-137",
+     "sv10.5w-138",
+     "sv10.5w-139",
+     "sv10.5w-140",
+     "sv10.5w-141",
+     "sv10.5w-142",
+     "sv10.5w-143",
+     "sv10.5w-144",
+     "sv10.5w-145",
+     "sv10.5w-146",
+     "sv10.5w-147",
+     "sv10.5w-148",
+     "sv10.5w-149",
+     "sv10.5w-150",
+     "sv10.5w-151",
+     "sv10.5w-152",
+     "sv10.5w-153",
+     "sv10.5w-154",
+     "sv10.5w-155",
+     "sv10.5w-156",
+     "sv10.5w-157",
+     "sv10.5w-158",
+     "sv10.5w-159",
+     "sv10.5w-160",
+     "sv10.5w-161",
+     "sv10.5w-162",
+     "sv10.5w-163",
+     "sv10.5w-164"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "sv04.5"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv04.5-092",
+     "sv04.5-093",
+     "sv04.5-094",
+     "sv04.5-095",
+     "sv04.5-096",
+     "sv04.5-097",
+     "sv04.5-098",
+     "sv04.5-099",
+     "sv04.5-100",
+     "sv04.5-101",
+     "sv04.5-102",
+     "sv04.5-103",
+     "sv04.5-104",
+     "sv04.5-105",
+     "sv04.5-106",
+     "sv04.5-107",
+     "sv04.5-108",
+     "sv04.5-109",
+     "sv04.5-110",
+     "sv04.5-111",
+     "sv04.5-112",
+     "sv04.5-113",
+     "sv04.5-114",
+     "sv04.5-115",
+     "sv04.5-116",
+     "sv04.5-117",
+     "sv04.5-118",
+     "sv04.5-119",
+     "sv04.5-120",
+     "sv04.5-121",
+     "sv04.5-122",
+     "sv04.5-123",
+     "sv04.5-124",
+     "sv04.5-125",
+     "sv04.5-126",
+     "sv04.5-127",
+     "sv04.5-128",
+     "sv04.5-129",
+     "sv04.5-130",
+     "sv04.5-131",
+     "sv04.5-132",
+     "sv04.5-133",
+     "sv04.5-134",
+     "sv04.5-135",
+     "sv04.5-136",
+     "sv04.5-137",
+     "sv04.5-138",
+     "sv04.5-139",
+     "sv04.5-140",
+     "sv04.5-141",
+     "sv04.5-142",
+     "sv04.5-143",
+     "sv04.5-144",
+     "sv04.5-145",
+     "sv04.5-146",
+     "sv04.5-147",
+     "sv04.5-148",
+     "sv04.5-149",
+     "sv04.5-150",
+     "sv04.5-151",
+     "sv04.5-152",
+     "sv04.5-153",
+     "sv04.5-154",
+     "sv04.5-155",
+     "sv04.5-156",
+     "sv04.5-157",
+     "sv04.5-158",
+     "sv04.5-159",
+     "sv04.5-160",
+     "sv04.5-161",
+     "sv04.5-162",
+     "sv04.5-163",
+     "sv04.5-164",
+     "sv04.5-165",
+     "sv04.5-166",
+     "sv04.5-167",
+     "sv04.5-168",
+     "sv04.5-169",
+     "sv04.5-170",
+     "sv04.5-171",
+     "sv04.5-172",
+     "sv04.5-173",
+     "sv04.5-174",
+     "sv04.5-175",
+     "sv04.5-176",
+     "sv04.5-177",
+     "sv04.5-178",
+     "sv04.5-179",
+     "sv04.5-180",
+     "sv04.5-181",
+     "sv04.5-182",
+     "sv04.5-183",
+     "sv04.5-184",
+     "sv04.5-185",
+     "sv04.5-186",
+     "sv04.5-187",
+     "sv04.5-188",
+     "sv04.5-189",
+     "sv04.5-190",
+     "sv04.5-191",
+     "sv04.5-192",
+     "sv04.5-193",
+     "sv04.5-194",
+     "sv04.5-195",
+     "sv04.5-196",
+     "sv04.5-197",
+     "sv04.5-198",
+     "sv04.5-199",
+     "sv04.5-200",
+     "sv04.5-201",
+     "sv04.5-202",
+     "sv04.5-203",
+     "sv04.5-204",
+     "sv04.5-205",
+     "sv04.5-206",
+     "sv04.5-207",
+     "sv04.5-208",
+     "sv04.5-209",
+     "sv04.5-210",
+     "sv04.5-211"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution regular ex (Double rare), Illustration Rare, Ultra Rare and shiny rares share one foil: parallel diagonal rainbow streaks rising to the right that slide with tilt, over the card's graded foil plate (etched on Ultra Rares). Shiny rares are window-scope: only the art window is foil.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme",
+   "scope": "window"
+  },
+  {
+   "pattern": "gold-secret",
+   "sel": {
+    "setIds": [
+     "me01"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me01-187",
+     "me01-188"
+    ]
+   },
+   "claim": "Mega Hyper Rares are the gold-foil hyper rare.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "gold-secret",
+   "sel": {
+    "setIds": [
+     "me02"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me02-130"
+    ]
+   },
+   "claim": "Mega Hyper Rares are the gold-foil hyper rare.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "gold-secret",
+   "sel": {
+    "setIds": [
+     "me02.5"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me02.5-294",
+     "me02.5-295"
+    ]
+   },
+   "claim": "Mega Hyper Rares are the gold-foil hyper rare.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "gold-secret",
+   "sel": {
+    "setIds": [
+     "me03"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me03-124"
+    ]
+   },
+   "claim": "Mega Hyper Rares are the gold-foil hyper rare.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "gold-secret",
+   "sel": {
+    "setIds": [
+     "me04"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me04-122"
+    ]
+   },
+   "claim": "Mega Hyper Rares are the gold-foil hyper rare.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "gold-secret",
+   "sel": {
+    "setIds": [
+     "me05"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me05-120"
+    ]
+   },
+   "claim": "Mega Hyper Rares are the gold-foil hyper rare.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "me01"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me01-003",
+     "me01-022",
+     "me01-036",
+     "me01-050",
+     "me01-060",
+     "me01-077",
+     "me01-086",
+     "me01-094",
+     "me01-100",
+     "me01-104",
+     "me01-155",
+     "me01-156",
+     "me01-157",
+     "me01-158",
+     "me01-159",
+     "me01-160",
+     "me01-161",
+     "me01-162",
+     "me01-163",
+     "me01-164",
+     "me01-171",
+     "me01-177",
+     "me01-178",
+     "me01-179",
+     "me01-180",
+     "me01-181",
+     "me01-182",
+     "me01-183",
+     "me01-184",
+     "me01-185",
+     "me01-186"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "me02"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me02-004",
+     "me02-013",
+     "me02-041",
+     "me02-056",
+     "me02-061",
+     "me02-084",
+     "me02-108",
+     "me02-109",
+     "me02-113",
+     "me02-115",
+     "me02-125",
+     "me02-126",
+     "me02-127",
+     "me02-128",
+     "me02-129"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "me02.5"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me02.5-010",
+     "me02.5-022",
+     "me02.5-031",
+     "me02.5-043",
+     "me02.5-047",
+     "me02.5-061",
+     "me02.5-089",
+     "me02.5-113",
+     "me02.5-116",
+     "me02.5-125",
+     "me02.5-135",
+     "me02.5-152",
+     "me02.5-172",
+     "me02.5-253",
+     "me02.5-265",
+     "me02.5-266",
+     "me02.5-267",
+     "me02.5-268",
+     "me02.5-269",
+     "me02.5-270",
+     "me02.5-271",
+     "me02.5-272",
+     "me02.5-273",
+     "me02.5-274",
+     "me02.5-275",
+     "me02.5-276",
+     "me02.5-277",
+     "me02.5-278",
+     "me02.5-279",
+     "me02.5-280",
+     "me02.5-281",
+     "me02.5-282",
+     "me02.5-283",
+     "me02.5-284",
+     "me02.5-285",
+     "me02.5-286",
+     "me02.5-287",
+     "me02.5-288",
+     "me02.5-289",
+     "me02.5-290",
+     "me02.5-291",
+     "me02.5-292",
+     "me02.5-293"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "me03"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me03-021",
+     "me03-031",
+     "me03-047",
+     "me03-055",
+     "me03-102",
+     "me03-103",
+     "me03-104",
+     "me03-106",
+     "me03-118",
+     "me03-119",
+     "me03-120",
+     "me03-121",
+     "me03-122",
+     "me03-123"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "me04"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me04-015",
+     "me04-022",
+     "me04-035",
+     "me04-048",
+     "me04-065",
+     "me04-099",
+     "me04-100",
+     "me04-101",
+     "me04-104",
+     "me04-116",
+     "me04-117",
+     "me04-118",
+     "me04-119",
+     "me04-120",
+     "me04-121"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "me05"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "me05-008",
+     "me05-027",
+     "me05-031",
+     "me05-038",
+     "me05-048",
+     "me05-065",
+     "me05-098",
+     "me05-099",
+     "me05-101",
+     "me05-103",
+     "me05-114",
+     "me05-115",
+     "me05-116",
+     "me05-117",
+     "me05-118",
+     "me05-119"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "sv01"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv01-243",
+     "sv01-244",
+     "sv01-245",
+     "sv01-246",
+     "sv01-247",
+     "sv01-248",
+     "sv01-249",
+     "sv01-250",
+     "sv01-251",
+     "sv01-252",
+     "sv01-253",
+     "sv01-254",
+     "sv01-255",
+     "sv01-256",
+     "sv01-257",
+     "sv01-258"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "sv02"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv02-256",
+     "sv02-257",
+     "sv02-258",
+     "sv02-259",
+     "sv02-260",
+     "sv02-261",
+     "sv02-262",
+     "sv02-263",
+     "sv02-264",
+     "sv02-265",
+     "sv02-266",
+     "sv02-267",
+     "sv02-268",
+     "sv02-269",
+     "sv02-270",
+     "sv02-271",
+     "sv02-272",
+     "sv02-273",
+     "sv02-274",
+     "sv02-275",
+     "sv02-276",
+     "sv02-277",
+     "sv02-278",
+     "sv02-279"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "sv03"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv03-222",
+     "sv03-223",
+     "sv03-224",
+     "sv03-225",
+     "sv03-226",
+     "sv03-227",
+     "sv03-228",
+     "sv03-229",
+     "sv03-230"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "sv03.5"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv03.5-198",
+     "sv03.5-199",
+     "sv03.5-200",
+     "sv03.5-201",
+     "sv03.5-202",
+     "sv03.5-203",
+     "sv03.5-204",
+     "sv03.5-205",
+     "sv03.5-206",
+     "sv03.5-207"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "sv04"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv04-245",
+     "sv04-246",
+     "sv04-247",
+     "sv04-248",
+     "sv04-249",
+     "sv04-250",
+     "sv04-251",
+     "sv04-252",
+     "sv04-253",
+     "sv04-254",
+     "sv04-255",
+     "sv04-256",
+     "sv04-257",
+     "sv04-258",
+     "sv04-259",
+     "sv04-260",
+     "sv04-261",
+     "sv04-262",
+     "sv04-263",
+     "sv04-264",
+     "sv04-265",
+     "sv04-266"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "sv04.5"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv04.5-232",
+     "sv04.5-233",
+     "sv04.5-234",
+     "sv04.5-235",
+     "sv04.5-236",
+     "sv04.5-237",
+     "sv04.5-238",
+     "sv04.5-239",
+     "sv04.5-240",
+     "sv04.5-241",
+     "sv04.5-242",
+     "sv04.5-243",
+     "sv04.5-244",
+     "sv04.5-245"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "sv05"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv05-203",
+     "sv05-204",
+     "sv05-205",
+     "sv05-206",
+     "sv05-207",
+     "sv05-208",
+     "sv05-209",
+     "sv05-210",
+     "sv05-211",
+     "sv05-212",
+     "sv05-213",
+     "sv05-214",
+     "sv05-215",
+     "sv05-216",
+     "sv05-217",
+     "sv05-218"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "sv06"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv06-210",
+     "sv06-211",
+     "sv06-212",
+     "sv06-213",
+     "sv06-214",
+     "sv06-215",
+     "sv06-216",
+     "sv06-217",
+     "sv06-218",
+     "sv06-219",
+     "sv06-220",
+     "sv06-221",
+     "sv06-222",
+     "sv06-223",
+     "sv06-224",
+     "sv06-225",
+     "sv06-226"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "sv06.5"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv06.5-090",
+     "sv06.5-091",
+     "sv06.5-092",
+     "sv06.5-093",
+     "sv06.5-094",
+     "sv06.5-095",
+     "sv06.5-096",
+     "sv06.5-097",
+     "sv06.5-098",
+     "sv06.5-099"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "sv07"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv07-167",
+     "sv07-168",
+     "sv07-169",
+     "sv07-170",
+     "sv07-171",
+     "sv07-172",
+     "sv07-173",
+     "sv07-174",
+     "sv07-175"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "sv08"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv08-236",
+     "sv08-237",
+     "sv08-238",
+     "sv08-239",
+     "sv08-240",
+     "sv08-241",
+     "sv08-242",
+     "sv08-243",
+     "sv08-244",
+     "sv08-245",
+     "sv08-246",
+     "sv08-247",
+     "sv08-248",
+     "sv08-249",
+     "sv08-250",
+     "sv08-251",
+     "sv08-252"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "sv08.5"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv08.5-144",
+     "sv08.5-145",
+     "sv08.5-146",
+     "sv08.5-147",
+     "sv08.5-148",
+     "sv08.5-149",
+     "sv08.5-150",
+     "sv08.5-151",
+     "sv08.5-152",
+     "sv08.5-153",
+     "sv08.5-154",
+     "sv08.5-155",
+     "sv08.5-156",
+     "sv08.5-157",
+     "sv08.5-158",
+     "sv08.5-159",
+     "sv08.5-160",
+     "sv08.5-161",
+     "sv08.5-162",
+     "sv08.5-163",
+     "sv08.5-164",
+     "sv08.5-165",
+     "sv08.5-166",
+     "sv08.5-167",
+     "sv08.5-168",
+     "sv08.5-169",
+     "sv08.5-170",
+     "sv08.5-171",
+     "sv08.5-172",
+     "sv08.5-173",
+     "sv08.5-174",
+     "sv08.5-175",
+     "sv08.5-176",
+     "sv08.5-177",
+     "sv08.5-178",
+     "sv08.5-179",
+     "sv08.5-180"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "sv09"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv09-182",
+     "sv09-183",
+     "sv09-184",
+     "sv09-185",
+     "sv09-186",
+     "sv09-187",
+     "sv09-188",
+     "sv09-189",
+     "sv09-190"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "sv10"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv10-228",
+     "sv10-229",
+     "sv10-230",
+     "sv10-231",
+     "sv10-232",
+     "sv10-233",
+     "sv10-234",
+     "sv10-235",
+     "sv10-236",
+     "sv10-237",
+     "sv10-238",
+     "sv10-239",
+     "sv10-240",
+     "sv10-241",
+     "sv10-242",
+     "sv10-243",
+     "sv10-244"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "sv10.5b"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv10.5b-164",
+     "sv10.5b-165",
+     "sv10.5b-166",
+     "sv10.5b-167",
+     "sv10.5b-168",
+     "sv10.5b-169",
+     "sv10.5b-170"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "sv10.5w"
+    ],
+    "cls": "full-foil",
+    "rarities": null,
+    "variantKinds": null,
+    "cardIds": [
+     "sv10.5w-165",
+     "sv10.5w-166",
+     "sv10.5w-167",
+     "sv10.5w-168",
+     "sv10.5w-169",
+     "sv10.5w-170",
+     "sv10.5w-171"
+    ]
+   },
+   "claim": "Special Illustration Rares, Hyper Rares and Mega ex use the textured etched ultra-rare foil: a silver-leaning rainbow under opposed light pillars, glitter, and the etch line texture.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Rarity",
+     "quote": "Paraphrase (Bulbapedia, 'Rarity') - The Scarlet & Violet rarity tiers: Double Rare, Illustration Rare, Ultra Rare, Special Illustration Rare, Hyper Rare, ACE SPEC Rare."
+    }
+   ],
+   "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10.",
+   "lane": "r10-svme"
   }
  ]
 }
