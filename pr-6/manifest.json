@@ -1,0 +1,179 @@
+{
+  "pr": "6",
+  "rendered": [
+    {
+      "kind": "canon",
+      "patternId": "big-glitter",
+      "file": "data/foil-canon/big-glitter.json",
+      "name": "canon-big-glitter",
+      "strip": "canon-big-glitter.png",
+      "meta": {
+        "generatedAt": "2026-10-19T12:00:31.510Z",
+        "pattern": "big-glitter",
+        "mask": null,
+        "canonFile": "/data/foil-canon/big-glitter.json",
+        "tone": "dark",
+        "maxTiltDeg": 16,
+        "framesPerStep": 300,
+        "tilts": [
+          -1,
+          -0.7,
+          -0.35,
+          -0.1,
+          0.1,
+          0.35,
+          0.7,
+          1
+        ],
+        "cell": {
+          "width": 246,
+          "height": 344
+        },
+        "strip": {
+          "width": 2024,
+          "height": 344,
+          "bytes": 915117
+        },
+        "sha256": "90c68e48d973a4b24aea6c5db6447f66df97902e616fe2910cd23360d3a8b784"
+      }
+    },
+    {
+      "kind": "canon",
+      "patternId": "confetti",
+      "file": "data/foil-canon/confetti.json",
+      "name": "canon-confetti",
+      "strip": "canon-confetti.png",
+      "meta": {
+        "generatedAt": "2026-10-19T12:05:58.436Z",
+        "pattern": "confetti",
+        "mask": null,
+        "canonFile": "/data/foil-canon/confetti.json",
+        "tone": "dark",
+        "maxTiltDeg": 16,
+        "framesPerStep": 300,
+        "tilts": [
+          -1,
+          -0.7,
+          -0.35,
+          -0.1,
+          0.1,
+          0.35,
+          0.7,
+          1
+        ],
+        "cell": {
+          "width": 246,
+          "height": 344
+        },
+        "strip": {
+          "width": 2024,
+          "height": 344,
+          "bytes": 954347
+        },
+        "sha256": "86e2ddc0799b2768dddac4e9540055e8dd83b261350a46af1a1253a03c0df0db"
+      }
+    },
+    {
+      "kind": "canon",
+      "patternId": "cosmos-ii-pixel",
+      "file": "data/foil-canon/cosmos-ii-pixel.json",
+      "name": "canon-cosmos-ii-pixel",
+      "strip": "canon-cosmos-ii-pixel.png",
+      "meta": {
+        "generatedAt": "2026-10-19T12:11:28.925Z",
+        "pattern": "cosmos-ii-pixel",
+        "mask": null,
+        "canonFile": "/data/foil-canon/cosmos-ii-pixel.json",
+        "tone": "dark",
+        "maxTiltDeg": 16,
+        "framesPerStep": 300,
+        "tilts": [
+          -1,
+          -0.7,
+          -0.35,
+          -0.1,
+          0.1,
+          0.35,
+          0.7,
+          1
+        ],
+        "cell": {
+          "width": 246,
+          "height": 344
+        },
+        "strip": {
+          "width": 2024,
+          "height": 344,
+          "bytes": 929525
+        },
+        "sha256": "4ad10af03ad094bdd4427c4c56ae3459925b2787900fe414b95d6c893dae761b"
+      }
+    },
+    {
+      "kind": "canon",
+      "patternId": "cosmos-iii-smooth",
+      "file": "data/foil-canon/cosmos-iii-smooth.json",
+      "name": "canon-cosmos-iii-smooth",
+      "strip": "canon-cosmos-iii-smooth.png",
+      "meta": {
+        "generatedAt": "2026-10-19T12:16:55.800Z",
+        "pattern": "cosmos-iii-smooth",
+        "mask": null,
+        "canonFile": "/data/foil-canon/cosmos-iii-smooth.json",
+        "tone": "dark",
+        "maxTiltDeg": 16,
+        "framesPerStep": 300,
+        "tilts": [
+          -1,
+          -0.7,
+          -0.35,
+          -0.1,
+          0.1,
+          0.35,
+          0.7,
+          1
+        ],
+        "cell": {
+          "width": 246,
+          "height": 344
+        },
+        "strip": {
+          "width": 2024,
+          "height": 344,
+          "bytes": 742466
+        },
+        "sha256": "0c08f6d6652a409e49afafcb0cd4fda576e11ce581ea8dfcb5b71ae2e51f624b"
+      }
+    }
+  ],
+  "skipped": [
+    "data/foil-canon/cosmos.json",
+    "data/foil-canon/cracked-ice.json",
+    "data/foil-canon/detective-pikachu.json",
+    "data/foil-canon/diagonal-sheen-left.json",
+    "data/foil-canon/diagonal-sheen-right.json",
+    "data/foil-canon/ex-emerald.json",
+    "data/foil-canon/fireworks.json",
+    "data/foil-canon/gold-secret.json",
+    "data/foil-canon/horizontal-sheen.json",
+    "data/foil-canon/mirror.json",
+    "data/foil-canon/pinwheel.json",
+    "data/foil-canon/pokeball-hologram.json",
+    "data/foil-canon/radiant-collection-dots.json",
+    "data/foil-canon/radiant.json",
+    "data/foil-canon/rainbow-glitter-sheen.json",
+    "data/foil-canon/rainbow-glitter.json",
+    "data/foil-canon/reverse-sheet.json",
+    "data/foil-canon/sequin.json",
+    "data/foil-canon/shiny-vault.json",
+    "data/foil-canon/starlight-ii.json",
+    "data/foil-canon/starlight.json",
+    "data/foil-canon/striped-vertical-sheen.json",
+    "data/foil-canon/tinsel-ii.json",
+    "data/foil-canon/tinsel.json",
+    "data/foil-canon/vertical-sheen-rainbow.json",
+    "data/foil-canon/vertical-sheen.json",
+    "data/foil-canon/vstar-pearl.json",
+    "data/foil-canon/water-web.json"
+  ]
+}
