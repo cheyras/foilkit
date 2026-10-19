@@ -74,6 +74,8 @@ export const PATTERN_ALIASES: Record<string, string> = {
   'crossed-rainbow': 'ex-starfoil',
   'sv-holo-bands': 'horizontal-sheen',
   'etched-ultra': 'rainbow-glitter-sheen',
+  // R11 2026-10-19: identical to mirror under the silver-plate law.
+  'mirror-sv': 'mirror',
 }
 
 export const canonicalPatternId = (id: string): string => PATTERN_ALIASES[id] ?? id
@@ -2833,7 +2835,7 @@ export const PATTERNS: FoilPattern[] = [
     id: 'mirror',
     label: 'Mirror',
     taxonomy: 'Plain aluminum mirror foil — no pattern, no hue shift',
-    usedOn: 'Neo Shining subjects; the raw base stock under many later patterns.',
+    usedOn: 'Neo Shining subjects; the raw base stock under many later patterns; every plain Scarlet & Violet and Mega Evolution reverse holo (the printed design is in the mask).',
     glsl: MIRROR_GLSL,
     // uSat 0: a mirror has NO hue shift at all (the recipe never calls
     // hueRamp, but canon/override sliders must not reintroduce color).
@@ -2853,43 +2855,6 @@ export const PATTERNS: FoilPattern[] = [
     // (data/foil-canon/mirror.json — "basically perfect", 2026-08-07) stores
     // its own and wins. Do not re-derive them: the canon's on-card appearance
     // is a frozen reference.
-    family: 'metal',
-    // R11 2026-10-19: the silver-plate law (uPlateOverlay 1) defines this
-    // recipe's look, rebuilt from a reference render of the modern client's
-    // plain silver reverse; the additive terms are switched off underneath it.
-    defaults: {
-      uIntensity: 1.0, uScale: 1.0, uHueShift: 0.5, uHueSpread: 0.0, uSat: 0.0,
-      uArtGate: 0.0, uSpecular: 0.0, uDarken: 0.0, uTint: 0.0, uInkPop: 0.5,
-      uMetal: 0.0, uSheen: 0.0, uSheenTint: 0.0, uDepth: 0.0, uGrain: 1.0, uPlateOverlay: 1.0,
-    },
-    params: [
-      // R11 silver-plate law (shader.ts). uP0 bar half-width in bar periods,
-      // uP1 bar travel, uP3 law strength; uP2 is unused under the law.
-      { key: 'uP0', label: 'Bar half-width', min: 0.04, max: 0.4, step: 0.005, default: 0.14 },
-      { key: 'uP1', label: 'Bar travel', min: 0, max: 3, step: 0.05, default: 1.0 },
-      { key: 'uP2', label: 'Unused (law)', min: 0, max: 1, step: 0.05, default: 0 },
-      { key: 'uP3', label: 'Law strength', min: 0, max: 2, step: 0.05, default: 1.0 },
-    ],
-    implemented: true,
-  },
-  // R10 (2026-10-18): the SV / Mega Evolution reverse holo. The same plain
-  // mirror sheet (the printed reverse pattern comes from the card's MASK, as
-  // graded foil strength), tuned against a local reference of how the modern
-  // reverse actually renders:
-  //   - a wide vertical bar of light that sweeps across with tilt (uP4 1),
-  //     not a round spotlight;
-  //   - an even, mild change everywhere else, with no dark lobe (uDarken and
-  //     uDepth low);
-  //   - silver, not ink-coloured (uTint 0, uSheenTint 0);
-  //   - nothing outside the mask (uSpecular low: the shared gloss is the only
-  //     light that reaches the unfoiled art window).
-  // mirror's own canon is untouched.
-  {
-    id: 'mirror-sv',
-    label: 'Mirror (SV/ME reverse)',
-    taxonomy: 'Plain aluminum mirror foil — no pattern, no hue shift',
-    usedOn: 'Scarlet & Violet and Mega Evolution reverse holos; the printed reverse pattern is in the mask.',
-    glsl: MIRROR_GLSL,
     family: 'metal',
     // R11 2026-10-19: the silver-plate law (uPlateOverlay 1) defines this
     // recipe's look, rebuilt from a reference render of the modern client's

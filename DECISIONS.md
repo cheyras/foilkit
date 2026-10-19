@@ -3186,3 +3186,14 @@ Every other recipe renders byte-identically (horizontal-sheen canon frames, 8/8)
 with `uPlateOverlay: 0` by `tools/freeze-canon.mjs`, with no value changes and their freeze provenance kept.
 
 **Previous mirror canon** (in git history): `{"uIntensity":1.64,"uScale":0.9,"uHueShift":0.4,"uHueSpread":0,"uSat":0,"uArtGate":0.64,"uSpecular":0.64,"uDarken":1,"uTint":1,"uInkGuard":1,"uInkPop":0.96,"uMetal":0.99,"uSheen":1.66,"uSheenTint":0.5,"uDepth":0.72,"uGrain":0.7,"uP0":7,"uP1":1.05,"uP2":0.85,"uP3":0.95}`
+
+## 2026-10-19 — mirror-sv folded into mirror; one canon for every reverse
+
+**Decided by:** @cheyras ("yeah let's do that")
+
+**Decision:** under the R11 silver-plate law, `mirror` and `mirror-sv` were the same recipe with separate settings.
+The maintainer tuned the `mirror` canon (PR #7: uIntensity 2, uP1 3, uP3 1.65). The 8 assignment rows that named
+`mirror-sv` now name `mirror`, and `mirror-sv` remains an alias.
+
+**Measured:** resolver over the catalog: 2,617 SV/ME `reverse` and 140 `reverse-foil-energy` variants resolve to
+`mirror`.
