@@ -3426,3 +3426,56 @@ Chroma matches within 0.003.
 - the lattice is pixelated at 192 cells per sheet;
 - columns alternate between 0.6 and 1.0;
 - the band peaks at 0.56 of its period (σ 0.125, floor 0.054).
+
+## 2026-10-19 — R12: SV/ME promos get masks and assignments; Tera ex found with four badge templates
+
+**Decided by:** @cheyras ("get it so that meg and svi are as done as you can make them on your own")
+
+**Promos (svp, mep; 315 cards).** Each promo is assigned from visible features only: the catalog name (ex, Mega), a
+Tera-badge template match, whether the catalog lists a cosmos variant, and a regular-frame / full-art classifier
+on our own TCGdex scans. The classifier is a logistic fit on four frame correlations and three text-box texture
+measures, and scores 98.6% on 900 main-set cards whose frame the rarity fixes.
+
+| Visible class | Pattern | Scope | Like |
+|---|---|---|---|
+| cosmos (a cosmos variant is listed) | `cosmos-iii-smooth` | window | — |
+| Mega or Tera ex | `rainbow-glitter-sheen` | full | — |
+| other ex | `ex-starfoil` | full | main-set Double rares |
+| non-ex full art | `ex-starfoil` | full | Illustration Rares |
+| non-ex regular frame | `horizontal-sheen` | window | main-set holo rares |
+
+64 promos have no TCGdex scan. They fall back to name rules, and otherwise to the window holo.
+
+Checked locally against the reference client's own choices (statistics only; the mapping is never exported):
+- cosmos-variant promos are cosmos 63/63;
+- ex promos are SvUltra exactly when Mega or Tera;
+- the frame rule agrees 86% (full art → SunPillar 37/46, regular → SvHolo 44/47).
+
+The masks come from our own generators: the window plate, the ex-frame plate, the full-art plate, and the cosmos
+plate (window plate, edge cut). The full-art and ex promos also get etch v2. Rows are in lane `r12-promos`, and the
+masks are in the svp / mep shards.
+
+**Tera ex.** R10 matched the "Tera" badge with one template and found 88 of 99 Tera ex. Four templates, one per
+badge colour family, find all 97 checked locally (2 extras). The R10 card lists are regenerated:
+`rainbow-glitter-sheen` now covers 474 SV/ME full arts.
+
+## 2026-10-19 — R12: Mega Ascended Heroes ball reverses are the silver reverse with a ball medallion
+
+**Decided by:** @cheyras ("get it so that meg and svi are as done as you can make them on your own")
+
+**Decision:** in Mega Ascended Heroes (me02.5), each Pokémon has exactly one ball parallel: Poké, Dusk, Love, Friend
+or Quick Ball, or Team Rocket. The modern client draws these as the set's plain silver reverse (FlatSilver), with the
+ball in the medallion disc where the regular printing shows the type symbol, and no cast-and-cure lattice.
+
+The 140 printings now resolve to `mirror` (row lane `r12-me-balls`). Before, they used the BB/WF ball recipe. 139 of
+them get their own generated plate (run `modular-reverse-ball`): the set's flat reverse, with the ball drawn in light
+lines in the disc.
+
+The ball drawings are our own geometry (`tools/modular/balls.py`, local). The shared structure is measured on a local
+reference plate (units of the disc radius):
+- button r < 0.20, a dark ring to 0.33, and a light ring to 0.43;
+- a belt of two light bands at 0.06 < |y| < 0.17;
+- a light lower half from r 0.54 to 0.89, and a dark rim.
+
+The cap motifs (heart, lightning arcs, leaf, crown, and an R) are simple originals. On the one cached reference (a
+Love Ball parallel), our plate agrees with the reference's light / dark split on 97.0% of the card (MAE 0.050).
