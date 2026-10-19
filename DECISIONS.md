@@ -3543,3 +3543,44 @@ structure correlation +0.83…+0.87.
 - **Mega rule.** "Mega" now needs the ex suffix as well. "Mega Signal", a Trainer, had been taken for a Mega ex.
 
 R10 card lists regenerated: `rainbow-glitter-sheen` 467 cards, `prismatic-pokeball` 4.
+
+## 2026-10-19 — R12: Basic Energy printings get generated plates; energy variant fixes
+
+**Decided by:** @cheyras ("Keep going until you don't have a 'still not done' to report on SV/ME"; "are we sure
+TCGdex has no images for basic energy?")
+
+**Decision:** TCGdex carries no card images for Scarlet & Violet Energy (sve) or Mega Evolution Energy (mee). Its API
+has no `image` field for them, and every asset URL is a 404. DeckPal reads its catalog from TCGdex, so it has none
+either. Limitless's card CDN has all 32, and pokemontcg.io has sve 1–16. The plates are generated from the Limitless
+scans. Those resize onto TCGdex's 600 × 825 framing with zero offset, checked against a main-set energy that both
+sources carry. The scans are used only to generate the plates (see NOTICE.md).
+
+The SV/ME reverse generator handled Basic Energy as Special Energy (a text band and a star mosaic). That is wrong:
+on a local reference plate, Basic Energy is foil across the whole art rectangle. A new generator (run
+`modular-basic-energy`) makes:
+- the art rectangle foil at full level;
+- the energy-symbol disc matte, found per card as the ring of strongest edge (the 2025 design moves it down);
+- the printed white glow as ink: `plate = 1 − 0.75 · glow`, with glow normalised per card.
+
+It agrees with the reference's light / dark split on 88–92% of the face across three reference plates. Rendered as a
+mirror reverse, our plate gives the same result as the reference plate: |dL| 0.034 / 0.032 / 0.032 / 0.025 against
+0.036 / 0.034 / 0.034 / 0.027. 81 variant rows (32 plates).
+
+**Variant fixes:**
+- **Tinsel energy reverses** now point at `tinsel-ii`, the modern client's tinsel film; they were on `tinsel`.
+- **Poké Ball energy reverses** now point at `pokeball-masterball`, the modern silver reverse under a ball lattice;
+  they were on `ex-emerald`, an EX-era sheet. The reference has no record of these printings.
+- **Cracked ice energy reverses** stay on `cracked-ice`. The modern client's cracked-ice film is mixed 30% over the
+  art and measures |dL| 0.003 on a reference card, while ours measures 0.002–0.014: both are near-invisible.
+
+**Follow-up (same day): every SV/ME foil printing now has a generated mask.**
+- **Promos:** 61 promos with no TCGdex scan get one from Limitless. svp-085 comes from pokemontcg.io. svp-190 and
+  mep-Museum are non-foil, so they need none. These promos are classified and generated like the rest.
+- **Tera:** promo Tera detection now uses the four-template badge match, Scarlet & Violet only.
+- **Odd variant kinds:** 13 printings with stamp, metal and league variant kinds (`normal-stamp-*`, `metal*`,
+  `normal-foil-*`) never matched the exporters' `holo*` / `reverse*` filter. They get their card's own plate (run
+  `modular-attach`), and 7 of them get an etch.
+- **Etches:** 9 Phantasmal Flames Double Rares that had no etch get etch v2.
+
+Checked across 6,229 SV/ME foil printings: every one has a foil plate. All 2,031 full-scope printings whose recipe
+reads an etch have one. Every index row's object is in the bucket (8,351 rows checked).

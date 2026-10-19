@@ -3071,7 +3071,7 @@
    "lane": "sv-era"
   },
   {
-   "pattern": "ex-emerald",
+   "pattern": "pokeball-masterball",
    "sel": {
     "setIds": [
      "sve"
@@ -3091,7 +3091,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Holofoil') — EX Emerald's holo is Poke Balls and stars, with the set logo at the lower right of the art window."
     }
    ],
-   "conflicts": "The Poke Ball reverse on energies could alternatively be the 3D pokeball-hologram (EX Unseen Forces) sheet; ex-emerald (flat Poke Ball + stars reverse) is the closer catalog-historical match for a flat reverse Poke Ball facet. Single source; catalog facet corroborates the 'pokeball' identity.",
+   "conflicts": "The Poke Ball reverse on energies could alternatively be the 3D pokeball-hologram (EX Unseen Forces) sheet; ex-emerald (flat Poke Ball + stars reverse) is the closer catalog-historical match for a flat reverse Poke Ball facet. Single source; catalog facet corroborates the 'pokeball' identity. R12 2026-10-19: re-pointed from ex-emerald (an EX-era sheet) to pokeball-masterball, the modern silver reverse under a Poke Ball lattice; the reference client has no record of these printings to compare against.",
    "lane": "sv-era"
   },
   {
@@ -3119,7 +3119,7 @@
    "lane": "sv-era"
   },
   {
-   "pattern": "tinsel",
+   "pattern": "tinsel-ii",
    "sel": {
     "setIds": [
      "sve"
@@ -3139,7 +3139,7 @@
      "quote": "Paraphrase (Bulbapedia, 'Holofoil') — Tinsel was the standard holo finish from Black & White to Legendary Treasures, plus assorted promos — horizontal banding across the art."
     }
    ],
-   "conflicts": "Pattern identity from Bulbapedia + the catalog's declared 'tinsel' facet; not a second truly independent source.",
+   "conflicts": "Pattern identity from Bulbapedia + the catalog's declared 'tinsel' facet; not a second truly independent source. R12 2026-10-19: re-pointed from tinsel to tinsel-ii, which is now the modern client's tinsel film (the client draws these energies with that film).",
    "lane": "sv-era"
   },
   {
@@ -4831,589 +4831,6 @@
    ],
    "conflicts": "R12 2026-10-19: the modern client draws every Scarlet & Violet / Mega Evolution cosmos printing with one smooth-disc cosmos film (a sweeping band and four parallax bubble layers), which is the community's Cosmos III (smooth). Behaviour measured against a local reference render; see DECISIONS R12.",
    "lane": "r12-svme"
-  },
-  {
-   "pattern": "cosmos-iii-smooth",
-   "sel": {
-    "setIds": [
-     "mep"
-    ],
-    "cls": "holo",
-    "rarities": null,
-    "variantKinds": [
-     "holo",
-     "holo-jumbo",
-     "holo-jumbo-stamp-set-logo",
-     "holo-stamp-ace-trainer",
-     "holo-stamp-horizons",
-     "holo-stamp-illustration-contest-2024",
-     "holo-stamp-player-rewards-program",
-     "holo-stamp-pokemon-center",
-     "holo-stamp-set-logo",
-     "holo-stamp-set-logo-stamp-staff"
-    ],
-    "cardIds": [
-     "mep-005",
-     "mep-006",
-     "mep-018",
-     "mep-019",
-     "mep-020",
-     "mep-021",
-     "mep-068",
-     "mep-069",
-     "mep-078",
-     "mep-079"
-    ]
-   },
-   "claim": "Promos that are printed as cosmos holos (the catalog lists a cosmos variant) are cosmos printings: every holo variant of them carries the smooth-disc cosmos foil in the art window.",
-   "confidence": "medium",
-   "sources": [
-    {
-     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
-     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
-    }
-   ],
-   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
-   "lane": "r12-promos"
-  },
-  {
-   "pattern": "cosmos-iii-smooth",
-   "sel": {
-    "setIds": [
-     "svp"
-    ],
-    "cls": "holo",
-    "rarities": null,
-    "variantKinds": [
-     "holo",
-     "holo-jumbo",
-     "holo-jumbo-stamp-set-logo",
-     "holo-stamp-ace-trainer",
-     "holo-stamp-horizons",
-     "holo-stamp-illustration-contest-2024",
-     "holo-stamp-player-rewards-program",
-     "holo-stamp-pokemon-center",
-     "holo-stamp-set-logo",
-     "holo-stamp-set-logo-stamp-staff"
-    ],
-    "cardIds": [
-     "svp-040"
-    ]
-   },
-   "claim": "Promos that are printed as cosmos holos (the catalog lists a cosmos variant) are cosmos printings: every holo variant of them carries the smooth-disc cosmos foil in the art window.",
-   "confidence": "medium",
-   "sources": [
-    {
-     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
-     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
-    }
-   ],
-   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
-   "lane": "r12-promos"
-  },
-  {
-   "pattern": "ex-starfoil",
-   "sel": {
-    "setIds": [
-     "mep"
-    ],
-    "cls": "holo",
-    "rarities": null,
-    "variantKinds": [
-     "holo",
-     "holo-jumbo",
-     "holo-jumbo-stamp-set-logo",
-     "holo-stamp-ace-trainer",
-     "holo-stamp-horizons",
-     "holo-stamp-illustration-contest-2024",
-     "holo-stamp-player-rewards-program",
-     "holo-stamp-pokemon-center",
-     "holo-stamp-set-logo",
-     "holo-stamp-set-logo-stamp-staff"
-    ],
-    "cardIds": [
-     "mep-024"
-    ]
-   },
-   "claim": "Scarlet & Violet / Mega Evolution ex promos carry the regular ex foil across the whole face, like the main-set Double rares.",
-   "confidence": "medium",
-   "sources": [
-    {
-     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
-     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
-    }
-   ],
-   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
-   "lane": "r12-promos",
-   "scope": "full"
-  },
-  {
-   "pattern": "ex-starfoil",
-   "sel": {
-    "setIds": [
-     "svp"
-    ],
-    "cls": "holo",
-    "rarities": null,
-    "variantKinds": [
-     "holo",
-     "holo-jumbo",
-     "holo-jumbo-stamp-set-logo",
-     "holo-stamp-ace-trainer",
-     "holo-stamp-horizons",
-     "holo-stamp-illustration-contest-2024",
-     "holo-stamp-player-rewards-program",
-     "holo-stamp-pokemon-center",
-     "holo-stamp-set-logo",
-     "holo-stamp-set-logo-stamp-staff"
-    ],
-    "cardIds": [
-     "svp-004",
-     "svp-016",
-     "svp-017",
-     "svp-018",
-     "svp-028",
-     "svp-029",
-     "svp-030",
-     "svp-031",
-     "svp-032",
-     "svp-033",
-     "svp-034",
-     "svp-035",
-     "svp-049",
-     "svp-050",
-     "svp-053",
-     "svp-054",
-     "svp-055",
-     "svp-067",
-     "svp-068",
-     "svp-072",
-     "svp-073",
-     "svp-074",
-     "svp-078",
-     "svp-081",
-     "svp-084",
-     "svp-086",
-     "svp-087",
-     "svp-100",
-     "svp-103",
-     "svp-104",
-     "svp-105",
-     "svp-106",
-     "svp-110",
-     "svp-125",
-     "svp-126",
-     "svp-127",
-     "svp-128",
-     "svp-131",
-     "svp-132",
-     "svp-142",
-     "svp-143",
-     "svp-144",
-     "svp-145",
-     "svp-146",
-     "svp-147",
-     "svp-160",
-     "svp-161",
-     "svp-162",
-     "svp-174",
-     "svp-175",
-     "svp-176",
-     "svp-177",
-     "svp-178",
-     "svp-179",
-     "svp-180",
-     "svp-193",
-     "svp-194",
-     "svp-195",
-     "svp-196",
-     "svp-197",
-     "svp-198",
-     "svp-204",
-     "svp-205",
-     "svp-215",
-     "svp-216",
-     "svp-217",
-     "svp-218"
-    ]
-   },
-   "claim": "Scarlet & Violet / Mega Evolution ex promos carry the regular ex foil across the whole face, like the main-set Double rares.",
-   "confidence": "medium",
-   "sources": [
-    {
-     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
-     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
-    }
-   ],
-   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
-   "lane": "r12-promos",
-   "scope": "full"
-  },
-  {
-   "pattern": "rainbow-glitter-sheen",
-   "sel": {
-    "setIds": [
-     "mep"
-    ],
-    "cls": "holo",
-    "rarities": null,
-    "variantKinds": [
-     "holo",
-     "holo-jumbo",
-     "holo-jumbo-stamp-set-logo",
-     "holo-stamp-ace-trainer",
-     "holo-stamp-horizons",
-     "holo-stamp-illustration-contest-2024",
-     "holo-stamp-player-rewards-program",
-     "holo-stamp-pokemon-center",
-     "holo-stamp-set-logo",
-     "holo-stamp-set-logo-stamp-staff"
-    ],
-    "cardIds": [
-     "mep-011",
-     "mep-012",
-     "mep-013",
-     "mep-023",
-     "mep-025",
-     "mep-029",
-     "mep-030",
-     "mep-032",
-     "mep-033",
-     "mep-034",
-     "mep-035",
-     "mep-036",
-     "mep-071",
-     "mep-072",
-     "mep-073",
-     "mep-081"
-    ]
-   },
-   "claim": "Mega ex and Tera ex promos carry the textured etched ultra-rare foil, like their main-set counterparts.",
-   "confidence": "medium",
-   "sources": [
-    {
-     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
-     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
-    }
-   ],
-   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
-   "lane": "r12-promos",
-   "scope": "full"
-  },
-  {
-   "pattern": "rainbow-glitter-sheen",
-   "sel": {
-    "setIds": [
-     "svp"
-    ],
-    "cls": "holo",
-    "rarities": null,
-    "variantKinds": [
-     "holo",
-     "holo-jumbo",
-     "holo-jumbo-stamp-set-logo",
-     "holo-stamp-ace-trainer",
-     "holo-stamp-horizons",
-     "holo-stamp-illustration-contest-2024",
-     "holo-stamp-player-rewards-program",
-     "holo-stamp-pokemon-center",
-     "holo-stamp-set-logo",
-     "holo-stamp-set-logo-stamp-staff"
-    ],
-    "cardIds": [
-     "svp-056",
-     "svp-163",
-     "svp-164",
-     "svp-165",
-     "svp-166"
-    ]
-   },
-   "claim": "Mega ex and Tera ex promos carry the textured etched ultra-rare foil, like their main-set counterparts.",
-   "confidence": "medium",
-   "sources": [
-    {
-     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
-     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
-    }
-   ],
-   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
-   "lane": "r12-promos",
-   "scope": "full"
-  },
-  {
-   "pattern": "ex-starfoil",
-   "sel": {
-    "setIds": [
-     "mep"
-    ],
-    "cls": "holo",
-    "rarities": null,
-    "variantKinds": [
-     "holo",
-     "holo-jumbo",
-     "holo-jumbo-stamp-set-logo",
-     "holo-stamp-ace-trainer",
-     "holo-stamp-horizons",
-     "holo-stamp-illustration-contest-2024",
-     "holo-stamp-player-rewards-program",
-     "holo-stamp-pokemon-center",
-     "holo-stamp-set-logo",
-     "holo-stamp-set-logo-stamp-staff"
-    ],
-    "cardIds": [
-     "mep-009",
-     "mep-010",
-     "mep-022",
-     "mep-026",
-     "mep-027",
-     "mep-031",
-     "mep-037",
-     "mep-038",
-     "mep-039",
-     "mep-040",
-     "mep-041",
-     "mep-042",
-     "mep-043",
-     "mep-045"
-    ]
-   },
-   "claim": "Full-art Scarlet & Violet / Mega Evolution promos (non-ex) carry the ex / Illustration Rare foil across the whole face.",
-   "confidence": "medium",
-   "sources": [
-    {
-     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
-     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
-    }
-   ],
-   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
-   "lane": "r12-promos",
-   "scope": "full"
-  },
-  {
-   "pattern": "ex-starfoil",
-   "sel": {
-    "setIds": [
-     "svp"
-    ],
-    "cls": "holo",
-    "rarities": null,
-    "variantKinds": [
-     "holo",
-     "holo-jumbo",
-     "holo-jumbo-stamp-set-logo",
-     "holo-stamp-ace-trainer",
-     "holo-stamp-horizons",
-     "holo-stamp-illustration-contest-2024",
-     "holo-stamp-player-rewards-program",
-     "holo-stamp-pokemon-center",
-     "holo-stamp-set-logo",
-     "holo-stamp-set-logo-stamp-staff"
-    ],
-    "cardIds": [
-     "svp-013",
-     "svp-014",
-     "svp-021",
-     "svp-027",
-     "svp-044",
-     "svp-051",
-     "svp-052",
-     "svp-058",
-     "svp-065",
-     "svp-066",
-     "svp-071",
-     "svp-075",
-     "svp-088",
-     "svp-092",
-     "svp-097",
-     "svp-098",
-     "svp-123",
-     "svp-124",
-     "svp-129",
-     "svp-130",
-     "svp-141",
-     "svp-159",
-     "svp-173",
-     "svp-189",
-     "svp-203",
-     "svp-206",
-     "svp-207"
-    ]
-   },
-   "claim": "Full-art Scarlet & Violet / Mega Evolution promos (non-ex) carry the ex / Illustration Rare foil across the whole face.",
-   "confidence": "medium",
-   "sources": [
-    {
-     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
-     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
-    }
-   ],
-   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
-   "lane": "r12-promos",
-   "scope": "full"
-  },
-  {
-   "pattern": "horizontal-sheen",
-   "sel": {
-    "setIds": [
-     "mep"
-    ],
-    "cls": "holo",
-    "rarities": null,
-    "variantKinds": [
-     "holo",
-     "holo-jumbo",
-     "holo-jumbo-stamp-set-logo",
-     "holo-stamp-ace-trainer",
-     "holo-stamp-horizons",
-     "holo-stamp-illustration-contest-2024",
-     "holo-stamp-player-rewards-program",
-     "holo-stamp-pokemon-center",
-     "holo-stamp-set-logo",
-     "holo-stamp-set-logo-stamp-staff"
-    ],
-    "cardIds": [
-     "mep-001",
-     "mep-002",
-     "mep-003",
-     "mep-004",
-     "mep-007",
-     "mep-008",
-     "mep-014",
-     "mep-015",
-     "mep-016",
-     "mep-017",
-     "mep-028",
-     "mep-044",
-     "mep-046",
-     "mep-047",
-     "mep-048",
-     "mep-049",
-     "mep-050",
-     "mep-051",
-     "mep-052",
-     "mep-053",
-     "mep-054",
-     "mep-055",
-     "mep-056",
-     "mep-057",
-     "mep-058",
-     "mep-059",
-     "mep-060",
-     "mep-061",
-     "mep-062",
-     "mep-063",
-     "mep-064",
-     "mep-065",
-     "mep-066",
-     "mep-067",
-     "mep-070",
-     "mep-074",
-     "mep-075",
-     "mep-076",
-     "mep-077",
-     "mep-080",
-     "mep-082",
-     "mep-083",
-     "mep-084",
-     "mep-085",
-     "mep-088"
-    ]
-   },
-   "claim": "Regular-frame Scarlet & Violet / Mega Evolution promos (non-ex) carry the standard SV holo in the art window, like the main-set holo rares.",
-   "confidence": "medium",
-   "sources": [
-    {
-     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
-     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
-    }
-   ],
-   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
-   "lane": "r12-promos"
-  },
-  {
-   "pattern": "horizontal-sheen",
-   "sel": {
-    "setIds": [
-     "svp"
-    ],
-    "cls": "holo",
-    "rarities": null,
-    "variantKinds": [
-     "holo",
-     "holo-jumbo",
-     "holo-jumbo-stamp-set-logo",
-     "holo-stamp-ace-trainer",
-     "holo-stamp-horizons",
-     "holo-stamp-illustration-contest-2024",
-     "holo-stamp-player-rewards-program",
-     "holo-stamp-pokemon-center",
-     "holo-stamp-set-logo",
-     "holo-stamp-set-logo-stamp-staff"
-    ],
-    "cardIds": [
-     "svp-001",
-     "svp-002",
-     "svp-003",
-     "svp-005",
-     "svp-006",
-     "svp-007",
-     "svp-008",
-     "svp-019",
-     "svp-020",
-     "svp-022",
-     "svp-036",
-     "svp-037",
-     "svp-038",
-     "svp-039",
-     "svp-057",
-     "svp-059",
-     "svp-060",
-     "svp-069",
-     "svp-070",
-     "svp-076",
-     "svp-077",
-     "svp-079",
-     "svp-080",
-     "svp-082",
-     "svp-083",
-     "svp-089",
-     "svp-090",
-     "svp-091",
-     "svp-115",
-     "svp-116",
-     "svp-117",
-     "svp-118",
-     "svp-133",
-     "svp-134",
-     "svp-135",
-     "svp-136",
-     "svp-151",
-     "svp-152",
-     "svp-153",
-     "svp-154",
-     "svp-181",
-     "svp-182",
-     "svp-183",
-     "svp-184",
-     "svp-191",
-     "svp-192",
-     "svp-208",
-     "svp-209",
-     "svp-210",
-     "svp-211",
-     "svp-212"
-    ]
-   },
-   "claim": "Regular-frame Scarlet & Violet / Mega Evolution promos (non-ex) carry the standard SV holo in the art window, like the main-set holo rares.",
-   "confidence": "medium",
-   "sources": [
-    {
-     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
-     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
-    }
-   ],
-   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
-   "lane": "r12-promos"
   },
   {
    "pattern": "mirror",
@@ -8481,6 +7898,589 @@
    ],
    "conflicts": "R10 2026-10-18: card list generated from the catalog's own rarity and name fields by exact match, plus a Tera-badge template match on the TCGdex scans for Tera ex (the substring rarity selector cannot tell 'Illustration rare' from 'Special illustration rare'). Behaviour measured against a local reference render; see DECISIONS R10. R12 2026-10-19: the Tera badge is matched with four templates (one per badge colour family), which finds every Tera ex the single R10 template missed.",
    "lane": "r10-svme"
+  },
+  {
+   "pattern": "cosmos-iii-smooth",
+   "sel": {
+    "setIds": [
+     "mep"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "mep-005",
+     "mep-006",
+     "mep-018",
+     "mep-019",
+     "mep-020",
+     "mep-021",
+     "mep-068",
+     "mep-069",
+     "mep-078",
+     "mep-079"
+    ]
+   },
+   "claim": "Promos that are printed as cosmos holos (the catalog lists a cosmos variant) are cosmos printings: every holo variant of them carries the smooth-disc cosmos foil in the art window.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos"
+  },
+  {
+   "pattern": "cosmos-iii-smooth",
+   "sel": {
+    "setIds": [
+     "svp"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "svp-040"
+    ]
+   },
+   "claim": "Promos that are printed as cosmos holos (the catalog lists a cosmos variant) are cosmos printings: every holo variant of them carries the smooth-disc cosmos foil in the art window.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "mep"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "mep-024"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution ex promos carry the regular ex foil across the whole face, like the main-set Double rares.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos",
+   "scope": "full"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "svp"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "svp-004",
+     "svp-016",
+     "svp-017",
+     "svp-018",
+     "svp-028",
+     "svp-029",
+     "svp-030",
+     "svp-031",
+     "svp-032",
+     "svp-033",
+     "svp-034",
+     "svp-035",
+     "svp-049",
+     "svp-050",
+     "svp-053",
+     "svp-054",
+     "svp-055",
+     "svp-067",
+     "svp-068",
+     "svp-072",
+     "svp-073",
+     "svp-078",
+     "svp-081",
+     "svp-084",
+     "svp-086",
+     "svp-087",
+     "svp-100",
+     "svp-103",
+     "svp-104",
+     "svp-105",
+     "svp-106",
+     "svp-110",
+     "svp-125",
+     "svp-126",
+     "svp-127",
+     "svp-128",
+     "svp-131",
+     "svp-132",
+     "svp-142",
+     "svp-143",
+     "svp-144",
+     "svp-145",
+     "svp-146",
+     "svp-147",
+     "svp-160",
+     "svp-161",
+     "svp-162",
+     "svp-177",
+     "svp-178",
+     "svp-179",
+     "svp-180",
+     "svp-193",
+     "svp-194",
+     "svp-195",
+     "svp-197",
+     "svp-198",
+     "svp-204",
+     "svp-205",
+     "svp-215",
+     "svp-216",
+     "svp-217",
+     "svp-218"
+    ]
+   },
+   "claim": "Scarlet & Violet / Mega Evolution ex promos carry the regular ex foil across the whole face, like the main-set Double rares.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos",
+   "scope": "full"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "mep"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "mep-011",
+     "mep-012",
+     "mep-013",
+     "mep-023",
+     "mep-025",
+     "mep-029",
+     "mep-030",
+     "mep-032",
+     "mep-033",
+     "mep-034",
+     "mep-035",
+     "mep-036",
+     "mep-071",
+     "mep-072",
+     "mep-073",
+     "mep-081"
+    ]
+   },
+   "claim": "Mega ex and Tera ex promos carry the textured etched ultra-rare foil, like their main-set counterparts.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos",
+   "scope": "full"
+  },
+  {
+   "pattern": "rainbow-glitter-sheen",
+   "sel": {
+    "setIds": [
+     "svp"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "svp-056",
+     "svp-074",
+     "svp-163",
+     "svp-164",
+     "svp-165",
+     "svp-166",
+     "svp-174",
+     "svp-175",
+     "svp-176",
+     "svp-196"
+    ]
+   },
+   "claim": "Mega ex and Tera ex promos carry the textured etched ultra-rare foil, like their main-set counterparts.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos",
+   "scope": "full"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "mep"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "mep-009",
+     "mep-010",
+     "mep-022",
+     "mep-026",
+     "mep-027",
+     "mep-031",
+     "mep-037",
+     "mep-038",
+     "mep-039",
+     "mep-040",
+     "mep-041",
+     "mep-042",
+     "mep-043",
+     "mep-045",
+     "mep-046",
+     "mep-047",
+     "mep-048",
+     "mep-049",
+     "mep-050",
+     "mep-051",
+     "mep-052",
+     "mep-053",
+     "mep-054",
+     "mep-055",
+     "mep-056",
+     "mep-057",
+     "mep-058",
+     "mep-059",
+     "mep-060",
+     "mep-061",
+     "mep-062",
+     "mep-063",
+     "mep-070",
+     "mep-080",
+     "mep-088"
+    ]
+   },
+   "claim": "Full-art Scarlet & Violet / Mega Evolution promos (non-ex) carry the ex / Illustration Rare foil across the whole face.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos",
+   "scope": "full"
+  },
+  {
+   "pattern": "ex-starfoil",
+   "sel": {
+    "setIds": [
+     "svp"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "svp-013",
+     "svp-014",
+     "svp-021",
+     "svp-027",
+     "svp-044",
+     "svp-051",
+     "svp-052",
+     "svp-058",
+     "svp-065",
+     "svp-066",
+     "svp-071",
+     "svp-075",
+     "svp-088",
+     "svp-092",
+     "svp-097",
+     "svp-098",
+     "svp-123",
+     "svp-124",
+     "svp-129",
+     "svp-130",
+     "svp-141",
+     "svp-159",
+     "svp-173",
+     "svp-189",
+     "svp-203",
+     "svp-206",
+     "svp-207",
+     "svp-208",
+     "svp-209",
+     "svp-210",
+     "svp-212"
+    ]
+   },
+   "claim": "Full-art Scarlet & Violet / Mega Evolution promos (non-ex) carry the ex / Illustration Rare foil across the whole face.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos",
+   "scope": "full"
+  },
+  {
+   "pattern": "horizontal-sheen",
+   "sel": {
+    "setIds": [
+     "mep"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "mep-001",
+     "mep-002",
+     "mep-003",
+     "mep-004",
+     "mep-007",
+     "mep-008",
+     "mep-014",
+     "mep-015",
+     "mep-016",
+     "mep-017",
+     "mep-028",
+     "mep-044",
+     "mep-064",
+     "mep-065",
+     "mep-066",
+     "mep-067",
+     "mep-074",
+     "mep-075",
+     "mep-076",
+     "mep-077",
+     "mep-082",
+     "mep-083",
+     "mep-084",
+     "mep-085"
+    ]
+   },
+   "claim": "Regular-frame Scarlet & Violet / Mega Evolution promos (non-ex) carry the standard SV holo in the art window, like the main-set holo rares.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos"
+  },
+  {
+   "pattern": "horizontal-sheen",
+   "sel": {
+    "setIds": [
+     "svp"
+    ],
+    "cls": "holo",
+    "rarities": null,
+    "variantKinds": [
+     "holo",
+     "holo-jumbo",
+     "holo-jumbo-stamp-set-logo",
+     "holo-stamp-ace-trainer",
+     "holo-stamp-horizons",
+     "holo-stamp-illustration-contest-2024",
+     "holo-stamp-player-rewards-program",
+     "holo-stamp-pokemon-center",
+     "holo-stamp-set-logo",
+     "holo-stamp-set-logo-stamp-staff"
+    ],
+    "cardIds": [
+     "svp-001",
+     "svp-002",
+     "svp-003",
+     "svp-005",
+     "svp-006",
+     "svp-007",
+     "svp-008",
+     "svp-019",
+     "svp-020",
+     "svp-022",
+     "svp-036",
+     "svp-037",
+     "svp-038",
+     "svp-039",
+     "svp-057",
+     "svp-059",
+     "svp-060",
+     "svp-069",
+     "svp-070",
+     "svp-076",
+     "svp-077",
+     "svp-079",
+     "svp-080",
+     "svp-082",
+     "svp-083",
+     "svp-089",
+     "svp-090",
+     "svp-091",
+     "svp-115",
+     "svp-116",
+     "svp-117",
+     "svp-118",
+     "svp-133",
+     "svp-134",
+     "svp-135",
+     "svp-136",
+     "svp-151",
+     "svp-152",
+     "svp-153",
+     "svp-154",
+     "svp-181",
+     "svp-182",
+     "svp-183",
+     "svp-184",
+     "svp-191",
+     "svp-192",
+     "svp-211"
+    ]
+   },
+   "claim": "Regular-frame Scarlet & Violet / Mega Evolution promos (non-ex) carry the standard SV holo in the art window, like the main-set holo rares.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Promotional_card",
+     "quote": "Paraphrase (Bulbapedia, 'Promotional card') - Black Star promos are released in products and events and use the foil treatments of their era."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
+   "lane": "r12-promos"
   }
  ]
 }

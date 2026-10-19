@@ -3,6 +3,15 @@
   "version": 1,
   "setId": "sv05",
   "runs": {
+    "modular-attach-2026-10-19": {
+      "name": "modular-attach",
+      "version": 1,
+      "modelId": "birefnet-lite+isnet-anime",
+      "params": {
+        "method": "the card's own generated plate attached to a stamp / metal / league variant"
+      },
+      "generatedAt": "2026-10-19T23:13:18Z"
+    },
     "modular-etch-v2-2026-10-19": {
       "name": "modular-etch",
       "version": 2,
@@ -250,6 +259,7 @@
     ["sv05-128",29423,"foil","sheet","d4a7c0511f1b55a25369da72f665a3dc679574e2b6aad4e15d20103a324d9859",70258,"modular-reverse-2026-10-19",null],
     ["sv05-129",29424,"foil","window","a88ca4f05c999c625168b093c59a5d83400218acb554269c734dcde51afaf026",54792,"modular-holo-window-2026-10-19",null],
     ["sv05-129",29425,"foil","sheet","b121d2123a685a1cfcfd56b18b5712c040e7a2501306a33f0902e062ee783d65",71389,"modular-reverse-2026-10-19",null],
+    ["sv05-129",29426,"foil","window","a88ca4f05c999c625168b093c59a5d83400218acb554269c734dcde51afaf026",54792,"modular-attach-2026-10-19",null],
     ["sv05-130",29428,"foil","sheet","270744b17bda27b0b02985a437c66b6235cf76e841f18063c495bc03f9f78ed7",70056,"modular-reverse-2026-10-19",null],
     ["sv05-131",29430,"foil","sheet","f60d886c70738f67d36d8e7b0ab55e6673dfc8f1b46f753a2ac17f38a140d113",70500,"modular-reverse-2026-10-19",null],
     ["sv05-132",29432,"foil","sheet","57fa5599e7da930c748cc4e99a8baf9e732ba2689f4f1cab7e665cb0e9f4828c",70090,"modular-reverse-2026-10-19",null],
