@@ -3,6 +3,15 @@
   "version": 1,
   "setId": "sv08.5",
   "runs": {
+    "modular-attach-2026-10-19": {
+      "name": "modular-attach",
+      "version": 1,
+      "modelId": "birefnet-lite+isnet-anime",
+      "params": {
+        "method": "the card's own generated plate attached to a stamp / metal / league variant"
+      },
+      "generatedAt": "2026-10-19T23:13:18Z"
+    },
     "modular-etch-v2-2026-10-19": {
       "name": "modular-etch",
       "version": 2,
@@ -10,7 +19,7 @@
       "params": {
         "method": "region classes (lines/solid/none) + direction-field stripes, 3.5 px pitch @1024"
       },
-      "generatedAt": "2026-10-19T21:27:50Z"
+      "generatedAt": "2026-10-19T23:13:18Z"
     },
     "modular-holo-cosmos-2026-10-19": {
       "name": "modular-holo-cosmos",
@@ -482,6 +491,10 @@
     ["sv08.5-081",31687,"foil","full","0c2f103a43c79d83301f1e86113d4b930dca6f2372317db405235ab8ec21a646",15102,"modular-prismatic-ball-2026-10-19",null],
     ["sv08.5-082",31688,"etch","full","d13292346e6621fb3de3be58ce7e963e638e75094e48c388e3509496d373b880",210709,"modular-etch-v2-2026-10-19",null],
     ["sv08.5-082",31688,"foil","full","68f7cd6df8cab46aaf5d0895ea7726d0aa42c49aa0a7e72a5d6c59a542184ce8",62394,"modular-holo-ex-2026-10-19",null],
+    ["sv08.5-082",31689,"etch","full","d13292346e6621fb3de3be58ce7e963e638e75094e48c388e3509496d373b880",210709,"modular-etch-v2-2026-10-19",null],
+    ["sv08.5-082",31689,"foil","full","68f7cd6df8cab46aaf5d0895ea7726d0aa42c49aa0a7e72a5d6c59a542184ce8",62394,"modular-attach-2026-10-19",null],
+    ["sv08.5-082",31690,"etch","full","d13292346e6621fb3de3be58ce7e963e638e75094e48c388e3509496d373b880",210709,"modular-etch-v2-2026-10-19",null],
+    ["sv08.5-082",31690,"foil","full","68f7cd6df8cab46aaf5d0895ea7726d0aa42c49aa0a7e72a5d6c59a542184ce8",62394,"modular-attach-2026-10-19",null],
     ["sv08.5-082",31691,"etch","full","d13292346e6621fb3de3be58ce7e963e638e75094e48c388e3509496d373b880",210709,"modular-etch-v2-2026-10-19",null],
     ["sv08.5-082",31691,"foil","full","68f7cd6df8cab46aaf5d0895ea7726d0aa42c49aa0a7e72a5d6c59a542184ce8",62394,"modular-holo-ex-2026-10-19",null],
     ["sv08.5-082",31692,"etch","full","d13292346e6621fb3de3be58ce7e963e638e75094e48c388e3509496d373b880",210709,"modular-etch-v2-2026-10-19",null],

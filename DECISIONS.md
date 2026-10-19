@@ -3572,3 +3572,15 @@ mirror reverse, our plate gives the same result as the reference plate: |dL| 0.0
   they were on `ex-emerald`, an EX-era sheet. The reference has no record of these printings.
 - **Cracked ice energy reverses** stay on `cracked-ice`. The modern client's cracked-ice film is mixed 30% over the
   art and measures |dL| 0.003 on a reference card, while ours measures 0.002–0.014: both are near-invisible.
+
+**Follow-up (same day): every SV/ME foil printing now has a generated mask.**
+- **Promos:** 61 promos with no TCGdex scan get one from Limitless. svp-085 comes from pokemontcg.io. svp-190 and
+  mep-Museum are non-foil, so they need none. These promos are classified and generated like the rest.
+- **Tera:** promo Tera detection now uses the four-template badge match, Scarlet & Violet only.
+- **Odd variant kinds:** 13 printings with stamp, metal and league variant kinds (`normal-stamp-*`, `metal*`,
+  `normal-foil-*`) never matched the exporters' `holo*` / `reverse*` filter. They get their card's own plate (run
+  `modular-attach`), and 7 of them get an etch.
+- **Etches:** 9 Phantasmal Flames Double Rares that had no etch get etch v2.
+
+Checked across 6,229 SV/ME foil printings: every one has a foil plate. All 2,031 full-scope printings whose recipe
+reads an etch have one. Every index row's object is in the bucket (8,351 rows checked).

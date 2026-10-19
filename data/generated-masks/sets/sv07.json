@@ -3,6 +3,15 @@
   "version": 1,
   "setId": "sv07",
   "runs": {
+    "modular-attach-2026-10-19": {
+      "name": "modular-attach",
+      "version": 1,
+      "modelId": "birefnet-lite+isnet-anime",
+      "params": {
+        "method": "the card's own generated plate attached to a stamp / metal / league variant"
+      },
+      "generatedAt": "2026-10-19T23:13:18Z"
+    },
     "modular-etch-v2-2026-10-19": {
       "name": "modular-etch",
       "version": 2,
@@ -189,6 +198,7 @@
     ["sv07-095",30328,"foil","sheet","989850f6e45461bf9efca7e2457dc60ac0c6291c8e73cacbad54e21387094b78",63394,"modular-reverse-2026-10-19",null],
     ["sv07-096",30329,"foil","sheet","d726e008d51afa9f488a26cadf97fdf7b05cf011335db159383608d3f6c6ad9a",64572,"modular-reverse-2026-10-19",null],
     ["sv07-096",30330,"foil","window","19eae58c8e6d42f0e9458607cd9fa3ed0ef54a884b97d10f2445fc72b3403314",55305,"modular-holo-window-2026-10-19",null],
+    ["sv07-096",30331,"foil","window","19eae58c8e6d42f0e9458607cd9fa3ed0ef54a884b97d10f2445fc72b3403314",55305,"modular-attach-2026-10-19",null],
     ["sv07-097",30333,"foil","sheet","a9a191d206506e361e7fef91d7646168e600741eccca242b368138051676397e",62970,"modular-reverse-2026-10-19",null],
     ["sv07-098",30335,"foil","sheet","387d27207eb5d5c3808acdff64fc011e5d01d9f9d1dac7de46c8afd0e6ea2c06",72366,"modular-reverse-2026-10-19",null],
     ["sv07-099",30337,"foil","sheet","402aeb1b703fb31138632dee2fd192f28714b0eb104c0b41306fd2f7294c7636",72334,"modular-reverse-2026-10-19",null],
@@ -214,6 +224,7 @@
     ["sv07-107",30359,"foil","window","57a3a51c0ab8d5d0b043499bdaed2d5be0716f22025a2417a5ef86d10d4a1216",38002,"modular-holo-window-2026-10-19",null],
     ["sv07-107",30360,"foil","window","57a3a51c0ab8d5d0b043499bdaed2d5be0716f22025a2417a5ef86d10d4a1216",38002,"modular-holo-window-2026-10-19",null],
     ["sv07-107",30361,"foil","window","af61293152fa6da639cd30f3b7b1b50dec052893915f9f5a36e73b83cdc4c6ea",37776,"modular-holo-cosmos-2026-10-19",null],
+    ["sv07-107",30362,"foil","window","57a3a51c0ab8d5d0b043499bdaed2d5be0716f22025a2417a5ef86d10d4a1216",38002,"modular-attach-2026-10-19",null],
     ["sv07-108",30364,"foil","sheet","36493abdcf49b08f126363f43c7b7f69f146120376652f67ce2b40dcbb0e5c0c",72457,"modular-reverse-2026-10-19",null],
     ["sv07-109",30366,"foil","sheet","7803b5a3de9e54688c9a792c44b80ad77286e18b49e358f8b2a2d039631a53bc",72644,"modular-reverse-2026-10-19",null],
     ["sv07-110",30367,"etch","full","adf9736ecb157d420a49a0fd20627ecd849790b0831e7025d14ea77ca31202d5",197627,"modular-etch-v2-2026-10-19",null],
