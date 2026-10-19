@@ -3314,13 +3314,17 @@ export const PATTERNS: FoilPattern[] = [
     usedOn: 'SV-era ACE SPEC cards only (BW ACE SPECs used tinsel).',
     glsl: ACE_SPEC_GLSL,
     family: 'flash',
-    defaults: { ...FLASH_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 0.8, uSat: 1.0, uArtGate: 0.0, uSpecular: 0.3 },
+    // R10 2026-10-18: against a reference render of the SV ACE SPEC foil (3 cards) the
+    // lattice is ~3x finer and pastel, and the change is ~3x larger: density 9 -> 24, uSat
+    // 1 -> 0.4, gain 1.1 -> 3, specular 0.3 -> 0.6. That reaches ~0.6x of the reference;
+    // the rest is the additive headroom budget over the light ACE SPEC body.
+    defaults: { ...FLASH_FOIL, uIntensity: 1.0, uScale: 1.0, uHueShift: 0.0, uHueSpread: 0.8, uSat: 0.4, uArtGate: 0.0, uSpecular: 0.6 },
     params: [
-      { key: 'uP0', label: 'Grid density', min: 4, max: 18, step: 0.5, default: 9 },
+      { key: 'uP0', label: 'Grid density', min: 4, max: 36, step: 0.5, default: 24 },
       { key: 'uP1', label: 'Cycle rate', min: 0.2, max: 4, step: 0.05, default: 1.3 },
       // ±size swing on each square's own tilt phase (1ckdc2); 0.5 = ±25%
       { key: 'uP2', label: 'Size pulse', min: 0, max: 1, step: 0.02, default: 0.5 },
-      { key: 'uP3', label: 'Gain', min: 0, max: 3, step: 0.05, default: 1.1 },
+      { key: 'uP3', label: 'Gain', min: 0, max: 4, step: 0.05, default: 3.0 },
     ],
     implemented: true,
   },
