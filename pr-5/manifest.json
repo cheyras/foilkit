@@ -1,0 +1,78 @@
+{
+  "pr": "5",
+  "rendered": [
+    {
+      "kind": "canon",
+      "patternId": "horizontal-sheen",
+      "file": "data/foil-canon/horizontal-sheen.json",
+      "name": "canon-horizontal-sheen",
+      "strip": "canon-horizontal-sheen.png",
+      "meta": {
+        "generatedAt": "2026-10-19T05:38:45.158Z",
+        "pattern": "horizontal-sheen",
+        "mask": null,
+        "canonFile": "/data/foil-canon/horizontal-sheen.json",
+        "tone": "dark",
+        "maxTiltDeg": 16,
+        "framesPerStep": 300,
+        "tilts": [
+          -1,
+          -0.7,
+          -0.35,
+          -0.1,
+          0.1,
+          0.35,
+          0.7,
+          1
+        ],
+        "cell": {
+          "width": 246,
+          "height": 344
+        },
+        "strip": {
+          "width": 2024,
+          "height": 344,
+          "bytes": 848841
+        },
+        "sha256": "29185a311dd04ef0d43fa7eaf0a10e9833dbd35c6b65299bc2b0d7f5ce87f468"
+      }
+    },
+    {
+      "kind": "canon",
+      "patternId": "rainbow-glitter-sheen",
+      "file": "data/foil-canon/rainbow-glitter-sheen.json",
+      "name": "canon-rainbow-glitter-sheen",
+      "strip": "canon-rainbow-glitter-sheen.png",
+      "meta": {
+        "generatedAt": "2026-10-19T05:43:19.642Z",
+        "pattern": "rainbow-glitter-sheen",
+        "mask": null,
+        "canonFile": "/data/foil-canon/rainbow-glitter-sheen.json",
+        "tone": "dark",
+        "maxTiltDeg": 16,
+        "framesPerStep": 300,
+        "tilts": [
+          -1,
+          -0.7,
+          -0.35,
+          -0.1,
+          0.1,
+          0.35,
+          0.7,
+          1
+        ],
+        "cell": {
+          "width": 246,
+          "height": 344
+        },
+        "strip": {
+          "width": 2024,
+          "height": 344,
+          "bytes": 975874
+        },
+        "sha256": "cb82fcdce5a839d1efc263a5b996be81a0941a159400bab8577b51c904d8b92c"
+      }
+    }
+  ],
+  "skipped": []
+}
