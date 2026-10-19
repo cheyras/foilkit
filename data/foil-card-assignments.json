@@ -373,9 +373,10 @@
   "r2b-vocab-wiring",
   "r7-ex-sheen-energies",
   "r12-svme",
-  "r12-promos"
+  "r12-promos",
+  "r12-me-balls"
  ],
- "row_count": 195,
+ "row_count": 196,
  "facet_rows": [
   {
    "facet": "cosmos",
@@ -8372,6 +8373,35 @@
    ],
    "conflicts": "R12 2026-10-19: card list generated from visible features only: the catalog name (ex, Mega), a Tera-badge template match and a regular-frame / full-art classifier on our own TCGdex scans (98.6% on main-set cards of known frame). Cosmos variants are left to the cosmos rows. Behaviour measured against a local reference render; see DECISIONS R12.",
    "lane": "r12-promos"
+  },
+  {
+   "pattern": "mirror",
+   "sel": {
+    "setIds": [
+     "me02.5"
+    ],
+    "cls": "reverse",
+    "rarities": null,
+    "variantKinds": [
+     "reverse-foil-pokeball",
+     "reverse-foil-duskball",
+     "reverse-foil-loveball",
+     "reverse-foil-friendball",
+     "reverse-foil-quickball",
+     "reverse-foil-team-rocket"
+    ],
+    "cardIds": null
+   },
+   "claim": "The Mega Ascended Heroes ball reverses are the set's plain silver reverse with the ball drawn in the medallion disc where the regular printing shows the type symbol; there is no ball lattice over the face.",
+   "confidence": "medium",
+   "sources": [
+    {
+     "url": "https://bulbapedia.bulbagarden.net/wiki/Reverse_Holofoil",
+     "quote": "Paraphrase (Bulbapedia, 'Reverse Holofoil') - reverse holofoil printings put the foil everywhere except the artwork; special reverse variants vary the foil pattern."
+    }
+   ],
+   "conflicts": "R12 2026-10-19: measured against a local reference render of the modern client, which draws these as the plain silver reverse (FlatSilver) with a ball medallion and no cast-and-cure layer. The ball drawings are our own (generated masks, run modular-reverse-ball).",
+   "lane": "r12-me-balls"
   }
  ]
 }

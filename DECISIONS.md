@@ -3420,3 +3420,24 @@ masks are in the svp / mep shards.
 **Tera ex.** R10 matched the "Tera" badge with one template and found 88 of 99 Tera ex. Four templates, one per
 badge colour family, find all 97 checked locally (2 extras). The R10 card lists are regenerated:
 `rainbow-glitter-sheen` now covers 474 SV/ME full arts.
+
+## 2026-10-19 — R12: Mega Ascended Heroes ball reverses are the silver reverse with a ball medallion
+
+**Decided by:** @cheyras ("get it so that meg and svi are as done as you can make them on your own")
+
+**Decision:** in Mega Ascended Heroes (me02.5), each Pokémon has exactly one ball parallel: Poké, Dusk, Love, Friend
+or Quick Ball, or Team Rocket. The modern client draws these as the set's plain silver reverse (FlatSilver), with the
+ball in the medallion disc where the regular printing shows the type symbol, and no cast-and-cure lattice.
+
+The 140 printings now resolve to `mirror` (row lane `r12-me-balls`). Before, they used the BB/WF ball recipe. 139 of
+them get their own generated plate (run `modular-reverse-ball`): the set's flat reverse, with the ball drawn in light
+lines in the disc.
+
+The ball drawings are our own geometry (`tools/modular/balls.py`, local). The shared structure is measured on a local
+reference plate (units of the disc radius):
+- button r < 0.20, a dark ring to 0.33, and a light ring to 0.43;
+- a belt of two light bands at 0.06 < |y| < 0.17;
+- a light lower half from r 0.54 to 0.89, and a dark rim.
+
+The cap motifs (heart, lightning arcs, leaf, crown, and an R) are simple originals. On the one cached reference (a
+Love Ball parallel), our plate agrees with the reference's light / dark split on 97.0% of the card (MAE 0.050).
