@@ -3135,3 +3135,23 @@ and etches as masks.
 - The saved canon reproduces the tuned frames exactly.
 
 **Previous canon** (in git history): `{"uIntensity":1,"uScale":0.55,"uHueShift":0.5,"uHueSpread":0.9,"uSat":1,"uArtGate":1,"uSpecular":0.35,"uDarken":0.4,"uTint":0,"uInkGuard":1,"uInkPop":0.5,"uMetal":0,"uSheen":1.4,"uSheenTint":0,"uDepth":1,"uGrain":1,"uP0":1,"uP1":0.8,"uP2":1.5,"uP3":1}`
+
+## 2026-10-18 — Generated masks cover every variant that shares a plate
+
+**Decided by:** @cheyras ("keep going until Meg and SVI cards all look fucking great")
+
+**Decision:** A generated plate now answers for every variant kind that shares the card's art and foil area:
+- the holo plate for stamped, jumbo, staff, Cosmos-foil and gold-foil holo variants;
+- the reverse plate for Poké Ball, Master Ball, specialty-ball, energy and stamped reverse variants. SV/ME reverse
+  plates are flat or type-patterned, and a ball variant's pattern comes from its own recipe.
+
+Plates were also generated for SV/ME printings that had none: 9 ex, 33 ACE SPEC, 33 holo Commons/Uncommons/Rares.
+
+**Measured:** 5,719 index rows (was 4,513), 4,810 unique objects, all present in the bucket (HEAD-checked).
+
+**Not covered:**
+- 289 promos;
+- 32 basic Energy printings (sve, mee), which TCGdex serves no image for;
+- 1 card whose art download failed.
+
+These render with the era-rule prior until they have a mask.
