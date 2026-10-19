@@ -21,14 +21,16 @@
       },
       "generatedAt": "2026-10-18T21:06:54Z"
     },
-    "modular-holo-window-2026-10-18": {
+    "modular-holo-window-2026-10-19": {
       "name": "modular-holo-window",
-      "version": 1,
+      "version": 2,
       "modelId": "birefnet-lite+isnet-anime",
       "params": {
-        "method": "window minus subject, edge holo"
+        "method": "window minus subject (depth-capped at 0.55), level 0.958-0.597*lum, edge holo",
+        "measured_agreement": 0.932,
+        "n": 19
       },
-      "generatedAt": "2026-10-18T21:06:54Z"
+      "generatedAt": "2026-10-19T00:02:23Z"
     },
     "modular-reverse-2026-10-18": {
       "name": "modular-reverse",
@@ -47,7 +49,7 @@
     ["sv06.5-003",29985,"foil","sheet","f89a31915e65287d814e2175e69731dd8d76a2a6021a552a9638b06bc3cc3222",88837,"modular-reverse-2026-10-18",null],
     ["sv06.5-004",29987,"foil","sheet","7844919d72df95fe403bb3f80751df62d11144a1d7916abfbfda3e36b201bc23",87839,"modular-reverse-2026-10-18",null],
     ["sv06.5-005",29989,"foil","sheet","43ef1d93f74f831e5c73e43c9b91a60b1a02794b891ec5da61fdb6637da0656a",87936,"modular-reverse-2026-10-18",null],
-    ["sv06.5-006",29990,"foil","window","1fcf78edb6f5cc62c08abe352d0225c7949440db003ad48ce4965e9dc65dcd11",30035,"modular-holo-window-2026-10-18",null],
+    ["sv06.5-006",29990,"foil","window","e05c761612316daec28337ec3bd05476d2b31f5641b907a9127a24ae260b1aeb",55958,"modular-holo-window-2026-10-19",null],
     ["sv06.5-006",29991,"foil","sheet","c51098a0bbe4a2e56f6a6df017c65cc92b6a9e990f853e683a5158edaf4b88e0",89011,"modular-reverse-2026-10-18",null],
     ["sv06.5-007",29993,"foil","sheet","d86f6b7250dd80921c56fb44f2fef27e11c7927d98c6a63cd078a81a5cb9ced7",88923,"modular-reverse-2026-10-18",null],
     ["sv06.5-008",29995,"foil","sheet","23d1da27b9bc0210cbe6fbb88a5426063b6ea8d3df05f8d4ea81bdf372a20f89",88068,"modular-reverse-2026-10-18",null],
@@ -62,14 +64,14 @@
     ["sv06.5-017",30014,"foil","sheet","be7f3bab381dc9a5fff74b25c38193fad95ef25f3a3623cf275b43c982a8d9c1",88233,"modular-reverse-2026-10-18",null],
     ["sv06.5-018",30016,"foil","sheet","605241ae4f35fe375df76b4cb5bcee0685be3041fac47c115d71dfd580a69f92",88872,"modular-reverse-2026-10-18",null],
     ["sv06.5-019",30018,"foil","sheet","4a459825b5a3dba58fa2fe9a9dfa3bf16fa4e328c2aa03343d72822f642f5862",88459,"modular-reverse-2026-10-18",null],
-    ["sv06.5-020",30019,"foil","window","89b154faaef7823c7bec1603d2daa30965a8311c7fe79b8cdcc9025a0e109ffc",44383,"modular-holo-window-2026-10-18",null],
+    ["sv06.5-020",30019,"foil","window","459ba3374c2429d0c813e9e07374125684e7fbc6e9ed82ae42b0f95d22bc8ba9",50817,"modular-holo-window-2026-10-19",null],
     ["sv06.5-020",30020,"foil","sheet","e810bad244193ec5b71574992ccccdc24337b96ed6d5a1d5db84a7e372fb412b",88447,"modular-reverse-2026-10-18",null],
-    ["sv06.5-021",30021,"foil","window","53437178c77cf928d38fc8635bb571164af33e1ffd611bbec7b503e15e1a2e6c",29914,"modular-holo-window-2026-10-18",null],
+    ["sv06.5-021",30021,"foil","window","54c0e7ab59c1dc2f3e961609dcfbffb9991e60f7fe48eb67db42e168a9f0e443",43893,"modular-holo-window-2026-10-19",null],
     ["sv06.5-021",30022,"foil","sheet","45229214c349e38760ffcbc5514403416f5efbf5866af0dbaf04088fb0094343",88534,"modular-reverse-2026-10-18",null],
     ["sv06.5-022",30024,"foil","sheet","d99a86be1348be26baa950986b18fa74d3f08116d801a86d3cb39b3caf0742b7",87877,"modular-reverse-2026-10-18",null],
     ["sv06.5-023",30026,"foil","sheet","f082e9071969cd13431200fcc2b0d021123d3614a0985f3ee15720d04dc3bc37",88868,"modular-reverse-2026-10-18",null],
     ["sv06.5-024",30028,"foil","sheet","0955951a1d2de7f345f0cbc059e87137ed3d9d30f50c00a01e716103f12e405a",88296,"modular-reverse-2026-10-18",null],
-    ["sv06.5-025",30029,"foil","window","7d9f4500899d173913912bec67d254d38e6cf17bde3c4cb7c40f8d105f3bc608",21675,"modular-holo-window-2026-10-18",null],
+    ["sv06.5-025",30029,"foil","window","aefe03ae9be75f14a49e148230355f2e956214582ae4dac042ba2f6a2fbabca1",53372,"modular-holo-window-2026-10-19",null],
     ["sv06.5-025",30030,"foil","sheet","afcb80a3f73bad8092647c585b94e11c3795743c4fffcafea45a4214299efc05",89763,"modular-reverse-2026-10-18",null],
     ["sv06.5-026",30032,"foil","sheet","e4d32077d4bdd92f8707c7f2f30c5084acb81c2aecc98e17f80303677393bdd3",89372,"modular-reverse-2026-10-18",null],
     ["sv06.5-027",30034,"foil","sheet","33dba79339ebadd0341812a490244182075743d7b27522ca4a5a10783980a106",88467,"modular-reverse-2026-10-18",null],
@@ -77,7 +79,7 @@
     ["sv06.5-029",30038,"foil","sheet","e1952d73411f6657888677576c633209b65f1b6824d868bc807542890403e4c7",88834,"modular-reverse-2026-10-18",null],
     ["sv06.5-030",30040,"foil","sheet","b5f9bc884ceee72d513a9ed352a6498b03da23a5e49ea9e50ef59549cd50d427",88539,"modular-reverse-2026-10-18",null],
     ["sv06.5-031",30042,"foil","sheet","87c5c0268dc01091b51dee23e3d26124dc0a26d98ec69284cc26aa20494e5e93",88931,"modular-reverse-2026-10-18",null],
-    ["sv06.5-032",30043,"foil","window","89bb500f03540d4b64783c10a691ba4230dfda3afc0a3dd1acd22b65ebd9fdcd",39263,"modular-holo-window-2026-10-18",null],
+    ["sv06.5-032",30043,"foil","window","471bf417e5d7eb125de8acd86b41a01ab4bab5c8f56d6793483cd080205c6dbe",46817,"modular-holo-window-2026-10-19",null],
     ["sv06.5-032",30044,"foil","sheet","088541bfbb29c2ad582c5e75f994de6dc0060a3dc69e90492d7adde8ad090021",88126,"modular-reverse-2026-10-18",null],
     ["sv06.5-033",30046,"foil","sheet","da65219798c60e7d46de8e82e1c922fc994f83e5ec9995f34aec951f929ff0c4",88593,"modular-reverse-2026-10-18",null],
     ["sv06.5-034",30048,"foil","sheet","72508e887a7ea4fd2ab12cb517766f2acdb5433217f00b695fb32ee43c75418c",88109,"modular-reverse-2026-10-18",null],
@@ -88,12 +90,12 @@
     ["sv06.5-039",30054,"foil","full","a44bedc307a0396293a5cbe7ed886817fa22d6be858208d69cc1e91da17340fc",71311,"modular-holo-ex-2026-10-18",null],
     ["sv06.5-040",30056,"foil","sheet","6d374967f56f38fd34a1b59a9b22b04cee6cf2949edde8ff70894d07065f6e6f",89059,"modular-reverse-2026-10-18",null],
     ["sv06.5-041",30058,"foil","sheet","3b53896daaca4c56a15c67460f7b18f13b8f14cd22784e23c0d11321b2dfb847",89336,"modular-reverse-2026-10-18",null],
-    ["sv06.5-042",30059,"foil","window","003f8edb5bcdbaeceffd9249a7254011e1cc94ba8f4222894e61da42b50301a7",45775,"modular-holo-window-2026-10-18",null],
+    ["sv06.5-042",30059,"foil","window","693e422aac3b7148b6f5f1ab184f6fa7d283f6092236ac57233ba3e486848754",52086,"modular-holo-window-2026-10-19",null],
     ["sv06.5-042",30060,"foil","sheet","69021b2139cd559d2e3a4cf9d2d4d283b2042cafec79169eab970d211c703e6d",89157,"modular-reverse-2026-10-18",null],
     ["sv06.5-043",30062,"foil","sheet","28b5d715c0be954d32cd23dd79b005e9188f5ca9f888583196ffe81024a6c69c",88776,"modular-reverse-2026-10-18",null],
     ["sv06.5-044",30064,"foil","sheet","810f468f859a3430b11b2cdb1ec4811026a599df604ff2e31321b7b0abef1f52",88731,"modular-reverse-2026-10-18",null],
     ["sv06.5-045",30066,"foil","sheet","23c4b723a5c636a4973b9f048b76bb437b0e1d18fca4e0b07a9ad35fab7d7d17",87806,"modular-reverse-2026-10-18",null],
-    ["sv06.5-046",30067,"foil","window","a6f92fc5c9f51ec10b7d79d88941277c9d2c5aeff3556cc1d203e295f44bc99e",38661,"modular-holo-window-2026-10-18",null],
+    ["sv06.5-046",30067,"foil","window","6e1534691a3456f1e34d649b0f936db6531f28cfabb25c097ae132af79ec059e",45464,"modular-holo-window-2026-10-19",null],
     ["sv06.5-046",30068,"foil","sheet","35ff61385b85c207e339f395b8b1d2ecfe98bf612385515962c2acf921e2e14c",88350,"modular-reverse-2026-10-18",null],
     ["sv06.5-047",30070,"foil","sheet","c7cd06bda4307a4d6072eb822eb94e57a4748ec60a20a32619cd90e6b0a672c3",89534,"modular-reverse-2026-10-18",null],
     ["sv06.5-048",30072,"foil","sheet","894e511ecb861d48d85fef0c1e8266b476c32d4393ae4ce50cf9cf1b9dd2c38b",88435,"modular-reverse-2026-10-18",null],
