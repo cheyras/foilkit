@@ -1,0 +1,42 @@
+{
+  "pr": "11",
+  "rendered": [
+    {
+      "kind": "canon",
+      "patternId": "cosmos-iii-smooth",
+      "file": "data/foil-canon/cosmos-iii-smooth.json",
+      "name": "canon-cosmos-iii-smooth",
+      "strip": "canon-cosmos-iii-smooth.png",
+      "meta": {
+        "generatedAt": "2026-10-19T20:15:04.854Z",
+        "pattern": "cosmos-iii-smooth",
+        "mask": null,
+        "canonFile": "/data/foil-canon/cosmos-iii-smooth.json",
+        "tone": "dark",
+        "maxTiltDeg": 16,
+        "framesPerStep": 300,
+        "tilts": [
+          -1,
+          -0.7,
+          -0.35,
+          -0.1,
+          0.1,
+          0.35,
+          0.7,
+          1
+        ],
+        "cell": {
+          "width": 246,
+          "height": 344
+        },
+        "strip": {
+          "width": 2024,
+          "height": 344,
+          "bytes": 746165
+        },
+        "sha256": "98c99874ac84708b1f487e501b2502063d530647c05c3debd1363eaa2c2fbf1f"
+      }
+    }
+  ],
+  "skipped": []
+}
